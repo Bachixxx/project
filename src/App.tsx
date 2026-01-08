@@ -46,6 +46,10 @@ import MultiClientCoaching from './pages/MultiClientCoaching';
 import Admin from './pages/Admin';
 
 function App() {
+  console.log('🔍 Debug Supabase Config:');
+  console.log(' - URL Defined:', !!import.meta.env.VITE_SUPABASE_URL);
+  console.log(' - Key Defined:', !!import.meta.env.VITE_SUPABASE_ANON_KEY);
+
   return (
     <AuthProvider>
       <ClientAuthProvider>
