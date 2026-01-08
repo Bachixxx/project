@@ -1,0 +1,214 @@
+import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { Icon } from 'react-icons-kit';
+import { eyeOff } from 'react-icons-kit/feather/eyeOff';
+import { eye } from 'react-icons-kit/feather/eye';
+import { useAuth } from '../contexts/AuthContext';
+import { LogIn, ChevronLeft, Dumbbell, Activity, Mail, Lock } from 'lucide-react';
+import { t } from '../i18n';
+
+function Login() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [type, setType] = useState('password');
+  const [icon, setIcon] = useState(eyeOff);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const { signIn } = useAuth();
+
+  const handlePasswordToggle = () => {
+    if (type === 'password') {
+      setIcon(eye);
+      setType('text');
+    } else {
+      setIcon(eyeOff);
+      setType('password');
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setError('');
+      setLoading(true);
+      const { data, error } = await signIn({ email, password });
+      if (error) {
+        if (error.message === 'Invalid login credentials') {
+          setError('Email ou mot de passe incorrect. Veuillez réessayer.');
+        } else {
+          setError(t('auth.loginError'));
+        }
+        return;
+      }
+
+      // Verify the user is a coach
+      const { supabase: supabaseClient } = await import('../lib/supabase');
+      const { data: coachData, error: coachError } = await supabaseClient
+        .from('coaches')
+        .select('id')
+        .eq('id', data.user.id)
+        .maybeSingle();
+
+      if (coachError || !coachData) {
+        // User is not a coach, sign them out
+        await supabaseClient.auth.signOut();
+        setError('Ce compte n\'est pas un compte coach. Veuillez utiliser l\'espace client.');
+        return;
+      }
+
+      navigate('/dashboard');
+    } catch (err) {
+      setError(t('auth.loginError'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-[#0f172a] p-4 flex flex-col font-sans selection:bg-blue-500/30 relative overflow-hidden">
+
+      {/* Background Gradients */}
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/20 rounded-full blur-[128px] pointer-events-none" />
+      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-cyan-500/20 rounded-full blur-[128px] pointer-events-none" />
+
+      {/* Header */}
+      <div className="relative z-10 flex items-center justify-between mb-8 max-w-7xl mx-auto w-full pt-4">
+        <Link
+          to="/"
+          className="group flex items-center text-gray-400 hover:text-white transition-colors"
+        >
+          <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center mr-3 group-hover:bg-white/10 transition-colors border border-white/5">
+            <ChevronLeft className="w-5 h-5" />
+          </div>
+          <span className="font-medium">Retour à l'accueil</span>
+        </Link>
+
+        <Link to="/" className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white shadow-lg shadow-blue-500/25">
+            <Dumbbell className="w-5 h-5" />
+          </div>
+          Coachency
+        </Link>
+      </div>
+
+      <div className="flex-1 flex items-center justify-center relative z-10 pb-20">
+        <div className="max-w-md w-full animate-fade-in relative">
+
+          {/* Glass Card */}
+          <div className="glass-card p-8 rounded-3xl border border-white/10 shadow-2xl relative overflow-hidden backdrop-blur-xl bg-white/5">
+
+            {/* Inner Glow */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-[80px] pointer-events-none" />
+
+            <div className="relative">
+              <div className="text-center mb-8">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-500/10 to-cyan-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-white/5 shadow-inner">
+                  <LogIn className="w-8 h-8 text-blue-400" />
+                </div>
+                <h2 className="text-3xl font-bold text-white mb-2">Bienvenue Coach</h2>
+                <p className="text-gray-400">Connectez-vous pour gérer votre activité</p>
+              </div>
+
+              {error && (
+                <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm mb-6 flex items-start gap-3 animate-slide-in">
+                  <Activity className="w-5 h-5 shrink-0 mt-0.5" />
+                  <p>{error}</p>
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit} className="space-y-5">
+                <div className="space-y-1.5">
+                  <label htmlFor="email" className="text-xs font-semibold text-gray-400 uppercase tracking-wider ml-1">
+                    {t('auth.email')}
+                  </label>
+                  <div className="relative group">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-blue-400 transition-colors pointer-events-none">
+                      <Mail className="w-5 h-5" />
+                    </div>
+                    <input
+                      id="email"
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full bg-slate-900/50 border border-white/10 rounded-xl pl-12 pr-4 py-3.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all font-medium"
+                      placeholder="coach@exemple.com"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label htmlFor="password" className="text-xs font-semibold text-gray-400 uppercase tracking-wider ml-1">
+                    {t('auth.password')}
+                  </label>
+                  <div className="relative group">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-blue-400 transition-colors pointer-events-none">
+                      <Lock className="w-5 h-5" />
+                    </div>
+                    <input
+                      id="password"
+                      type={type}
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full bg-slate-900/50 border border-white/10 rounded-xl pl-12 pr-12 py-3.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all font-medium"
+                      placeholder="••••••••"
+                    />
+                    <button
+                      type="button"
+                      onClick={handlePasswordToggle}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors p-1"
+                    >
+                      <Icon icon={icon} size={18} />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end">
+                  <a href="#" className="text-sm font-medium text-blue-400 hover:text-blue-300 transition-colors">
+                    Mot de passe oublié ?
+                  </a>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-4 px-6 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-bold rounded-xl shadow-lg shadow-blue-500/25 transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100 flex items-center justify-center gap-2"
+                >
+                  {loading ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <span>Connexion...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Se connecter</span>
+                      <ChevronLeft className="w-5 h-5 rotate-180" />
+                    </>
+                  )}
+                </button>
+              </form>
+
+              <div className="mt-8 pt-6 border-t border-white/5 text-center">
+                <p className="text-sm text-gray-400">
+                  Pas encore de compte coach ?{' '}
+                  <Link to="/register" className="font-semibold text-blue-400 hover:text-blue-300 transition-colors">
+                    Commencer l'essai gratuit
+                  </Link>
+                </p>
+                <div className="mt-4">
+                  <Link to="/client/login" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-sm font-medium text-gray-300 hover:text-white transition-all border border-white/5 hover:border-white/10">
+                    Vous êtes un client ? Accédez à l'espace client
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default Login;
