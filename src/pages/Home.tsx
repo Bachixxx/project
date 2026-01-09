@@ -20,8 +20,10 @@ function Home() {
 
       {/* Background Gradients */}
       <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-600/20 rounded-full blur-[120px] animate-pulse-slow"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-600/20 rounded-full blur-[120px] animate-pulse-slow delay-1000"></div>
+        <div className="hidden md:block absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-600/20 rounded-full blur-[120px] animate-pulse-slow"></div>
+        <div className="hidden md:block absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-600/20 rounded-full blur-[120px] animate-pulse-slow delay-1000"></div>
+        {/* Lighter gradient for mobile */}
+        <div className="md:hidden absolute top-[-10%] left-[-10%] w-[80%] h-[50%] bg-blue-600/10 rounded-full blur-[80px]"></div>
         <div className="absolute top-[40%] left-[50%] transform -translate-x-1/2 -translate-y-1/2 w-[30%] h-[30%] bg-cyan-500/10 rounded-full blur-[100px]"></div>
       </div>
 
@@ -116,11 +118,21 @@ function Home() {
           </div>
 
           <div className="lg:w-1/2 relative animate-float">
-            <div className="relative z-10 bg-[#1e293b] border border-white/10 rounded-2xl p-2 shadow-2xl shadow-blue-500/20 transform rotate-1 hover:rotate-0 transition-transform duration-500">
+            <div className="relative z-10 bg-[#1e293b] border border-white/10 rounded-2xl p-2 shadow-2xl shadow-blue-500/20 transform rotate-1 lg:rotate-1 hover:rotate-0 transition-transform duration-500">
               <img
                 src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=2670&ixlib=rb-4.0.3"
+                srcSet="
+                  https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=600&ixlib=rb-4.0.3 600w,
+                  https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=1200&ixlib=rb-4.0.3 1200w,
+                  https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=2670&ixlib=rb-4.0.3 2670w
+                "
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 800px"
                 alt="Dashboard Preview"
+                width="800"
+                height="600"
                 className="rounded-xl w-full h-auto opacity-90 hover:opacity-100 transition-opacity"
+                // @ts-ignore
+                fetchPriority="high"
               />
 
               {/* Floating Cards */}
