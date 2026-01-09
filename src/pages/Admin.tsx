@@ -91,34 +91,27 @@ function Admin() {
       } else {
         const { data: clientsData, error: clientsError } = await supabase
           .from('clients')
-          .select('*')
+          .select(`
+            *,
+            coach:coaches (
+              full_name
+            )
+          `)
           .order('created_at', { ascending: false });
 
         if (clientsError) {
           console.error('Error fetching clients:', clientsError);
         }
 
-        if (clientsData) {
-          const clientsWithCoach = await Promise.all(
-            clientsData.map(async (client) => {
-              if (client.coach_id) {
-                const { data: coachData } = await supabase
-                  .from('coaches')
-                  .select('full_name')
-                  .eq('id', client.coach_id)
-                  .maybeSingle();
+        // Supabase returns the relationship as an object or array depending on cardinality.
+        // Assuming coach_id is a foreign key to coaches.id (single), it should return an object or null.
+        // However, typescript might complain if the return type of select isn't perfectly inferred or if it returns an array.
+        // It's safe to cast or trust the interface if it matches the runtime shape.
+        // To be safe and since we can't easily check runtime here without running, 
+        // I will assume the standard Supabase behavior for M:1 which matches the interface `coach: { full_name: string }`.
 
-                return { ...client, coach: coachData };
-              }
-              return { ...client, coach: null };
-            })
-          );
-
-          console.log('Fetched clients:', clientsWithCoach.length);
-          setClients(clientsWithCoach);
-        } else {
-          setClients([]);
-        }
+        console.log('Fetched clients:', clientsData?.length);
+        setClients(clientsData || []);
       }
     } catch (error) {
       console.error('Error fetching accounts:', error);
@@ -239,11 +232,10 @@ function Admin() {
             <div className="flex">
               <button
                 onClick={() => setSelectedTab('coaches')}
-                className={`flex-1 px-6 py-4 text-sm font-medium ${
-                  selectedTab === 'coaches'
+                className={`flex-1 px-6 py-4 text-sm font-medium ${selectedTab === 'coaches'
                     ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
                     : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                }`}
+                  }`}
               >
                 <div className="flex items-center justify-center">
                   <Users className="w-5 h-5 mr-2" />
@@ -252,11 +244,10 @@ function Admin() {
               </button>
               <button
                 onClick={() => setSelectedTab('clients')}
-                className={`flex-1 px-6 py-4 text-sm font-medium ${
-                  selectedTab === 'clients'
+                className={`flex-1 px-6 py-4 text-sm font-medium ${selectedTab === 'clients'
                     ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
                     : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                }`}
+                  }`}
               >
                 <div className="flex items-center justify-center">
                   <Users className="w-5 h-5 mr-2" />

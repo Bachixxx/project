@@ -1,10 +1,20 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { User, Session } from '@supabase/supabase-js';
 
-const AuthContext = createContext(null);
+// Define the shape of the context
+interface AuthContextType {
+  signUp: (data: any) => Promise<{ data: any; error: any }>;
+  signIn: (data: any) => Promise<{ data: any; error: any }>;
+  signOut: () => Promise<void>;
+  user: User | null;
+  loading: boolean;
+}
 
-export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
+const AuthContext = createContext<AuthContextType | null>(null);
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -12,8 +22,8 @@ export function AuthProvider({ children }) {
     supabase.auth.getSession().then(async ({ data: { session }, error }) => {
       if (error) {
         // Gérer silencieusement les erreurs de token de rafraîchissement
-        if (error.message?.includes('refresh_token_not_found') || 
-            error.message?.includes('Invalid Refresh Token')) {
+        if (error.message?.includes('refresh_token_not_found') ||
+          error.message?.includes('Invalid Refresh Token')) {
           console.log('Session expired, user will need to re-authenticate');
           await supabase.auth.signOut();
         } else {
@@ -39,7 +49,7 @@ export function AuthProvider({ children }) {
       } else if (event === 'SIGNED_OUT') {
         console.log('User signed out');
       }
-      
+
       setUser(session?.user ?? null);
       setLoading(false);
     });
@@ -47,7 +57,7 @@ export function AuthProvider({ children }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async ({ email, password, options = {} }) => {
+  const signUp = async ({ email, password, options = {} }: any) => {
     try {
       // Créer l'utilisateur dans Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -86,7 +96,7 @@ export function AuthProvider({ children }) {
             specialization: options.data?.specialization || null,
             subscription_type: 'free',
             client_limit: 5
-          });
+          } as any); // Type assertion for insert if needed
 
         if (coachError) {
           console.error('Error creating coach profile:', coachError);
@@ -103,7 +113,7 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const signIn = async (data) => {
+  const signIn = async (data: any) => {
     try {
       const { data: authData, error } = await supabase.auth.signInWithPassword(data);
       if (error) throw error;
