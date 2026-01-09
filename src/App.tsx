@@ -10,8 +10,10 @@ import ClientPrivateRoute from './components/client/ClientPrivateRoute';
 import ClientLayout from './components/client/ClientLayout';
 import Loading from './components/Loading';
 
-// Public Pages
-const Home = lazy(() => import('./pages/Home'));
+// Static Import for Landing Page (Immediate LCP)
+import Home from './pages/Home';
+
+// Public Pages (Lazy)
 const Marketplace = lazy(() => import('./pages/Marketplace'));
 const ProgramDetails = lazy(() => import('./pages/ProgramDetails'));
 const Login = lazy(() => import('./pages/Login'));
