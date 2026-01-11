@@ -28,8 +28,16 @@ function Home() {
       </div>
 
       {/* Navbar */}
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-[#0f172a]/80 backdrop-blur-xl border-b border-white/5 py-4' : 'bg-transparent py-6'}`}>
-        <div className="container mx-auto px-6 flex items-center justify-between">
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-[#0f172a]/95 backdrop-blur-xl border-b border-white/5 pb-4' : 'bg-transparent pb-6'}`}>
+
+        {/* Announcement Banner */}
+        <div className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white text-xs md:text-sm font-medium py-2 px-4 text-center">
+          <p>
+            🚀 Lancement imminent ! <Link to="/waitlist" className="underline hover:text-blue-100">Rejoignez la liste d'attente</Link> dès maintenant pour un accès prioritaire.
+          </p>
+        </div>
+
+        <div className="container mx-auto px-6 pt-4 flex items-center justify-between">
           <Link to="/" className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white">
               <Dumbbell className="w-5 h-5" />
@@ -83,7 +91,7 @@ function Home() {
       </nav>
 
       {/* Hero Section */}
-      <header className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 container mx-auto px-6 z-10">
+      <header className="relative pt-40 pb-20 lg:pt-56 lg:pb-32 container mx-auto px-6 z-10">
         <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
           <div className="lg:w-1/2 text-center lg:text-left">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-sm font-medium mb-6 animate-fade-in">
