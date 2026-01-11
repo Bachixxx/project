@@ -53,10 +53,10 @@ function Home() {
               Connexion Coach
             </Link>
             <Link
-              to="/register"
+              to="/waitlist"
               className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white px-5 py-2 rounded-lg font-medium shadow-lg shadow-blue-500/25 transition-all hover:scale-105"
             >
-              Essai Gratuit
+              Rejoindre la liste d'attente
             </Link>
           </div>
 
@@ -77,7 +77,7 @@ function Home() {
             <Link to="/client/login" className="text-gray-300 py-2">Espace Client</Link>
             <div className="h-px bg-white/10 my-2"></div>
             <Link to="/login" className="bg-white/10 text-center py-3 rounded-lg text-white font-medium">Connexion Coach</Link>
-            <Link to="/register" className="bg-blue-600 text-center py-3 rounded-lg text-white font-medium">Commencer gratuitement</Link>
+            <Link to="/waitlist" className="bg-blue-600 text-center py-3 rounded-lg text-white font-medium">Rejoindre la liste d'attente</Link>
           </div>
         )}
       </nav>
@@ -99,10 +99,10 @@ function Home() {
             </p>
             <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start animate-slide-in delay-200">
               <Link
-                to="/register"
+                to="/waitlist"
                 className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-xl font-bold shadow-lg shadow-blue-500/25 transition-all hover:scale-105 flex items-center justify-center gap-2"
               >
-                Commencer en tant que Coach <ArrowRight className="w-5 h-5" />
+                Rejoindre la liste d'attente <ArrowRight className="w-5 h-5" />
               </Link>
               <Link
                 to="/client/check-email"
@@ -239,10 +239,10 @@ function Home() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
-                to="/register"
+                to="/waitlist"
                 className="px-8 py-4 bg-white text-blue-600 rounded-xl font-bold hover:bg-gray-100 transition-all shadow-xl"
               >
-                Essai Gratuit de 14 Jours
+                M'inscrire sur la liste
               </Link>
               <Link
                 to="/pricing"
