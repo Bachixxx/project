@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Dumbbell, Users, Calendar, LineChart, Facebook, Twitter, Instagram, Linkedin, Mail, Phone, MapPin, ShoppingBag, User, ArrowRight, CheckCircle, Smartphone, Globe, Shield, Star, Menu, X } from 'lucide-react';
+import { Dumbbell, Users, Calendar, LineChart, Facebook, Twitter, Instagram, Linkedin, Mail, MapPin, ShoppingBag, User, ArrowRight, CheckCircle, Smartphone, Globe, Shield, Star, Menu, X } from 'lucide-react';
 import { t } from '../i18n';
 
 function Home() {
@@ -302,8 +302,7 @@ function Home() {
             <div>
               <h4 className="text-white font-bold mb-6">Contact</h4>
               <ul className="space-y-4 text-gray-400">
-                <li className="flex items-center gap-3"><Mail className="w-4 h-4 text-blue-400" /> contact@coachency.com</li>
-                <li className="flex items-center gap-3"><Phone className="w-4 h-4 text-blue-400" /> +41 22 555 01 23</li>
+                <li className="flex items-center gap-3"><Mail className="w-4 h-4 text-blue-400" /> contact@coachency.ch</li>
                 <li className="flex items-center gap-3"><MapPin className="w-4 h-4 text-blue-400" /> Genève, Suisse</li>
               </ul>
             </div>
