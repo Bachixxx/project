@@ -213,22 +213,22 @@ function Home() {
         </div>
       </section>
 
-      {/* Stats Section */}
+      {/* Value Props Section (Replacing Stats) */}
       <section className="py-20 bg-white/5 border-y border-white/5 relative overflow-hidden">
         <div className="absolute inset-0 bg-blue-600/5 blur-3xl"></div>
         <div className="container mx-auto px-6 relative z-10">
           <div className="grid md:grid-cols-3 gap-12 text-center">
             <div>
-              <div className="text-5xl font-bold text-white mb-2">500+</div>
-              <div className="text-blue-400 font-medium">Coachs Actifs</div>
+              <div className="text-3xl md:text-4xl font-bold text-white mb-2">Centralisé</div>
+              <div className="text-blue-400 font-medium">Adieu les fichiers Excel</div>
             </div>
             <div>
-              <div className="text-5xl font-bold text-white mb-2">12k+</div>
-              <div className="text-purple-400 font-medium">Clients Entraînés</div>
+              <div className="text-3xl md:text-4xl font-bold text-white mb-2">Automatisé</div>
+              <div className="text-purple-400 font-medium">Gagnez 10h / semaine</div>
             </div>
             <div>
-              <div className="text-5xl font-bold text-white mb-2">50k+</div>
-              <div className="text-cyan-400 font-medium">Programmes Créés</div>
+              <div className="text-3xl md:text-4xl font-bold text-white mb-2">Optimisé</div>
+              <div className="text-cyan-400 font-medium">Encaissez plus vite</div>
             </div>
           </div>
         </div>
