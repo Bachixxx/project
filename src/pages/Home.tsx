@@ -128,16 +128,10 @@ function Home() {
           <div className="lg:w-1/2 relative animate-float">
             <div className="relative z-10 bg-[#1e293b] border border-white/10 rounded-2xl p-2 shadow-2xl shadow-blue-500/20 transform rotate-1 lg:rotate-1 hover:rotate-0 transition-transform duration-500">
               <img
-                src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=2670&ixlib=rb-4.0.3"
-                srcSet="
-                  https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=600&ixlib=rb-4.0.3 600w,
-                  https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=1200&ixlib=rb-4.0.3 1200w,
-                  https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=2670&ixlib=rb-4.0.3 2670w
-                "
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 800px"
+                src="/dashboard-preview.png"
                 alt="Dashboard Preview"
-                width="800"
-                height="600"
+                width="1200"
+                height="800"
                 className="rounded-xl w-full h-auto opacity-90 hover:opacity-100 transition-opacity"
                 // @ts-ignore
                 fetchPriority="high"
