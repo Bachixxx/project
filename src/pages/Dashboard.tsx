@@ -1,27 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  BarChart2, 
-  Users, 
-  Calendar as CalendarIcon, 
-  DollarSign, 
-  TrendingUp, 
-  Activity, 
-  Target, 
+import {
+  BarChart2,
+  Users,
+  Calendar as CalendarIcon,
+  DollarSign,
+  TrendingUp,
+  Activity,
+  Target,
   ArrowUpRight,
   ArrowDownRight,
   MoreHorizontal,
   Plus,
   Clock
 } from 'lucide-react';
-import { 
-  AreaChart, 
-  Area, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer 
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer
 } from 'recharts';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -66,7 +66,7 @@ function Dashboard() {
       // Get upcoming sessions (next 7 days)
       const nextWeek = new Date();
       nextWeek.setDate(nextWeek.getDate() + 7);
-      
+
       const { count: upcomingSessions } = await supabase
         .from('appointments')
         .select('*', { count: 'exact', head: true })
@@ -97,7 +97,7 @@ function Dashboard() {
         ?.filter(p => new Date(p.payment_date) < startOfMonth)
         .reduce((sum, p) => sum + p.amount, 0) || 0;
 
-      const monthlyGrowth = lastMonthRevenue 
+      const monthlyGrowth = lastMonthRevenue
         ? ((currentMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100
         : 0;
 
@@ -174,24 +174,24 @@ function Dashboard() {
             {t('nav.dashboard', language)}
           </h1>
           <p className="text-gray-400">
-            {new Date().toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US', { 
-              weekday: 'long', 
-              year: 'numeric', 
-              month: 'long', 
-              day: 'numeric' 
+            {new Date().toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US', {
+              weekday: 'long',
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric'
             })}
           </p>
         </div>
         <div className="flex gap-3">
-          <Link 
-            to="/clients" 
+          <Link
+            to="/clients"
             className="glass-button flex items-center gap-2 hover:bg-primary-500/20 text-sm"
           >
             <Users className="w-4 h-4" />
             <span>Nouveau Client</span>
           </Link>
-          <Link 
-            to="/programs" 
+          <Link
+            to="/programs"
             className="primary-button flex items-center gap-2 text-sm"
           >
             <Plus className="w-4 h-4" />
@@ -205,7 +205,7 @@ function Dashboard() {
         <StatCard
           title={t('dashboard.stats.totalClients', language)}
           value={stats.totalClients}
-          subValue="+3 this month"
+          subValue="+3 ce mois"
           icon={Users}
           color="blue"
           trend={12}
@@ -213,7 +213,7 @@ function Dashboard() {
         <StatCard
           title={t('dashboard.stats.activePrograms', language)}
           value={stats.activePrograms}
-          subValue="85% completion rate"
+          subValue="85% de complétion"
           icon={Activity}
           color="purple"
           trend={5}
@@ -221,14 +221,14 @@ function Dashboard() {
         <StatCard
           title={t('dashboard.stats.upcomingSessions', language)}
           value={stats.upcomingSessions}
-          subValue="Next 7 days"
+          subValue="7 prochains jours"
           icon={CalendarIcon}
           color="emerald"
         />
         <StatCard
           title={t('dashboard.stats.monthlyRevenue', language)}
           value={`${stats.monthlyRevenue.toLocaleString()} CHF`}
-          subValue="Gross revenue"
+          subValue="Revenu brut"
           icon={DollarSign}
           color="amber"
           trend={stats.monthlyGrowth}
@@ -244,12 +244,12 @@ function Dashboard() {
           <div className="glass-card p-6 border-white/5">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h3 className="text-lg font-semibold text-white">Revenue Overview</h3>
-                <p className="text-sm text-gray-400">Monthly evolution</p>
+                <h3 className="text-lg font-semibold text-white">Aperçu des Revenus</h3>
+                <p className="text-sm text-gray-400">Évolution mensuelle</p>
               </div>
               <select className="bg-white/5 border border-white/10 rounded-lg px-3 py-1 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary-500">
-                <option>Last 6 months</option>
-                <option>Last year</option>
+                <option>6 derniers mois</option>
+                <option>Cette année</option>
               </select>
             </div>
             <div className="h-[300px] w-full">
@@ -257,37 +257,37 @@ function Dashboard() {
                 <AreaChart data={revenueData}>
                   <defs>
                     <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#ffffff10" />
-                  <XAxis 
-                    dataKey="name" 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{ fill: '#9ca3af', fontSize: 12 }} 
+                  <XAxis
+                    dataKey="name"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: '#9ca3af', fontSize: 12 }}
                     dy={10}
                   />
-                  <YAxis 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{ fill: '#9ca3af', fontSize: 12 }} 
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: '#9ca3af', fontSize: 12 }}
                     dx={-10}
                     tickFormatter={(value) => `${value} CHF`}
                   />
-                  <Tooltip 
+                  <Tooltip
                     contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', borderRadius: '0.5rem', color: '#fff' }}
                     itemStyle={{ color: '#fff' }}
-                    formatter={(value: number) => [`${value} CHF`, 'Revenue']}
+                    formatter={(value: number) => [`${value} CHF`, 'Revenu']}
                   />
-                  <Area 
-                    type="monotone" 
-                    dataKey="value" 
-                    stroke="#0ea5e9" 
+                  <Area
+                    type="monotone"
+                    dataKey="value"
+                    stroke="#0ea5e9"
                     strokeWidth={2}
-                    fillOpacity={1} 
-                    fill="url(#colorRevenue)" 
+                    fillOpacity={1}
+                    fill="url(#colorRevenue)"
                   />
                 </AreaChart>
               </ResponsiveContainer>
@@ -296,18 +296,18 @@ function Dashboard() {
 
           {/* Detailed Progress Table */}
           <div className="glass-card p-6">
-             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-white">Top Client Progress</h3>
-              <Link to="/clients" className="text-sm text-primary-400 hover:text-primary-300">View all</Link>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold text-white">Progression Clients</h3>
+              <Link to="/clients" className="text-sm text-primary-400 hover:text-primary-300">Voir tout</Link>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="text-left border-b border-white/10">
                     <th className="pb-4 text-xs font-medium text-gray-400 uppercase tracking-wider">Client</th>
-                    <th className="pb-4 text-xs font-medium text-gray-400 uppercase tracking-wider">Program</th>
-                    <th className="pb-4 text-xs font-medium text-gray-400 uppercase tracking-wider">Status</th>
-                    <th className="pb-4 text-xs font-medium text-gray-400 uppercase tracking-wider">Progress</th>
+                    <th className="pb-4 text-xs font-medium text-gray-400 uppercase tracking-wider">Programme</th>
+                    <th className="pb-4 text-xs font-medium text-gray-400 uppercase tracking-wider">Statut</th>
+                    <th className="pb-4 text-xs font-medium text-gray-400 uppercase tracking-wider">Progression</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
@@ -326,13 +326,13 @@ function Dashboard() {
                       <td className="py-4 text-gray-300">{item.program.name}</td>
                       <td className="py-4">
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-400 border border-green-500/20">
-                          Active
+                          Actif
                         </span>
                       </td>
                       <td className="py-4 w-1/3">
                         <div className="flex items-center gap-3">
                           <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
-                            <div 
+                            <div
                               className="h-full bg-gradient-to-r from-primary-500 to-accent-500 rounded-full"
                               style={{ width: `${item.progress}%` }}
                             />
@@ -353,7 +353,7 @@ function Dashboard() {
           {/* Recent Activity Feed */}
           <div className="glass-card p-6">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-white">Recent Activity</h3>
+              <h3 className="text-lg font-semibold text-white">Activité Récente</h3>
               <button className="text-gray-400 hover:text-white">
                 <MoreHorizontal className="w-5 h-5" />
               </button>
@@ -364,7 +364,7 @@ function Dashboard() {
                   <div className="absolute left-[-5px] top-0 w-2.5 h-2.5 rounded-full bg-primary-500 ring-4 ring-gray-900" />
                   <div className="flex flex-col gap-1">
                     <p className="text-sm text-gray-300">
-                      <span className="font-medium text-white">{activity.client.full_name}</span> started program <span className="text-primary-400">{activity.program.name}</span>
+                      <span className="font-medium text-white">{activity.client.full_name}</span> a commencé le programme <span className="text-primary-400">{activity.program.name}</span>
                     </p>
                     <span className="text-xs text-gray-500 flex items-center gap-1">
                       <Clock className="w-3 h-3" />
@@ -378,7 +378,7 @@ function Dashboard() {
 
           {/* Upcoming Sessions Mini List */}
           <div className="glass-card p-6">
-            <h3 className="text-lg font-semibold text-white mb-6">Upcoming Sessions</h3>
+            <h3 className="text-lg font-semibold text-white mb-6">Prochaines Séances</h3>
             <div className="space-y-4">
               {[1, 2, 3].map((_, i) => (
                 <div key={i} className="group p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors border border-white/5 hover:border-white/10 cursor-pointer">
@@ -398,7 +398,7 @@ function Dashboard() {
           </div>
         </div>
       </div>
-      
+
     </div>
   );
 }
@@ -423,15 +423,14 @@ function StatCard({ title, value, subValue, icon: Icon, color, trend, isMoney })
       <div className={`absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity`}>
         <Icon className="w-24 h-24" />
       </div>
-      
+
       <div className="flex items-start justify-between mb-4">
         <div className={`p-3 rounded-xl ${bgColors[color]} ring-1 ring-white/10`}>
           <Icon className="w-6 h-6" />
         </div>
         {trend !== undefined && (
-          <div className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full ${
-            trend >= 0 ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'
-          }`}>
+          <div className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full ${trend >= 0 ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'
+            }`}>
             {trend >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
             {Math.abs(trend)}%
           </div>
