@@ -77,8 +77,8 @@ function Features() {
                         <button
                             onClick={() => setActiveTab('coach')}
                             className={`px-8 py-3 rounded-full font-bold transition-all duration-300 flex items-center gap-2 ${activeTab === 'coach'
-                                    ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg shadow-blue-500/25'
-                                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                                ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg shadow-blue-500/25'
+                                : 'text-gray-400 hover:text-white hover:bg-white/5'
                                 }`}
                         >
                             <Dumbbell className="w-4 h-4" /> Pour les Coachs
@@ -86,8 +86,8 @@ function Features() {
                         <button
                             onClick={() => setActiveTab('client')}
                             className={`px-8 py-3 rounded-full font-bold transition-all duration-300 flex items-center gap-2 ${activeTab === 'client'
-                                    ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/25'
-                                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                                ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/25'
+                                : 'text-gray-400 hover:text-white hover:bg-white/5'
                                 }`}
                         >
                             <Users className="w-4 h-4" /> Pour les Clients
@@ -186,10 +186,11 @@ function Features() {
                             <div className="flex-1 order-1 md:order-2 flex justify-center">
                                 <div className="w-64 h-[500px] bg-black border-4 border-gray-800 rounded-[3rem] p-2 relative shadow-2xl rotate-2 group-hover:rotate-0 transition-transform duration-500">
                                     <div className="w-full h-full bg-[#0f172a] rounded-[2.5rem] overflow-hidden flex flex-col">
-                                        {/* Fake Mobile UI */}
-                                        <div className="h-full flex items-center justify-center text-gray-600">
-                                            <Smartphone className="w-12 h-12 opacity-20" />
-                                        </div>
+                                        <img
+                                            src="/client-app-mockup.jpg"
+                                            alt="App Client Coachency"
+                                            className="w-full h-full object-cover"
+                                        />
                                     </div>
                                 </div>
                             </div>
