@@ -1,15 +1,25 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, Dumbbell, Zap, ChevronLeft, ChevronDown, Star, CheckCircle, ArrowRight } from 'lucide-react';
+import { Users, Dumbbell, Zap, ChevronLeft, ChevronDown, Star, CheckCircle, ArrowRight, Menu, X } from 'lucide-react';
 import { useClientAuth } from '../contexts/ClientAuthContext';
 
 function Marketplace() {
   const { client } = useClientAuth();
   const [activeTab, setActiveTab] = useState<'coach' | 'client'>('coach');
+  const [scrolled, setScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showRegisterDropdown, setShowRegisterDropdown] = useState(false);
   const [showLoginDropdown, setShowLoginDropdown] = useState(false);
   const registerDropdownRef = useRef<HTMLDivElement>(null);
   const loginDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 50);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -34,105 +44,90 @@ function Marketplace() {
         <div className="absolute bottom-0 left-1/4 w-[600px] h-[600px] bg-cyan-500/10 rounded-full blur-[128px]" />
       </div>
 
-      {/* Header */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0f172a]/80 backdrop-blur-xl border-b border-white/5 transition-all">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-20 items-center">
-            <div className="flex items-center">
-              <Link
-                to={client ? "/client/dashboard" : "/"}
-                className="flex items-center text-gray-400 hover:text-white transition-colors group"
-              >
-                <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center mr-3 group-hover:bg-white/10 transition-colors border border-white/5">
-                  <ChevronLeft className="w-5 h-5" />
-                </div>
-                <span className="font-medium">Retour à l'accueil</span>
-              </Link>
-            </div>
+      {/* Navbar */}
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-[#0f172a]/95 backdrop-blur-xl border-b border-white/5 pb-4' : 'bg-transparent pb-6'}`}>
 
-            {/* Nav Actions */}
-            <div className="flex items-center space-x-4">
-              {client ? (
-                <div className="flex items-center gap-4 bg-white/5 px-4 py-2 rounded-xl border border-white/5">
-                  <div className="text-right hidden sm:block">
-                    <span className="block text-xs text-gray-400">Connecté en tant que</span>
-                    <span className="block text-sm font-semibold text-white">{client.full_name}</span>
-                  </div>
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white font-bold shadow-lg shadow-blue-500/20">
-                    {client.full_name.charAt(0)}
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <div className="relative" ref={loginDropdownRef}>
-                    <button
-                      onClick={() => setShowLoginDropdown(!showLoginDropdown)}
-                      className="px-4 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition-all inline-flex items-center"
-                    >
-                      Connexion
-                      <ChevronDown className={`ml-1.5 w-4 h-4 transition-transform ${showLoginDropdown ? 'rotate-180' : ''}`} />
-                    </button>
-                    {showLoginDropdown && (
-                      <div className="absolute right-0 mt-2 w-64 bg-[#1e293b] border border-white/10 rounded-xl shadow-2xl py-2 z-50 animate-fade-in overflow-hidden">
-                        <Link
-                          to="/client/login"
-                          className="block px-4 py-3 hover:bg-white/5 transition-colors group"
-                          onClick={() => setShowLoginDropdown(false)}
-                        >
-                          <div className="font-medium text-white group-hover:text-blue-400 transition-colors">Connexion client</div>
-                          <div className="text-xs text-gray-500 mt-0.5">Accédez à vos programmes</div>
-                        </Link>
-                        <div className="h-px bg-white/5 mx-4 my-1"></div>
-                        <Link
-                          to="/login"
-                          className="block px-4 py-3 hover:bg-white/5 transition-colors group"
-                          onClick={() => setShowLoginDropdown(false)}
-                        >
-                          <div className="font-medium text-white group-hover:text-cyan-400 transition-colors">Connexion coach</div>
-                          <div className="text-xs text-gray-500 mt-0.5">Gérez vos clients et programmes</div>
-                        </Link>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="relative" ref={registerDropdownRef}>
-                    <button
-                      onClick={() => setShowRegisterDropdown(!showRegisterDropdown)}
-                      className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white hover:from-blue-600 hover:to-cyan-600 px-5 py-2.5 rounded-lg text-sm font-bold inline-flex items-center shadow-lg shadow-blue-500/25 transition-all transform hover:scale-105"
-                    >
-                      Commencer
-                      <ChevronDown className={`ml-1.5 w-4 h-4 transition-transform ${showRegisterDropdown ? 'rotate-180' : ''}`} />
-                    </button>
-                    {showRegisterDropdown && (
-                      <div className="absolute right-0 mt-2 w-64 bg-[#1e293b] border border-white/10 rounded-xl shadow-2xl py-2 z-50 animate-fade-in overflow-hidden">
-                        <Link
-                          to="/client/check-email"
-                          className="block px-4 py-3 hover:bg-white/5 transition-colors group"
-                          onClick={() => setShowRegisterDropdown(false)}
-                        >
-                          <div className="font-medium text-white group-hover:text-blue-400 transition-colors">Je suis un client</div>
-                          <div className="text-xs text-gray-500 mt-0.5">Je cherche un coach ou programme</div>
-                        </Link>
-                        <div className="h-px bg-white/5 mx-4 my-1"></div>
-                        <Link
-                          to="/register"
-                          className="block px-4 py-3 hover:bg-white/5 transition-colors group"
-                          onClick={() => setShowRegisterDropdown(false)}
-                        >
-                          <div className="font-medium text-white group-hover:text-cyan-400 transition-colors">Je suis un coach</div>
-                          <div className="text-xs text-gray-500 mt-0.5">Je veux vendre mes services</div>
-                        </Link>
-                      </div>
-                    )}
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
+        {/* Announcement Banner */}
+        <div className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white text-xs md:text-sm font-medium py-2 px-4 text-center">
+          <p>
+            🚀 Lancement imminent ! <Link to="/waitlist" className="underline hover:text-blue-100">Rejoignez la liste d'attente</Link> dès maintenant pour un accès prioritaire.
+          </p>
         </div>
+
+        <div className="container mx-auto px-6 pt-4 flex items-center justify-between">
+          <Link to="/" className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white">
+              <Dumbbell className="w-5 h-5" />
+            </div>
+            Coachency
+          </Link>
+
+          {/* Desktop Nav */}
+          <div className="hidden md:flex items-center gap-8">
+            <Link to="/marketplace" className="text-sm font-medium text-white transition-colors">Marketplace</Link>
+            <Link to="/features" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">Fonctionnalités</Link>
+            <Link to="/pricing" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">Tarifs</Link>
+          </div>
+
+          <div className="hidden md:flex items-center gap-4">
+            {client ? (
+              <div className="flex items-center gap-4 bg-white/5 px-4 py-2 rounded-xl border border-white/5">
+                <div className="text-right hidden sm:block">
+                  <span className="block text-xs text-gray-400">Connecté en tant que</span>
+                  <span className="block text-sm font-semibold text-white">{client.full_name}</span>
+                </div>
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white font-bold shadow-lg shadow-blue-500/20">
+                  {client.full_name.charAt(0)}
+                </div>
+              </div>
+            ) : (
+              <>
+                <Link to="/client/login" className="text-sm font-medium text-white hover:text-blue-400 transition-colors">Espace Client</Link>
+                <Link
+                  to="/login"
+                  className="bg-white/10 hover:bg-white/20 border border-white/10 text-white px-5 py-2 rounded-lg font-medium transition-all"
+                >
+                  Connexion Coach
+                </Link>
+                <Link
+                  to="/waitlist"
+                  className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white px-5 py-2 rounded-lg font-medium shadow-lg shadow-blue-500/25 transition-all hover:scale-105"
+                >
+                  Rejoindre la liste d'attente
+                </Link>
+              </>
+            )}
+          </div>
+
+          {/* Mobile Menu Button */}
+          <button
+            className="md:hidden p-2 text-white"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
+        </div>
+
+        {/* Mobile Menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden absolute top-full left-0 right-0 bg-[#0f172a] border-b border-white/10 p-6 flex flex-col gap-4 animate-fade-in shadow-2xl">
+            <Link to="/marketplace" className="text-white font-medium py-2">Marketplace</Link>
+            <Link to="/features" className="text-gray-300 py-2">Fonctionnalités</Link>
+            <Link to="/client/login" className="text-gray-300 py-2">Espace Client</Link>
+            <div className="h-px bg-white/10 my-2"></div>
+            {client ? (
+              <Link to="/client/dashboard" className="bg-blue-600 text-center py-3 rounded-lg text-white font-medium">Mon Tableau de Bord</Link>
+            ) : (
+              <>
+                <Link to="/login" className="bg-white/10 text-center py-3 rounded-lg text-white font-medium">Connexion Coach</Link>
+                <Link to="/waitlist" className="bg-blue-600 text-center py-3 rounded-lg text-white font-medium">Rejoindre la liste d'attente</Link>
+              </>
+            )}
+          </div>
+        )}
       </nav>
 
-      <div className="relative z-10 pt-32 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center">
+      <div className="relative z-10 pt-40 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center">
         {/* Page Header */}
         <div className="mb-12 animate-slide-in">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 text-purple-400 text-xs font-semibold uppercase tracking-wider mb-4 border border-purple-500/20">
