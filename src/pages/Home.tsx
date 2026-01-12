@@ -316,7 +316,14 @@ function Home() {
           </div>
 
           <div className="border-t border-white/5 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-gray-500 text-sm">© {new Date().getFullYear()} Coachency. Tous droits réservés.</p>
+            <div className="flex flex-col md:flex-row items-center gap-4 text-sm text-gray-500">
+              <p>© {new Date().getFullYear()} Coachency. Tous droits réservés.</p>
+              <div className="hidden md:block w-1 h-1 bg-gray-700 rounded-full"></div>
+              <a href="https://devjay.ch" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:text-white transition-colors">
+                <img src="/jbdev-favicon.ico" alt="JB.Dev" className="w-4 h-4 opacity-70" />
+                <span>Conçu par JB.Dev</span>
+              </a>
+            </div>
             <div className="flex gap-6 text-sm text-gray-500">
               <Link to="/privacy" className="hover:text-white transition-colors">Confidentialité</Link>
               <Link to="/terms" className="hover:text-white transition-colors">Conditions</Link>
