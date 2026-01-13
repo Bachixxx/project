@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Calendar, Clock, User, FileText, CheckCircle, XCircle, Layers, Edit2, Save, Plus, Trash2, GripVertical, AlertCircle } from 'lucide-react';
+import { X, Calendar, Clock, User, FileText, CheckCircle, XCircle, Layers, Edit2, Save, Plus, Trash2, AlertCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -63,6 +63,7 @@ export function SessionDetailsModal({ scheduledSessionId, onClose, onStatusChang
   const [saving, setSaving] = useState(false);
   const [session, setSession] = useState<SessionDetails | null>(null);
   const [workoutItems, setWorkoutItems] = useState<WorkoutItem[]>([]);
+  const [workoutLogs, setWorkoutLogs] = useState<any[]>([]);
 
   // Edit Mode State
   const [isEditing, setIsEditing] = useState(false);
@@ -118,6 +119,18 @@ export function SessionDetailsModal({ scheduledSessionId, onClose, onStatusChang
         .single();
 
       if (sessionError) throw sessionError;
+
+      // If session is completed, fetch logs
+      if (sessionData.status === 'completed') {
+        const { data: logs, error: logsError } = await supabase
+          .from('workout_logs')
+          .select('*')
+          .eq('scheduled_session_id', scheduledSessionId);
+
+        if (!logsError) {
+          setWorkoutLogs(logs || []);
+        }
+      }
 
       const { data: exercisesData, error: exercisesError } = await supabase
         .from('session_exercises')
@@ -185,6 +198,10 @@ export function SessionDetailsModal({ scheduledSessionId, onClose, onStatusChang
     } finally {
       setLoading(false);
     }
+  };
+
+  const getExerciseLogs = (exerciseId: string) => {
+    return workoutLogs.filter(log => log.exercise_id === exerciseId).sort((a, b) => a.set_number - b.set_number);
   };
 
   const handleStatusChange = async (newStatus: string) => {
@@ -366,7 +383,7 @@ export function SessionDetailsModal({ scheduledSessionId, onClose, onStatusChang
     return null;
   }
 
-  const statusColors = {
+  const statusColors: Record<string, string> = {
     scheduled: 'bg-blue-500/20 text-blue-400 border border-blue-500/30',
     completed: 'bg-green-500/20 text-green-400 border border-green-500/30',
     cancelled: 'bg-red-500/20 text-red-400 border border-red-500/30',
@@ -493,19 +510,51 @@ export function SessionDetailsModal({ scheduledSessionId, onClose, onStatusChang
 
               {workoutItems.length > 0 && (
                 <div>
-                  <h3 className="text-lg font-bold text-white mb-4">Composition de la séance</h3>
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-bold text-white">
+                      {session.status === 'completed' ? 'Résultats de la séance' : 'Composition de la séance'}
+                    </h3>
+                  </div>
                   <div className="space-y-3">
                     {workoutItems.map((item, index) => (
                       item.type === 'exercise' ? (
                         <div key={index} className="bg-white/5 rounded-xl p-4 border border-white/10 hover:bg-white/10 transition-colors">
-                          <div className="font-bold text-white mb-2 text-lg">{item.data.name}</div>
-                          <div className="flex flex-wrap gap-4 text-sm text-gray-300">
-                            <span className="bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded border border-blue-500/30">{item.data.sets} séries</span>
-                            <span className="text-gray-600">•</span>
-                            <span className="bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded border border-purple-500/30">{item.data.reps} reps</span>
-                            <span className="text-gray-600">•</span>
-                            <span className="bg-orange-500/20 text-orange-300 px-2 py-0.5 rounded border border-orange-500/30">{item.data.rest_time}s repos</span>
+                          <div className="flex justify-between items-start mb-2">
+                            <div className="font-bold text-white text-lg">{item.data.name}</div>
+                            {session.status === 'completed' && (
+                              <div className="text-xs font-medium px-2 py-1 bg-blue-500/20 text-blue-300 rounded border border-blue-500/30">
+                                {getExerciseLogs(item.data.exercise_id).length} / {item.data.sets} séries
+                              </div>
+                            )}
                           </div>
+
+                          {/* Planned Details */}
+                          <div className="flex flex-wrap gap-4 text-sm text-gray-300 mb-3">
+                            <span className="bg-blue-500/10 text-blue-300 px-2 py-0.5 rounded border border-blue-500/20">{item.data.sets} séries</span>
+                            <span className="text-gray-600">•</span>
+                            <span className="bg-purple-500/10 text-purple-300 px-2 py-0.5 rounded border border-purple-500/20">{item.data.reps} reps</span>
+                            <span className="text-gray-600">•</span>
+                            <span className="bg-orange-500/10 text-orange-300 px-2 py-0.5 rounded border border-orange-500/20">{item.data.rest_time}s repos</span>
+                          </div>
+
+                          {/* Completed Logs Comparison */}
+                          {session.status === 'completed' && getExerciseLogs(item.data.exercise_id).length > 0 && (
+                            <div className="mt-3 bg-black/30 rounded-lg p-3 border border-white/5 space-y-2">
+                              {getExerciseLogs(item.data.exercise_id).map((log, idx) => (
+                                <div key={idx} className="flex justify-between items-center text-sm">
+                                  <span className="text-gray-400 font-medium">Série {log.set_number}</span>
+                                  <div className="flex items-center gap-3">
+                                    <span className={`font-mono ${log.reps >= item.data.reps ? 'text-green-400' : 'text-yellow-400'}`}>
+                                      {log.reps} reps
+                                    </span>
+                                    <span className="text-gray-600">x</span>
+                                    <span className="font-mono text-white font-bold">{log.weight} kg</span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
                           {item.data.instructions && (
                             <div className="mt-3 text-sm text-gray-400 italic bg-black/20 p-2 rounded-lg border-l-2 border-gray-500">
                               {item.data.instructions}
@@ -531,12 +580,17 @@ export function SessionDetailsModal({ scheduledSessionId, onClose, onStatusChang
                                   <span className="bg-blue-500/10 text-blue-300 px-2 py-0.5 rounded">{exercise.sets} séries</span>
                                   <span>•</span>
                                   <span className="bg-purple-500/10 text-purple-300 px-2 py-0.5 rounded">{exercise.reps} reps</span>
-                                  <span>•</span>
-                                  <span className="bg-orange-500/10 text-orange-300 px-2 py-0.5 rounded">{exercise.rest_time}s repos</span>
                                 </div>
-                                {exercise.instructions && (
-                                  <div className="mt-2 text-xs text-gray-400 italic">
-                                    {exercise.instructions}
+
+                                {/* Logs for Group Exercise */}
+                                {session.status === 'completed' && getExerciseLogs(exercise.exercise_id).length > 0 && (
+                                  <div className="mt-2 text-xs bg-black/30 rounded p-2 border border-white/5 space-y-1">
+                                    {getExerciseLogs(exercise.exercise_id).map((log, logIdx) => (
+                                      <div key={logIdx} className="flex justify-between">
+                                        <span className="text-gray-500">S#{log.set_number}</span>
+                                        <span className="text-white font-mono">{log.reps} x {log.weight}kg</span>
+                                      </div>
+                                    ))}
                                   </div>
                                 )}
                               </div>
@@ -553,7 +607,7 @@ export function SessionDetailsModal({ scheduledSessionId, onClose, onStatusChang
                 <div>
                   <h3 className="text-sm font-semibold text-gray-300 mb-2 flex items-center gap-2">
                     <FileText className="w-4 h-4 text-blue-400" />
-                    Notes pour le client
+                    {session.status === 'completed' ? 'Retour Client' : 'Notes pour le client'}
                   </h3>
                   <p className="text-gray-300 bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 leading-relaxed">
                     {session.notes}
