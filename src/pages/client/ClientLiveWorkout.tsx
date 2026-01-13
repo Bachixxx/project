@@ -43,6 +43,8 @@ function ClientLiveWorkout() {
     timeLeft: number;
     isRunning: boolean;
     totalTime: number;
+    isPreStart: boolean;
+    preStartTimeLeft: number;
   } | null>(null);
 
   useEffect(() => {
@@ -63,10 +65,20 @@ function ClientLiveWorkout() {
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
-    if (activeTimer && activeTimer.isRunning && activeTimer.timeLeft > 0) {
+    if (activeTimer && activeTimer.isRunning) {
       interval = setInterval(() => {
         setActiveTimer(prev => {
           if (!prev) return null;
+
+          if (prev.isPreStart) {
+            if (prev.preStartTimeLeft <= 1) {
+              // End of pre-start
+              if (navigator.vibrate) navigator.vibrate(200);
+              return { ...prev, isPreStart: false, preStartTimeLeft: 0 };
+            }
+            return { ...prev, preStartTimeLeft: prev.preStartTimeLeft - 1 };
+          }
+
           if (prev.timeLeft <= 1) {
             // Timer finished
             // Play sound or vibrate here if possible
@@ -78,7 +90,7 @@ function ClientLiveWorkout() {
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [activeTimer?.isRunning, activeTimer?.timeLeft]);
+  }, [activeTimer?.isRunning, activeTimer?.timeLeft, activeTimer?.isPreStart, activeTimer?.preStartTimeLeft]);
 
   const handleStartTimer = (setIndex: number, duration: number) => {
     if (activeTimer && activeTimer.setIndex === setIndex) {
@@ -88,7 +100,9 @@ function ClientLiveWorkout() {
         setIndex,
         timeLeft: duration,
         totalTime: duration,
-        isRunning: true
+        isRunning: true,
+        isPreStart: true,
+        preStartTimeLeft: 5
       });
     }
   };
@@ -102,7 +116,9 @@ function ClientLiveWorkout() {
       setActiveTimer({
         ...activeTimer,
         timeLeft: activeTimer.totalTime,
-        isRunning: false
+        isRunning: false,
+        isPreStart: true,
+        preStartTimeLeft: 5
       });
     }
   };
@@ -480,13 +496,24 @@ function ClientLiveWorkout() {
 
                   {activeTimer && activeTimer.setIndex === idx ? (
                     /* Active Timer View */
-                    <div className="bg-blue-600/20 rounded-xl p-4 border border-blue-500/30 text-center animate-fade-in relative overflow-hidden">
-                      <div className="absolute inset-0 bg-blue-500/5 animate-pulse z-0"></div>
+                    <div className={`rounded-xl p-4 border text-center animate-fade-in relative overflow-hidden ${activeTimer.isPreStart
+                        ? 'bg-red-600/20 border-red-500/30'
+                        : 'bg-blue-600/20 border-blue-500/30'
+                      }`}>
+                      <div className={`absolute inset-0 animate-pulse z-0 ${activeTimer.isPreStart ? 'bg-red-500/5' : 'bg-blue-500/5'
+                        }`}></div>
                       <div className="relative z-10">
-                        <div className="text-5xl font-black text-white tabular-nums tracking-tighter mb-2">
-                          {Math.floor(activeTimer.timeLeft / 60)}:{(activeTimer.timeLeft % 60).toString().padStart(2, '0')}
+                        <div className={`text-5xl font-black tabular-nums tracking-tighter mb-2 ${activeTimer.isPreStart ? 'text-red-500' : 'text-white'
+                          }`}>
+                          {activeTimer.isPreStart
+                            ? activeTimer.preStartTimeLeft
+                            : `${Math.floor(activeTimer.timeLeft / 60)}:${(activeTimer.timeLeft % 60).toString().padStart(2, '0')}`
+                          }
                         </div>
-                        <div className="text-blue-300 text-xs font-bold uppercase tracking-widest mb-4">Temps restant</div>
+                        <div className={`text-xs font-bold uppercase tracking-widest mb-4 ${activeTimer.isPreStart ? 'text-red-400' : 'text-blue-300'
+                          }`}>
+                          {activeTimer.isPreStart ? 'Préparez-vous' : 'Temps restant'}
+                        </div>
 
                         <div className="flex items-center justify-center gap-4">
                           <button
