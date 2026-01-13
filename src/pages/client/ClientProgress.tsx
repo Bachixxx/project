@@ -4,16 +4,15 @@ import { TrendingUp, Scale, Target, Award, Loader, Dumbbell, Calendar, ChevronDo
 import { useClientAuth } from '../../contexts/ClientAuthContext';
 import { supabase } from '../../lib/supabase';
 
-interface WorkoutSession {
+interface WorkoutLog {
   id: string;
-  date: string;
-  completed_exercises: Record<string, {
-    sets: Array<{
-      reps: number;
-      weight: number;
-      completed: boolean;
-    }>;
-  }>;
+  completed_at: string;
+  weight: number;
+  reps: number;
+  exercise_id: string;
+  scheduled_session: {
+    scheduled_date: string;
+  } | null;
 }
 
 interface Exercise {
@@ -26,7 +25,7 @@ function ClientProgress() {
   const [loading, setLoading] = useState(true);
   const [weightData, setWeightData] = useState<any[]>([]);
   const [strengthData, setStrengthData] = useState<any[]>([]);
-  const [workoutSessions, setWorkoutSessions] = useState<WorkoutSession[]>([]);
+  const [workoutLogs, setWorkoutLogs] = useState<WorkoutLog[]>([]);
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [selectedExercise, setSelectedExercise] = useState<string>('');
 
@@ -37,68 +36,68 @@ function ClientProgress() {
   }, [client]);
 
   useEffect(() => {
-    if (selectedExercise && workoutSessions.length > 0) {
+    if (selectedExercise && workoutLogs.length > 0) {
       generateStrengthData();
     }
-  }, [selectedExercise, workoutSessions]);
+  }, [selectedExercise, workoutLogs]);
 
   const fetchProgressData = async () => {
     try {
       setLoading(true);
-
-      // Fetch client programs to get workout sessions
-      // Explicitly checking if client exists and casting to any to avoid TS errors with missing context types
       const clientData = client as any;
       if (!clientData?.id) return;
 
-      const { data: clientPrograms, error: programsError } = await supabase
-        .from('client_programs')
-        .select('id')
-        .eq('client_id', clientData.id);
+      // Fetch workout logs joined with scheduled_sessions to get the date
+      const { data: logs, error: logsError } = await supabase
+        .from('workout_logs')
+        .select(`
+          id,
+          completed_at,
+          weight,
+          reps,
+          exercise_id,
+          scheduled_session:scheduled_sessions (
+            scheduled_date
+          )
+        `)
+        .eq('client_id', clientData.id)
+        .order('completed_at', { ascending: true });
 
-      if (programsError) throw programsError;
+      if (logsError) throw logsError;
 
-      if (!clientPrograms || clientPrograms.length === 0) {
-        setLoading(false);
-        return;
-      }
+      const formattedLogs: WorkoutLog[] = (logs || []).map(log => ({
+        id: log.id,
+        completed_at: log.completed_at,
+        weight: log.weight,
+        reps: log.reps,
+        exercise_id: log.exercise_id,
+        // Safe access to nested join
+        scheduled_session: Array.isArray(log.scheduled_session)
+          ? log.scheduled_session[0]
+          : log.scheduled_session
+      }));
 
-      // Fetch workout sessions
-      const { data: sessions, error: sessionsError } = await supabase
-        .from('workout_sessions')
-        .select('*')
-        .in('client_program_id', clientPrograms.map(cp => cp.id))
-        .order('date', { ascending: true });
+      setWorkoutLogs(formattedLogs);
 
-      if (sessionsError) throw sessionsError;
+      // Get unique exercises
+      const exerciseIds = Array.from(new Set(formattedLogs.map(log => log.exercise_id)));
 
-      setWorkoutSessions(sessions || []);
-
-      // Get unique exercises from workout sessions
-      const exerciseIds = new Set<string>();
-      sessions?.forEach(session => {
-        Object.keys(session.completed_exercises || {}).forEach(exerciseId => {
-          exerciseIds.add(exerciseId);
-        });
-      });
-
-      if (exerciseIds.size > 0) {
+      if (exerciseIds.length > 0) {
         const { data: exercisesData, error: exercisesError } = await supabase
           .from('exercises')
           .select('id, name')
-          .in('id', Array.from(exerciseIds));
+          .in('id', exerciseIds);
 
         if (exercisesError) throw exercisesError;
         setExercises(exercisesData || []);
 
-        // Set first exercise as default
-        if (exercisesData && exercisesData.length > 0) {
+        if (exercisesData && exercisesData.length > 0 && !selectedExercise) {
           setSelectedExercise(exercisesData[0].id);
         }
       }
 
       // Generate weight data (mock for now since we don't have weight tracking)
-      generateWeightData(sessions || []);
+      generateWeightData();
 
     } catch (error) {
       console.error('Error fetching progress data:', error);
@@ -107,20 +106,20 @@ function ClientProgress() {
     }
   };
 
-  const generateWeightData = (sessions: WorkoutSession[]) => {
-    // Generate mock weight data based on session dates linked to user start date
-    // In a real app, this would come from a measurements table
-    if (sessions.length === 0) return;
+  const generateWeightData = () => {
+    // Generate mock weight data based on last 30 days
+    const mockDates = Array.from({ length: 15 }, (_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (15 - i) * 2);
+      return d;
+    });
 
-    // Use startDate if needed for more complex logic
-    // const startDate = new Date(sessions[0].date); 
-
-    const weightData = sessions.slice(0, 15).map((session, index) => {
+    const weightData = mockDates.map((date, index) => {
       // Mock fluctuation
       const baseWeight = 85;
       const weightLoss = index * 0.2 + (Math.random() * 0.4 - 0.2);
       return {
-        date: new Date(session.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }),
+        date: date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }),
         value: Math.round((baseWeight - weightLoss) * 10) / 10
       };
     });
@@ -129,46 +128,67 @@ function ClientProgress() {
   };
 
   const generateStrengthData = () => {
-    if (!selectedExercise || workoutSessions.length === 0) return;
+    if (!selectedExercise || workoutLogs.length === 0) return;
 
-    const strengthData = workoutSessions
-      .filter(session => session.completed_exercises[selectedExercise])
-      .map(session => {
-        const exerciseData = session.completed_exercises[selectedExercise];
-        // Calculate estimated 1RM or just max weight lifted
-        const maxWeight = Math.max(...exerciseData.sets.filter(s => s.completed).map(set => set.weight || 0));
+    // Group logs by date (or session)
+    const sessionGroups: Record<string, WorkoutLog[]> = {};
 
-        // Calculate volume
-        const totalVolume = exerciseData.sets.reduce((sum, set) =>
-          sum + (set.completed ? (set.weight || 0) * (set.reps || 0) : 0), 0
-        );
+    workoutLogs
+      .filter(log => log.exercise_id === selectedExercise)
+      .forEach(log => {
+        // Use scheduled date as key if available, else completed_at
+        let dateStr = log.completed_at;
+        if (log.scheduled_session?.scheduled_date) {
+          dateStr = log.scheduled_session.scheduled_date;
+        }
 
-        return {
-          date: new Date(session.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }),
-          maxWeight: maxWeight > 0 ? maxWeight : null,
-          totalVolume
-        };
-      })
-      .filter(data => data.maxWeight !== null); // Filter out sessions where exercise wasn't performed properly
+        // Group by day (YYYY-MM-DD) to aggregate multiple sets/sessions in one day
+        const dateKey = new Date(dateStr).toISOString().split('T')[0];
+
+        if (!sessionGroups[dateKey]) {
+          sessionGroups[dateKey] = [];
+        }
+        sessionGroups[dateKey].push(log);
+      });
+
+    const strengthData = Object.entries(sessionGroups).map(([dateStr, logs]) => {
+      // Calculate metrics for this session
+      const maxWeight = Math.max(...logs.map(l => l.weight));
+      // Volume = sum(weight * reps)
+      const totalVolume = logs.reduce((sum, l) => sum + (l.weight * l.reps), 0);
+
+      const dateObj = new Date(dateStr);
+
+      return {
+        date: dateObj.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }),
+        rawDate: dateObj, // helper for sort
+        maxWeight: maxWeight > 0 ? maxWeight : 0,
+        totalVolume
+      };
+    })
+      .sort((a, b) => a.rawDate.getTime() - b.rawDate.getTime());
 
     setStrengthData(strengthData);
   };
 
   const calculateGoalProgress = () => {
     const clientData = client as any;
-    if (!clientData?.fitness_goals || workoutSessions.length === 0) return [];
+    if (!clientData?.fitness_goals || workoutLogs.length === 0) return [];
 
     return clientData.fitness_goals.slice(0, 3).map((goal: string, index: number) => {
-      // Calculate progress based on workout frequency
-      const sessionsThisMonth = workoutSessions.filter(session => {
-        const sessionDate = new Date(session.date);
-        const now = new Date();
-        return sessionDate.getMonth() === now.getMonth() &&
-          sessionDate.getFullYear() === now.getFullYear();
-      }).length;
+      // Calculate active days this month
+      const uniqueDaysThisMonth = new Set(
+        workoutLogs
+          .filter(log => {
+            const logDate = new Date(log.completed_at);
+            const now = new Date();
+            return logDate.getMonth() === now.getMonth() && logDate.getFullYear() === now.getFullYear();
+          })
+          .map(log => new Date(log.completed_at).toDateString())
+      ).size;
 
-      // Simple progress calculation based on sessions completed
-      const progress = Math.min(100, (sessionsThisMonth * 10) + (index * 20) + 10);
+      // Simple progress calculation based on active days (mock logic for goals)
+      const progress = Math.min(100, (uniqueDaysThisMonth * 10) + (index * 20) + 10);
 
       return {
         name: goal,
@@ -176,11 +196,6 @@ function ClientProgress() {
         progress
       };
     });
-  };
-
-  const getSelectedExerciseName = () => {
-    const exercise = exercises.find(ex => ex.id === selectedExercise);
-    return exercise?.name || 'Sélectionner un exercice';
   };
 
   if (loading) {
@@ -216,7 +231,7 @@ function ClientProgress() {
           </div>
         </div>
 
-        {workoutSessions.length === 0 ? (
+        {workoutLogs.length === 0 ? (
           <div className="glass-card rounded-3xl p-12 text-center border border-dashed border-white/20 flex flex-col items-center justify-center animate-fade-in delay-100">
             <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-6">
               <Activity className="w-10 h-10 text-gray-500" />
