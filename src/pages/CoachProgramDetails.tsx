@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ChevronLeft, Play, Calendar, CheckCircle, Clock, Dumbbell, User, Award, TrendingUp } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
-import { supabase } from '../../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
 
 function CoachProgramDetails() {
     const { clientProgramId } = useParams();
@@ -191,8 +191,8 @@ function CoachProgramDetails() {
                                     className={`bg-[#1e293b]/50 border ${isCompleted ? 'border-green-500/20' : 'border-white/5'} p-5 rounded-2xl flex items-center gap-5`}
                                 >
                                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border ${isCompleted
-                                            ? 'bg-green-500/10 border-green-500/20 text-green-400'
-                                            : 'bg-white/5 border-white/10 text-gray-400'
+                                        ? 'bg-green-500/10 border-green-500/20 text-green-400'
+                                        : 'bg-white/5 border-white/10 text-gray-400'
                                         }`}>
                                         {isCompleted ? <CheckCircle className="w-5 h-5" /> : <span className="font-bold">{index + 1}</span>}
                                     </div>
