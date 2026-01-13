@@ -17,6 +17,7 @@ interface Exercise {
   id: string;
   name: string;
   category: string;
+  tracking_type: 'reps_weight' | 'duration' | 'distance';
 }
 
 interface SelectedExercise {
@@ -25,6 +26,9 @@ interface SelectedExercise {
   reps: number;
   rest_time: number;
   group_id?: string;
+  tracking_type?: 'reps_weight' | 'duration' | 'distance';
+  duration_seconds?: number;
+  distance_meters?: number;
 }
 
 interface ExerciseGroup {
@@ -101,7 +105,7 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
     try {
       const { data, error } = await supabase
         .from('exercises')
-        .select('id, name, category')
+        .select('id, name, category, tracking_type')
         .eq('coach_id', user?.id)
         .order('name');
 
@@ -138,7 +142,10 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
             exercise_id: exercises[0].id,
             sets: 3,
             reps: 12,
-            rest_time: 60
+            rest_time: 60,
+            tracking_type: exercises[0].tracking_type || 'reps_weight',
+            duration_seconds: 60,
+            distance_meters: 1000,
           }
         }
       ]);
@@ -152,9 +159,18 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
   const handleExerciseChange = (index: number, field: string, value: string | number) => {
     const updated = [...workoutItems];
     if (updated[index].type === 'exercise') {
+      const newData = { ...updated[index].data, [field]: value };
+
+      if (field === 'exercise_id') {
+        const selectedEx = exercises.find(e => e.id === value);
+        if (selectedEx) {
+          newData.tracking_type = selectedEx.tracking_type;
+        }
+      }
+
       updated[index] = {
         ...updated[index],
-        data: { ...updated[index].data, [field]: value }
+        data: newData
       };
       setWorkoutItems(updated);
     }
@@ -169,15 +185,16 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
         exercise_id: exercises[0].id,
         sets: 1,
         reps: 12,
-        rest_time: 30
+        rest_time: 30,
+        tracking_type: exercises[0].tracking_type || 'reps_weight',
+        duration_seconds: 60,
+        distance_meters: 1000,
       }] : []
     };
     setWorkoutItems([...workoutItems, { type: 'group', data: newGroup }]);
   };
 
-  const handleRemoveGroup = (index: number) => {
-    setWorkoutItems(workoutItems.filter((_, i) => i !== index));
-  };
+
 
   const handleGroupChange = (index: number, field: string, value: string | number) => {
     const updated = [...workoutItems];
@@ -199,7 +216,10 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
           exercise_id: exercises[0].id,
           sets: 1,
           reps: 12,
-          rest_time: 30
+          rest_time: 30,
+          tracking_type: exercises[0].tracking_type || 'reps_weight',
+          duration_seconds: 60,
+          distance_meters: 1000,
         });
         setWorkoutItems(updated);
       }
@@ -219,10 +239,20 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
     const updated = [...workoutItems];
     if (updated[itemIndex].type === 'group') {
       const groupData = updated[itemIndex].data as ExerciseGroup;
-      groupData.exercises[exerciseIndex] = {
+
+      const newData = {
         ...groupData.exercises[exerciseIndex],
         [field]: value
       };
+
+      if (field === 'exercise_id') {
+        const selectedEx = exercises.find(e => e.id === value);
+        if (selectedEx) {
+          newData.tracking_type = selectedEx.tracking_type;
+        }
+      }
+
+      groupData.exercises[exerciseIndex] = newData;
       setWorkoutItems(updated);
     }
   };
@@ -288,7 +318,9 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
                 reps: ex.reps,
                 rest_time: ex.rest_time,
                 order_index: i,
-                group_id: null
+                group_id: null,
+                duration_seconds: ex.duration_seconds,
+                distance_meters: ex.distance_meters,
               });
 
             if (exerciseError) throw exerciseError;
@@ -316,7 +348,9 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
                 reps: ex.reps,
                 rest_time: ex.rest_time,
                 order_index: index,
-                group_id: groupData.id
+                group_id: groupData.id,
+                duration_seconds: ex.duration_seconds,
+                distance_meters: ex.distance_meters,
               }));
 
               const { error: groupExercisesError } = await supabase
@@ -549,8 +583,8 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
                           setFormData(prev => ({ ...prev, duration_minutes: session.duration_minutes }));
                         }}
                         className={`w-full p-4 rounded-xl border transition-all text-left ${selectedSessionId === session.id
-                            ? 'border-green-500 bg-green-500/10'
-                            : 'border-white/10 bg-white/5 hover:border-green-500/50 hover:bg-white/10'
+                          ? 'border-green-500 bg-green-500/10'
+                          : 'border-white/10 bg-white/5 hover:border-green-500/50 hover:bg-white/10'
                           }`}
                       >
                         <h4 className="font-bold text-white mb-1">{session.name}</h4>
@@ -603,8 +637,8 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
                       type="button"
                       onClick={() => setFormData({ ...formData, payment_method: 'online' })}
                       className={`p-4 rounded-xl border transition-all ${formData.payment_method === 'online'
-                          ? 'border-blue-500 bg-blue-500/10'
-                          : 'border-white/10 bg-white/5 hover:bg-white/10'
+                        ? 'border-blue-500 bg-blue-500/10'
+                        : 'border-white/10 bg-white/5 hover:bg-white/10'
                         }`}
                     >
                       <div className="flex flex-col items-center gap-2">
@@ -624,8 +658,8 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
                       type="button"
                       onClick={() => setFormData({ ...formData, payment_method: 'in_person' })}
                       className={`p-4 rounded-xl border transition-all ${formData.payment_method === 'in_person'
-                          ? 'border-blue-500 bg-blue-500/10'
-                          : 'border-white/10 bg-white/5 hover:bg-white/10'
+                        ? 'border-blue-500 bg-blue-500/10'
+                        : 'border-white/10 bg-white/5 hover:bg-white/10'
                         }`}
                     >
                       <div className="flex flex-col items-center gap-2">
@@ -786,32 +820,64 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
                           </div>
 
                           <div className="grid grid-cols-3 gap-2">
-                            <div>
-                              <label className="block text-xs font-medium text-gray-400 mb-1">
-                                Séries
-                              </label>
-                              <input
-                                type="number"
-                                value={item.data.sets}
-                                onChange={(e) => handleExerciseChange(index, 'sets', parseInt(e.target.value))}
-                                min="1"
-                                max="10"
-                                className="w-full rounded-lg bg-white/5 border-white/10 text-white text-sm focus:border-blue-500 focus:ring-blue-500"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-xs font-medium text-gray-400 mb-1">
-                                Reps
-                              </label>
-                              <input
-                                type="number"
-                                value={item.data.reps}
-                                onChange={(e) => handleExerciseChange(index, 'reps', parseInt(e.target.value))}
-                                min="1"
-                                max="100"
-                                className="w-full rounded-lg bg-white/5 border-white/10 text-white text-sm focus:border-blue-500 focus:ring-blue-500"
-                              />
-                            </div>
+                            {item.data.tracking_type === 'duration' ? (
+                              <div className="col-span-2">
+                                <label className="block text-xs font-medium text-gray-400 mb-1">
+                                  Durée (secondes)
+                                </label>
+                                <input
+                                  type="number"
+                                  value={item.data.duration_seconds || 60}
+                                  onChange={(e) => handleExerciseChange(index, 'duration_seconds', parseInt(e.target.value))}
+                                  min="0"
+                                  step="10"
+                                  className="w-full rounded-lg bg-white/5 border-white/10 text-white text-sm focus:border-blue-500 focus:ring-blue-500"
+                                />
+                              </div>
+                            ) : item.data.tracking_type === 'distance' ? (
+                              <div className="col-span-2">
+                                <label className="block text-xs font-medium text-gray-400 mb-1">
+                                  Distance (mètres)
+                                </label>
+                                <input
+                                  type="number"
+                                  value={item.data.distance_meters || 1000}
+                                  onChange={(e) => handleExerciseChange(index, 'distance_meters', parseInt(e.target.value))}
+                                  min="0"
+                                  step="100"
+                                  className="w-full rounded-lg bg-white/5 border-white/10 text-white text-sm focus:border-blue-500 focus:ring-blue-500"
+                                />
+                              </div>
+                            ) : (
+                              <>
+                                <div>
+                                  <label className="block text-xs font-medium text-gray-400 mb-1">
+                                    Séries
+                                  </label>
+                                  <input
+                                    type="number"
+                                    value={item.data.sets}
+                                    onChange={(e) => handleExerciseChange(index, 'sets', parseInt(e.target.value))}
+                                    min="1"
+                                    max="10"
+                                    className="w-full rounded-lg bg-white/5 border-white/10 text-white text-sm focus:border-blue-500 focus:ring-blue-500"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-medium text-gray-400 mb-1">
+                                    Reps
+                                  </label>
+                                  <input
+                                    type="number"
+                                    value={item.data.reps}
+                                    onChange={(e) => handleExerciseChange(index, 'reps', parseInt(e.target.value))}
+                                    min="1"
+                                    max="100"
+                                    className="w-full rounded-lg bg-white/5 border-white/10 text-white text-sm focus:border-blue-500 focus:ring-blue-500"
+                                  />
+                                </div>
+                              </>
+                            )}
                             <div>
                               <label className="block text-xs font-medium text-gray-400 mb-1">
                                 Repos (s)
@@ -821,8 +887,7 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
                                 value={item.data.rest_time}
                                 onChange={(e) => handleExerciseChange(index, 'rest_time', parseInt(e.target.value))}
                                 min="0"
-                                max="600"
-                                step="15"
+                                step="10"
                                 className="w-full rounded-lg bg-white/5 border-white/10 text-white text-sm focus:border-blue-500 focus:ring-blue-500"
                               />
                             </div>
@@ -906,28 +971,56 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
                                   </button>
                                 </div>
                                 <div className="grid grid-cols-3 gap-2">
-                                  <div>
-                                    <input
-                                      type="number"
-                                      value={ex.sets}
-                                      onChange={(e) => handleGroupExerciseChange(index, exIndex, 'sets', parseInt(e.target.value))}
-                                      min="1"
-                                      max="10"
-                                      placeholder="Séries"
-                                      className="w-full rounded bg-white/5 border-white/10 text-white text-xs focus:border-green-500 focus:ring-green-500"
-                                    />
-                                  </div>
-                                  <div>
-                                    <input
-                                      type="number"
-                                      value={ex.reps}
-                                      onChange={(e) => handleGroupExerciseChange(index, exIndex, 'reps', parseInt(e.target.value))}
-                                      min="1"
-                                      max="100"
-                                      placeholder="Reps"
-                                      className="w-full rounded bg-white/5 border-white/10 text-white text-xs focus:border-green-500 focus:ring-green-500"
-                                    />
-                                  </div>
+                                  {ex.tracking_type === 'duration' ? (
+                                    <div className="col-span-2">
+                                      <input
+                                        type="number"
+                                        value={ex.duration_seconds || 60}
+                                        onChange={(e) => handleGroupExerciseChange(index, exIndex, 'duration_seconds', parseInt(e.target.value))}
+                                        min="0"
+                                        step="10"
+                                        placeholder="Durée (s)"
+                                        className="w-full rounded bg-white/5 border-white/10 text-white text-xs focus:border-green-500 focus:ring-green-500"
+                                      />
+                                    </div>
+                                  ) : ex.tracking_type === 'distance' ? (
+                                    <div className="col-span-2">
+                                      <input
+                                        type="number"
+                                        value={ex.distance_meters || 1000}
+                                        onChange={(e) => handleGroupExerciseChange(index, exIndex, 'distance_meters', parseInt(e.target.value))}
+                                        min="0"
+                                        step="100"
+                                        placeholder="Distance (m)"
+                                        className="w-full rounded bg-white/5 border-white/10 text-white text-xs focus:border-green-500 focus:ring-green-500"
+                                      />
+                                    </div>
+                                  ) : (
+                                    <>
+                                      <div>
+                                        <input
+                                          type="number"
+                                          value={ex.sets}
+                                          onChange={(e) => handleGroupExerciseChange(index, exIndex, 'sets', parseInt(e.target.value))}
+                                          min="1"
+                                          max="10"
+                                          placeholder="Séries"
+                                          className="w-full rounded bg-white/5 border-white/10 text-white text-xs focus:border-green-500 focus:ring-green-500"
+                                        />
+                                      </div>
+                                      <div>
+                                        <input
+                                          type="number"
+                                          value={ex.reps}
+                                          onChange={(e) => handleGroupExerciseChange(index, exIndex, 'reps', parseInt(e.target.value))}
+                                          min="1"
+                                          max="100"
+                                          placeholder="Reps"
+                                          className="w-full rounded bg-white/5 border-white/10 text-white text-xs focus:border-green-500 focus:ring-green-500"
+                                        />
+                                      </div>
+                                    </>
+                                  )}
                                   <div>
                                     <input
                                       type="number"
@@ -1002,8 +1095,8 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
                       type="button"
                       onClick={() => setFormData({ ...formData, payment_method: 'online' })}
                       className={`p-4 rounded-xl border transition-all ${formData.payment_method === 'online'
-                          ? 'border-blue-500 bg-blue-500/10'
-                          : 'border-white/10 bg-white/5 hover:bg-white/10'
+                        ? 'border-blue-500 bg-blue-500/10'
+                        : 'border-white/10 bg-white/5 hover:bg-white/10'
                         }`}
                     >
                       <div className="flex flex-col items-center gap-2">
@@ -1023,8 +1116,8 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
                       type="button"
                       onClick={() => setFormData({ ...formData, payment_method: 'in_person' })}
                       className={`p-4 rounded-xl border transition-all ${formData.payment_method === 'in_person'
-                          ? 'border-blue-500 bg-blue-500/10'
-                          : 'border-white/10 bg-white/5 hover:bg-white/10'
+                        ? 'border-blue-500 bg-blue-500/10'
+                        : 'border-white/10 bg-white/5 hover:bg-white/10'
                         }`}
                     >
                       <div className="flex flex-col items-center gap-2">
