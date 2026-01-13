@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ChevronLeft, Plus, Calendar as CalendarIcon, BarChart, Activity, TrendingUp, X, Clock, CheckCircle, AlertCircle, ChevronRight } from 'lucide-react';
+import { ChevronLeft, Plus, Calendar as CalendarIcon, BarChart, Activity, TrendingUp, X, Clock, ChevronRight } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { t } from '../i18n';
+// import { t } from '../i18n';
 import { InviteClientButton } from '../components/InviteClientButton';
 import { ScheduleSessionModal } from '../components/ScheduleSessionModal';
 import { SessionDetailsModal } from '../components/SessionDetailsModal';
@@ -134,7 +134,7 @@ function ClientDetails() {
       }));
 
       setClient(clientData);
-      setClientPrograms(programsData || []);
+      setClientPrograms((programsData as any) || []);
       setScheduledSessions(formattedSessions);
     } catch (error) {
       console.error('Error fetching client data:', error);
@@ -150,15 +150,20 @@ function ClientDetails() {
 
   const filteredSessions = scheduledSessions.filter(session => {
     const now = new Date();
+    const isMaintainedInHistory = ['completed', 'cancelled'].includes(session.status);
+
     if (agendaTab === 'upcoming') {
-      return session.start >= now;
+      // Show only future sessions that are NOT completed or cancelled
+      return session.start >= now && !isMaintainedInHistory;
     } else {
-      return session.start < now;
+      // Show past sessions OR any session that is completed/cancelled (even if in future)
+      return session.start < now || isMaintainedInHistory;
     }
   }).sort((a, b) => {
     if (agendaTab === 'upcoming') {
       return a.start.getTime() - b.start.getTime();
     } else {
+      // Sort history by most recent first
       return b.start.getTime() - a.start.getTime();
     }
   });
@@ -393,8 +398,8 @@ function ClientDetails() {
                 <button
                   onClick={() => setAgendaTab('upcoming')}
                   className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${agendaTab === 'upcoming'
-                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
-                      : 'text-gray-400 hover:text-white'
+                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
+                    : 'text-gray-400 hover:text-white'
                     }`}
                 >
                   À venir
@@ -402,8 +407,8 @@ function ClientDetails() {
                 <button
                   onClick={() => setAgendaTab('past')}
                   className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${agendaTab === 'past'
-                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
-                      : 'text-gray-400 hover:text-white'
+                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
+                    : 'text-gray-400 hover:text-white'
                     }`}
                 >
                   Passé
@@ -510,7 +515,13 @@ function ClientDetails() {
   );
 }
 
-function AssignProgramModal({ clientId, onClose, onAssign }) {
+interface AssignProgramModalProps {
+  clientId: string;
+  onClose: () => void;
+  onAssign: () => void;
+}
+
+function AssignProgramModal({ clientId, onClose, onAssign }: AssignProgramModalProps) {
   const [programs, setPrograms] = useState<Program[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedProgram, setSelectedProgram] = useState<string>('');
