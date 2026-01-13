@@ -150,6 +150,12 @@ export const fr = {
       videoUrl: 'URL de la vidéo (optionnel)',
       addEquipment: 'Ajouter un équipement',
       addInstruction: 'Ajouter une instruction',
+      trackingType: {
+        label: 'Type de suivi',
+        reps_weight: 'Poids & Répétitions',
+        duration: 'Durée (Chronomètre)',
+        distance: 'Distance',
+      },
     },
   },
   programs: {
