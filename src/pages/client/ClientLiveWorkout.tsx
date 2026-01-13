@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Play, Pause, CheckCircle, RotateCcw, Timer, ChevronRight, Plus, Minus, ChevronLeft, Dumbbell, Activity } from 'lucide-react';
+import { Play, Pause, CheckCircle, RotateCcw, Timer, ChevronRight, Plus, Minus, ChevronLeft, Dumbbell, Activity, X } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useClientAuth } from '../../contexts/ClientAuthContext';
 
@@ -38,6 +38,12 @@ function ClientLiveWorkout() {
   }>>({});
   const [restTimer, setRestTimer] = useState<number | null>(null);
   const [notes, setNotes] = useState('');
+  const [activeTimer, setActiveTimer] = useState<{
+    setIndex: number;
+    timeLeft: number;
+    isRunning: boolean;
+    totalTime: number;
+  } | null>(null);
 
   useEffect(() => {
     if (client && scheduledSessionId) {
@@ -54,6 +60,56 @@ function ClientLiveWorkout() {
     }
     return () => clearInterval(interval);
   }, [restTimer]);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (activeTimer && activeTimer.isRunning && activeTimer.timeLeft > 0) {
+      interval = setInterval(() => {
+        setActiveTimer(prev => {
+          if (!prev) return null;
+          if (prev.timeLeft <= 1) {
+            // Timer finished
+            // Play sound or vibrate here if possible
+            if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+            return { ...prev, timeLeft: 0, isRunning: false };
+          }
+          return { ...prev, timeLeft: prev.timeLeft - 1 };
+        });
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [activeTimer?.isRunning, activeTimer?.timeLeft]);
+
+  const handleStartTimer = (setIndex: number, duration: number) => {
+    if (activeTimer && activeTimer.setIndex === setIndex) {
+      setActiveTimer(prev => prev ? { ...prev, isRunning: true } : null);
+    } else {
+      setActiveTimer({
+        setIndex,
+        timeLeft: duration,
+        totalTime: duration,
+        isRunning: true
+      });
+    }
+  };
+
+  const handlePauseTimer = () => {
+    setActiveTimer(prev => prev ? { ...prev, isRunning: false } : null);
+  };
+
+  const handleResetTimer = () => {
+    if (activeTimer) {
+      setActiveTimer({
+        ...activeTimer,
+        timeLeft: activeTimer.totalTime,
+        isRunning: false
+      });
+    }
+  };
+
+  const handleStopTimer = () => {
+    setActiveTimer(null);
+  };
 
   const fetchSessionData = async () => {
     try {
@@ -243,6 +299,7 @@ function ClientLiveWorkout() {
     if (currentExerciseIndex < exercises.length - 1) {
       setCurrentExerciseIndex(prev => prev + 1);
       setRestTimer(null);
+      setActiveTimer(null);
     }
   };
 
@@ -250,6 +307,7 @@ function ClientLiveWorkout() {
     if (currentExerciseIndex > 0) {
       setCurrentExerciseIndex(prev => prev - 1);
       setRestTimer(null);
+      setActiveTimer(null);
     }
   };
 
@@ -420,108 +478,152 @@ function ClientLiveWorkout() {
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    {currentExercise.tracking_type === 'duration' ? (
-                      <div className="col-span-2">
-                        <label className="text-gray-500 text-xs font-bold uppercase mb-2 block">Durée (secondes)</label>
-                        <div className="flex items-center gap-1 bg-black/20 rounded-xl p-1 border border-white/5">
-                          <button
-                            onClick={() => handleUpdateSet(idx, 'duration_seconds', Math.max(0, (set.duration_seconds || 0) - 5))}
-                            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 transition-colors"
-                          >
-                            <Minus className="w-4 h-4" />
-                          </button>
-                          <input
-                            type="number"
-                            value={set.duration_seconds || 0}
-                            onChange={(e) => handleUpdateSet(idx, 'duration_seconds', parseInt(e.target.value) || 0)}
-                            className="flex-1 bg-transparent text-white text-center font-bold text-lg focus:outline-none"
-                          />
-                          <button
-                            onClick={() => handleUpdateSet(idx, 'duration_seconds', (set.duration_seconds || 0) + 5)}
-                            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 transition-colors"
-                          >
-                            <Plus className="w-4 h-4" />
-                          </button>
+                  {activeTimer && activeTimer.setIndex === idx ? (
+                    /* Active Timer View */
+                    <div className="bg-blue-600/20 rounded-xl p-4 border border-blue-500/30 text-center animate-fade-in relative overflow-hidden">
+                      <div className="absolute inset-0 bg-blue-500/5 animate-pulse z-0"></div>
+                      <div className="relative z-10">
+                        <div className="text-5xl font-black text-white tabular-nums tracking-tighter mb-2">
+                          {Math.floor(activeTimer.timeLeft / 60)}:{(activeTimer.timeLeft % 60).toString().padStart(2, '0')}
                         </div>
-                      </div>
-                    ) : currentExercise.tracking_type === 'distance' ? (
-                      <div className="col-span-2">
-                        <label className="text-gray-500 text-xs font-bold uppercase mb-2 block">Distance (m)</label>
-                        <div className="flex items-center gap-1 bg-black/20 rounded-xl p-1 border border-white/5">
-                          <button
-                            onClick={() => handleUpdateSet(idx, 'distance_meters', Math.max(0, (set.distance_meters || 0) - 50))}
-                            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 transition-colors"
-                          >
-                            <Minus className="w-4 h-4" />
-                          </button>
-                          <input
-                            type="number"
-                            value={set.distance_meters || 0}
-                            onChange={(e) => handleUpdateSet(idx, 'distance_meters', parseInt(e.target.value) || 0)}
-                            className="flex-1 bg-transparent text-white text-center font-bold text-lg focus:outline-none"
-                          />
-                          <button
-                            onClick={() => handleUpdateSet(idx, 'distance_meters', (set.distance_meters || 0) + 50)}
-                            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 transition-colors"
-                          >
-                            <Plus className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        <div>
-                          <label className="text-gray-500 text-xs font-bold uppercase mb-2 block">Répétitions</label>
-                          <div className="flex items-center gap-1 bg-black/20 rounded-xl p-1 border border-white/5">
-                            <button
-                              onClick={() => handleUpdateSet(idx, 'reps', Math.max(1, set.reps - 1))}
-                              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 transition-colors"
-                            >
-                              <Minus className="w-4 h-4" />
-                            </button>
-                            <input
-                              type="number"
-                              value={set.reps}
-                              onChange={(e) => handleUpdateSet(idx, 'reps', parseInt(e.target.value) || 0)}
-                              className="flex-1 bg-transparent text-white text-center font-bold text-lg focus:outline-none"
-                            />
-                            <button
-                              onClick={() => handleUpdateSet(idx, 'reps', set.reps + 1)}
-                              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 transition-colors"
-                            >
-                              <Plus className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
+                        <div className="text-blue-300 text-xs font-bold uppercase tracking-widest mb-4">Temps restant</div>
 
-                        <div>
-                          <label className="text-gray-500 text-xs font-bold uppercase mb-2 block">Poids (kg)</label>
+                        <div className="flex items-center justify-center gap-4">
+                          <button
+                            onClick={handlePauseTimer}
+                            className="w-12 h-12 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-colors"
+                          >
+                            {activeTimer.isRunning ? <Pause className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current" />}
+                          </button>
+                          <button
+                            onClick={handleResetTimer}
+                            className="w-12 h-12 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-colors"
+                          >
+                            <RotateCcw className="w-5 h-5" />
+                          </button>
+                          <button
+                            onClick={handleStopTimer}
+                            className="w-12 h-12 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-full flex items-center justify-center transition-colors"
+                          >
+                            <X className="w-5 h-5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-4">
+                      {currentExercise.tracking_type === 'duration' ? (
+                        <div className="col-span-2">
+                          <div className="flex items-center gap-4">
+                            <div className="flex-1">
+                              <label className="text-gray-500 text-xs font-bold uppercase mb-2 block">Durée (secondes)</label>
+                              <div className="flex items-center gap-1 bg-black/20 rounded-xl p-1 border border-white/5">
+                                <button
+                                  onClick={() => handleUpdateSet(idx, 'duration_seconds', Math.max(0, (set.duration_seconds || 0) - 5))}
+                                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 transition-colors"
+                                >
+                                  <Minus className="w-4 h-4" />
+                                </button>
+                                <input
+                                  type="number"
+                                  value={set.duration_seconds || 0}
+                                  onChange={(e) => handleUpdateSet(idx, 'duration_seconds', parseInt(e.target.value) || 0)}
+                                  className="flex-1 bg-transparent text-white text-center font-bold text-lg focus:outline-none"
+                                />
+                                <button
+                                  onClick={() => handleUpdateSet(idx, 'duration_seconds', (set.duration_seconds || 0) + 5)}
+                                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 transition-colors"
+                                >
+                                  <Plus className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => handleStartTimer(idx, set.duration_seconds || 60)}
+                              className="w-14 h-14 bg-blue-600 hover:bg-blue-500 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-600/20 transition-all active:scale-95"
+                            >
+                              <Play className="w-6 h-6 text-white fill-current ml-1" />
+                            </button>
+                          </div>
+                        </div>
+                      ) : currentExercise.tracking_type === 'distance' ? (
+                        <div className="col-span-2">
+                          <label className="text-gray-500 text-xs font-bold uppercase mb-2 block">Distance (m)</label>
                           <div className="flex items-center gap-1 bg-black/20 rounded-xl p-1 border border-white/5">
                             <button
-                              onClick={() => handleUpdateSet(idx, 'weight', Math.max(0, set.weight - 2.5))}
+                              onClick={() => handleUpdateSet(idx, 'distance_meters', Math.max(0, (set.distance_meters || 0) - 50))}
                               className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 transition-colors"
                             >
                               <Minus className="w-4 h-4" />
                             </button>
                             <input
                               type="number"
-                              step="0.5"
-                              value={set.weight}
-                              onChange={(e) => handleUpdateSet(idx, 'weight', parseFloat(e.target.value) || 0)}
+                              value={set.distance_meters || 0}
+                              onChange={(e) => handleUpdateSet(idx, 'distance_meters', parseInt(e.target.value) || 0)}
                               className="flex-1 bg-transparent text-white text-center font-bold text-lg focus:outline-none"
                             />
                             <button
-                              onClick={() => handleUpdateSet(idx, 'weight', set.weight + 2.5)}
+                              onClick={() => handleUpdateSet(idx, 'distance_meters', (set.distance_meters || 0) + 50)}
                               className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 transition-colors"
                             >
                               <Plus className="w-4 h-4" />
                             </button>
                           </div>
                         </div>
-                      </>
-                    )}
-                  </div>
+                      ) : (
+                        <>
+                          <div>
+                            <label className="text-gray-500 text-xs font-bold uppercase mb-2 block">Répétitions</label>
+                            <div className="flex items-center gap-1 bg-black/20 rounded-xl p-1 border border-white/5">
+                              <button
+                                onClick={() => handleUpdateSet(idx, 'reps', Math.max(1, set.reps - 1))}
+                                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 transition-colors"
+                              >
+                                <Minus className="w-4 h-4" />
+                              </button>
+                              <input
+                                type="number"
+                                value={set.reps}
+                                onChange={(e) => handleUpdateSet(idx, 'reps', parseInt(e.target.value) || 0)}
+                                className="flex-1 bg-transparent text-white text-center font-bold text-lg focus:outline-none"
+                              />
+                              <button
+                                onClick={() => handleUpdateSet(idx, 'reps', set.reps + 1)}
+                                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 transition-colors"
+                              >
+                                <Plus className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="text-gray-500 text-xs font-bold uppercase mb-2 block">Poids (kg)</label>
+                            <div className="flex items-center gap-1 bg-black/20 rounded-xl p-1 border border-white/5">
+                              <button
+                                onClick={() => handleUpdateSet(idx, 'weight', Math.max(0, set.weight - 2.5))}
+                                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 transition-colors"
+                              >
+                                <Minus className="w-4 h-4" />
+                              </button>
+                              <input
+                                type="number"
+                                step="0.5"
+                                value={set.weight}
+                                onChange={(e) => handleUpdateSet(idx, 'weight', parseFloat(e.target.value) || 0)}
+                                className="flex-1 bg-transparent text-white text-center font-bold text-lg focus:outline-none"
+                              />
+                              <button
+                                onClick={() => handleUpdateSet(idx, 'weight', set.weight + 2.5)}
+                                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 transition-colors"
+                              >
+                                <Plus className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

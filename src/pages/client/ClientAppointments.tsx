@@ -221,8 +221,11 @@ function ClientAppointments() {
             name,
             description,
             category,
-            equipment
-          )
+            equipment,
+            tracking_type
+          ),
+          duration_seconds,
+          distance_meters
         `)
         .eq('session_id', sessionId)
         .order('order_index', { ascending: true });
@@ -376,11 +379,10 @@ function ClientAppointments() {
       <div className="flex gap-4 mb-6">
         <button
           onClick={() => setActiveTab('personal')}
-          className={`px-6 py-3 rounded-lg font-medium transition-all ${
-            activeTab === 'personal'
-              ? 'bg-blue-600 text-white shadow-lg'
-              : 'bg-white/10 text-white/70 hover:bg-white/20'
-          }`}
+          className={`px-6 py-3 rounded-lg font-medium transition-all ${activeTab === 'personal'
+            ? 'bg-blue-600 text-white shadow-lg'
+            : 'bg-white/10 text-white/70 hover:bg-white/20'
+            }`}
         >
           <div className="flex items-center gap-2">
             <User className="w-5 h-5" />
@@ -389,11 +391,10 @@ function ClientAppointments() {
         </button>
         <button
           onClick={() => setActiveTab('group')}
-          className={`px-6 py-3 rounded-lg font-medium transition-all ${
-            activeTab === 'group'
-              ? 'bg-green-600 text-white shadow-lg'
-              : 'bg-white/10 text-white/70 hover:bg-white/20'
-          }`}
+          className={`px-6 py-3 rounded-lg font-medium transition-all ${activeTab === 'group'
+            ? 'bg-green-600 text-white shadow-lg'
+            : 'bg-white/10 text-white/70 hover:bg-white/20'
+            }`}
         >
           <div className="flex items-center gap-2">
             <Users className="w-5 h-5" />
@@ -635,9 +636,17 @@ function SessionModal({ session, exercises, loadingExercises, onClose, onRegiste
                                     <p className="text-white/60 text-xs mt-1">{se.exercise.description}</p>
                                   )}
                                   <div className="flex gap-3 mt-2 text-xs text-white/70">
-                                    <span>{se.sets} séries</span>
-                                    <span>•</span>
-                                    <span>{se.reps} reps</span>
+                                    {se.exercise?.tracking_type === 'duration' ? (
+                                      <span>{se.duration_seconds} secondes</span>
+                                    ) : se.exercise?.tracking_type === 'distance' ? (
+                                      <span>{se.distance_meters} mètres</span>
+                                    ) : (
+                                      <>
+                                        <span>{se.sets} séries</span>
+                                        <span>•</span>
+                                        <span>{se.reps} reps</span>
+                                      </>
+                                    )}
                                     {se.rest_time > 0 && (
                                       <>
                                         <span>•</span>
