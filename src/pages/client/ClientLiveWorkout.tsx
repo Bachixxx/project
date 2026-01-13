@@ -143,21 +143,69 @@ function ClientLiveWorkout() {
 
   const currentExercise = exercises[currentExerciseIndex];
 
-  const handleCompleteSet = (setIndex: number) => {
+  const handleCompleteSet = async (setIndex: number) => {
     if (!currentExercise) return;
 
+    const currentSet = completedExercises[currentExercise.id]?.sets[setIndex];
+    if (!currentSet) return;
+
+    const newCompletedState = !currentSet.completed;
+
+    // Optimistic UI update
     setCompletedExercises(prev => ({
       ...prev,
       [currentExercise.id]: {
         ...prev[currentExercise.id],
         sets: prev[currentExercise.id].sets.map((set, idx) =>
-          idx === setIndex ? { ...set, completed: !set.completed } : set
+          idx === setIndex ? { ...set, completed: newCompletedState } : set
         )
       }
     }));
 
-    if (currentExercise.rest_time > 0 && setIndex < currentExercise.sets - 1) {
-      setRestTimer(currentExercise.rest_time);
+    if (newCompletedState) {
+      // Log the set to the database
+      try {
+        const { error } = await supabase
+          .from('workout_logs')
+          .upsert({
+            client_id: client.id,
+            scheduled_session_id: scheduledSessionId,
+            exercise_id: currentExercise.id,
+            set_number: setIndex + 1,
+            reps: currentSet.reps,
+            weight: currentSet.weight,
+            completed_at: new Date().toISOString()
+          }, {
+            onConflict: 'scheduled_session_id,exercise_id,set_number'
+          });
+
+        if (error) {
+          console.error('Error logging workout:', error);
+          // Revert UI on error? Or just silence for now but maybe show toast
+        }
+      } catch (err) {
+        console.error('Error logging workout:', err);
+      }
+
+      if (currentExercise.rest_time > 0 && setIndex < currentExercise.sets - 1) {
+        setRestTimer(currentExercise.rest_time);
+      }
+    } else {
+      // Optional: Remove log if unchecked? 
+      // For now, we keep the log but maybe the UI just reflects it's not "done" in this session view.
+      // Or we could delete it.
+      try {
+        await supabase
+          .from('workout_logs')
+          .delete()
+          .match({
+            scheduled_session_id: scheduledSessionId,
+            exercise_id: currentExercise.id,
+            set_number: setIndex + 1
+          });
+      } catch (err) {
+        console.error('Error removing workout log:', err);
+      }
     }
   };
 
@@ -325,8 +373,8 @@ function ClientLiveWorkout() {
                 <div
                   key={idx}
                   className={`p-4 rounded-2xl border transition-all duration-300 ${set.completed
-                      ? 'bg-green-500/10 border-green-500/20 shadow-[0_0_15px_rgba(34,197,94,0.1)]'
-                      : 'bg-[#0f172a]/50 border-white/5'
+                    ? 'bg-green-500/10 border-green-500/20 shadow-[0_0_15px_rgba(34,197,94,0.1)]'
+                    : 'bg-[#0f172a]/50 border-white/5'
                     }`}
                 >
                   <div className="flex items-center justify-between mb-4">
@@ -336,8 +384,8 @@ function ClientLiveWorkout() {
                     <button
                       onClick={() => handleCompleteSet(idx)}
                       className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${set.completed
-                          ? 'bg-green-500 text-white shadow-lg shadow-green-500/30 scale-105'
-                          : 'bg-white/10 text-gray-400 hover:bg-white/20'
+                        ? 'bg-green-500 text-white shadow-lg shadow-green-500/30 scale-105'
+                        : 'bg-white/10 text-gray-400 hover:bg-white/20'
                         }`}
                     >
                       <CheckCircle className="w-6 h-6" />
