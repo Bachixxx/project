@@ -39,15 +39,78 @@ function Dashboard() {
     monthlyRevenue: 0,
     monthlyGrowth: 0,
   });
-  const [recentActivities, setRecentActivities] = useState([]);
-  const [clientProgress, setClientProgress] = useState([]);
-  const [revenueData, setRevenueData] = useState([]);
+  const [recentActivities, setRecentActivities] = useState<any[]>([]);
+  const [clientProgress, setClientProgress] = useState<any[]>([]);
+  const [revenueData, setRevenueData] = useState<{ name: string, value: number }[]>([]);
+  const [timeRange, setTimeRange] = useState<'6months' | 'year'>('6months');
+  const [allPayments, setAllPayments] = useState<any[]>([]);
 
   useEffect(() => {
     if (user) {
       fetchDashboardData();
     }
   }, [user]);
+
+  useEffect(() => {
+    if (allPayments.length > 0) {
+      processChartData();
+    }
+  }, [timeRange, allPayments, language]);
+
+  const processChartData = () => {
+    const now = new Date();
+    const chartData = [];
+
+    if (timeRange === '6months') {
+      // Last 6 months logic
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const monthStart = new Date(d.getFullYear(), d.getMonth(), 1);
+        const monthEnd = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+
+        const monthRevenue = allPayments
+          .filter(p => {
+            const payDate = new Date(p.payment_date);
+            return payDate >= monthStart && payDate < monthEnd;
+          })
+          .reduce((sum, p) => sum + p.amount, 0);
+
+        const monthName = d.toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US', { month: 'short' });
+        const formattedName = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+
+        chartData.push({
+          name: formattedName,
+          value: monthRevenue
+        });
+      }
+    } else {
+      // Current Year logic (Jan to Now)
+      const startOfYear = new Date(now.getFullYear(), 0, 1);
+      const monthsDiff = now.getMonth() - startOfYear.getMonth() + 1;
+
+      for (let i = 0; i < monthsDiff; i++) {
+        const d = new Date(now.getFullYear(), i, 1);
+        const monthStart = new Date(d.getFullYear(), d.getMonth(), 1);
+        const monthEnd = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+
+        const monthRevenue = allPayments
+          .filter(p => {
+            const payDate = new Date(p.payment_date);
+            return payDate >= monthStart && payDate < monthEnd;
+          })
+          .reduce((sum, p) => sum + p.amount, 0);
+
+        const monthName = d.toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US', { month: 'short' });
+        const formattedName = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+
+        chartData.push({
+          name: formattedName,
+          value: monthRevenue
+        });
+      }
+    }
+    setRevenueData(chartData);
+  };
 
   const fetchDashboardData = async () => {
     try {
@@ -76,42 +139,40 @@ function Dashboard() {
         .eq('status', 'scheduled');
 
       // Calculate monthly revenue and growth
-      const startOfMonth = new Date();
-      startOfMonth.setDate(1);
-      startOfMonth.setHours(0, 0, 0, 0);
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-      const lastMonth = new Date(startOfMonth);
-      lastMonth.setMonth(lastMonth.getMonth() - 1);
+      const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+
+      // Fetch payments - Get everything from start of year or 6 months ago, whichever is earlier
+      const startOfYear = new Date(now.getFullYear(), 0, 1);
+      const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+      const fetchStartDate = startOfYear < sixMonthsAgo ? startOfYear : sixMonthsAgo;
 
       const { data: payments } = await supabase
         .from('payments')
         .select('amount, payment_date')
         .eq('status', 'paid')
-        .gte('payment_date', lastMonth.toISOString());
+        .gte('payment_date', fetchStartDate.toISOString());
+
+      if (payments) {
+        setAllPayments(payments);
+      }
 
       const currentMonthRevenue = payments
         ?.filter(p => new Date(p.payment_date) >= startOfMonth)
         .reduce((sum, p) => sum + p.amount, 0) || 0;
 
       const lastMonthRevenue = payments
-        ?.filter(p => new Date(p.payment_date) < startOfMonth)
+        ?.filter(p => {
+          const d = new Date(p.payment_date);
+          return d >= lastMonthDate && d < startOfMonth;
+        })
         .reduce((sum, p) => sum + p.amount, 0) || 0;
 
       const monthlyGrowth = lastMonthRevenue
         ? ((currentMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100
         : 0;
-
-      // Mock chart data (since we might not have enough history)
-      // In production, aggregate real payments by month
-      const chartData = [
-        { name: 'Jan', value: 2400 },
-        { name: 'Fév', value: 1398 },
-        { name: 'Mar', value: 9800 },
-        { name: 'Avr', value: 3908 },
-        { name: 'Mai', value: 4800 },
-        { name: 'Juin', value: 3800 },
-        { name: 'Juil', value: currentMonthRevenue || 4300 },
-      ];
 
       // Get recent activities
       const { data: recentActivitiesData } = await supabase
@@ -148,7 +209,7 @@ function Dashboard() {
 
       setRecentActivities(recentActivitiesData || []);
       setClientProgress(clientProgressData || []);
-      setRevenueData(chartData);
+      // Revenue data is set by useEffect via processChartData
 
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -247,9 +308,13 @@ function Dashboard() {
                 <h3 className="text-lg font-semibold text-white">Aperçu des Revenus</h3>
                 <p className="text-sm text-gray-400">Évolution mensuelle</p>
               </div>
-              <select className="bg-white/5 border border-white/10 rounded-lg px-3 py-1 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary-500">
-                <option>6 derniers mois</option>
-                <option>Cette année</option>
+              <select
+                value={timeRange}
+                onChange={(e) => setTimeRange(e.target.value as '6months' | 'year')}
+                className="bg-white/5 border border-white/10 rounded-lg px-3 py-1 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+              >
+                <option value="6months">6 derniers mois</option>
+                <option value="year">Cette année</option>
               </select>
             </div>
             <div className="h-[300px] w-full">
@@ -403,7 +468,17 @@ function Dashboard() {
   );
 }
 
-function StatCard({ title, value, subValue, icon: Icon, color, trend, isMoney }) {
+interface StatCardProps {
+  title: string;
+  value: string | number;
+  subValue: string;
+  icon: any;
+  color: 'blue' | 'purple' | 'emerald' | 'amber';
+  trend?: number;
+  isMoney?: boolean;
+}
+
+function StatCard({ title, value, subValue, icon: Icon, color, trend, isMoney }: StatCardProps) {
   const colors = {
     blue: 'from-blue-500 to-cyan-500',
     purple: 'from-purple-500 to-pink-500',
