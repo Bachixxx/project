@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ChevronLeft, Plus, Calendar as CalendarIcon, BarChart, Activity, TrendingUp } from 'lucide-react';
+import { ChevronLeft, Plus, Calendar as CalendarIcon, BarChart, Activity, TrendingUp, X } from 'lucide-react';
 import { Calendar as BigCalendar, dateFnsLocalizer } from 'react-big-calendar';
 import format from 'date-fns/format';
 import parse from 'date-fns/parse';
@@ -163,23 +163,23 @@ function ClientDetails() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+      <div className="min-h-screen bg-[#09090b] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
       </div>
     );
   }
 
   if (!client) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-6">
-        <div className="max-w-4xl mx-auto text-center text-white">
-          <h1 className="text-2xl font-bold mb-4">Client not found</h1>
+      <div className="min-h-screen bg-[#09090b] p-6 text-white">
+        <div className="max-w-4xl mx-auto text-center">
+          <h1 className="text-2xl font-bold mb-4">Client introuvable</h1>
           <Link
             to="/clients"
-            className="inline-flex items-center text-white/80 hover:text-white"
+            className="inline-flex items-center text-gray-400 hover:text-white transition-colors"
           >
             <ChevronLeft className="w-5 h-5 mr-1" />
-            Back to Clients
+            Retour aux clients
           </Link>
         </div>
       </div>
@@ -187,27 +187,70 @@ function ClientDetails() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-6">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-[#09090b] text-white p-6 font-sans">
+      <style>{`
+        .rbc-calendar { color: #9ca3af; }
+        .rbc-header { color: #e5e7eb; border-bottom: 1px solid rgba(255,255,255,0.1) !important; padding: 10px 0; }
+        .rbc-month-view { border: 1px solid rgba(255,255,255,0.1) !important; background: rgba(255,255,255,0.02); }
+        .rbc-day-bg { border-left: 1px solid rgba(255,255,255,0.1) !important; }
+        .rbc-off-range-bg { background: rgba(0,0,0,0.2) !important; }
+        .rbc-row-segment .rbc-event { background-color: #3b82f6 !important; }
+        .rbc-today { background-color: rgba(59, 130, 246, 0.1) !important; }
+        .rbc-time-view { border: 1px solid rgba(255,255,255,0.1) !important; }
+        .rbc-time-header { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+        .rbc-time-content { border-top: 1px solid rgba(255,255,255,0.1) !important; }
+        .rbc-timeslot-group { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+        .rbc-day-slot { border-left: 1px solid rgba(255,255,255,0.1) !important; }
+        .rbc-time-gutter .rbc-timeslot-group { border-right: 1px solid rgba(255,255,255,0.1) !important; }
+        .rbc-event {
+          background-color: #3b82f6 !important;
+          border: none !important;
+          border-radius: 6px !important;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+        }
+        .rbc-toolbar button {
+          color: #e5e7eb !important;
+          border: 1px solid rgba(255,255,255,0.1) !important;
+        }
+        .rbc-toolbar button:hover {
+          background-color: rgba(255,255,255,0.1) !important;
+        }
+        .rbc-toolbar button.rbc-active {
+          background-color: #3b82f6 !important;
+          border-color: #3b82f6 !important;
+          color: white !important;
+        }
+      `}</style>
+
+      {/* Background Gradients */}
+      <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
+        <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[128px]" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-cyan-600/10 rounded-full blur-[128px]" />
+      </div>
+
+      <div className="relative z-10 max-w-7xl mx-auto">
         <div className="mb-8">
           <Link
             to="/clients"
-            className="inline-flex items-center text-white/80 hover:text-white mb-4"
+            className="inline-flex items-center text-gray-400 hover:text-white mb-6 transition-colors"
           >
             <ChevronLeft className="w-5 h-5 mr-1" />
-            Back to Clients
+            Retour aux Clients
           </Link>
-          <div className="flex justify-between items-start">
+          <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-white mb-2">{client.full_name}</h1>
-              <div className="text-white/80">
-                <p>{client.email} • {client.phone}</p>
-                <p>
-                  {client.gender} • {new Date().getFullYear() - new Date(client.date_of_birth).getFullYear()} years
-                </p>
+              <h1 className="text-4xl font-bold text-white mb-2 bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">{client.full_name}</h1>
+              <div className="flex flex-wrap items-center gap-3 text-gray-400">
+                <span>{client.email}</span>
+                <span className="w-1 h-1 bg-gray-600 rounded-full"></span>
+                <span>{client.phone}</span>
+                <span className="w-1 h-1 bg-gray-600 rounded-full"></span>
+                <span>{client.gender}</span>
+                <span className="w-1 h-1 bg-gray-600 rounded-full"></span>
+                <span>{new Date().getFullYear() - new Date(client.date_of_birth).getFullYear()} ans</span>
               </div>
             </div>
-            <div className="flex gap-4">
+            <div className="flex flex-wrap gap-3">
               {client && !client.auth_id && (
                 <InviteClientButton
                   clientId={client.id}
@@ -218,60 +261,60 @@ function ClientDetails() {
               )}
               <Link
                 to={`/clients/${client.id}/analytics`}
-                className="bg-white/5 border border-white/10 backdrop-blur-lg text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-white/10 hover:border-white/20"
+                className="bg-white/5 border border-white/10 text-white px-4 py-2.5 rounded-xl flex items-center gap-2 hover:bg-white/10 hover:border-white/20 transition-all font-medium"
               >
-                <TrendingUp className="w-5 h-5" />
-                Analyse des performances
+                <TrendingUp className="w-5 h-5 text-green-400" />
+                Analyse
               </Link>
               <button
                 onClick={() => setShowAssignModal(true)}
-                className="bg-white/5 border border-white/10 backdrop-blur-lg text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-white/10 hover:border-white/20"
+                className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-4 py-2.5 rounded-xl flex items-center gap-2 hover:from-blue-700 hover:to-cyan-700 transition-all font-bold shadow-lg shadow-blue-500/20"
               >
                 <Plus className="w-5 h-5" />
-                Assign Program
+                Assigner Programme
               </button>
             </div>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white/5 border border-white/10 backdrop-blur-lg rounded-xl p-6 text-white">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-white/10 rounded-lg">
-                <Activity className="w-5 h-5" />
+          <div className="bg-[#1e293b]/50 border border-white/5 backdrop-blur-xl rounded-2xl p-6 hover:border-white/10 transition-colors">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2.5 bg-blue-500/20 rounded-xl">
+                <Activity className="w-5 h-5 text-blue-400" />
               </div>
-              <h2 className="text-lg font-semibold">Stats</h2>
+              <h2 className="text-lg font-bold text-white">Métriques</h2>
             </div>
             <div className="space-y-4">
-              <div>
-                <div className="text-white/60 text-sm">Height</div>
-                <div className="text-xl font-semibold">{client.height} cm</div>
+              <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                <span className="text-gray-400">Taille</span>
+                <span className="text-xl font-bold text-white">{client.height} cm</span>
               </div>
-              <div>
-                <div className="text-white/60 text-sm">Weight</div>
-                <div className="text-xl font-semibold">{client.weight} kg</div>
+              <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                <span className="text-gray-400">Poids</span>
+                <span className="text-xl font-bold text-white">{client.weight} kg</span>
               </div>
-              <div>
-                <div className="text-white/60 text-sm">BMI</div>
-                <div className="text-xl font-semibold">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-400">IMC</span>
+                <span className="text-xl font-bold text-white">
                   {(client.weight / Math.pow(client.height / 100, 2)).toFixed(1)}
-                </div>
+                </span>
               </div>
             </div>
           </div>
 
-          <div className="bg-white/5 border border-white/10 backdrop-blur-lg rounded-xl p-6 text-white">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-white/10 rounded-lg">
-                <BarChart className="w-5 h-5" />
+          <div className="bg-[#1e293b]/50 border border-white/5 backdrop-blur-xl rounded-2xl p-6 hover:border-white/10 transition-colors">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2.5 bg-purple-500/20 rounded-xl">
+                <BarChart className="w-5 h-5 text-purple-400" />
               </div>
-              <h2 className="text-lg font-semibold">Goals</h2>
+              <h2 className="text-lg font-bold text-white">Objectifs</h2>
             </div>
             <div className="flex flex-wrap gap-2">
               {client.fitness_goals.map((goal, index) => (
                 <span
                   key={index}
-                  className="px-3 py-1 bg-white/10 rounded-lg text-sm"
+                  className="px-3 py-1.5 bg-purple-500/10 border border-purple-500/20 rounded-lg text-sm text-purple-300"
                 >
                   {goal}
                 </span>
@@ -279,90 +322,109 @@ function ClientDetails() {
             </div>
           </div>
 
-          <div className="bg-white/5 border border-white/10 backdrop-blur-lg rounded-xl p-6 text-white">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-white/10 rounded-lg">
-                <CalendarIcon className="w-5 h-5" />
+          <div className="bg-[#1e293b]/50 border border-white/5 backdrop-blur-xl rounded-2xl p-6 hover:border-white/10 transition-colors">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2.5 bg-red-500/20 rounded-xl">
+                <Activity className="w-5 h-5 text-red-400" />
               </div>
-              <h2 className="text-lg font-semibold">Medical Info</h2>
+              <h2 className="text-lg font-bold text-white">Infos Médicales</h2>
             </div>
             <div className="space-y-2">
-              {client.medical_conditions.map((condition, index) => (
-                <div key={index} className="text-white/80">
-                  • {condition}
-                </div>
-              ))}
+              {client.medical_conditions.length > 0 ? (
+                client.medical_conditions.map((condition, index) => (
+                  <div key={index} className="flex items-start gap-2 text-gray-300">
+                    <span className="text-red-400 mt-1.5">•</span>
+                    {condition}
+                  </div>
+                ))
+              ) : (
+                <span className="text-gray-500 italic">Aucune condition signalée.</span>
+              )}
             </div>
           </div>
         </div>
 
-        <div className="bg-white/5 border border-white/10 backdrop-blur-lg rounded-xl p-6">
-          <h2 className="text-xl font-semibold text-white mb-6">Programs</h2>
-          <div className="space-y-4">
-            {clientPrograms.map((cp) => (
-              <div
-                key={cp.id}
-                className="bg-white/10 rounded-lg p-4"
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <h3 className="text-lg font-medium text-white">
-                      {cp.program.name}
-                    </h3>
-                    <p className="text-white/60">
-                      {new Date(cp.start_date).toLocaleDateString()} - {new Date(cp.end_date).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <Link
-                    to={`/workout/${cp.id}`}
-                    className="px-4 py-2 bg-white/50/20 hover:bg-white/50/30 rounded-lg text-blue-200"
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="bg-[#1e293b]/50 border border-white/5 backdrop-blur-xl rounded-2xl p-6">
+            <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+              <Activity className="w-5 h-5 text-cyan-400" />
+              Programmes Actifs
+            </h2>
+            <div className="space-y-4">
+              {clientPrograms.length > 0 ? (
+                clientPrograms.map((cp) => (
+                  <div
+                    key={cp.id}
+                    className="bg-white/5 border border-white/5 rounded-xl p-5 hover:bg-white/10 transition-colors group"
                   >
-                    Start Workout
-                  </Link>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm text-white/80">
-                    <span>Progress</span>
-                    <span>{cp.progress}%</span>
+                    <div className="flex items-start justify-between mb-4">
+                      <div>
+                        <h3 className="text-lg font-bold text-white group-hover:text-blue-400 transition-colors">
+                          {cp.program.name}
+                        </h3>
+                        <p className="text-gray-400 text-sm mt-1">
+                          {new Date(cp.start_date).toLocaleDateString()} - {new Date(cp.end_date).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <Link
+                        to={`/workout/${cp.id}`}
+                        className="px-4 py-2 bg-blue-500/10 text-blue-400 rounded-lg text-sm font-medium hover:bg-blue-500/20 transition-colors"
+                      >
+                        Voir détails
+                      </Link>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm text-gray-400">
+                        <span>Progression</span>
+                        <span className="text-white font-medium">{cp.progress}%</span>
+                      </div>
+                      <div className="w-full bg-gray-700/50 rounded-full h-2 overflow-hidden">
+                        <div
+                          className="bg-gradient-to-r from-blue-500 to-cyan-500 h-full rounded-full transition-all duration-300"
+                          style={{ width: `${cp.progress}%` }}
+                        />
+                      </div>
+                    </div>
                   </div>
-                  <div className="w-full bg-white/10 rounded-full h-2">
-                    <div
-                      className="bg-white/50 rounded-full h-2 transition-all duration-300"
-                      style={{ width: `${cp.progress}%` }}
-                    />
-                  </div>
+                ))
+              ) : (
+                <div className="text-center py-10 text-gray-500">
+                  Aucun programme assigné.
                 </div>
-              </div>
-            ))}
+              )}
+            </div>
           </div>
-        </div>
 
-        <div className="bg-white/5 border border-white/10 backdrop-blur-lg rounded-xl p-6 mt-8">
-          <h2 className="text-xl font-semibold text-white mb-6">Calendrier des séances</h2>
-          <div className="bg-white rounded-lg p-4">
-            <BigCalendar
-              localizer={localizer}
-              events={scheduledSessions}
-              startAccessor="start"
-              endAccessor="end"
-              style={{ height: 600 }}
-              views={['month', 'week', 'day']}
-              defaultView="week"
-              selectable
-              onSelectSlot={handleSelectSlot}
-              onSelectEvent={handleSelectEvent}
-              min={new Date(2024, 0, 1, 6, 0, 0)}
-              max={new Date(2024, 0, 1, 21, 0, 0)}
-              messages={{
-                next: "Suivant",
-                previous: "Précédent",
-                today: "Aujourd'hui",
-                month: "Mois",
-                week: "Semaine",
-                day: "Jour",
-                noEventsInRange: "Aucune séance programmée"
-              }}
-            />
+          <div className="bg-[#1e293b]/50 border border-white/5 backdrop-blur-xl rounded-2xl p-6 mt-8 lg:mt-0">
+            <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+              <CalendarIcon className="w-5 h-5 text-cyan-400" />
+              Calendrier
+            </h2>
+            <div className="bg-[#0f172a] rounded-xl p-4 border border-white/5">
+              <BigCalendar
+                localizer={localizer}
+                events={scheduledSessions}
+                startAccessor="start"
+                endAccessor="end"
+                style={{ height: 600 }}
+                views={['month', 'week', 'day']}
+                defaultView="week"
+                selectable
+                onSelectSlot={handleSelectSlot}
+                onSelectEvent={handleSelectEvent}
+                min={new Date(2024, 0, 1, 6, 0, 0)}
+                max={new Date(2024, 0, 1, 21, 0, 0)}
+                messages={{
+                  next: "Suivant",
+                  previous: "Précédent",
+                  today: "Aujourd'hui",
+                  month: "Mois",
+                  week: "Semaine",
+                  day: "Jour",
+                  noEventsInRange: "Aucune séance programmée"
+                }}
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -433,7 +495,7 @@ function AssignProgramModal({ clientId, onClose, onAssign }) {
   const handleAssign = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedProgram) return;
-    
+
     try {
       setLoading(true);
       const program = programs.find(p => p.id === selectedProgram);
@@ -454,12 +516,6 @@ function AssignProgramModal({ clientId, onClose, onAssign }) {
         }]);
 
       if (error) throw error;
-      console.log("Program assigned successfully:", {
-        client_id: clientId,
-        program_id: selectedProgram,
-        start_date: startDate,
-        end_date: endDate.toISOString().split('T')[0]
-      });
       onAssign();
     } catch (error) {
       console.error('Error assigning program:', error);
@@ -470,62 +526,62 @@ function AssignProgramModal({ clientId, onClose, onAssign }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-md w-full">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
+      <div className="bg-[#1e293b] border border-white/10 rounded-2xl max-w-md w-full overflow-hidden shadow-2xl">
         <div className="p-6">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold">Assign Program</h2>
+            <h2 className="text-2xl font-bold text-white">Assigner un Programme</h2>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-500"
+              className="text-gray-400 hover:text-white transition-colors p-1 hover:bg-white/10 rounded-lg"
             >
-              <ChevronLeft className="w-6 h-6" />
+              <X className="w-5 h-5" />
             </button>
           </div>
 
           <form onSubmit={handleAssign} className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Program</label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Choisir un programme</label>
               <select
                 value={selectedProgram}
                 onChange={(e) => setSelectedProgram(e.target.value)}
                 required
-                className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                className="w-full rounded-xl bg-white/5 border border-white/10 text-white p-3 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
               >
-                <option value="">Select a program</option>
+                <option value="" className="bg-[#1e293b]">Sélectionner un programme</option>
                 {programs.map((program) => (
-                  <option key={program.id} value={program.id}>
-                    {program.name} ({program.duration_weeks} weeks)
+                  <option key={program.id} value={program.id} className="bg-[#1e293b]">
+                    {program.name} ({program.duration_weeks} semaines)
                   </option>
                 ))}
               </select>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Start Date</label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Date de début</label>
               <input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
                 required
-                className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                className="w-full rounded-xl bg-white/5 border border-white/10 text-white p-3 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
               />
             </div>
 
-            <div className="flex justify-end gap-4">
+            <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 border border-gray-500 rounded-lg hover:bg-gray-50 text-gray-700"
+                className="px-4 py-2 rounded-xl text-gray-300 hover:text-white hover:bg-white/5 transition-colors font-medium"
               >
-                Cancel
+                Annuler
               </button>
               <button
                 type="submit"
-                disabled={!selectedProgram}
-                className="px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:from-blue-600 hover:to-cyan-600 shadow-lg shadow-blue-500/25"
+                disabled={!selectedProgram || loading}
+                className="px-6 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl hover:from-blue-700 hover:to-cyan-700 shadow-lg shadow-blue-500/20 font-bold disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Assign Program
+                {loading ? 'Assignation...' : 'Assigner'}
               </button>
             </div>
           </form>

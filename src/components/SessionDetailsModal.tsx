@@ -171,9 +171,9 @@ export function SessionDetailsModal({ scheduledSessionId, onClose, onStatusChang
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-        <div className="bg-white rounded-xl p-8">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
+        <div className="bg-[#1e293b] rounded-xl p-8 border border-white/10 shadow-2xl">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
         </div>
       </div>
     );
@@ -184,20 +184,20 @@ export function SessionDetailsModal({ scheduledSessionId, onClose, onStatusChang
   }
 
   const statusColors = {
-    scheduled: 'bg-blue-100 text-blue-800',
-    completed: 'bg-green-100 text-green-800',
-    cancelled: 'bg-red-100 text-red-800',
-    in_progress: 'bg-yellow-100 text-yellow-800'
+    scheduled: 'bg-blue-500/20 text-blue-400 border border-blue-500/30',
+    completed: 'bg-green-500/20 text-green-400 border border-green-500/30',
+    cancelled: 'bg-red-500/20 text-red-400 border border-red-500/30',
+    in_progress: 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-        <div className="p-6 border-b border-gray-200">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
+      <div className="bg-[#1e293b] border border-white/10 rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
+        <div className="p-6 border-b border-white/10 bg-white/5">
           <div className="flex justify-between items-start">
             <div>
-              <h2 className="text-2xl font-bold text-gray-800">{session.session.name}</h2>
-              <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium mt-2 ${statusColors[session.status] || statusColors.scheduled}`}>
+              <h2 className="text-2xl font-bold text-white mb-2">{session.session.name}</h2>
+              <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${statusColors[session.status] || statusColors.scheduled}`}>
                 {session.status === 'scheduled' && 'Programmée'}
                 {session.status === 'completed' && 'Complétée'}
                 {session.status === 'cancelled' && 'Annulée'}
@@ -206,21 +206,23 @@ export function SessionDetailsModal({ scheduledSessionId, onClose, onStatusChang
             </div>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 hover:text-gray-800 transition-colors"
+              className="p-2 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
           <div className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
-              <div className="flex items-center gap-3 text-gray-700">
-                <Calendar className="w-5 h-5 text-gray-400" />
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/5 rounded-lg">
+                  <Calendar className="w-5 h-5 text-blue-400" />
+                </div>
                 <div>
-                  <div className="text-sm text-gray-500">Date</div>
-                  <div className="font-medium">
+                  <div className="text-sm text-gray-400">Date</div>
+                  <div className="font-medium text-white">
                     {new Date(session.scheduled_date).toLocaleDateString('fr-FR', {
                       weekday: 'long',
                       year: 'numeric',
@@ -231,11 +233,13 @@ export function SessionDetailsModal({ scheduledSessionId, onClose, onStatusChang
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 text-gray-700">
-                <Clock className="w-5 h-5 text-gray-400" />
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/5 rounded-lg">
+                  <Clock className="w-5 h-5 text-blue-400" />
+                </div>
                 <div>
-                  <div className="text-sm text-gray-500">Heure</div>
-                  <div className="font-medium">
+                  <div className="text-sm text-gray-400">Heure</div>
+                  <div className="font-medium text-white">
                     {new Date(session.scheduled_date).toLocaleTimeString('fr-FR', {
                       hour: '2-digit',
                       minute: '2-digit'
@@ -244,30 +248,34 @@ export function SessionDetailsModal({ scheduledSessionId, onClose, onStatusChang
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 text-gray-700">
-                <User className="w-5 h-5 text-gray-400" />
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/5 rounded-lg">
+                  <User className="w-5 h-5 text-purple-400" />
+                </div>
                 <div>
-                  <div className="text-sm text-gray-500">Client</div>
-                  <div className="font-medium">{session.client.full_name}</div>
+                  <div className="text-sm text-gray-400">Client</div>
+                  <div className="font-medium text-white">{session.client.full_name}</div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 text-gray-700">
-                <Clock className="w-5 h-5 text-gray-400" />
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/5 rounded-lg">
+                  <Clock className="w-5 h-5 text-gray-400" />
+                </div>
                 <div>
-                  <div className="text-sm text-gray-500">Durée</div>
-                  <div className="font-medium">{session.session.duration_minutes} minutes</div>
+                  <div className="text-sm text-gray-400">Durée</div>
+                  <div className="font-medium text-white">{session.session.duration_minutes} minutes</div>
                 </div>
               </div>
             </div>
 
             {session.session.description && (
               <div>
-                <h3 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                  <FileText className="w-4 h-4" />
+                <h3 className="text-sm font-semibold text-gray-300 mb-2 flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-blue-400" />
                   Description
                 </h3>
-                <p className="text-gray-600 bg-gray-50 rounded-lg p-3">
+                <p className="text-gray-300 bg-white/5 border border-white/10 rounded-xl p-4 leading-relaxed">
                   {session.session.description}
                 </p>
               </div>
@@ -275,49 +283,49 @@ export function SessionDetailsModal({ scheduledSessionId, onClose, onStatusChang
 
             {workoutItems.length > 0 && (
               <div>
-                <h3 className="text-lg font-semibold text-gray-800 mb-3">Composition de la séance</h3>
+                <h3 className="text-lg font-bold text-white mb-4">Composition de la séance</h3>
                 <div className="space-y-3">
                   {workoutItems.map((item, index) => (
                     item.type === 'exercise' ? (
-                      <div key={index} className="bg-blue-50 rounded-lg p-3 border-2 border-blue-200">
-                        <div className="font-medium text-gray-800 mb-2">{item.data.name}</div>
-                        <div className="flex gap-4 text-sm text-gray-600">
-                          <span>{item.data.sets} séries</span>
-                          <span>•</span>
-                          <span>{item.data.reps} reps</span>
-                          <span>•</span>
-                          <span>{item.data.rest_time}s repos</span>
+                      <div key={index} className="bg-white/5 rounded-xl p-4 border border-white/10 hover:bg-white/10 transition-colors">
+                        <div className="font-bold text-white mb-2 text-lg">{item.data.name}</div>
+                        <div className="flex flex-wrap gap-4 text-sm text-gray-300">
+                          <span className="bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded border border-blue-500/30">{item.data.sets} séries</span>
+                          <span className="text-gray-600">•</span>
+                          <span className="bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded border border-purple-500/30">{item.data.reps} reps</span>
+                          <span className="text-gray-600">•</span>
+                          <span className="bg-orange-500/20 text-orange-300 px-2 py-0.5 rounded border border-orange-500/30">{item.data.rest_time}s repos</span>
                         </div>
                         {item.data.instructions && (
-                          <div className="mt-2 text-sm text-gray-600 italic">
+                          <div className="mt-3 text-sm text-gray-400 italic bg-black/20 p-2 rounded-lg border-l-2 border-gray-500">
                             {item.data.instructions}
                           </div>
                         )}
                       </div>
                     ) : (
-                      <div key={index} className="bg-green-50 rounded-lg p-4 border-2 border-green-200">
-                        <div className="flex justify-between items-center mb-3">
-                          <h4 className="font-semibold text-gray-800 flex items-center gap-2">
-                            <Layers className="w-4 h-4" />
+                      <div key={index} className="bg-green-500/5 rounded-xl p-5 border border-green-500/20">
+                        <div className="flex justify-between items-center mb-4">
+                          <h4 className="font-bold text-white flex items-center gap-2 text-lg">
+                            <Layers className="w-5 h-5 text-green-400" />
                             {item.data.name}
                           </h4>
-                          <span className="text-sm font-medium text-green-700 bg-green-100 px-3 py-1 rounded-full">
+                          <span className="text-sm font-bold text-green-400 bg-green-500/20 px-3 py-1 rounded-full border border-green-500/30">
                             {item.data.repetitions} tours
                           </span>
                         </div>
-                        <div className="space-y-2">
+                        <div className="space-y-3 pl-4 border-l-2 border-green-500/20">
                           {item.data.exercises.map((exercise, exIndex) => (
-                            <div key={exIndex} className="bg-white rounded-lg p-3 border border-green-200">
-                              <div className="font-medium text-gray-800 mb-1 text-sm">{exercise.name}</div>
-                              <div className="flex gap-3 text-xs text-gray-600">
-                                <span>{exercise.sets} séries</span>
+                            <div key={exIndex} className="bg-white/5 rounded-lg p-3 border border-white/10">
+                              <div className="font-medium text-white mb-2">{exercise.name}</div>
+                              <div className="flex flex-wrap gap-3 text-xs text-gray-300">
+                                <span className="bg-blue-500/10 text-blue-300 px-2 py-0.5 rounded">{exercise.sets} séries</span>
                                 <span>•</span>
-                                <span>{exercise.reps} reps</span>
+                                <span className="bg-purple-500/10 text-purple-300 px-2 py-0.5 rounded">{exercise.reps} reps</span>
                                 <span>•</span>
-                                <span>{exercise.rest_time}s repos</span>
+                                <span className="bg-orange-500/10 text-orange-300 px-2 py-0.5 rounded">{exercise.rest_time}s repos</span>
                               </div>
                               {exercise.instructions && (
-                                <div className="mt-2 text-xs text-gray-600 italic">
+                                <div className="mt-2 text-xs text-gray-400 italic">
                                   {exercise.instructions}
                                 </div>
                               )}
@@ -333,11 +341,11 @@ export function SessionDetailsModal({ scheduledSessionId, onClose, onStatusChang
 
             {session.notes && (
               <div>
-                <h3 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                  <FileText className="w-4 h-4" />
+                <h3 className="text-sm font-semibold text-gray-300 mb-2 flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-blue-400" />
                   Notes pour le client
                 </h3>
-                <p className="text-gray-600 bg-blue-50 rounded-lg p-3 border border-blue-200">
+                <p className="text-gray-300 bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 leading-relaxed">
                   {session.notes}
                 </p>
               </div>
@@ -345,11 +353,11 @@ export function SessionDetailsModal({ scheduledSessionId, onClose, onStatusChang
           </div>
         </div>
 
-        <div className="border-t border-gray-200 p-6">
+        <div className="border-t border-white/10 p-6 bg-white/5">
           <div className="flex justify-between items-center gap-3">
             <button
               onClick={onClose}
-              className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+              className="px-4 py-2 border border-white/10 rounded-xl text-gray-300 hover:bg-white/10 hover:text-white transition-colors"
             >
               Fermer
             </button>
@@ -358,14 +366,14 @@ export function SessionDetailsModal({ scheduledSessionId, onClose, onStatusChang
               <div className="flex gap-3">
                 <button
                   onClick={() => handleStatusChange('cancelled')}
-                  className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 bg-red-500/10 text-red-400 border border-red-500/20 rounded-xl hover:bg-red-500/20 transition-colors font-medium"
                 >
                   <XCircle className="w-4 h-4" />
                   Annuler
                 </button>
                 <button
                   onClick={() => handleStatusChange('completed')}
-                  className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:from-green-700 hover:to-emerald-700 shadow-lg shadow-green-500/20 transition-all font-bold"
                 >
                   <CheckCircle className="w-4 h-4" />
                   Marquer comme complétée

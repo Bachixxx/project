@@ -417,16 +417,16 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-        <div className="p-6 border-b border-gray-200">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
+      <div className="bg-[#1e293b] border border-white/10 rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
+        <div className="p-6 border-b border-white/10">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold text-gray-800">
+            <h2 className="text-2xl font-bold text-white">
               {step === 0 ? 'Planifier une séance' : sessionMode === 'existing' ? 'Utiliser une séance existante' : 'Créer et planifier une séance'}
             </h2>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 hover:text-gray-800 transition-colors"
+              className="p-2 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -434,22 +434,22 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
 
           {step > 0 && sessionMode === 'new' && (
             <div className="flex items-center justify-center gap-2">
-              <div className={`flex items-center gap-2 ${step >= 1 ? 'text-blue-600' : 'text-gray-400'}`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold ${step >= 1 ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
+              <div className={`flex items-center gap-2 ${step >= 1 ? 'text-blue-400' : 'text-gray-600'}`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold ${step >= 1 ? 'bg-blue-600 text-white' : 'bg-gray-800 border border-white/10'}`}>
                   1
                 </div>
                 <span className="text-sm font-medium hidden sm:inline">Détails</span>
               </div>
-              <div className="w-12 h-0.5 bg-gray-300"></div>
-              <div className={`flex items-center gap-2 ${step >= 2 ? 'text-blue-600' : 'text-gray-400'}`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold ${step >= 2 ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
+              <div className="w-12 h-0.5 bg-gray-700"></div>
+              <div className={`flex items-center gap-2 ${step >= 2 ? 'text-blue-400' : 'text-gray-600'}`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold ${step >= 2 ? 'bg-blue-600 text-white' : 'bg-gray-800 border border-white/10'}`}>
                   2
                 </div>
                 <span className="text-sm font-medium hidden sm:inline">Exercices</span>
               </div>
-              <div className="w-12 h-0.5 bg-gray-300"></div>
-              <div className={`flex items-center gap-2 ${step >= 3 ? 'text-blue-600' : 'text-gray-400'}`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold ${step >= 3 ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
+              <div className="w-12 h-0.5 bg-gray-700"></div>
+              <div className={`flex items-center gap-2 ${step >= 3 ? 'text-blue-400' : 'text-gray-600'}`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold ${step >= 3 ? 'bg-blue-600 text-white' : 'bg-gray-800 border border-white/10'}`}>
                   3
                 </div>
                 <span className="text-sm font-medium hidden sm:inline">Planning</span>
@@ -459,8 +459,8 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
 
           {step > 0 && sessionMode === 'existing' && (
             <div className="flex items-center justify-center gap-2">
-              <div className={`flex items-center gap-2 ${step >= 1 ? 'text-blue-600' : 'text-gray-400'}`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold ${step >= 1 ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
+              <div className={`flex items-center gap-2 ${step >= 1 ? 'text-blue-400' : 'text-gray-600'}`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold ${step >= 1 ? 'bg-blue-600 text-white' : 'bg-gray-800 border border-white/10'}`}>
                   1
                 </div>
                 <span className="text-sm font-medium hidden sm:inline">Planning</span>
@@ -482,10 +482,10 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
           }}
           className="flex flex-col flex-1 overflow-hidden"
         >
-          <div className="flex-1 overflow-y-auto p-6">
+          <div className="flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
             {step === 0 && (
               <div className="space-y-4 max-w-2xl mx-auto">
-                <p className="text-center text-gray-600 mb-6">
+                <p className="text-center text-gray-400 mb-6">
                   Choisissez comment vous souhaitez créer cette séance
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -495,14 +495,14 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
                       setSessionMode('new');
                       setStep(1);
                     }}
-                    className="p-6 rounded-xl border-2 border-gray-300 hover:border-blue-500 hover:bg-blue-50 transition-all group"
+                    className="p-6 rounded-2xl border-2 border-white/10 hover:border-blue-500 hover:bg-blue-500/10 transition-all group bg-white/5"
                   >
                     <div className="flex flex-col items-center gap-3">
-                      <div className="w-16 h-16 rounded-full bg-blue-100 group-hover:bg-blue-200 flex items-center justify-center transition-colors">
-                        <Plus className="w-8 h-8 text-blue-600" />
+                      <div className="w-16 h-16 rounded-full bg-blue-500/20 group-hover:bg-blue-500/30 flex items-center justify-center transition-colors">
+                        <Plus className="w-8 h-8 text-blue-400" />
                       </div>
-                      <h3 className="text-lg font-semibold text-gray-800">Créer une nouvelle séance</h3>
-                      <p className="text-sm text-gray-600 text-center">
+                      <h3 className="text-lg font-bold text-white">Créer une nouvelle séance</h3>
+                      <p className="text-sm text-gray-400 text-center">
                         Composez une séance personnalisée avec des exercices et circuits
                       </p>
                     </div>
@@ -515,14 +515,14 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
                       setStep(1);
                     }}
                     disabled={existingSessions.length === 0}
-                    className="p-6 rounded-xl border-2 border-gray-300 hover:border-green-500 hover:bg-green-50 transition-all group disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-gray-300 disabled:hover:bg-transparent"
+                    className="p-6 rounded-2xl border-2 border-white/10 hover:border-green-500 hover:bg-green-500/10 transition-all group bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-white/10 disabled:hover:bg-white/5"
                   >
                     <div className="flex flex-col items-center gap-3">
-                      <div className="w-16 h-16 rounded-full bg-green-100 group-hover:bg-green-200 flex items-center justify-center transition-colors">
-                        <BookOpen className="w-8 h-8 text-green-600" />
+                      <div className="w-16 h-16 rounded-full bg-green-500/20 group-hover:bg-green-500/30 flex items-center justify-center transition-colors">
+                        <BookOpen className="w-8 h-8 text-green-400" />
                       </div>
-                      <h3 className="text-lg font-semibold text-gray-800">Utiliser une séance existante</h3>
-                      <p className="text-sm text-gray-600 text-center">
+                      <h3 className="text-lg font-bold text-white">Utiliser une séance existante</h3>
+                      <p className="text-sm text-gray-400 text-center">
                         {existingSessions.length > 0
                           ? `Choisir parmi vos ${existingSessions.length} séance${existingSessions.length > 1 ? 's' : ''}`
                           : 'Aucune séance disponible'}
@@ -536,10 +536,10 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
             {step === 1 && sessionMode === 'existing' && (
               <div className="space-y-4 max-w-2xl mx-auto">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                  <label className="block text-sm font-medium text-gray-300 mb-3">
                     Sélectionner une séance existante *
                   </label>
-                  <div className="space-y-2 max-h-96 overflow-y-auto">
+                  <div className="space-y-2 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10">
                     {existingSessions.map((session) => (
                       <button
                         key={session.id}
@@ -548,15 +548,14 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
                           setSelectedSessionId(session.id);
                           setFormData(prev => ({ ...prev, duration_minutes: session.duration_minutes }));
                         }}
-                        className={`w-full p-4 rounded-lg border-2 transition-all text-left ${
-                          selectedSessionId === session.id
-                            ? 'border-green-500 bg-green-50'
-                            : 'border-gray-300 hover:border-green-400 hover:bg-green-50'
-                        }`}
+                        className={`w-full p-4 rounded-xl border transition-all text-left ${selectedSessionId === session.id
+                            ? 'border-green-500 bg-green-500/10'
+                            : 'border-white/10 bg-white/5 hover:border-green-500/50 hover:bg-white/10'
+                          }`}
                       >
-                        <h4 className="font-semibold text-gray-800 mb-1">{session.name}</h4>
+                        <h4 className="font-bold text-white mb-1">{session.name}</h4>
                         {session.description && (
-                          <p className="text-sm text-gray-600 mb-2">{session.description}</p>
+                          <p className="text-sm text-gray-400 mb-2">{session.description}</p>
                         )}
                         <p className="text-xs text-gray-500">{session.duration_minutes} minutes</p>
                       </button>
@@ -565,7 +564,7 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+                  <label className="block text-sm font-medium text-gray-300 mb-1 flex items-center gap-2">
                     <Calendar className="w-4 h-4" />
                     Date *
                   </label>
@@ -576,12 +575,12 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
                     onChange={handleChange}
                     min={new Date().toISOString().split('T')[0]}
                     required
-                    className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900"
+                    className="w-full rounded-xl bg-white/5 border border-white/10 text-white p-3 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+                  <label className="block text-sm font-medium text-gray-300 mb-1 flex items-center gap-2">
                     <Clock className="w-4 h-4" />
                     Heure *
                   </label>
@@ -591,31 +590,28 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
                     value={formData.scheduled_time}
                     onChange={handleChange}
                     required
-                    className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900"
+                    className="w-full rounded-xl bg-white/5 border border-white/10 text-white p-3 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                  <label className="block text-sm font-medium text-gray-300 mb-3">
                     Mode de paiement *
                   </label>
                   <div className="grid grid-cols-2 gap-3">
                     <button
                       type="button"
                       onClick={() => setFormData({ ...formData, payment_method: 'online' })}
-                      className={`p-4 rounded-lg border-2 transition-all ${
-                        formData.payment_method === 'online'
-                          ? 'border-blue-500 bg-blue-50'
-                          : 'border-gray-300 hover:border-gray-400'
-                      }`}
+                      className={`p-4 rounded-xl border transition-all ${formData.payment_method === 'online'
+                          ? 'border-blue-500 bg-blue-500/10'
+                          : 'border-white/10 bg-white/5 hover:bg-white/10'
+                        }`}
                     >
                       <div className="flex flex-col items-center gap-2">
-                        <CreditCard className={`w-6 h-6 ${
-                          formData.payment_method === 'online' ? 'text-blue-600' : 'text-gray-600'
-                        }`} />
-                        <span className={`text-sm font-medium ${
-                          formData.payment_method === 'online' ? 'text-blue-900' : 'text-gray-700'
-                        }`}>
+                        <CreditCard className={`w-6 h-6 ${formData.payment_method === 'online' ? 'text-blue-400' : 'text-gray-400'
+                          }`} />
+                        <span className={`text-sm font-medium ${formData.payment_method === 'online' ? 'text-blue-300' : 'text-gray-300'
+                          }`}>
                           En ligne
                         </span>
                         <span className="text-xs text-gray-500 text-center">
@@ -627,19 +623,16 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
                     <button
                       type="button"
                       onClick={() => setFormData({ ...formData, payment_method: 'in_person' })}
-                      className={`p-4 rounded-lg border-2 transition-all ${
-                        formData.payment_method === 'in_person'
-                          ? 'border-blue-500 bg-blue-50'
-                          : 'border-gray-300 hover:border-gray-400'
-                      }`}
+                      className={`p-4 rounded-xl border transition-all ${formData.payment_method === 'in_person'
+                          ? 'border-blue-500 bg-blue-500/10'
+                          : 'border-white/10 bg-white/5 hover:bg-white/10'
+                        }`}
                     >
                       <div className="flex flex-col items-center gap-2">
-                        <Banknote className={`w-6 h-6 ${
-                          formData.payment_method === 'in_person' ? 'text-blue-600' : 'text-gray-600'
-                        }`} />
-                        <span className={`text-sm font-medium ${
-                          formData.payment_method === 'in_person' ? 'text-blue-900' : 'text-gray-700'
-                        }`}>
+                        <Banknote className={`w-6 h-6 ${formData.payment_method === 'in_person' ? 'text-blue-400' : 'text-gray-400'
+                          }`} />
+                        <span className={`text-sm font-medium ${formData.payment_method === 'in_person' ? 'text-blue-300' : 'text-gray-300'
+                          }`}>
                           Sur place
                         </span>
                         <span className="text-xs text-gray-500 text-center">
@@ -651,7 +644,7 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
                     Notes pour le client (optionnel)
                   </label>
                   <textarea
@@ -665,7 +658,7 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
                     }}
                     rows={4}
                     placeholder="Instructions spéciales pour le client..."
-                    className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900"
+                    className="w-full rounded-xl bg-white/5 border border-white/10 text-white p-3 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
               </div>
@@ -674,7 +667,7 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
             {step === 1 && sessionMode === 'new' && (
               <div className="space-y-4 max-w-xl mx-auto">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
                     Nom de la séance *
                   </label>
                   <input
@@ -684,12 +677,12 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
                     onChange={handleChange}
                     required
                     placeholder="Ex: Entraînement du haut du corps"
-                    className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900"
+                    className="w-full rounded-xl bg-white/5 border border-white/10 text-white p-3 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
                     Description
                   </label>
                   <textarea
@@ -698,12 +691,12 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
                     onChange={handleChange}
                     rows={3}
                     placeholder="Description de la séance..."
-                    className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900"
+                    className="w-full rounded-xl bg-white/5 border border-white/10 text-white p-3 focus:outline-none focus:border-blue-500 focus:ring-1 focus:border-blue-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
                     Durée (minutes) *
                   </label>
                   <input
@@ -715,7 +708,7 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
                     min="15"
                     max="240"
                     step="15"
-                    className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900"
+                    className="w-full rounded-xl bg-white/5 border border-white/10 text-white p-3 focus:outline-none focus:border-blue-500 focus:ring-1 focus:border-blue-500"
                   />
                 </div>
               </div>
@@ -725,13 +718,13 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
               <div className="space-y-6">
                 <div>
                   <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-semibold text-gray-800">Composition de la séance</h3>
+                    <h3 className="text-lg font-bold text-white">Composition de la séance</h3>
                     <div className="flex gap-2">
                       <button
                         type="button"
                         onClick={handleAddExercise}
                         disabled={exercises.length === 0}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition-colors text-sm"
+                        className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-700 disabled:text-gray-500 transition-colors text-sm"
                       >
                         <Plus className="w-4 h-4" />
                         Ajouter exercice
@@ -740,7 +733,7 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
                         type="button"
                         onClick={handleAddGroup}
                         disabled={exercises.length === 0}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 transition-colors text-sm"
+                        className="flex items-center gap-2 px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-700 disabled:text-gray-500 transition-colors text-sm"
                       >
                         <Layers className="w-4 h-4" />
                         Ajouter circuit
@@ -749,7 +742,7 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
                   </div>
 
                   {exercises.length === 0 && (
-                    <p className="text-sm text-gray-500 mb-4 bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+                    <p className="text-sm text-yellow-300 mb-4 bg-yellow-500/10 p-3 rounded-lg border border-yellow-500/20">
                       Vous n'avez pas encore d'exercices. Créez-en d'abord dans la section Exercices.
                     </p>
                   )}
@@ -763,22 +756,22 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
                           onDragStart={() => handleDragStart(index)}
                           onDragOver={(e) => handleDragOver(e)}
                           onDrop={() => handleDrop(index)}
-                          className="bg-blue-50 rounded-lg p-3 border-2 border-blue-200 cursor-move hover:bg-blue-100 transition-colors"
+                          className="bg-blue-500/5 rounded-xl p-3 border border-blue-500/20 cursor-move hover:bg-blue-500/10 transition-colors"
                         >
                           <div className="flex gap-2 mb-2">
                             <button
                               type="button"
-                              className="cursor-grab active:cursor-grabbing text-blue-600 hover:text-blue-700"
+                              className="cursor-grab active:cursor-grabbing text-blue-400 hover:text-blue-300"
                             >
                               <GripVertical className="w-4 h-4" />
                             </button>
                             <select
                               value={item.data.exercise_id}
                               onChange={(e) => handleExerciseChange(index, 'exercise_id', e.target.value)}
-                              className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900 text-sm"
+                              className="flex-1 rounded-lg bg-white/5 border-white/10 text-white text-sm focus:border-blue-500 focus:ring-blue-500"
                             >
                               {exercises.map((exercise) => (
-                                <option key={exercise.id} value={exercise.id}>
+                                <option key={exercise.id} value={exercise.id} className="bg-[#1e293b]">
                                   {exercise.name}
                                 </option>
                               ))}
@@ -786,7 +779,7 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
                             <button
                               type="button"
                               onClick={() => handleRemoveItem(index)}
-                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                              className="p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -794,7 +787,7 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
 
                           <div className="grid grid-cols-3 gap-2">
                             <div>
-                              <label className="block text-xs font-medium text-gray-600 mb-1">
+                              <label className="block text-xs font-medium text-gray-400 mb-1">
                                 Séries
                               </label>
                               <input
@@ -803,11 +796,11 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
                                 onChange={(e) => handleExerciseChange(index, 'sets', parseInt(e.target.value))}
                                 min="1"
                                 max="10"
-                                className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900 text-sm"
+                                className="w-full rounded-lg bg-white/5 border-white/10 text-white text-sm focus:border-blue-500 focus:ring-blue-500"
                               />
                             </div>
                             <div>
-                              <label className="block text-xs font-medium text-gray-600 mb-1">
+                              <label className="block text-xs font-medium text-gray-400 mb-1">
                                 Reps
                               </label>
                               <input
@@ -816,11 +809,11 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
                                 onChange={(e) => handleExerciseChange(index, 'reps', parseInt(e.target.value))}
                                 min="1"
                                 max="100"
-                                className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900 text-sm"
+                                className="w-full rounded-lg bg-white/5 border-white/10 text-white text-sm focus:border-blue-500 focus:ring-blue-500"
                               />
                             </div>
                             <div>
-                              <label className="block text-xs font-medium text-gray-600 mb-1">
+                              <label className="block text-xs font-medium text-gray-400 mb-1">
                                 Repos (s)
                               </label>
                               <input
@@ -830,7 +823,7 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
                                 min="0"
                                 max="600"
                                 step="15"
-                                className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900 text-sm"
+                                className="w-full rounded-lg bg-white/5 border-white/10 text-white text-sm focus:border-blue-500 focus:ring-blue-500"
                               />
                             </div>
                           </div>
@@ -842,12 +835,12 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
                           onDragStart={() => handleDragStart(index)}
                           onDragOver={(e) => handleDragOver(e)}
                           onDrop={() => handleDrop(index)}
-                          className="bg-green-50 rounded-lg p-4 border-2 border-green-200 cursor-move hover:bg-green-100 transition-colors"
+                          className="bg-green-500/5 rounded-xl p-4 border border-green-500/20 cursor-move hover:bg-green-500/10 transition-colors"
                         >
                           <div className="flex gap-2 mb-3">
                             <button
                               type="button"
-                              className="cursor-grab active:cursor-grabbing text-green-600 hover:text-green-700"
+                              className="cursor-grab active:cursor-grabbing text-green-400 hover:text-green-300"
                             >
                               <GripVertical className="w-5 h-5" />
                             </button>
@@ -856,7 +849,7 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
                               value={item.data.name}
                               onChange={(e) => handleGroupChange(index, 'name', e.target.value)}
                               placeholder="Nom du circuit"
-                              className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 text-gray-900 font-medium"
+                              className="flex-1 rounded-lg bg-white/5 border-white/10 text-white font-medium focus:border-green-500 focus:ring-green-500"
                             />
                             <input
                               type="number"
@@ -864,13 +857,13 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
                               onChange={(e) => handleGroupChange(index, 'repetitions', parseInt(e.target.value))}
                               min="1"
                               max="10"
-                              className="w-20 rounded-lg border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 text-gray-900"
+                              className="w-20 rounded-lg bg-white/5 border-white/10 text-white focus:border-green-500 focus:ring-green-500"
                               title="Nombre de tours"
                             />
                             <button
                               type="button"
                               onClick={() => handleRemoveItem(index)}
-                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                              className="p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -884,22 +877,22 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
                                 onDragStart={() => handleDragStartGroupExercise(index, exIndex)}
                                 onDragOver={(e) => { e.preventDefault(); }}
                                 onDrop={() => handleDropGroupExercise(index, exIndex)}
-                                className="bg-white rounded-lg p-2 border border-green-200 cursor-move hover:bg-gray-50 transition-colors"
+                                className="bg-white/5 rounded-lg p-2 border border-white/10 cursor-move hover:bg-white/10 transition-colors"
                               >
                                 <div className="flex gap-2 mb-2">
                                   <button
                                     type="button"
-                                    className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600"
+                                    className="cursor-grab active:cursor-grabbing text-gray-500 hover:text-gray-300"
                                   >
                                     <GripVertical className="w-3.5 h-3.5" />
                                   </button>
                                   <select
                                     value={ex.exercise_id}
                                     onChange={(e) => handleGroupExerciseChange(index, exIndex, 'exercise_id', e.target.value)}
-                                    className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 text-gray-900 text-sm"
+                                    className="flex-1 rounded-lg bg-white/5 border-white/10 text-white text-sm focus:border-green-500 focus:ring-green-500"
                                   >
                                     {exercises.map((exercise) => (
-                                      <option key={exercise.id} value={exercise.id}>
+                                      <option key={exercise.id} value={exercise.id} className="bg-[#1e293b]">
                                         {exercise.name}
                                       </option>
                                     ))}
@@ -907,7 +900,7 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
                                   <button
                                     type="button"
                                     onClick={() => handleRemoveExerciseFromGroup(index, exIndex)}
-                                    className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
+                                    className="p-1.5 text-red-400 hover:bg-red-500/10 rounded transition-colors"
                                   >
                                     <Trash2 className="w-3.5 h-3.5" />
                                   </button>
@@ -921,7 +914,7 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
                                       min="1"
                                       max="10"
                                       placeholder="Séries"
-                                      className="w-full rounded border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 text-gray-900 text-xs"
+                                      className="w-full rounded bg-white/5 border-white/10 text-white text-xs focus:border-green-500 focus:ring-green-500"
                                     />
                                   </div>
                                   <div>
@@ -932,7 +925,7 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
                                       min="1"
                                       max="100"
                                       placeholder="Reps"
-                                      className="w-full rounded border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 text-gray-900 text-xs"
+                                      className="w-full rounded bg-white/5 border-white/10 text-white text-xs focus:border-green-500 focus:ring-green-500"
                                     />
                                   </div>
                                   <div>
@@ -940,22 +933,22 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
                                       type="number"
                                       value={ex.rest_time}
                                       onChange={(e) => handleGroupExerciseChange(index, exIndex, 'rest_time', parseInt(e.target.value))}
-                                    min="0"
-                                    max="600"
-                                    step="15"
-                                    placeholder="Repos"
-                                    className="w-full rounded border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 text-gray-900 text-xs"
-                                  />
+                                      min="0"
+                                      max="600"
+                                      step="15"
+                                      placeholder="Repos"
+                                      className="w-full rounded bg-white/5 border-white/10 text-white text-xs focus:border-green-500 focus:ring-green-500"
+                                    />
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                              ))}
+                            ))}
                           </div>
 
                           <button
                             type="button"
                             onClick={() => handleAddExerciseToGroup(index)}
-                            className="w-full py-2 text-sm text-green-700 hover:bg-green-100 rounded-lg transition-colors border border-green-300 border-dashed"
+                            className="w-full py-2 text-sm text-green-400 hover:bg-green-500/10 rounded-lg transition-colors border border-green-500/30 border-dashed"
                           >
                             + Ajouter un exercice
                           </button>
@@ -970,7 +963,7 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
             {step === 3 && (
               <div className="space-y-4 max-w-xl mx-auto">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+                  <label className="block text-sm font-medium text-gray-300 mb-1 flex items-center gap-2">
                     <Calendar className="w-4 h-4" />
                     Date *
                   </label>
@@ -981,12 +974,12 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
                     onChange={handleChange}
                     min={new Date().toISOString().split('T')[0]}
                     required
-                    className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900"
+                    className="w-full rounded-xl bg-white/5 border border-white/10 text-white p-3 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+                  <label className="block text-sm font-medium text-gray-300 mb-1 flex items-center gap-2">
                     <Clock className="w-4 h-4" />
                     Heure *
                   </label>
@@ -996,31 +989,28 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
                     value={formData.scheduled_time}
                     onChange={handleChange}
                     required
-                    className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900"
+                    className="w-full rounded-xl bg-white/5 border border-white/10 text-white p-3 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                  <label className="block text-sm font-medium text-gray-300 mb-3">
                     Mode de paiement *
                   </label>
                   <div className="grid grid-cols-2 gap-3">
                     <button
                       type="button"
                       onClick={() => setFormData({ ...formData, payment_method: 'online' })}
-                      className={`p-4 rounded-lg border-2 transition-all ${
-                        formData.payment_method === 'online'
-                          ? 'border-blue-500 bg-blue-50'
-                          : 'border-gray-300 hover:border-gray-400'
-                      }`}
+                      className={`p-4 rounded-xl border transition-all ${formData.payment_method === 'online'
+                          ? 'border-blue-500 bg-blue-500/10'
+                          : 'border-white/10 bg-white/5 hover:bg-white/10'
+                        }`}
                     >
                       <div className="flex flex-col items-center gap-2">
-                        <CreditCard className={`w-6 h-6 ${
-                          formData.payment_method === 'online' ? 'text-blue-600' : 'text-gray-600'
-                        }`} />
-                        <span className={`text-sm font-medium ${
-                          formData.payment_method === 'online' ? 'text-blue-900' : 'text-gray-700'
-                        }`}>
+                        <CreditCard className={`w-6 h-6 ${formData.payment_method === 'online' ? 'text-blue-400' : 'text-gray-400'
+                          }`} />
+                        <span className={`text-sm font-medium ${formData.payment_method === 'online' ? 'text-blue-300' : 'text-gray-300'
+                          }`}>
                           En ligne
                         </span>
                         <span className="text-xs text-gray-500 text-center">
@@ -1032,19 +1022,16 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
                     <button
                       type="button"
                       onClick={() => setFormData({ ...formData, payment_method: 'in_person' })}
-                      className={`p-4 rounded-lg border-2 transition-all ${
-                        formData.payment_method === 'in_person'
-                          ? 'border-blue-500 bg-blue-50'
-                          : 'border-gray-300 hover:border-gray-400'
-                      }`}
+                      className={`p-4 rounded-xl border transition-all ${formData.payment_method === 'in_person'
+                          ? 'border-blue-500 bg-blue-500/10'
+                          : 'border-white/10 bg-white/5 hover:bg-white/10'
+                        }`}
                     >
                       <div className="flex flex-col items-center gap-2">
-                        <Banknote className={`w-6 h-6 ${
-                          formData.payment_method === 'in_person' ? 'text-blue-600' : 'text-gray-600'
-                        }`} />
-                        <span className={`text-sm font-medium ${
-                          formData.payment_method === 'in_person' ? 'text-blue-900' : 'text-gray-700'
-                        }`}>
+                        <Banknote className={`w-6 h-6 ${formData.payment_method === 'in_person' ? 'text-blue-400' : 'text-gray-400'
+                          }`} />
+                        <span className={`text-sm font-medium ${formData.payment_method === 'in_person' ? 'text-blue-300' : 'text-gray-300'
+                          }`}>
                           Sur place
                         </span>
                         <span className="text-xs text-gray-500 text-center">
@@ -1056,7 +1043,7 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
                     Notes pour le client (optionnel)
                   </label>
                   <textarea
@@ -1070,14 +1057,14 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
                     }}
                     rows={4}
                     placeholder="Instructions spéciales pour le client..."
-                    className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900"
+                    className="w-full rounded-xl bg-white/5 border border-white/10 text-white p-3 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
               </div>
             )}
           </div>
 
-          <div className="border-t border-gray-200 p-6">
+          <div className="border-t border-white/10 p-6 bg-white/5">
             <div className="flex justify-between gap-3">
               <button
                 type="button"
@@ -1092,7 +1079,7 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
                     onClose();
                   }
                 }}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
+                className="px-4 py-2 border border-white/10 rounded-xl text-gray-300 hover:bg-white/10 hover:text-white transition-colors flex items-center gap-2"
               >
                 {step > 0 ? (
                   <>
@@ -1117,7 +1104,7 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
                     }
                   }}
                   disabled={!canGoNext()}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-400 transition-colors flex items-center gap-2"
+                  className="px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl hover:from-blue-700 hover:to-cyan-700 shadow-lg shadow-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2 font-bold"
                 >
                   Suivant
                   <ChevronRight className="w-4 h-4" />
@@ -1126,7 +1113,7 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
                 <button
                   type="submit"
                   disabled={loading}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-green-400 transition-colors flex items-center gap-2"
+                  className="px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:from-green-700 hover:to-emerald-700 shadow-lg shadow-green-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2 font-bold"
                 >
                   <Plus className="w-4 h-4" />
                   {loading ? (sessionMode === 'existing' ? 'Planification...' : 'Création...') : 'Planifier'}
