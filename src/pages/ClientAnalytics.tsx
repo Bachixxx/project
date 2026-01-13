@@ -23,8 +23,7 @@ interface Exercise {
 
 interface ClientData {
   id: string;
-  first_name: string;
-  last_name: string;
+  full_name: string;
   fitness_goals: string[];
 }
 
@@ -60,9 +59,8 @@ function ClientAnalytics() {
       // 1. Fetch Client Details
       const { data: clientData, error: clientError } = await supabase
         .from('clients')
-        .select('id, first_name, last_name, fitness_goals')
+        .select('*')
         .eq('id', clientId)
-        .eq('coach_id', user?.id)
         .single();
 
       if (clientError) throw clientError;
@@ -84,7 +82,10 @@ function ClientAnalytics() {
         .eq('client_id', clientId)
         .order('completed_at', { ascending: true });
 
-      if (logsError) throw logsError;
+      if (logsError) {
+        console.error('Error fetching logs:', logsError);
+        throw logsError;
+      }
 
       const formattedLogs: WorkoutLog[] = (logs || []).map(log => ({
         id: log.id,
@@ -121,6 +122,9 @@ function ClientAnalytics() {
 
     } catch (error) {
       console.error('Error fetching analytics:', error);
+      if (typeof error === 'object' && error !== null) {
+        console.error('Error details:', JSON.stringify(error, null, 2));
+      }
     } finally {
       setLoading(false);
     }
@@ -231,13 +235,13 @@ function ClientAnalytics() {
             className="inline-flex items-center text-gray-400 hover:text-white mb-6 transition-colors group"
           >
             <ChevronLeft className="w-5 h-5 mr-1 group-hover:-translate-x-1 transition-transform" />
-            Retour au profil de {client?.first_name}
+            Retour au profil de {client?.full_name}
           </Link>
 
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
             <div>
               <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Analyse des Performances</h1>
-              <p className="text-gray-400">Progression détaillée de {client?.first_name} {client?.last_name}</p>
+              <p className="text-gray-400">Progression détaillée de {client?.full_name}</p>
             </div>
 
             <div className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-lg border border-white/10 text-sm text-gray-400">
