@@ -11,8 +11,12 @@ interface Exercise {
   sets: number;
   reps: number;
   rest_time: number;
+
   instructions: string;
   order_index: number;
+  tracking_type?: 'reps_weight' | 'duration' | 'distance';
+  duration_seconds?: number;
+  distance_meters?: number;
 }
 
 function ClientLiveWorkout() {
@@ -27,6 +31,8 @@ function ClientLiveWorkout() {
     sets: Array<{
       reps: number;
       weight: number;
+      duration_seconds?: number;
+      distance_meters?: number;
       completed: boolean;
     }>;
   }>>({});
@@ -96,8 +102,11 @@ function ClientLiveWorkout() {
             name,
             description,
             category,
-            equipment
-          )
+            equipment,
+            tracking_type
+          ),
+          duration_seconds,
+          distance_meters
         `)
         .eq('session_id', scheduledSession.session.id)
         .order('order_index', { ascending: true });
@@ -115,7 +124,10 @@ function ClientLiveWorkout() {
         reps: se.reps,
         rest_time: se.rest_time,
         instructions: se.instructions,
-        order_index: se.order_index
+        order_index: se.order_index,
+        tracking_type: se.exercise.tracking_type,
+        duration_seconds: se.duration_seconds,
+        distance_meters: se.distance_meters
       }));
 
       setExercises(exerciseList);
@@ -126,6 +138,8 @@ function ClientLiveWorkout() {
           sets: Array(ex.sets).fill(null).map(() => ({
             reps: ex.reps,
             weight: 0,
+            duration_seconds: ex.duration_seconds,
+            distance_meters: ex.distance_meters,
             completed: false
           }))
         };
@@ -174,6 +188,8 @@ function ClientLiveWorkout() {
             set_number: setIndex + 1,
             reps: currentSet.reps,
             weight: currentSet.weight,
+            duration_seconds: currentSet.duration_seconds,
+            distance_meters: currentSet.distance_meters,
             completed_at: new Date().toISOString()
           }, {
             onConflict: 'scheduled_session_id,exercise_id,set_number'
@@ -209,7 +225,7 @@ function ClientLiveWorkout() {
     }
   };
 
-  const handleUpdateSet = (setIndex: number, field: 'reps' | 'weight', value: number) => {
+  const handleUpdateSet = (setIndex: number, field: 'reps' | 'weight' | 'duration_seconds' | 'distance_meters', value: number) => {
     if (!currentExercise) return;
 
     setCompletedExercises(prev => ({
@@ -357,10 +373,22 @@ function ClientLiveWorkout() {
                 <div className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">Séries</div>
                 <div className="text-white text-2xl font-black">{currentExercise.sets}</div>
               </div>
-              <div className="bg-white/5 rounded-2xl p-4 text-center border border-white/5">
-                <div className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">Reps</div>
-                <div className="text-white text-2xl font-black">{currentExercise.reps}</div>
-              </div>
+              {currentExercise.tracking_type === 'duration' ? (
+                <div className="bg-white/5 rounded-2xl p-4 text-center border border-white/5">
+                  <div className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">Durée</div>
+                  <div className="text-white text-2xl font-black">{Math.floor((currentExercise.duration_seconds || 0) / 60)}:{(currentExercise.duration_seconds || 0) % 60 < 10 ? '0' : ''}{(currentExercise.duration_seconds || 0) % 60}</div>
+                </div>
+              ) : currentExercise.tracking_type === 'distance' ? (
+                <div className="bg-white/5 rounded-2xl p-4 text-center border border-white/5">
+                  <div className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">Distance</div>
+                  <div className="text-white text-2xl font-black">{currentExercise.distance_meters}m</div>
+                </div>
+              ) : (
+                <div className="bg-white/5 rounded-2xl p-4 text-center border border-white/5">
+                  <div className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">Reps</div>
+                  <div className="text-white text-2xl font-black">{currentExercise.reps}</div>
+                </div>
+              )}
               <div className="bg-white/5 rounded-2xl p-4 text-center border border-white/5">
                 <div className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">Repos</div>
                 <div className="text-white text-2xl font-black">{currentExercise.rest_time}s</div>
@@ -393,54 +421,106 @@ function ClientLiveWorkout() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-gray-500 text-xs font-bold uppercase mb-2 block">Répétitions</label>
-                      <div className="flex items-center gap-1 bg-black/20 rounded-xl p-1 border border-white/5">
-                        <button
-                          onClick={() => handleUpdateSet(idx, 'reps', Math.max(1, set.reps - 1))}
-                          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 transition-colors"
-                        >
-                          <Minus className="w-4 h-4" />
-                        </button>
-                        <input
-                          type="number"
-                          value={set.reps}
-                          onChange={(e) => handleUpdateSet(idx, 'reps', parseInt(e.target.value) || 0)}
-                          className="flex-1 bg-transparent text-white text-center font-bold text-lg focus:outline-none"
-                        />
-                        <button
-                          onClick={() => handleUpdateSet(idx, 'reps', set.reps + 1)}
-                          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 transition-colors"
-                        >
-                          <Plus className="w-4 h-4" />
-                        </button>
+                    {currentExercise.tracking_type === 'duration' ? (
+                      <div className="col-span-2">
+                        <label className="text-gray-500 text-xs font-bold uppercase mb-2 block">Durée (secondes)</label>
+                        <div className="flex items-center gap-1 bg-black/20 rounded-xl p-1 border border-white/5">
+                          <button
+                            onClick={() => handleUpdateSet(idx, 'duration_seconds', Math.max(0, (set.duration_seconds || 0) - 5))}
+                            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 transition-colors"
+                          >
+                            <Minus className="w-4 h-4" />
+                          </button>
+                          <input
+                            type="number"
+                            value={set.duration_seconds || 0}
+                            onChange={(e) => handleUpdateSet(idx, 'duration_seconds', parseInt(e.target.value) || 0)}
+                            className="flex-1 bg-transparent text-white text-center font-bold text-lg focus:outline-none"
+                          />
+                          <button
+                            onClick={() => handleUpdateSet(idx, 'duration_seconds', (set.duration_seconds || 0) + 5)}
+                            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 transition-colors"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
-                    </div>
+                    ) : currentExercise.tracking_type === 'distance' ? (
+                      <div className="col-span-2">
+                        <label className="text-gray-500 text-xs font-bold uppercase mb-2 block">Distance (m)</label>
+                        <div className="flex items-center gap-1 bg-black/20 rounded-xl p-1 border border-white/5">
+                          <button
+                            onClick={() => handleUpdateSet(idx, 'distance_meters', Math.max(0, (set.distance_meters || 0) - 50))}
+                            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 transition-colors"
+                          >
+                            <Minus className="w-4 h-4" />
+                          </button>
+                          <input
+                            type="number"
+                            value={set.distance_meters || 0}
+                            onChange={(e) => handleUpdateSet(idx, 'distance_meters', parseInt(e.target.value) || 0)}
+                            className="flex-1 bg-transparent text-white text-center font-bold text-lg focus:outline-none"
+                          />
+                          <button
+                            onClick={() => handleUpdateSet(idx, 'distance_meters', (set.distance_meters || 0) + 50)}
+                            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 transition-colors"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div>
+                          <label className="text-gray-500 text-xs font-bold uppercase mb-2 block">Répétitions</label>
+                          <div className="flex items-center gap-1 bg-black/20 rounded-xl p-1 border border-white/5">
+                            <button
+                              onClick={() => handleUpdateSet(idx, 'reps', Math.max(1, set.reps - 1))}
+                              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 transition-colors"
+                            >
+                              <Minus className="w-4 h-4" />
+                            </button>
+                            <input
+                              type="number"
+                              value={set.reps}
+                              onChange={(e) => handleUpdateSet(idx, 'reps', parseInt(e.target.value) || 0)}
+                              className="flex-1 bg-transparent text-white text-center font-bold text-lg focus:outline-none"
+                            />
+                            <button
+                              onClick={() => handleUpdateSet(idx, 'reps', set.reps + 1)}
+                              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 transition-colors"
+                            >
+                              <Plus className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
 
-                    <div>
-                      <label className="text-gray-500 text-xs font-bold uppercase mb-2 block">Poids (kg)</label>
-                      <div className="flex items-center gap-1 bg-black/20 rounded-xl p-1 border border-white/5">
-                        <button
-                          onClick={() => handleUpdateSet(idx, 'weight', Math.max(0, set.weight - 2.5))}
-                          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 transition-colors"
-                        >
-                          <Minus className="w-4 h-4" />
-                        </button>
-                        <input
-                          type="number"
-                          step="0.5"
-                          value={set.weight}
-                          onChange={(e) => handleUpdateSet(idx, 'weight', parseFloat(e.target.value) || 0)}
-                          className="flex-1 bg-transparent text-white text-center font-bold text-lg focus:outline-none"
-                        />
-                        <button
-                          onClick={() => handleUpdateSet(idx, 'weight', set.weight + 2.5)}
-                          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 transition-colors"
-                        >
-                          <Plus className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
+                        <div>
+                          <label className="text-gray-500 text-xs font-bold uppercase mb-2 block">Poids (kg)</label>
+                          <div className="flex items-center gap-1 bg-black/20 rounded-xl p-1 border border-white/5">
+                            <button
+                              onClick={() => handleUpdateSet(idx, 'weight', Math.max(0, set.weight - 2.5))}
+                              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 transition-colors"
+                            >
+                              <Minus className="w-4 h-4" />
+                            </button>
+                            <input
+                              type="number"
+                              step="0.5"
+                              value={set.weight}
+                              onChange={(e) => handleUpdateSet(idx, 'weight', parseFloat(e.target.value) || 0)}
+                              className="flex-1 bg-transparent text-white text-center font-bold text-lg focus:outline-none"
+                            />
+                            <button
+                              onClick={() => handleUpdateSet(idx, 'weight', set.weight + 2.5)}
+                              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 transition-colors"
+                            >
+                              <Plus className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               ))}

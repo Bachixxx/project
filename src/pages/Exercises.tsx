@@ -7,6 +7,8 @@ import {
   X,
   Play,
   Dumbbell,
+  Timer,
+  Ruler,
   Filter,
   List,
   AlertCircle
@@ -24,6 +26,7 @@ interface Exercise {
   equipment: string[];
   instructions: string[];
   video_url?: string;
+  tracking_type?: 'reps_weight' | 'duration' | 'distance';
 }
 
 function ExercisesPage() {
@@ -78,6 +81,22 @@ function ExercisesPage() {
     const matchesCategory = !selectedCategory || exercise.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
+
+  const getTrackingIcon = (type: string) => {
+    switch (type) {
+      case 'duration': return <Timer className="w-3 h-3 mr-1" />;
+      case 'distance': return <Ruler className="w-3 h-3 mr-1" />;
+      default: return <Dumbbell className="w-3 h-3 mr-1" />;
+    }
+  };
+
+  const getTrackingLabel = (type: string) => {
+    switch (type) {
+      case 'duration': return t('exercises.form.trackingType.duration');
+      case 'distance': return t('exercises.form.trackingType.distance');
+      default: return t('exercises.form.trackingType.reps_weight');
+    }
+  };
 
   return (
     <div className="p-6 max-w-[2000px] mx-auto space-y-8 animate-fade-in">
@@ -208,14 +227,14 @@ function ExercisesPage() {
 
                 <div className="flex flex-wrap gap-2 mb-4">
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                    <Dumbbell className="w-3 h-3 mr-1" />
+                    {getTrackingIcon(exercise.tracking_type || 'reps_weight')}
                     {exercise.category}
                   </span>
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${exercise.difficulty_level === 'Débutant' || exercise.difficulty_level === 'Beginner'
-                      ? 'bg-green-500/10 text-green-400 border-green-500/20'
-                      : exercise.difficulty_level === 'Intermédiaire' || exercise.difficulty_level === 'Intermediate'
-                        ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'
-                        : 'bg-red-500/10 text-red-400 border-red-500/20'
+                    ? 'bg-green-500/10 text-green-400 border-green-500/20'
+                    : exercise.difficulty_level === 'Intermédiaire' || exercise.difficulty_level === 'Intermediate'
+                      ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'
+                      : 'bg-red-500/10 text-red-400 border-red-500/20'
                     }`}>
                     {exercise.difficulty_level}
                   </span>
@@ -283,6 +302,7 @@ function ExerciseModal({ exercise, onClose, onSave, categories, difficultyLevels
     equipment: exercise?.equipment || [],
     instructions: exercise?.instructions || [],
     video_url: exercise?.video_url || '',
+    tracking_type: exercise?.tracking_type || 'reps_weight',
   });
 
   const handleChange = (e: any) => {
@@ -343,6 +363,34 @@ function ExerciseModal({ exercise, onClose, onSave, categories, difficultyLevels
                 required
                 className="input-field"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">{t('exercises.form.trackingType.label')}</label>
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { id: 'reps_weight', label: t('exercises.form.trackingType.reps_weight'), icon: Dumbbell },
+                  { id: 'duration', label: t('exercises.form.trackingType.duration'), icon: Timer },
+                  { id: 'distance', label: t('exercises.form.trackingType.distance'), icon: Ruler },
+                ].map((type) => {
+                  const Icon = type.icon;
+                  const isSelected = formData.tracking_type === type.id;
+                  return (
+                    <button
+                      key={type.id}
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, tracking_type: type.id }))}
+                      className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all ${isSelected
+                        ? 'bg-blue-500/20 border-blue-500 text-blue-400'
+                        : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'
+                        }`}
+                    >
+                      <Icon className="w-5 h-5 mb-2" />
+                      <span className="text-xs font-medium text-center">{type.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             <div>

@@ -20,6 +20,9 @@ interface Exercise {
   group_id: string | null;
   instructions?: string;
   exercise_id: string; // Reference to the base exercise definition
+  tracking_type?: 'reps_weight' | 'duration' | 'distance';
+  duration_seconds?: number;
+  distance_meters?: number;
 }
 
 interface ExerciseGroup {
@@ -55,6 +58,7 @@ interface BaseExercise {
   id: string;
   name: string;
   category: string;
+  tracking_type: 'reps_weight' | 'duration' | 'distance';
 }
 
 export function SessionDetailsModal({ scheduledSessionId, onClose, onStatusChange }: SessionDetailsModalProps) {
@@ -85,7 +89,7 @@ export function SessionDetailsModal({ scheduledSessionId, onClose, onStatusChang
     try {
       const { data, error } = await supabase
         .from('exercises')
-        .select('id, name, category')
+        .select('id, name, category, tracking_type')
         .eq('coach_id', user?.id)
         .order('name');
 
@@ -139,7 +143,8 @@ export function SessionDetailsModal({ scheduledSessionId, onClose, onStatusChang
           exercise:exercises (
             id,
             name,
-            category
+            category,
+            tracking_type
           )
         `)
         .eq('session_id', sessionData.session.id)
@@ -157,7 +162,10 @@ export function SessionDetailsModal({ scheduledSessionId, onClose, onStatusChang
         rest_time: ex.rest_time,
         order_index: ex.order_index,
         group_id: ex.group_id,
-        instructions: ex.instructions
+        instructions: ex.instructions,
+        tracking_type: ex.exercise.tracking_type,
+        duration_seconds: ex.duration_seconds,
+        distance_meters: ex.distance_meters
       }));
 
       const individualExercises = formattedExercises.filter(ex => !ex.group_id);
@@ -241,6 +249,9 @@ export function SessionDetailsModal({ scheduledSessionId, onClose, onStatusChang
         sets: 3,
         reps: 12,
         rest_time: 60,
+        duration_seconds: 60,
+        distance_meters: 1000,
+        tracking_type: newExercise.tracking_type,
         order_index: editedItems.length,
         group_id: null,
         instructions: ''
@@ -261,6 +272,7 @@ export function SessionDetailsModal({ scheduledSessionId, onClose, onStatusChang
         if (exercise) {
           newItems[index].data.name = exercise.name;
           newItems[index].data.category = exercise.category;
+          newItems[index].data.tracking_type = exercise.tracking_type;
         }
       }
     }
@@ -305,6 +317,8 @@ export function SessionDetailsModal({ scheduledSessionId, onClose, onStatusChang
               sets: item.data.sets,
               reps: item.data.reps,
               rest_time: item.data.rest_time,
+              duration_seconds: item.data.duration_seconds,
+              distance_meters: item.data.distance_meters,
               instructions: item.data.instructions,
               order_index: i,
               group_id: null
@@ -528,13 +542,26 @@ export function SessionDetailsModal({ scheduledSessionId, onClose, onStatusChang
                             )}
                           </div>
 
+
                           {/* Planned Details */}
                           <div className="flex flex-wrap gap-4 text-sm text-gray-300 mb-3">
-                            <span className="bg-blue-500/10 text-blue-300 px-2 py-0.5 rounded border border-blue-500/20">{item.data.sets} séries</span>
-                            <span className="text-gray-600">•</span>
-                            <span className="bg-purple-500/10 text-purple-300 px-2 py-0.5 rounded border border-purple-500/20">{item.data.reps} reps</span>
-                            <span className="text-gray-600">•</span>
-                            <span className="bg-orange-500/10 text-orange-300 px-2 py-0.5 rounded border border-orange-500/20">{item.data.rest_time}s repos</span>
+                            {item.data.tracking_type === 'duration' ? (
+                              <span className="bg-blue-500/10 text-blue-300 px-2 py-0.5 rounded border border-blue-500/20">
+                                {Math.floor((item.data.duration_seconds || 0) / 60)}m {(item.data.duration_seconds || 0) % 60}s
+                              </span>
+                            ) : item.data.tracking_type === 'distance' ? (
+                              <span className="bg-blue-500/10 text-blue-300 px-2 py-0.5 rounded border border-blue-500/20">
+                                {item.data.distance_meters}m
+                              </span>
+                            ) : (
+                              <>
+                                <span className="bg-blue-500/10 text-blue-300 px-2 py-0.5 rounded border border-blue-500/20">{item.data.sets} séries</span>
+                                <span className="text-gray-600">•</span>
+                                <span className="bg-purple-500/10 text-purple-300 px-2 py-0.5 rounded border border-purple-500/20">{item.data.reps} reps</span>
+                                <span className="text-gray-600">•</span>
+                                <span className="bg-orange-500/10 text-orange-300 px-2 py-0.5 rounded border border-orange-500/20">{item.data.rest_time}s repos</span>
+                              </>
+                            )}
                           </div>
 
                           {/* Completed Logs Comparison */}
@@ -654,38 +681,68 @@ export function SessionDetailsModal({ scheduledSessionId, onClose, onStatusChang
                           </button>
                         </div>
 
+
+
                         <div className="grid grid-cols-3 gap-3">
-                          <div>
-                            <label className="block text-xs font-medium text-gray-500 mb-1">Séries</label>
-                            <input
-                              type="number"
-                              min="1"
-                              value={item.data.sets}
-                              onChange={(e) => handleUpdateItem(index, 'sets', parseInt(e.target.value) || 0)}
-                              className="w-full bg-[#0f172a] border border-white/10 rounded-lg py-2 px-3 text-white text-sm focus:border-blue-500"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-gray-500 mb-1">Reps</label>
-                            <input
-                              type="number"
-                              min="1"
-                              value={item.data.reps}
-                              onChange={(e) => handleUpdateItem(index, 'reps', parseInt(e.target.value) || 0)}
-                              className="w-full bg-[#0f172a] border border-white/10 rounded-lg py-2 px-3 text-white text-sm focus:border-blue-500"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-gray-500 mb-1">Repos (s)</label>
-                            <input
-                              type="number"
-                              min="0"
-                              step="15"
-                              value={item.data.rest_time}
-                              onChange={(e) => handleUpdateItem(index, 'rest_time', parseInt(e.target.value) || 0)}
-                              className="w-full bg-[#0f172a] border border-white/10 rounded-lg py-2 px-3 text-white text-sm focus:border-blue-500"
-                            />
-                          </div>
+                          {item.data.tracking_type === 'duration' ? (
+                            <div className="col-span-3">
+                              <label className="block text-xs font-medium text-gray-500 mb-1">Durée (secondes)</label>
+                              <input
+                                type="number"
+                                min="0"
+                                step="10"
+                                value={item.data.duration_seconds || 0}
+                                onChange={(e) => handleUpdateItem(index, 'duration_seconds', parseInt(e.target.value) || 0)}
+                                className="w-full bg-[#0f172a] border border-white/10 rounded-lg py-2 px-3 text-white text-sm focus:border-blue-500"
+                              />
+                            </div>
+                          ) : item.data.tracking_type === 'distance' ? (
+                            <div className="col-span-3">
+                              <label className="block text-xs font-medium text-gray-500 mb-1">Distance (mètres)</label>
+                              <input
+                                type="number"
+                                min="0"
+                                step="100"
+                                value={item.data.distance_meters || 0}
+                                onChange={(e) => handleUpdateItem(index, 'distance_meters', parseInt(e.target.value) || 0)}
+                                className="w-full bg-[#0f172a] border border-white/10 rounded-lg py-2 px-3 text-white text-sm focus:border-blue-500"
+                              />
+                            </div>
+                          ) : (
+                            <>
+                              <div>
+                                <label className="block text-xs font-medium text-gray-500 mb-1">Séries</label>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  value={item.data.sets}
+                                  onChange={(e) => handleUpdateItem(index, 'sets', parseInt(e.target.value) || 0)}
+                                  className="w-full bg-[#0f172a] border border-white/10 rounded-lg py-2 px-3 text-white text-sm focus:border-blue-500"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-gray-500 mb-1">Reps</label>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  value={item.data.reps}
+                                  onChange={(e) => handleUpdateItem(index, 'reps', parseInt(e.target.value) || 0)}
+                                  className="w-full bg-[#0f172a] border border-white/10 rounded-lg py-2 px-3 text-white text-sm focus:border-blue-500"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-gray-500 mb-1">Repos (s)</label>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  step="15"
+                                  value={item.data.rest_time}
+                                  onChange={(e) => handleUpdateItem(index, 'rest_time', parseInt(e.target.value) || 0)}
+                                  className="w-full bg-[#0f172a] border border-white/10 rounded-lg py-2 px-3 text-white text-sm focus:border-blue-500"
+                                />
+                              </div>
+                            </>
+                          )}
                         </div>
                         <div>
                           <label className="block text-xs font-medium text-gray-500 mb-1">Instructions (Optionnel)</label>
@@ -790,6 +847,6 @@ export function SessionDetailsModal({ scheduledSessionId, onClose, onStatusChang
           </div>
         </div>
       </div>
-    </div>
+    </div >
   );
 }

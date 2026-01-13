@@ -37,6 +37,9 @@ interface SessionExercise {
   order_index: number;
   instructions?: string;
   group_id?: string | null;
+  tracking_type?: 'reps_weight' | 'duration' | 'distance';
+  duration_seconds?: number;
+  distance_meters?: number;
 }
 
 interface ExerciseGroup {
@@ -208,10 +211,10 @@ function ProgramsPage() {
                       {program.duration_weeks} sem
                     </span>
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${program.difficulty_level === 'Débutant'
-                        ? 'bg-green-500/10 text-green-400 border-green-500/20'
-                        : program.difficulty_level === 'Intermédiaire'
-                          ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'
-                          : 'bg-red-500/10 text-red-400 border-red-500/20'
+                      ? 'bg-green-500/10 text-green-400 border-green-500/20'
+                      : program.difficulty_level === 'Intermédiaire'
+                        ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'
+                        : 'bg-red-500/10 text-red-400 border-red-500/20'
                       }`}>
                       <Target className="w-3 h-3 mr-1" />
                       {program.difficulty_level}
@@ -766,7 +769,7 @@ function CreateSessionModal({ onClose, onSave }: any) {
     session_type: 'private',
   });
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [exercises, setExercises] = useState([]);
+  const [exercises, setExercises] = useState<any[]>([]);
   const [selectedExercises, setSelectedExercises] = useState<SessionExercise[]>([]);
   const [exerciseGroups, setExerciseGroups] = useState<ExerciseGroup[]>([]);
   const [showExerciseSelector, setShowExerciseSelector] = useState(false);
@@ -785,7 +788,7 @@ function CreateSessionModal({ onClose, onSave }: any) {
     try {
       const { data, error } = await supabase
         .from('exercises')
-        .select('id, name, category, difficulty_level')
+        .select('id, name, category, difficulty_level, tracking_type')
         .eq('coach_id', user?.id)
         .order('name');
 
@@ -838,6 +841,9 @@ function CreateSessionModal({ onClose, onSave }: any) {
       order_index: selectedExercises.length,
       instructions: '',
       group_id: activeGroupId,
+      tracking_type: exercise.tracking_type || 'reps_weight',
+      duration_seconds: 60,
+      distance_meters: 1000,
     };
 
     if (activeGroupId) {
@@ -907,6 +913,8 @@ function CreateSessionModal({ onClose, onSave }: any) {
           instructions: se.instructions,
           group_id: null,
           order_index: exerciseGroups.length + index,
+          duration_seconds: se.duration_seconds,
+          distance_meters: se.distance_meters,
         }));
         const { error } = await supabase.from('session_exercises').insert(sessionExercises);
         if (error) throw error;
@@ -1096,7 +1104,7 @@ function EditSessionModal({ session, onClose, onSave }: any) {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [exercises, setExercises] = useState([]);
+  const [exercises, setExercises] = useState<any[]>([]);
   const [selectedExercises, setSelectedExercises] = useState<SessionExercise[]>([]);
   const [showExerciseSelector, setShowExerciseSelector] = useState(false);
 
@@ -1201,7 +1209,7 @@ function EditSessionModal({ session, onClose, onSave }: any) {
           exercises={exercises}
           selectedExercises={selectedExercises}
           onSelect={(ex) => {
-            setSelectedExercises([...selectedExercises, { exercise: ex, sets: 3, reps: 10, rest_time: 60, order_index: selectedExercises.length }]);
+            setSelectedExercises([...selectedExercises, { id: `temp-${Date.now()}`, exercise: ex, sets: 3, reps: 10, rest_time: 60, order_index: selectedExercises.length }]);
             setShowExerciseSelector(false);
           }}
           onClose={() => setShowExerciseSelector(false)}
@@ -1282,6 +1290,7 @@ function CreateExerciseModal({ onClose, onSave }: any) {
     description: '',
     category: 'Force',
     difficulty_level: 'Débutant',
+    tracking_type: 'reps_weight',
   });
   const [loading, setLoading] = useState(false);
   const categories = ['Force', 'Cardio', 'Flexibilité', 'Équilibre', 'HIIT'];
@@ -1313,6 +1322,14 @@ function CreateExerciseModal({ onClose, onSave }: any) {
             <div> <label className="block text-sm font-medium text-gray-300 mb-2">Description</label> <textarea value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} className="input-field" rows={3} /> </div>
             <div> <label className="block text-sm font-medium text-gray-300 mb-2">Catégorie</label> <select value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })} className="input-field appearance-none cursor-pointer"> {categories.map(c => <option key={c} value={c} className="bg-gray-800">{c}</option>)} </select> </div>
             <div> <label className="block text-sm font-medium text-gray-300 mb-2">Difficulté</label> <select value={formData.difficulty_level} onChange={e => setFormData({ ...formData, difficulty_level: e.target.value })} className="input-field appearance-none cursor-pointer"> <option value="Débutant" className="bg-gray-800">Débutant</option> <option value="Intermédiaire" className="bg-gray-800">Intermédiaire</option> <option value="Avancé" className="bg-gray-800">Avancé</option> </select> </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Type de suivi</label>
+              <select value={formData.tracking_type} onChange={e => setFormData({ ...formData, tracking_type: e.target.value })} className="input-field appearance-none cursor-pointer">
+                <option value="reps_weight" className="bg-gray-800">Répétitions & Poids</option>
+                <option value="duration" className="bg-gray-800">Durée</option>
+                <option value="distance" className="bg-gray-800">Distance</option>
+              </select>
+            </div>
             <div className="flex justify-end gap-4 pt-4 border-t border-white/5">
               <button type="button" onClick={onClose} className="px-6 py-3 rounded-xl font-medium text-gray-300 hover:text-white hover:bg-white/10">Annuler</button>
               <button type="submit" disabled={loading} className="primary-button">{loading ? '...' : 'Créer'}</button>

@@ -15,6 +15,9 @@ interface SessionExercise {
   order_index: number;
   instructions?: string;
   group_id?: string | null;
+  tracking_type?: 'reps_weight' | 'duration' | 'distance';
+  duration_seconds?: number;
+  distance_meters?: number;
 }
 
 interface ExerciseGroup {
@@ -41,10 +44,8 @@ interface ExerciseGroupManagerProps {
 export function ExerciseGroupManager({
   groups,
   standaloneExercises,
-  onCreateGroup,
   onUpdateGroup,
   onDeleteGroup,
-  onAddExercisesToGroup,
   onRemoveExerciseFromGroup,
   onUpdateExercise,
   onRemoveExercise,
@@ -165,6 +166,79 @@ export function ExerciseGroupManager({
                       placeholder="Ex: 3 séries de 12 répétitions"
                     />
                   </div>
+
+                  {exercise.tracking_type === 'duration' ? (
+                    <div className="flex flex-col">
+                      <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                        Durée (secondes)
+                      </label>
+                      <input
+                        type="number"
+                        value={exercise.duration_seconds || 0}
+                        onChange={(e) => {
+                          const globalIndex = standaloneExercises.length + groups
+                            .slice(0, groupIndex)
+                            .reduce((acc, g) => acc + g.exercises.length, 0) + exerciseIndex;
+                          onUpdateExercise(globalIndex, { duration_seconds: parseInt(e.target.value) || 0 });
+                        }}
+                        min="0"
+                        step="10"
+                        className="w-full h-11 px-4 py-2.5 rounded-lg border-2 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900 placeholder-gray-400 transition-all duration-150"
+                      />
+                    </div>
+                  ) : exercise.tracking_type === 'distance' ? (
+                    <div className="flex flex-col">
+                      <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                        Distance (mètres)
+                      </label>
+                      <input
+                        type="number"
+                        value={exercise.distance_meters || 0}
+                        onChange={(e) => {
+                          const globalIndex = standaloneExercises.length + groups
+                            .slice(0, groupIndex)
+                            .reduce((acc, g) => acc + g.exercises.length, 0) + exerciseIndex;
+                          onUpdateExercise(globalIndex, { distance_meters: parseInt(e.target.value) || 0 });
+                        }}
+                        min="0"
+                        step="100"
+                        className="w-full h-11 px-4 py-2.5 rounded-lg border-2 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900 placeholder-gray-400 transition-all duration-150"
+                      />
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex flex-col">
+                        <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">Séries</label>
+                        <input
+                          type="number"
+                          value={exercise.sets}
+                          onChange={(e) => {
+                            const globalIndex = standaloneExercises.length + groups
+                              .slice(0, groupIndex)
+                              .reduce((acc, g) => acc + g.exercises.length, 0) + exerciseIndex;
+                            onUpdateExercise(globalIndex, { sets: parseInt(e.target.value) || 0 });
+                          }}
+                          min="1"
+                          className="w-full h-11 px-4 py-2.5 rounded-lg border-2 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900 placeholder-gray-400 transition-all duration-150"
+                        />
+                      </div>
+                      <div className="flex flex-col">
+                        <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">Reps</label>
+                        <input
+                          type="number"
+                          value={exercise.reps}
+                          onChange={(e) => {
+                            const globalIndex = standaloneExercises.length + groups
+                              .slice(0, groupIndex)
+                              .reduce((acc, g) => acc + g.exercises.length, 0) + exerciseIndex;
+                            onUpdateExercise(globalIndex, { reps: parseInt(e.target.value) || 0 });
+                          }}
+                          min="1"
+                          className="w-full h-11 px-4 py-2.5 rounded-lg border-2 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900 placeholder-gray-400 transition-all duration-150"
+                        />
+                      </div>
+                    </>
+                  )}
                   <div className="flex flex-col max-w-[200px]">
                     <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2 whitespace-nowrap">
                       <svg className="w-4 h-4 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -241,6 +315,58 @@ export function ExerciseGroupManager({
                 placeholder="Ex: 3 séries de 12 répétitions"
               />
             </div>
+            {exercise.tracking_type === 'duration' ? (
+              <div className="flex flex-col">
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                  Durée (secondes)
+                </label>
+                <input
+                  type="number"
+                  value={exercise.duration_seconds || 0}
+                  onChange={(e) => onUpdateExercise(index, { duration_seconds: parseInt(e.target.value) || 0 })}
+                  min="0"
+                  step="10"
+                  className="w-full h-11 px-4 py-2.5 rounded-lg border-2 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900 placeholder-gray-400 transition-all duration-150"
+                />
+              </div>
+            ) : exercise.tracking_type === 'distance' ? (
+              <div className="flex flex-col">
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                  Distance (mètres)
+                </label>
+                <input
+                  type="number"
+                  value={exercise.distance_meters || 0}
+                  onChange={(e) => onUpdateExercise(index, { distance_meters: parseInt(e.target.value) || 0 })}
+                  min="0"
+                  step="100"
+                  className="w-full h-11 px-4 py-2.5 rounded-lg border-2 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900 placeholder-gray-400 transition-all duration-150"
+                />
+              </div>
+            ) : (
+              <>
+                <div className="flex flex-col">
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">Séries</label>
+                  <input
+                    type="number"
+                    value={exercise.sets}
+                    onChange={(e) => onUpdateExercise(index, { sets: parseInt(e.target.value) || 0 })}
+                    min="1"
+                    className="w-full h-11 px-4 py-2.5 rounded-lg border-2 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900 placeholder-gray-400 transition-all duration-150"
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">Reps</label>
+                  <input
+                    type="number"
+                    value={exercise.reps}
+                    onChange={(e) => onUpdateExercise(index, { reps: parseInt(e.target.value) || 0 })}
+                    min="1"
+                    className="w-full h-11 px-4 py-2.5 rounded-lg border-2 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900 placeholder-gray-400 transition-all duration-150"
+                  />
+                </div>
+              </>
+            )}
             <div className="flex flex-col max-w-[200px]">
               <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2 whitespace-nowrap">
                 <svg className="w-4 h-4 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
