@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Play, Pause, CheckCircle, RotateCcw, Timer, ChevronRight, Plus, Minus, ChevronLeft } from 'lucide-react';
+import { Play, Pause, CheckCircle, RotateCcw, Timer, ChevronRight, Plus, Minus, ChevronLeft, Dumbbell, Activity } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useClientAuth } from '../../contexts/ClientAuthContext';
 
@@ -202,7 +202,6 @@ function ClientLiveWorkout() {
 
       if (error) throw error;
 
-      alert('Entraînement terminé avec succès!');
       navigate('/client/appointments');
     } catch (error) {
       console.error('Error completing workout:', error);
@@ -216,117 +215,142 @@ function ClientLiveWorkout() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-white text-xl">Chargement...</div>
+      <div className="min-h-screen bg-[#09090b] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
       </div>
     );
   }
 
   if (!sessionData || exercises.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-4">
-        <div className="text-white text-xl mb-4">Aucun exercice trouvé pour cette séance</div>
+      <div className="min-h-screen bg-[#09090b] flex flex-col items-center justify-center p-4">
+        <div className="text-white text-xl mb-4">Aucun exercice trouvé</div>
         <button
           onClick={() => navigate('/client/appointments')}
           className="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white"
         >
-          Retour aux rendez-vous
+          Retour
         </button>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen p-4 md:p-8 pb-24">
-      <div className="max-w-4xl mx-auto space-y-6">
-        <div className="flex items-center justify-between mb-6">
+    <div className="min-h-screen bg-[#09090b] text-white p-4 font-sans pb-24">
+      {/* Background Gradients */}
+      <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
+        <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[128px]" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[128px]" />
+      </div>
+
+      <div className="relative z-10 max-w-2xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-2">
           <button
             onClick={() => navigate('/client/appointments')}
-            className="flex items-center gap-2 text-white/80 hover:text-white"
+            className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
           >
             <ChevronLeft className="w-5 h-5" />
             Retour
           </button>
           <div className="text-right">
-            <h1 className="text-2xl font-bold text-white">{sessionData.session?.name}</h1>
-            <p className="text-white/60 text-sm">
-              Exercice {currentExerciseIndex + 1} sur {exercises.length}
+            <h1 className="text-xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
+              {sessionData.session?.name}
+            </h1>
+            <p className="text-sm text-cyan-400 font-medium">
+              Exercice {currentExerciseIndex + 1}/{exercises.length}
             </p>
           </div>
         </div>
 
+        {/* Timer Card */}
         {restTimer !== null && restTimer > 0 && (
-          <div className="glass-card p-6 text-center animate-pulse">
-            <Timer className="w-12 h-12 text-blue-400 mx-auto mb-2" />
-            <div className="text-4xl font-bold text-white mb-2">{restTimer}s</div>
-            <p className="text-white/80">Temps de repos</p>
-            <button
-              onClick={() => setRestTimer(null)}
-              className="mt-4 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white"
-            >
-              Passer
-            </button>
+          <div className="bg-gradient-to-br from-blue-900/40 to-cyan-900/40 border border-blue-500/20 rounded-2xl p-6 text-center animate-pulse backdrop-blur-xl relative overflow-hidden">
+            <div className="absolute inset-0 bg-blue-500/5 z-0"></div>
+            <div className="relative z-10">
+              <Timer className="w-10 h-10 text-cyan-400 mx-auto mb-2" />
+              <div className="text-4xl font-black text-white mb-1 tabular-nums tracking-tighter">{restTimer}s</div>
+              <p className="text-cyan-200/70 text-sm font-medium uppercase tracking-wide">Temps de repos</p>
+              <button
+                onClick={() => setRestTimer(null)}
+                className="mt-4 px-6 py-2 bg-white/10 hover:bg-white/20 border border-white/10 rounded-full text-white text-sm font-medium transition-all"
+              >
+                Passer le repos
+              </button>
+            </div>
           </div>
         )}
 
+        {/* Main Exercise Card */}
         {currentExercise && (
-          <div className="glass-card p-6">
-            <h2 className="text-3xl font-bold text-white mb-2">{currentExercise.name}</h2>
-            {currentExercise.description && (
-              <p className="text-white/80 mb-4">{currentExercise.description}</p>
-            )}
-            {currentExercise.instructions && (
-              <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 mb-4">
-                <p className="text-blue-200 text-sm">{currentExercise.instructions}</p>
+          <div className="bg-[#1e293b]/60 border border-white/5 backdrop-blur-xl rounded-3xl p-6 shadow-2xl">
+            <div className="flex items-start justify-between gap-4 mb-6">
+              <div>
+                <h2 className="text-2xl font-bold text-white mb-2 leading-tight">{currentExercise.name}</h2>
+                {currentExercise.description && (
+                  <p className="text-gray-400 text-sm">{currentExercise.description}</p>
+                )}
               </div>
-            )}
-
-            <div className="grid grid-cols-3 gap-4 mb-6">
-              <div className="bg-white/5 rounded-lg p-4 text-center">
-                <div className="text-white/60 text-sm mb-1">Séries</div>
-                <div className="text-white text-2xl font-bold">{currentExercise.sets}</div>
-              </div>
-              <div className="bg-white/5 rounded-lg p-4 text-center">
-                <div className="text-white/60 text-sm mb-1">Répétitions</div>
-                <div className="text-white text-2xl font-bold">{currentExercise.reps}</div>
-              </div>
-              <div className="bg-white/5 rounded-lg p-4 text-center">
-                <div className="text-white/60 text-sm mb-1">Repos</div>
-                <div className="text-white text-2xl font-bold">{currentExercise.rest_time}s</div>
+              <div className="p-3 bg-white/5 rounded-xl border border-white/5">
+                <Dumbbell className="w-6 h-6 text-blue-400" />
               </div>
             </div>
 
+            {currentExercise.instructions && (
+              <div className="bg-blue-500/5 border border-blue-500/10 rounded-xl p-4 mb-6 flex gap-3">
+                <Activity className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
+                <p className="text-blue-200/80 text-sm leading-relaxed">{currentExercise.instructions}</p>
+              </div>
+            )}
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-3 gap-3 mb-8">
+              <div className="bg-white/5 rounded-2xl p-4 text-center border border-white/5">
+                <div className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">Séries</div>
+                <div className="text-white text-2xl font-black">{currentExercise.sets}</div>
+              </div>
+              <div className="bg-white/5 rounded-2xl p-4 text-center border border-white/5">
+                <div className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">Reps</div>
+                <div className="text-white text-2xl font-black">{currentExercise.reps}</div>
+              </div>
+              <div className="bg-white/5 rounded-2xl p-4 text-center border border-white/5">
+                <div className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">Repos</div>
+                <div className="text-white text-2xl font-black">{currentExercise.rest_time}s</div>
+              </div>
+            </div>
+
+            {/* Sets List */}
             <div className="space-y-3">
               {completedExercises[currentExercise.id]?.sets.map((set, idx) => (
                 <div
                   key={idx}
-                  className={`p-4 rounded-lg border-2 transition-colors ${
-                    set.completed
-                      ? 'bg-green-500/20 border-green-500/50'
-                      : 'bg-white/5 border-white/10'
-                  }`}
+                  className={`p-4 rounded-2xl border transition-all duration-300 ${set.completed
+                      ? 'bg-green-500/10 border-green-500/20 shadow-[0_0_15px_rgba(34,197,94,0.1)]'
+                      : 'bg-[#0f172a]/50 border-white/5'
+                    }`}
                 >
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-white font-medium">Série {idx + 1}</span>
+                  <div className="flex items-center justify-between mb-4">
+                    <span className={`text-sm font-bold uppercase tracking-wider ${set.completed ? 'text-green-400' : 'text-gray-400'}`}>
+                      Série {idx + 1}
+                    </span>
                     <button
                       onClick={() => handleCompleteSet(idx)}
-                      className={`p-2 rounded-lg transition-colors ${
-                        set.completed
-                          ? 'bg-green-500 text-white'
-                          : 'bg-white/10 hover:bg-white/20 text-white'
-                      }`}
+                      className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${set.completed
+                          ? 'bg-green-500 text-white shadow-lg shadow-green-500/30 scale-105'
+                          : 'bg-white/10 text-gray-400 hover:bg-white/20'
+                        }`}
                     >
-                      <CheckCircle className="w-5 h-5" />
+                      <CheckCircle className="w-6 h-6" />
                     </button>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="text-white/60 text-sm mb-1 block">Répétitions</label>
-                      <div className="flex items-center gap-2">
+                      <label className="text-gray-500 text-xs font-bold uppercase mb-2 block">Répétitions</label>
+                      <div className="flex items-center gap-1 bg-black/20 rounded-xl p-1 border border-white/5">
                         <button
                           onClick={() => handleUpdateSet(idx, 'reps', Math.max(1, set.reps - 1))}
-                          className="p-1 bg-white/10 hover:bg-white/20 rounded text-white"
+                          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 transition-colors"
                         >
                           <Minus className="w-4 h-4" />
                         </button>
@@ -334,11 +358,11 @@ function ClientLiveWorkout() {
                           type="number"
                           value={set.reps}
                           onChange={(e) => handleUpdateSet(idx, 'reps', parseInt(e.target.value) || 0)}
-                          className="flex-1 bg-white/10 text-white text-center rounded px-2 py-1"
+                          className="flex-1 bg-transparent text-white text-center font-bold text-lg focus:outline-none"
                         />
                         <button
                           onClick={() => handleUpdateSet(idx, 'reps', set.reps + 1)}
-                          className="p-1 bg-white/10 hover:bg-white/20 rounded text-white"
+                          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 transition-colors"
                         >
                           <Plus className="w-4 h-4" />
                         </button>
@@ -346,11 +370,11 @@ function ClientLiveWorkout() {
                     </div>
 
                     <div>
-                      <label className="text-white/60 text-sm mb-1 block">Poids (kg)</label>
-                      <div className="flex items-center gap-2">
+                      <label className="text-gray-500 text-xs font-bold uppercase mb-2 block">Poids (kg)</label>
+                      <div className="flex items-center gap-1 bg-black/20 rounded-xl p-1 border border-white/5">
                         <button
                           onClick={() => handleUpdateSet(idx, 'weight', Math.max(0, set.weight - 2.5))}
-                          className="p-1 bg-white/10 hover:bg-white/20 rounded text-white"
+                          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 transition-colors"
                         >
                           <Minus className="w-4 h-4" />
                         </button>
@@ -359,11 +383,11 @@ function ClientLiveWorkout() {
                           step="0.5"
                           value={set.weight}
                           onChange={(e) => handleUpdateSet(idx, 'weight', parseFloat(e.target.value) || 0)}
-                          className="flex-1 bg-white/10 text-white text-center rounded px-2 py-1"
+                          className="flex-1 bg-transparent text-white text-center font-bold text-lg focus:outline-none"
                         />
                         <button
                           onClick={() => handleUpdateSet(idx, 'weight', set.weight + 2.5)}
-                          className="p-1 bg-white/10 hover:bg-white/20 rounded text-white"
+                          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 transition-colors"
                         >
                           <Plus className="w-4 h-4" />
                         </button>
@@ -376,18 +400,20 @@ function ClientLiveWorkout() {
           </div>
         )}
 
-        <div className="flex gap-4">
+        {/* Navigation Buttons */}
+        <div className="flex gap-4 pt-4">
           <button
             onClick={handlePreviousExercise}
             disabled={currentExerciseIndex === 0}
-            className="flex-1 px-6 py-3 bg-white/10 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-white font-medium transition-colors"
+            className="flex-1 px-6 py-4 bg-[#1e293b] border border-white/5 hover:bg-[#283548] disabled:opacity-50 disabled:cursor-not-allowed rounded-2xl text-white font-bold transition-all"
           >
             Précédent
           </button>
+
           {currentExerciseIndex < exercises.length - 1 ? (
             <button
               onClick={handleNextExercise}
-              className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-medium transition-colors flex items-center justify-center gap-2"
+              className="flex-1 px-6 py-4 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 rounded-2xl text-white font-bold transition-all shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2"
             >
               Suivant
               <ChevronRight className="w-5 h-5" />
@@ -396,21 +422,22 @@ function ClientLiveWorkout() {
             <button
               onClick={handleCompleteWorkout}
               disabled={!allExercisesCompleted}
-              className="flex-1 px-6 py-3 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-white font-medium transition-colors flex items-center justify-center gap-2"
+              className="flex-1 px-6 py-4 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-2xl text-white font-bold transition-all shadow-lg shadow-green-500/20 flex items-center justify-center gap-2"
             >
               <CheckCircle className="w-5 h-5" />
-              Terminer l'entraînement
+              Terminer
             </button>
           )}
         </div>
 
-        <div className="glass-card p-6">
-          <label className="block text-white font-medium mb-2">Notes (optionnel)</label>
+        {/* Notes Section */}
+        <div className="bg-[#1e293b]/60 border border-white/5 backdrop-blur-xl rounded-2xl p-6">
+          <label className="block text-gray-400 text-sm font-bold uppercase tracking-wider mb-3">Notes de séance</label>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="Ajoutez des notes sur votre séance..."
-            className="w-full bg-white/10 text-white rounded-lg p-3 min-h-[100px] placeholder-white/40"
+            placeholder="Sensations, difficultés, points à améliorer..."
+            className="w-full bg-black/20 text-white border border-white/10 rounded-xl p-4 min-h-[100px] placeholder-gray-600 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all"
           />
         </div>
       </div>

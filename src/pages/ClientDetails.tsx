@@ -1,31 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ChevronLeft, Plus, Calendar as CalendarIcon, BarChart, Activity, TrendingUp, X } from 'lucide-react';
-import { Calendar as BigCalendar, dateFnsLocalizer } from 'react-big-calendar';
-import format from 'date-fns/format';
-import parse from 'date-fns/parse';
-import startOfWeek from 'date-fns/startOfWeek';
-import getDay from 'date-fns/getDay';
-import fr from 'date-fns/locale/fr';
-import 'react-big-calendar/lib/css/react-big-calendar.css';
+import { ChevronLeft, Plus, Calendar as CalendarIcon, BarChart, Activity, TrendingUp, X, Clock, CheckCircle, AlertCircle, ChevronRight } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { t } from '../i18n';
 import { InviteClientButton } from '../components/InviteClientButton';
 import { ScheduleSessionModal } from '../components/ScheduleSessionModal';
 import { SessionDetailsModal } from '../components/SessionDetailsModal';
-
-const locales = {
-  'fr': fr,
-};
-
-const localizer = dateFnsLocalizer({
-  format,
-  parse,
-  startOfWeek: (date) => startOfWeek(date, { locale: fr }),
-  getDay,
-  locales,
-});
 
 interface Client {
   id: string;
@@ -61,6 +42,16 @@ interface ClientProgram {
   status: string;
 }
 
+interface ScheduledSession {
+  id: string;
+  title: string;
+  start: Date;
+  end: Date;
+  status: string;
+  notes: string | null;
+  session: any;
+}
+
 function ClientDetails() {
   const { clientId } = useParams();
   const { user } = useAuth();
@@ -70,9 +61,10 @@ function ClientDetails() {
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [scheduledSessions, setScheduledSessions] = useState([]);
+  const [scheduledSessions, setScheduledSessions] = useState<ScheduledSession[]>([]);
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
+  const [agendaTab, setAgendaTab] = useState<'upcoming' | 'past'>('upcoming');
 
   useEffect(() => {
     if (user && clientId) {
@@ -151,14 +143,42 @@ function ClientDetails() {
     }
   };
 
-  const handleSelectSlot = (slotInfo) => {
-    setSelectedSlot(slotInfo);
-    setShowScheduleModal(true);
+  const handleSelectSession = (sessionId: string) => {
+    setSelectedSessionId(sessionId);
+    setShowDetailsModal(true);
   };
 
-  const handleSelectEvent = (event) => {
-    setSelectedSessionId(event.id);
-    setShowDetailsModal(true);
+  const filteredSessions = scheduledSessions.filter(session => {
+    const now = new Date();
+    if (agendaTab === 'upcoming') {
+      return session.start >= now;
+    } else {
+      return session.start < now;
+    }
+  }).sort((a, b) => {
+    if (agendaTab === 'upcoming') {
+      return a.start.getTime() - b.start.getTime();
+    } else {
+      return b.start.getTime() - a.start.getTime();
+    }
+  });
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed': return 'bg-green-500/10 text-green-400 border-green-500/20';
+      case 'cancelled': return 'bg-red-500/10 text-red-400 border-red-500/20';
+      case 'in_progress': return 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20';
+      default: return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'completed': return 'Complétée';
+      case 'cancelled': return 'Annulée';
+      case 'in_progress': return 'En cours';
+      default: return 'Programmée';
+    }
   };
 
   if (loading) {
@@ -188,40 +208,6 @@ function ClientDetails() {
 
   return (
     <div className="min-h-screen bg-[#09090b] text-white p-6 font-sans">
-      <style>{`
-        .rbc-calendar { color: #9ca3af; }
-        .rbc-header { color: #e5e7eb; border-bottom: 1px solid rgba(255,255,255,0.1) !important; padding: 10px 0; }
-        .rbc-month-view { border: 1px solid rgba(255,255,255,0.1) !important; background: rgba(255,255,255,0.02); }
-        .rbc-day-bg { border-left: 1px solid rgba(255,255,255,0.1) !important; }
-        .rbc-off-range-bg { background: rgba(0,0,0,0.2) !important; }
-        .rbc-row-segment .rbc-event { background-color: #3b82f6 !important; }
-        .rbc-today { background-color: rgba(59, 130, 246, 0.1) !important; }
-        .rbc-time-view { border: 1px solid rgba(255,255,255,0.1) !important; }
-        .rbc-time-header { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
-        .rbc-time-content { border-top: 1px solid rgba(255,255,255,0.1) !important; }
-        .rbc-timeslot-group { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
-        .rbc-day-slot { border-left: 1px solid rgba(255,255,255,0.1) !important; }
-        .rbc-time-gutter .rbc-timeslot-group { border-right: 1px solid rgba(255,255,255,0.1) !important; }
-        .rbc-event {
-          background-color: #3b82f6 !important;
-          border: none !important;
-          border-radius: 6px !important;
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
-        }
-        .rbc-toolbar button {
-          color: #e5e7eb !important;
-          border: 1px solid rgba(255,255,255,0.1) !important;
-        }
-        .rbc-toolbar button:hover {
-          background-color: rgba(255,255,255,0.1) !important;
-        }
-        .rbc-toolbar button.rbc-active {
-          background-color: #3b82f6 !important;
-          border-color: #3b82f6 !important;
-          color: white !important;
-        }
-      `}</style>
-
       {/* Background Gradients */}
       <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
         <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[128px]" />
@@ -345,6 +331,7 @@ function ClientDetails() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Active Programs Section */}
           <div className="bg-[#1e293b]/50 border border-white/5 backdrop-blur-xl rounded-2xl p-6">
             <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
               <Activity className="w-5 h-5 text-cyan-400" />
@@ -395,35 +382,94 @@ function ClientDetails() {
             </div>
           </div>
 
-          <div className="bg-[#1e293b]/50 border border-white/5 backdrop-blur-xl rounded-2xl p-6 mt-8 lg:mt-0">
-            <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-              <CalendarIcon className="w-5 h-5 text-cyan-400" />
-              Calendrier
-            </h2>
-            <div className="bg-[#0f172a] rounded-xl p-4 border border-white/5">
-              <BigCalendar
-                localizer={localizer}
-                events={scheduledSessions}
-                startAccessor="start"
-                endAccessor="end"
-                style={{ height: 600 }}
-                views={['month', 'week', 'day']}
-                defaultView="week"
-                selectable
-                onSelectSlot={handleSelectSlot}
-                onSelectEvent={handleSelectEvent}
-                min={new Date(2024, 0, 1, 6, 0, 0)}
-                max={new Date(2024, 0, 1, 21, 0, 0)}
-                messages={{
-                  next: "Suivant",
-                  previous: "Précédent",
-                  today: "Aujourd'hui",
-                  month: "Mois",
-                  week: "Semaine",
-                  day: "Jour",
-                  noEventsInRange: "Aucune séance programmée"
-                }}
-              />
+          {/* Agenda View Section */}
+          <div className="bg-[#1e293b]/50 border border-white/5 backdrop-blur-xl rounded-2xl p-6 mt-8 lg:mt-0 flex flex-col">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                <CalendarIcon className="w-5 h-5 text-cyan-400" />
+                Agenda
+              </h2>
+              <div className="flex bg-white/5 rounded-lg p-1 border border-white/5">
+                <button
+                  onClick={() => setAgendaTab('upcoming')}
+                  className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${agendaTab === 'upcoming'
+                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
+                      : 'text-gray-400 hover:text-white'
+                    }`}
+                >
+                  À venir
+                </button>
+                <button
+                  onClick={() => setAgendaTab('past')}
+                  className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${agendaTab === 'past'
+                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
+                      : 'text-gray-400 hover:text-white'
+                    }`}
+                >
+                  Passé
+                </button>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto max-h-[600px] pr-2 space-y-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+              {/* Add Session Button */}
+              <button
+                onClick={() => setShowScheduleModal(true)}
+                className="w-full py-4 border-2 border-dashed border-white/10 rounded-xl text-gray-400 hover:border-blue-500/30 hover:bg-blue-500/5 hover:text-blue-400 transition-all flex items-center justify-center gap-2 group mb-4"
+              >
+                <Plus className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                <span>Planifier une nouvelle séance</span>
+              </button>
+
+              {filteredSessions.length > 0 ? (
+                filteredSessions.map((session) => (
+                  <div
+                    key={session.id}
+                    onClick={() => handleSelectSession(session.id)}
+                    className="group bg-white/5 border border-white/5 hover:border-white/10 rounded-xl p-4 transition-all cursor-pointer hover:bg-white/10 flex items-center gap-4"
+                  >
+                    {/* Date Box */}
+                    <div className="flex flex-col items-center justify-center bg-white/5 rounded-lg w-16 h-16 border border-white/5">
+                      <span className="text-xs text-gray-400 uppercase font-bold">
+                        {new Date(session.start).toLocaleDateString('fr-FR', { month: 'short' })}
+                      </span>
+                      <span className="text-2xl font-bold text-white leading-none">
+                        {new Date(session.start).getDate()}
+                      </span>
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="text-lg font-bold text-white truncate group-hover:text-cyan-400 transition-colors">
+                          {session.title}
+                        </h3>
+                      </div>
+                      <div className="flex items-center gap-3 text-sm text-gray-400">
+                        <div className="flex items-center gap-1.5">
+                          <Clock className="w-4 h-4 text-cyan-500/70" />
+                          <span>
+                            {new Date(session.start).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                        <span className={`px-2 py-0.5 rounded text-xs font-medium border ${getStatusColor(session.status)}`}>
+                          {getStatusLabel(session.status)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Arrow */}
+                    <div className="p-2 bg-white/5 rounded-full text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity -translate-x-2 group-hover:translate-x-0">
+                      <ChevronRight className="w-5 h-5" />
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="flex flex-col items-center justify-center py-12 text-gray-500">
+                  <CalendarIcon className="w-12 h-12 mb-3 text-gray-700" />
+                  <p className="font-medium">Aucune séance {agendaTab === 'upcoming' ? 'à venir' : 'passée'}.</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
