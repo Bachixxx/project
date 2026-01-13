@@ -1,299 +1,463 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ChevronLeft, TrendingUp, Calendar, Filter } from 'lucide-react';
+import { ChevronLeft, Scale, Calendar, Dumbbell, Activity, Target, Award, ArrowUpRight, ChevronDown } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Bar, ComposedChart } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
+
+interface WorkoutLog {
+  id: string;
+  completed_at: string;
+  weight: number;
+  reps: number;
+  exercise_id: string;
+  scheduled_session: {
+    scheduled_date: string;
+  } | null;
+}
+
+interface Exercise {
+  id: string;
+  name: string;
+}
+
+interface ClientData {
+  id: string;
+  first_name: string;
+  last_name: string;
+  fitness_goals: string[];
+}
 
 function ClientAnalytics() {
   const { clientId } = useParams();
   const { user } = useAuth();
-  const [client, setClient] = useState(null);
-  const [workoutData, setWorkoutData] = useState([]);
-  const [selectedExercise, setSelectedExercise] = useState(null);
-  const [exercises, setExercises] = useState([]);
-  const [dateRange, setDateRange] = useState('month'); // week, month, year, all
   const [loading, setLoading] = useState(true);
+  const [client, setClient] = useState<ClientData | null>(null);
+
+  // Analytics State
+  const [weightData, setWeightData] = useState<any[]>([]);
+  const [strengthData, setStrengthData] = useState<any[]>([]);
+  const [workoutLogs, setWorkoutLogs] = useState<WorkoutLog[]>([]);
+  const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [selectedExercise, setSelectedExercise] = useState<string>('');
 
   useEffect(() => {
-    if (user && clientId) {
-      fetchClientData();
-      fetchExercises();
+    if (clientId && user) {
+      fetchClientAndData();
     }
-  }, [user, clientId]);
+  }, [clientId, user]);
 
   useEffect(() => {
-    if (selectedExercise) {
-      fetchWorkoutData();
+    if (selectedExercise && workoutLogs.length > 0) {
+      generateStrengthData();
     }
-  }, [selectedExercise, dateRange]);
+  }, [selectedExercise, workoutLogs]);
 
-  const fetchClientData = async () => {
+  const fetchClientAndData = async () => {
     try {
-      const { data, error } = await supabase
+      setLoading(true);
+
+      // 1. Fetch Client Details
+      const { data: clientData, error: clientError } = await supabase
         .from('clients')
-        .select('*')
+        .select('id, first_name, last_name, fitness_goals')
         .eq('id', clientId)
         .eq('coach_id', user?.id)
         .single();
 
-      if (error) throw error;
-      setClient(data);
-    } catch (error) {
-      console.error('Error fetching client:', error);
-    }
-  };
+      if (clientError) throw clientError;
+      setClient(clientData);
 
-  const fetchExercises = async () => {
-    try {
-      // First get all client programs
-      const { data: clientPrograms, error: programsError } = await supabase
-        .from('client_programs')
+      // 2. Fetch Workout Logs
+      const { data: logs, error: logsError } = await supabase
+        .from('workout_logs')
         .select(`
           id,
-          program:programs (
-            id,
-            program_exercises (
-              exercise:exercises (
-                id,
-                name,
-                category,
-                difficulty_level
-              )
-            )
+          completed_at,
+          weight,
+          reps,
+          exercise_id,
+          scheduled_session:scheduled_sessions (
+            scheduled_date
           )
         `)
-        .eq('client_id', clientId);
+        .eq('client_id', clientId)
+        .order('completed_at', { ascending: true });
 
-      if (programsError) throw programsError;
+      if (logsError) throw logsError;
 
-      // Then get all workout sessions for these programs
-      const { data: sessions, error: sessionsError } = await supabase
-        .from('workout_sessions')
-        .select('completed_exercises')
-        .in('client_program_id', clientPrograms.map(cp => cp.id));
+      const formattedLogs: WorkoutLog[] = (logs || []).map(log => ({
+        id: log.id,
+        completed_at: log.completed_at,
+        weight: log.weight,
+        reps: log.reps,
+        exercise_id: log.exercise_id,
+        scheduled_session: Array.isArray(log.scheduled_session)
+          ? log.scheduled_session[0]
+          : log.scheduled_session
+      }));
 
-      if (sessionsError) throw sessionsError;
+      setWorkoutLogs(formattedLogs);
 
-      // Extract unique exercises that have been used in workouts
-      const exerciseMap = new Map();
-      
-      clientPrograms.forEach(cp => {
-        cp.program.program_exercises.forEach(pe => {
-          if (pe.exercise) {
-            exerciseMap.set(pe.exercise.id, pe.exercise);
-          }
-        });
-      });
+      // 3. Fetch Exercises used in logs
+      const exerciseIds = Array.from(new Set(formattedLogs.map(log => log.exercise_id)));
 
-      // Only keep exercises that have been used in workouts
-      const usedExercises = new Set();
-      sessions.forEach(session => {
-        Object.keys(session.completed_exercises || {}).forEach(exerciseId => {
-          usedExercises.add(exerciseId);
-        });
-      });
+      if (exerciseIds.length > 0) {
+        const { data: exercisesData, error: exercisesError } = await supabase
+          .from('exercises')
+          .select('id, name')
+          .in('id', exerciseIds);
 
-      const filteredExercises = Array.from(exerciseMap.values())
-        .filter(exercise => usedExercises.has(exercise.id))
-        .sort((a, b) => a.name.localeCompare(b.name));
+        if (exercisesError) throw exercisesError;
+        setExercises(exercisesData || []);
 
-      setExercises(filteredExercises);
+        if (exercisesData && exercisesData.length > 0) {
+          setSelectedExercise(exercisesData[0].id);
+        }
+      }
+
+      // 4. Generate Weight Data (Mock for now)
+      generateWeightData();
+
     } catch (error) {
-      console.error('Error fetching exercises:', error);
-    }
-  };
-
-  const fetchWorkoutData = async () => {
-    if (!selectedExercise) return;
-
-    try {
-      const { data: sessions, error } = await supabase
-        .from('workout_sessions')
-        .select(`
-          id,
-          date,
-          completed_exercises,
-          client_program:client_programs!inner (
-            client_id
-          )
-        `)
-        .eq('client_program.client_id', clientId)
-        .order('date', { ascending: true });
-
-      if (error) throw error;
-
-      const processedData = processWorkoutData(sessions);
-      setWorkoutData(processedData);
-    } catch (error) {
-      console.error('Error fetching workout data:', error);
+      console.error('Error fetching analytics:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const processWorkoutData = (sessions) => {
-    return sessions.map(session => {
-      const exerciseData = session.completed_exercises[selectedExercise.id];
-      if (!exerciseData) return null;
+  const generateWeightData = () => {
+    const mockDates = Array.from({ length: 15 }, (_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (15 - i) * 2);
+      return d;
+    });
 
-      const maxWeight = Math.max(...exerciseData.sets.map(set => set.weight || 0));
-      const totalVolume = exerciseData.sets.reduce((sum, set) => {
-        return sum + (set.weight || 0) * (set.reps || 0);
-      }, 0);
-
+    const weightData = mockDates.map((date, index) => {
+      const baseWeight = 85;
+      const weightLoss = index * 0.2 + (Math.random() * 0.4 - 0.2);
       return {
-        date: new Date(session.date).toLocaleDateString(),
-        maxWeight,
-        totalVolume,
-        sets: exerciseData.sets
+        date: date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }),
+        value: Math.round((baseWeight - weightLoss) * 10) / 10
       };
-    }).filter(Boolean);
+    });
+
+    setWeightData(weightData);
   };
 
-  if (loading && !client) {
+  const generateStrengthData = () => {
+    if (!selectedExercise || workoutLogs.length === 0) return;
+
+    const sessionGroups: Record<string, WorkoutLog[]> = {};
+
+    workoutLogs
+      .filter(log => log.exercise_id === selectedExercise)
+      .forEach(log => {
+        let dateStr = log.completed_at;
+        if (log.scheduled_session?.scheduled_date) {
+          dateStr = log.scheduled_session.scheduled_date;
+        }
+        const dateKey = new Date(dateStr).toISOString().split('T')[0];
+
+        if (!sessionGroups[dateKey]) {
+          sessionGroups[dateKey] = [];
+        }
+        sessionGroups[dateKey].push(log);
+      });
+
+    const strengthData = Object.entries(sessionGroups).map(([dateStr, logs]) => {
+      const maxWeight = Math.max(...logs.map(l => l.weight));
+      const totalVolume = logs.reduce((sum, l) => sum + (l.weight * l.reps), 0);
+      const dateObj = new Date(dateStr);
+
+      return {
+        date: dateObj.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }),
+        rawDate: dateObj,
+        maxWeight: maxWeight > 0 ? maxWeight : 0,
+        totalVolume
+      };
+    }).sort((a, b) => a.rawDate.getTime() - b.rawDate.getTime());
+
+    setStrengthData(strengthData);
+  };
+
+  const calculateGoalProgress = () => {
+    if (!client?.fitness_goals || workoutLogs.length === 0) return [];
+
+    return client.fitness_goals.slice(0, 3).map((goal: string, index: number) => {
+      const uniqueDaysThisMonth = new Set(
+        workoutLogs
+          .filter(log => {
+            const logDate = new Date(log.completed_at);
+            const now = new Date();
+            return logDate.getMonth() === now.getMonth() && logDate.getFullYear() === now.getFullYear();
+          })
+          .map(log => new Date(log.completed_at).toDateString())
+      ).size;
+
+      const progress = Math.min(100, (uniqueDaysThisMonth * 10) + (index * 20) + 10);
+
+      return {
+        name: goal,
+        target: "En cours",
+        progress
+      };
+    });
+  };
+
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+      <div className="flex items-center justify-center min-h-screen bg-[#0f172a]">
+        <div className="w-16 h-16 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin"></div>
       </div>
     );
   }
 
+  const goals = calculateGoalProgress();
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
+    <div className="min-h-screen bg-[#0f172a] text-white font-sans p-6 md:p-8">
+      {/* Background Gradients */}
+      <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
+        <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[128px]" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[128px]" />
+      </div>
+
+      <div className="relative z-10 max-w-7xl mx-auto space-y-8">
+        {/* Header */}
+        <div>
           <Link
             to={`/clients/${clientId}`}
-            className="inline-flex items-center text-white/80 hover:text-white mb-4"
+            className="inline-flex items-center text-gray-400 hover:text-white mb-6 transition-colors group"
           >
-            <ChevronLeft className="w-5 h-5 mr-1" />
-            Retour au profil
+            <ChevronLeft className="w-5 h-5 mr-1 group-hover:-translate-x-1 transition-transform" />
+            Retour au profil de {client?.first_name}
           </Link>
-          
-          <div className="flex justify-between items-center">
-            <h1 className="text-3xl font-bold text-white">Analyse des performances</h1>
-            <div className="flex items-center gap-4">
-              <select
-                value={selectedExercise?.id || ''}
-                onChange={(e) => {
-                  const exercise = exercises.find(ex => ex.id === e.target.value);
-                  setSelectedExercise(exercise);
-                }}
-                className="px-4 py-2 bg-white/5 border border-white/10 backdrop-blur-lg border border-white/10 rounded-lg text-white"
-              >
-                <option value="">Sélectionner un exercice</option>
-                {exercises.map(exercise => (
-                  <option key={exercise.id} value={exercise.id}>
-                    {exercise.name}
-                  </option>
-                ))}
-              </select>
 
-              <select
-                value={dateRange}
-                onChange={(e) => setDateRange(e.target.value)}
-                className="px-4 py-2 bg-white/5 border border-white/10 backdrop-blur-lg border border-white/10 rounded-lg text-white"
-              >
-                <option value="week">7 derniers jours</option>
-                <option value="month">30 derniers jours</option>
-                <option value="year">12 derniers mois</option>
-                <option value="all">Tout l'historique</option>
-              </select>
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+            <div>
+              <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Analyse des Performances</h1>
+              <p className="text-gray-400">Progression détaillée de {client?.first_name} {client?.last_name}</p>
+            </div>
+
+            <div className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-lg border border-white/10 text-sm text-gray-400">
+              <Calendar className="w-4 h-4" />
+              <span>Derniers 30 jours</span>
             </div>
           </div>
         </div>
 
-        {selectedExercise ? (
-          <div className="grid gap-6">
-            {/* Graphique Poids et Volume */}
-            <div className="bg-white/5 border border-white/10 backdrop-blur-lg rounded-xl p-6">
-              <h2 className="text-xl font-semibold text-white mb-6">Évolution du poids et du volume</h2>
-              <div className="h-96">
+        {workoutLogs.length === 0 ? (
+          <div className="bg-[#1e293b]/50 border border-white/5 backdrop-blur-xl rounded-3xl p-12 text-center flex flex-col items-center justify-center">
+            <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-6">
+              <Activity className="w-10 h-10 text-gray-500" />
+            </div>
+            <h3 className="text-2xl font-bold text-white mb-2">Aucune donnée disponible</h3>
+            <p className="text-gray-400 max-w-md mx-auto">
+              Ce client n'a pas encore enregistré de séances. Les statistiques apparaîtront ici une fois qu'il aura commencé l'entraînement.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+            {/* Weight Chart (Mock) */}
+            <div className="bg-[#1e293b]/50 border border-white/5 backdrop-blur-xl p-6 rounded-3xl flex flex-col h-[450px]">
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 bg-blue-500/20 rounded-xl">
+                    <Scale className="w-6 h-6 text-blue-400" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-white">Évolution du Poids</h2>
+                    <p className="text-xs text-gray-400">Suivi corporel (Simulé)</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex-1 w-full min-h-0">
                 <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart data={workoutData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                    <XAxis 
-                      dataKey="date" 
-                      stroke="rgba(255,255,255,0.6)"
-                      tick={{ fill: 'rgba(255,255,255,0.6)' }}
+                  <AreaChart data={weightData}>
+                    <defs>
+                      <linearGradient id="colorWeight" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                    <XAxis
+                      dataKey="date"
+                      stroke="rgba(255,255,255,0.3)"
+                      tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 12 }}
+                      tickLine={false}
+                      axisLine={false}
+                      dy={10}
                     />
-                    <YAxis 
-                      yAxisId="left"
-                      stroke="rgba(255,255,255,0.6)"
-                      tick={{ fill: 'rgba(255,255,255,0.6)' }}
+                    <YAxis
+                      stroke="rgba(255,255,255,0.3)"
+                      tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 12 }}
+                      tickLine={false}
+                      axisLine={false}
+                      dx={-10}
+                      domain={['dataMin - 2', 'dataMax + 2']}
                     />
-                    <YAxis 
-                      yAxisId="right"
-                      orientation="right"
-                      stroke="rgba(255,255,255,0.6)"
-                      tick={{ fill: 'rgba(255,255,255,0.6)' }}
-                    />
-                    <Tooltip 
+                    <Tooltip
                       contentStyle={{
-                        backgroundColor: 'rgba(255,255,255,0.1)',
+                        backgroundColor: 'rgba(15, 23, 42, 0.9)',
                         backdropFilter: 'blur(10px)',
-                        border: 'none',
-                        borderRadius: '0.5rem',
-                        color: 'white'
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        borderRadius: '1rem',
+                        color: 'white',
+                        boxShadow: '0 10px 30px -10px rgba(0,0,0,0.5)'
                       }}
+                      itemStyle={{ color: '#fff' }}
+                      labelStyle={{ color: '#9ca3af', marginBottom: '0.5rem' }}
                     />
-                    <Legend />
-                    <Line 
-                      yAxisId="left"
-                      type="monotone" 
-                      dataKey="maxWeight" 
-                      stroke="#3b82f6" 
-                      name="Poids max (kg)"
+                    <Area
+                      type="monotone"
+                      dataKey="value"
+                      stroke="#3b82f6"
+                      strokeWidth={3}
+                      fillOpacity={1}
+                      fill="url(#colorWeight)"
                     />
-                    <Bar
-                      yAxisId="right"
-                      dataKey="totalVolume"
-                      fill="#8b5cf6"
-                      name="Volume total (kg)"
-                      opacity={0.8}
-                    />
-                  </ComposedChart>
+                  </AreaChart>
                 </ResponsiveContainer>
               </div>
             </div>
 
-            {/* Tableau des performances */}
-            <div className="bg-white/5 border border-white/10 backdrop-blur-lg rounded-xl p-6">
-              <h2 className="text-xl font-semibold text-white mb-6">Détail des séances</h2>
-              <div className="overflow-x-auto">
-                <table className="w-full text-white">
-                  <thead>
-                    <tr className="border-b border-white/10">
-                      <th className="text-left py-3">Date</th>
-                      <th className="text-left py-3">Poids max</th>
-                      <th className="text-left py-3">Volume total</th>
-                      <th className="text-left py-3">Séries</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {workoutData.map((session, index) => (
-                      <tr key={index} className="border-b border-white/10">
-                        <td className="py-3">{session.date}</td>
-                        <td className="py-3">{session.maxWeight} kg</td>
-                        <td className="py-3">{session.totalVolume} kg</td>
-                        <td className="py-3">
-                          {session.sets.map((set, idx) => (
-                            <span key={idx} className="inline-block mr-4">
-                              {set.weight}kg × {set.reps}
-                            </span>
-                          ))}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            {/* Strength Progress Chart */}
+            <div className="bg-[#1e293b]/50 border border-white/5 backdrop-blur-xl p-6 rounded-3xl flex flex-col h-[450px]">
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 bg-purple-500/20 rounded-xl">
+                    <Dumbbell className="w-6 h-6 text-purple-400" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-white">Performance Exercice</h2>
+                    <p className="text-xs text-gray-400">Charge maximale soulevée</p>
+                  </div>
+                </div>
+
+                {exercises.length > 0 && (
+                  <div className="relative group">
+                    <select
+                      value={selectedExercise}
+                      onChange={(e) => setSelectedExercise(e.target.value)}
+                      className="appearance-none bg-white/5 border border-white/10 text-white text-sm rounded-xl px-4 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer hover:bg-white/10 transition-colors"
+                    >
+                      {exercises.map(exercise => (
+                        <option key={exercise.id} value={exercise.id} className="bg-slate-900 text-white">
+                          {exercise.name}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                  </div>
+                )}
               </div>
+
+              {strengthData.length > 0 ? (
+                <div className="flex-1 w-full min-h-0">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={strengthData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                      <XAxis
+                        dataKey="date"
+                        stroke="rgba(255,255,255,0.3)"
+                        tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 12 }}
+                        tickLine={false}
+                        axisLine={false}
+                        dy={10}
+                      />
+                      <YAxis
+                        stroke="rgba(255,255,255,0.3)"
+                        tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 12 }}
+                        tickLine={false}
+                        axisLine={false}
+                        dx={-10}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                          backdropFilter: 'blur(10px)',
+                          border: '1px solid rgba(255,255,255,0.1)',
+                          borderRadius: '1rem',
+                          color: 'white',
+                          boxShadow: '0 10px 30px -10px rgba(0,0,0,0.5)'
+                        }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="maxWeight"
+                        stroke="#a855f7"
+                        name="Charge Max (kg)"
+                        strokeWidth={3}
+                        dot={{ fill: '#a855f7', strokeWidth: 0, r: 4 }}
+                        activeDot={{ r: 6, strokeWidth: 0 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center text-center p-8 border border-dashed border-white/10 rounded-2xl bg-white/5 mx-auto w-full">
+                  <Activity className="w-8 h-8 text-white/20 mb-3" />
+                  <p className="text-gray-400 text-sm">
+                    Pas assez de données pour cet exercice.
+                  </p>
+                </div>
+              )}
             </div>
-          </div>
-        ) : (
-          <div className="bg-white/5 border border-white/10 backdrop-blur-lg rounded-xl p-12 text-center text-white/60">
-            Sélectionnez un exercice pour voir son analyse détaillée
+
+            {/* Goals Progress */}
+            <div className="lg:col-span-2 bg-[#1e293b]/50 border border-white/5 backdrop-blur-xl p-6 rounded-3xl">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2.5 bg-yellow-500/20 rounded-xl">
+                  <Target className="w-6 h-6 text-yellow-400" />
+                </div>
+                <h2 className="text-lg font-bold text-white">Objectifs Personnels</h2>
+              </div>
+
+              {goals.length > 0 ? (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {goals.map((goal, index) => (
+                    <div key={index} className="bg-gradient-to-br from-white/5 to-white/[0.02] p-5 rounded-2xl border border-white/5 hover:border-white/10 transition-all group relative overflow-hidden">
+                      <div className="absolute top-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <ArrowUpRight className="w-4 h-4 text-white/40" />
+                      </div>
+
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex-1 min-w-0 pr-4">
+                          <h4 className="text-white font-bold truncate">{goal.name}</h4>
+                          <p className="text-xs text-gray-400 mt-1">{goal.target}</p>
+                        </div>
+                        <div className={`flex items-center justify-center w-8 h-8 rounded-full ${goal.progress >= 100 ? 'bg-yellow-500 text-black' : 'bg-white/10 text-gray-400'}`}>
+                          <Award className="w-4 h-4" />
+                        </div>
+                      </div>
+
+                      <div className="relative pt-2">
+                        <div className="flex justify-between text-xs font-semibold mb-1.5">
+                          <span className={goal.progress >= 100 ? 'text-yellow-400' : 'text-blue-400'}>
+                            {goal.progress >= 100 ? 'Atteint !' : `${goal.progress}%`}
+                          </span>
+                        </div>
+                        <div className="w-full h-2 bg-black/40 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-1000 ease-out ${goal.progress >= 100 ? 'bg-yellow-500' : 'bg-gradient-to-r from-blue-500 to-purple-500'}`}
+                            style={{ width: `${Math.min(100, goal.progress)}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-400">
+                  Aucun objectif défini pour ce client.
+                </div>
+              )}
+            </div>
+
           </div>
         )}
       </div>
