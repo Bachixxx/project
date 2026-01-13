@@ -40,6 +40,7 @@ const Clients = lazy(() => import('./pages/Clients'));
 const ClientDetails = lazy(() => import('./pages/ClientDetails'));
 const ClientAnalytics = lazy(() => import('./pages/ClientAnalytics'));
 const Calendar = lazy(() => import('./pages/Calendar'));
+const CoachProgramDetails = lazy(() => import('./pages/CoachProgramDetails'));
 const LiveWorkout = lazy(() => import('./pages/LiveWorkout'));
 const MonthlyRevenue = lazy(() => import('./pages/MonthlyRevenue'));
 const Payments = lazy(() => import('./pages/Payments'));
@@ -173,7 +174,7 @@ function App() {
                     path="/workout/:clientProgramId"
                     element={
                       <PrivateRoute>
-                        <LiveWorkout />
+                        <CoachProgramDetails />
                       </PrivateRoute>
                     }
                   />

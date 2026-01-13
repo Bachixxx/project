@@ -27,6 +27,7 @@ function ClientWorkout() {
         .select(`
           id,
           status,
+          progress,
           program:programs!inner (
             id,
             name,
@@ -247,7 +248,7 @@ function ClientWorkout() {
                   <div className="flex items-start gap-4">
                     {/* Number / Status Icon */}
                     <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border ${isCompleted ? 'bg-green-500/20 border-green-500/30 text-green-400' :
-                        'bg-white/5 border-white/5 text-gray-400'
+                      'bg-white/5 border-white/5 text-gray-400'
                       }`}>
                       {isCompleted ? <CheckCircle className="w-6 h-6" /> : <span className="text-lg font-bold">{index + 1}</span>}
                     </div>
