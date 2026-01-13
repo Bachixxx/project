@@ -1,86 +1,43 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { ChevronLeft, Play, Pause, CheckCircle, Timer, Dumbbell, Clock, Settings, Save, ArrowRight, RotateCcw, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { ChevronLeft, Play, Calendar, CheckCircle, Clock, Dumbbell, User, Award } from 'lucide-react';
 import { useClientAuth } from '../../contexts/ClientAuthContext';
 import { supabase } from '../../lib/supabase';
-import confetti from 'canvas-confetti';
-
-interface Exercise {
-  id: string;
-  name: string;
-  description: string;
-  sets: number;
-  reps: number;
-  rest_time: number;
-  order_index: number;
-}
-
-interface WorkoutSession {
-  id: string;
-  client_program_id: string;
-  date: string;
-  notes: string;
-  completed_exercises: Record<string, {
-    sets: Array<{
-      reps: number;
-      weight: number;
-      completed: boolean;
-    }>;
-  }>;
-}
 
 function ClientWorkout() {
   const { clientProgramId } = useParams();
   const { client } = useClientAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [program, setProgram] = useState<any>(null);
-  const [exercises, setExercises] = useState<Exercise[]>([]);
-  const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
-  const [session, setSession] = useState<WorkoutSession | null>(null);
-  const [restTimer, setRestTimer] = useState<number | null>(null);
-  const [initialRestTime, setInitialRestTime] = useState<number | null>(null);
-  const [notes, setNotes] = useState('');
-  const [showExitConfirm, setShowExitConfirm] = useState(false);
-
-  // Sound effect ref
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [sessionsStatus, setSessionsStatus] = useState<Record<string, any>>({});
+  const [startingSessionId, setStartingSessionId] = useState<string | null>(null);
 
   useEffect(() => {
     if (client && clientProgramId) {
-      fetchProgramData();
+      fetchProgramDetails();
     }
-    // Preload timer sound
-    audioRef.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2860/2860-preview.mp3');
   }, [client, clientProgramId]);
 
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (restTimer && restTimer > 0) {
-      interval = setInterval(() => {
-        setRestTimer(prev => {
-          if (prev === 1) {
-            // Timer finished
-            audioRef.current?.play().catch(() => { });
-            return null;
-          }
-          return prev ? prev - 1 : null;
-        });
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [restTimer]);
-
-  const fetchProgramData = async () => {
+  const fetchProgramDetails = async () => {
     try {
-      // Fetch program details and exercises
+      // 1. Fetch Program Details with Sessions
       const { data: programData, error: programError } = await supabase
         .from('client_programs')
         .select(`
           id,
+          status,
           program:programs!inner (
             id,
             name,
             description,
+            difficulty_level,
+            duration_weeks,
+            coach_id,
+            coach:coaches (
+              full_name,
+              profile_image_url
+            ),
             program_sessions!inner (
               id,
               order_index,
@@ -89,18 +46,8 @@ function ClientWorkout() {
                 name,
                 description,
                 duration_minutes,
-                session_exercises!inner (
-                  id,
-                  sets,
-                  reps,
-                  rest_time,
-                  order_index,
-                  exercise:exercises!inner (
-                    id,
-                    name,
-                    description
-                  )
-                )
+                difficulty_level,
+                session_exercises ( count )
               )
             )
           )
@@ -109,392 +56,276 @@ function ClientWorkout() {
         .single();
 
       if (programError) throw programError;
-
       setProgram(programData);
 
-      // Extract exercises from all sessions
-      const allExercises: Exercise[] = [];
-      programData.program.program_sessions
-        .sort((a: any, b: any) => a.order_index - b.order_index)
-        .forEach((ps: any) => {
-          ps.session.session_exercises
-            .sort((a: any, b: any) => a.order_index - b.order_index)
-            .forEach((se: any) => {
-              allExercises.push({
-                id: se.exercise.id,
-                name: se.exercise.name,
-                description: se.exercise.description,
-                sets: se.sets,
-                reps: se.reps,
-                rest_time: se.rest_time,
-                order_index: se.order_index,
-              });
-            });
-        });
+      // 2. Fetch Completion Status for these sessions
+      // We look for any scheduled_sessions for this client and these session_ids
+      const prog = programData.program as any;
+      const sessionIds = prog.program_sessions.map((ps: any) => ps.session.id);
 
-      setExercises(allExercises);
+      const { data: historyData, error: historyError } = await supabase
+        .from('scheduled_sessions')
+        .select('session_id, status, scheduled_date, id')
+        .eq('client_id', client.id)
+        .in('session_id', sessionIds)
+        .order('scheduled_date', { ascending: false });
 
-      // Check for existing session today
-      const today = new Date().toISOString().split('T')[0];
-      const { data: sessions, error: sessionError } = await supabase
-        .from('workout_sessions')
-        .select('*')
-        .eq('client_program_id', clientProgramId)
-        .eq('date', today);
+      if (historyError) throw historyError;
 
-      if (sessionError) throw sessionError;
+      // Map history to session IDs (keeping the most recent status)
+      const statusMap: Record<string, any> = {};
+      historyData?.forEach(h => {
+        if (!statusMap[h.session_id]) {
+          statusMap[h.session_id] = h;
+        }
+      });
+      setSessionsStatus(statusMap);
 
-      if (sessions && sessions.length > 0) {
-        setSession(sessions[0]);
-        setNotes(sessions[0].notes || '');
-      } else {
-        // Create new session
-        const { data: newSession, error: createError } = await supabase
-          .from('workout_sessions')
-          .insert([{
-            client_program_id: clientProgramId,
-            date: today,
-            completed_exercises: {},
-          }])
-          .select()
-          .single();
-
-        if (createError) throw createError;
-        setSession(newSession);
-      }
     } catch (error) {
-      console.error('Error fetching program data:', error);
+      console.error('Error fetching program details:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const updateExerciseProgress = async (exerciseId: string, setIndex: number, data: any) => {
-    if (!session) return;
+  const handleStartSession = async (session: any) => {
+    if (!client || !program) return;
+    setStartingSessionId(session.id);
 
     try {
-      const currentExercise = exercises[currentExerciseIndex];
-      const updatedExercises = {
-        ...session.completed_exercises,
-        [exerciseId]: {
-          sets: [
-            ...(session.completed_exercises[exerciseId]?.sets || Array(currentExercise?.sets || 0).fill({
-              reps: currentExercise?.reps || 0,
-              weight: 0,
-              completed: false,
-            })),
-          ],
-        },
-      };
+      // Check if unfinished session exists today
+      // (This logic is partly handled by the UI showing "Reprendre", but let's be safe)
+      const today = new Date().toISOString().split('T')[0];
 
-      updatedExercises[exerciseId].sets[setIndex] = {
-        ...updatedExercises[exerciseId].sets[setIndex],
-        ...data,
-      };
+      // Look for an existing scheduled session for today that isn't completed
+      const { data: existingSession } = await supabase
+        .from('scheduled_sessions')
+        .select('id')
+        .eq('client_id', client.id)
+        .eq('session_id', session.id)
+        .gte('scheduled_date', today) // Simplification: any session from today onwards or just "recent"
+        .neq('status', 'completed')
+        .maybeSingle();
 
-      const { error } = await supabase
-        .from('workout_sessions')
-        .update({
-          completed_exercises: updatedExercises,
-          notes,
-        })
-        .eq('id', session.id);
-
-      if (error) throw error;
-
-      setSession(prev => prev ? {
-        ...prev,
-        completed_exercises: updatedExercises,
-      } : null);
-
-      // Start rest timer if set is completed and not already running
-      if (data.completed && currentExercise?.rest_time && !restTimer) {
-        setInitialRestTime(currentExercise.rest_time);
-        setRestTimer(currentExercise.rest_time);
+      if (existingSession) {
+        navigate(`/client/live-workout/${existingSession.id}`);
+        return;
       }
 
-      // Check if workout is complete
-      const totalSets = exercises.reduce((acc, ex) => acc + ex.sets, 0);
-      let completedSets = 0;
-      Object.values(updatedExercises).forEach(ex => {
-        ex.sets.forEach(s => { if (s.completed) completedSets++; });
-      });
+      // Create NEW Scheduled Session (Unified Engine)
+      const prog = program.program as any;
+      const { data: newSession, error: createError } = await supabase
+        .from('scheduled_sessions')
+        .insert([{
+          client_id: client.id,
+          coach_id: prog.coach_id, // Use Program Author as Coach
+          session_id: session.id,
+          scheduled_date: new Date().toISOString(),
+          status: 'scheduled',
+          notes: `Séance du programme: ${prog.name}`
+        }])
+        .select()
+        .single();
 
-      if (completedSets === totalSets) {
-        confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.6 }
-        });
-      }
+      if (createError) throw createError;
+
+      navigate(`/client/live-workout/${newSession.id}`);
 
     } catch (error) {
-      console.error('Error updating exercise progress:', error);
+      console.error('Error starting session:', error);
+      alert('Erreur lors du lancement de la séance');
+      setStartingSessionId(null);
     }
   };
 
-  const calculateProgress = () => {
-    if (!session || !exercises.length) return 0;
-
-    const totalSets = exercises.reduce((acc, ex) => acc + ex.sets, 0);
-    const completedSets = Object.values(session.completed_exercises).reduce(
-      (acc, ex) => acc + ex.sets.filter(set => set.completed).length,
-      0
-    );
-
-    return Math.round((completedSets / totalSets) * 100);
-  };
-
-  const currentExercise = exercises[currentExerciseIndex];
-  const progress = calculateProgress();
-
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-[#0f172a]">
-        <div className="w-16 h-16 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin"></div>
+      <div className="min-h-screen bg-[#0f172a] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
       </div>
     );
   }
 
+  if (!program) return null;
+
+  const sortedSessions = program.program.program_sessions.sort((a: any, b: any) => a.order_index - b.order_index);
+
   return (
-    <div className="min-h-screen bg-[#0f172a] text-white flex flex-col font-sans">
+    <div className="min-h-screen bg-[#0f172a] text-white pb-24 font-sans">
 
-      {/* Top Navigation */}
-      <div className="flex items-center justify-between px-4 py-4 bg-[#0f172a]/80 backdrop-blur-md sticky top-0 z-50 border-b border-white/5">
-        <Link
-          to="/client/workouts"
-          className="p-2 -ml-2 rounded-full hover:bg-white/10 transition-colors"
-        >
-          <ChevronLeft className="w-6 h-6 text-white" />
-        </Link>
+      {/* Hero Header */}
+      <div className="relative h-64 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#0f172a] z-10" />
+        <div className="absolute inset-0 bg-blue-900/20 z-0" />
 
-        <div className="flex flex-col items-center">
-          <span className="text-sm font-semibold text-white/90">{program?.program?.name}</span>
-          <span className="text-xs text-blue-400 font-medium">
-            Exercice {currentExerciseIndex + 1} / {exercises.length}
-          </span>
-        </div>
+        {/* Abstract Shapes */}
+        <div className="absolute top-[-50%] right-[-20%] w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-[100px]" />
+        <div className="absolute bottom-[-50%] left-[-20%] w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[100px]" />
 
-        <div className="w-8">
-          {/* Placeholder for balance */}
+        <div className="relative z-20 p-4 pt-6 h-full flex flex-col justify-between max-w-2xl mx-auto">
+          <Link to="/client/workouts" className="self-start p-2 bg-white/10 backdrop-blur-md rounded-full hover:bg-white/20 transition-all">
+            <ChevronLeft className="w-6 h-6" />
+          </Link>
+
+          <div className="mb-4">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="px-2 py-1 bg-blue-500/20 border border-blue-500/30 rounded-lg text-xs font-bold text-blue-400 uppercase tracking-wider">
+                Programme
+              </span>
+              {program.program.difficulty_level && (
+                <span className="px-2 py-1 bg-white/5 border border-white/10 rounded-lg text-xs font-medium text-gray-400 capitalize">
+                  {program.program.difficulty_level}
+                </span>
+              )}
+            </div>
+            <h1 className="text-3xl font-bold text-white mb-2 shadow-sm">{program.program.name}</h1>
+            <div className="flex items-center gap-2 text-sm text-gray-400">
+              <User className="w-4 h-4" />
+              <span>Par {program.program.coach?.full_name || 'Coach'}</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 overflow-y-auto p-4 pb-32 max-w-2xl mx-auto w-full">
+      <div className="max-w-2xl mx-auto px-4 -mt-6 relative z-30 space-y-6">
 
-        {/* Progress Bar */}
-        <div className="mb-6">
-          <div className="flex justify-between text-xs text-gray-400 mb-2">
-            <span>Progression globale</span>
-            <span>{progress}%</span>
+        {/* Stats Row */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-[#1e293b]/80 backdrop-blur-xl border border-white/5 p-4 rounded-2xl flex items-center gap-3">
+            <div className="p-2.5 bg-blue-500/10 rounded-xl">
+              <Calendar className="w-5 h-5 text-blue-400" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-400 font-medium">Durée</p>
+              <p className="text-lg font-bold">{program.program.duration_weeks} semaines</p>
+            </div>
           </div>
-          <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-blue-500 to-cyan-500 transition-all duration-500"
-              style={{ width: `${progress}%` }}
-            />
+          <div className="bg-[#1e293b]/80 backdrop-blur-xl border border-white/5 p-4 rounded-2xl flex items-center gap-3">
+            <div className="p-2.5 bg-purple-500/10 rounded-xl">
+              <Dumbbell className="w-5 h-5 text-purple-400" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-400 font-medium">Séances</p>
+              <p className="text-lg font-bold">{sortedSessions.length} total</p>
+            </div>
           </div>
         </div>
 
-        {/* Current Exercise Card */}
-        {currentExercise && (
-          <div className="space-y-6">
-
-            {/* Header */}
-            <div>
-              <h1 className="text-2xl font-bold text-white mb-2">{currentExercise.name}</h1>
-              <p className="text-gray-400 text-sm leading-relaxed">{currentExercise.description || "Aucune description disponible."}</p>
-            </div>
-
-            {/* Timer Banner (if active) */}
-            {restTimer && (
-              <div className="sticky top-20 z-40 bg-blue-600 rounded-2xl p-4 shadow-lg shadow-blue-500/20 animate-fade-in flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-white/20 rounded-xl">
-                    <Timer className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-blue-100 text-xs font-bold uppercase">Repos</p>
-                    <p className="text-2xl font-mono font-bold text-white">
-                      {Math.floor(restTimer / 60)}:{(restTimer % 60).toString().padStart(2, '0')}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setRestTimer(prev => (prev ? prev + 30 : 30))}
-                    className="p-2 bg-white/20 rounded-lg text-white hover:bg-white/30 transition-colors"
-                  >
-                    +30s
-                  </button>
-                  <button
-                    onClick={() => setRestTimer(null)}
-                    className="p-2 bg-white/20 rounded-lg text-white hover:bg-white/30 transition-colors"
-                  >
-                    Skip
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Sets List */}
-            <div className="space-y-3">
-              <div className="grid grid-cols-12 gap-2 text-xs text-gray-500 font-bold uppercase tracking-wider px-2">
-                <div className="col-span-2 text-center">Série</div>
-                <div className="col-span-3 text-center">kg</div>
-                <div className="col-span-3 text-center">Reps</div>
-                <div className="col-span-4 text-center">Action</div>
-              </div>
-
-              {Array.from({ length: currentExercise.sets }).map((_, setIndex) => {
-                const setData = session?.completed_exercises[currentExercise.id]?.sets[setIndex];
-                const isCompleted = setData?.completed;
-
-                return (
-                  <div
-                    key={setIndex}
-                    className={`grid grid-cols-12 gap-2 items-center p-3 rounded-xl border transition-all ${isCompleted
-                        ? 'bg-green-500/10 border-green-500/30'
-                        : 'bg-white/5 border-white/5'
-                      }`}
-                  >
-                    <div className="col-span-2 flex flex-col items-center justify-center">
-                      <span className={`text-lg font-bold ${isCompleted ? 'text-green-400' : 'text-gray-400'}`}>{setIndex + 1}</span>
-                      <span className="text-[10px] text-gray-500 hidden sm:block">Série</span>
-                    </div>
-
-                    <div className="col-span-3">
-                      <input
-                        type="number"
-                        placeholder="0"
-                        defaultValue={setData?.weight || 0}
-                        onChange={(e) => {
-                          const val = parseFloat(e.target.value);
-                          if (!isNaN(val)) {
-                            // Only update if changed visually? 
-                            // In a real app we might want debounce, but for now let's update on completion or blur
-                          }
-                        }}
-                        onBlur={(e) => {
-                          const val = parseFloat(e.target.value);
-                          if (!isNaN(val)) {
-                            updateExerciseProgress(currentExercise.id, setIndex, {
-                              weight: val,
-                              // Don't auto-complete on blur
-                            });
-                          }
-                        }}
-                        className={`w-full bg-black/20 text-center py-2 rounded-lg text-white font-mono font-medium focus:ring-2 focus:ring-blue-500 outline-none border border-transparent ${isCompleted ? 'text-green-400' : ''}`}
-                      />
-                    </div>
-
-                    <div className="col-span-3">
-                      <input
-                        type="number"
-                        placeholder={currentExercise.reps.toString()}
-                        defaultValue={setData?.reps || currentExercise.reps}
-                        onBlur={(e) => {
-                          const val = parseFloat(e.target.value);
-                          if (!isNaN(val)) {
-                            updateExerciseProgress(currentExercise.id, setIndex, {
-                              reps: val,
-                              // Don't auto-complete on blur
-                            });
-                          }
-                        }}
-                        className={`w-full bg-black/20 text-center py-2 rounded-lg text-white font-mono font-medium focus:ring-2 focus:ring-blue-500 outline-none border border-transparent ${isCompleted ? 'text-green-400' : ''}`}
-                      />
-                    </div>
-
-                    <div className="col-span-4 flex justify-center">
-                      <button
-                        onClick={() => {
-                          const weightInput = document.querySelectorAll(`input`)[setIndex * 2] as HTMLInputElement;
-                          const repsInput = document.querySelectorAll(`input`)[setIndex * 2 + 1] as HTMLInputElement;
-
-                          updateExerciseProgress(currentExercise.id, setIndex, {
-                            completed: !isCompleted,
-                            weight: parseFloat(weightInput.value) || 0,
-                            reps: parseFloat(repsInput.value) || currentExercise.reps
-                          });
-                        }}
-                        className={`w-full py-2 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-1.5 ${isCompleted
-                            ? 'bg-green-500 text-white shadow-lg shadow-green-500/20'
-                            : 'bg-white/10 text-white hover:bg-white/20'
-                          }`}
-                      >
-                        {isCompleted ? <CheckCircle className="w-4 h-4" /> : 'Valider'}
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+        {/* Description */}
+        {program.program.description && (
+          <div className="bg-[#1e293b]/50 border border-white/5 p-5 rounded-2xl">
+            <h3 className="text-sm font-bold text-gray-300 uppercase tracking-wider mb-2">À propos</h3>
+            <p className="text-gray-400 text-sm leading-relaxed">{program.program.description}</p>
           </div>
         )}
 
-        {/* Notes */}
-        <div className="mt-8">
-          <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-2">Notes</h3>
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            onBlur={async () => {
-              if (session) {
-                await supabase
-                  .from('workout_sessions')
-                  .update({ notes })
-                  .eq('id', session.id);
-              }
-            }}
-            placeholder="Notes sur la séance..."
-            className="w-full h-24 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 outline-none resize-none text-sm"
-          />
+        {/* Sessions List */}
+        <div>
+          <h3 className="text-lg font-bold text-white mb-4 px-1 flex items-center gap-2">
+            <Award className="w-5 h-5 text-yellow-500" />
+            Votre Parcours
+          </h3>
+
+          <div className="space-y-4">
+            {sortedSessions.map((item: any, index: number) => {
+              const session = item.session;
+              const status = sessionsStatus[session.id]; // { status, scheduled_date }
+              const isCompleted = status?.status === 'completed';
+              const isScheduled = status?.status === 'scheduled';
+              const isLocked = index > 0 && !(sessionsStatus[sortedSessions[index - 1].session.id]?.status === 'completed'); // Simple lock logic? Maybe too strict.
+
+              return (
+                <div
+                  key={session.id}
+                  className={`relative group bg-[#1e293b] border ${isCompleted ? 'border-green-500/30' : 'border-white/5'} hover:border-blue-500/30 rounded-2xl p-5 transition-all duration-300`}
+                >
+                  {/* Connector Line */}
+                  {index < sortedSessions.length - 1 && (
+                    <div className="absolute left-[2.25rem] bottom-[-20px] w-0.5 h-[20px] bg-white/5 -z-10" />
+                  )}
+
+                  <div className="flex items-start gap-4">
+                    {/* Number / Status Icon */}
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border ${isCompleted ? 'bg-green-500/20 border-green-500/30 text-green-400' :
+                        'bg-white/5 border-white/5 text-gray-400'
+                      }`}>
+                      {isCompleted ? <CheckCircle className="w-6 h-6" /> : <span className="text-lg font-bold">{index + 1}</span>}
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-start mb-1">
+                        <h4 className={`font-bold text-lg truncate pr-2 ${isCompleted ? 'text-gray-300' : 'text-white'}`}>
+                          {session.name}
+                        </h4>
+                        {isCompleted && (
+                          <span className="text-xs font-mono text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full">Fait</span>
+                        )}
+                      </div>
+
+                      <p className="text-sm text-gray-500 line-clamp-2 mb-3">
+                        {session.description || 'Séance complète'}
+                      </p>
+
+                      <div className="flex items-center gap-4 text-xs text-gray-400 mb-4">
+                        <div className="flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5" />
+                          <span>{session.duration_minutes} min</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <Dumbbell className="w-3.5 h-3.5" />
+                          <span>{session.session_exercises[0]?.count || 0} exos</span>
+                        </div>
+                      </div>
+
+                      {/* Action Button */}
+                      {isCompleted ? (
+                        <button
+                          onClick={() => handleStartSession(session)}
+                          disabled={startingSessionId === session.id}
+                          className="w-full py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 text-sm font-medium transition-all flex items-center justify-center gap-2 border border-white/5"
+                        >
+                          {startingSessionId === session.id ? (
+                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          ) : (
+                            <>
+                              <RotateCcw className="w-4 h-4" />
+                              Refaire la séance
+                            </>
+                          )}
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleStartSession(session)}
+                          disabled={startingSessionId === session.id}
+                          className="w-full py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white text-sm font-bold shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2"
+                        >
+                          {startingSessionId === session.id ? (
+                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          ) : (
+                            <>
+                              <Play className="w-4 h-4 fill-current" />
+                              {isScheduled ? 'Reprendre' : 'Commencer'}
+                            </>
+                          )}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
       </div>
-
-      {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-[#0f172a]/90 backdrop-blur-xl border-t border-white/10 p-4 pb-8 z-50">
-        <div className="max-w-2xl mx-auto flex items-center justify-between gap-4">
-          <button
-            onClick={() => setCurrentExerciseIndex(Math.max(0, currentExerciseIndex - 1))}
-            disabled={currentExerciseIndex === 0}
-            className="px-4 py-3 bg-white/5 rounded-xl text-white disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/10 transition-colors"
-          >
-            <ChevronLeft className="w-6 h-6" />
-          </button>
-
-          <span className="text-sm font-medium text-gray-400">
-            {currentExercise?.name}
-          </span>
-
-          <button
-            onClick={() => {
-              if (currentExerciseIndex < exercises.length - 1) {
-                setCurrentExerciseIndex(currentExerciseIndex + 1);
-              } else {
-                // Finish workout
-                setShowExitConfirm(true); // Re-use logic or just redirect
-                // For now, since "Exit" button logic wasn't fully fleshed out in my mind, just link back
-              }
-            }}
-            className={`px-6 py-3 rounded-xl text-white font-bold flex items-center gap-2 transition-all shadow-lg ${currentExerciseIndex === exercises.length - 1
-                ? 'bg-green-500 hover:bg-green-600 shadow-green-500/20'
-                : 'bg-blue-500 hover:bg-blue-600 shadow-blue-500/20'
-              }`}
-          >
-            {currentExerciseIndex === exercises.length - 1 ? (
-              <Link to="/client/workouts" className="flex items-center gap-2">Terminer <CheckCircle className="w-5 h-5" /></Link>
-            ) : (
-              <>Suivant <ArrowRight className="w-5 h-5" /></>
-            )}
-          </button>
-        </div>
-      </div>
-
     </div>
+  );
+}
+
+// Helper icon
+function RotateCcw({ className }: { className?: string }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74-2.74L3 12" /><path d="M3 3v9h9" /></svg>
   );
 }
 

@@ -5,7 +5,8 @@ import { useClientAuth } from '../../contexts/ClientAuthContext';
 import { supabase } from '../../lib/supabase';
 
 function ClientDashboard() {
-  const { client, loading: authLoading } = useClientAuth();
+  const { client: authClient, loading: authLoading } = useClientAuth();
+  const client = authClient as any;
   const [loading, setLoading] = useState(false);
   const [clientPrograms, setClientPrograms] = useState<any[]>([]);
   const [workoutSessions, setWorkoutSessions] = useState<any[]>([]);
@@ -129,12 +130,17 @@ function ClientDashboard() {
     // Priority 1: Scheduled Session today/soon
     if (upcomingSessions.length > 0) {
       const next = upcomingSessions[0];
+      const sessionDate = new Date(next.scheduled_date);
+      const isToday = new Date().toDateString() === sessionDate.toDateString();
+      const isPast = new Date() > sessionDate;
+      const isReadyCurrent = isToday || isPast;
+
       return {
         type: 'scheduled',
         data: next,
         title: next.session?.name || "Session planifiée",
-        subtitle: new Date(next.scheduled_date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }),
-        link: `/client/appointments`
+        subtitle: sessionDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }),
+        link: isReadyCurrent ? `/client/live-workout/${next.id}` : `/client/appointments`
       };
     }
 
@@ -146,7 +152,7 @@ function ClientDashboard() {
         data: prog,
         title: prog.program?.name || "Programme en cours",
         subtitle: "Continuer votre progression",
-        link: `/client/workouts`
+        link: `/client/workout/${prog.id}` // Link to the specific program details
       };
     }
 

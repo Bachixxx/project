@@ -5,7 +5,8 @@ import { useClientAuth } from '../../contexts/ClientAuthContext';
 import { supabase } from '../../lib/supabase';
 
 function ClientWorkouts() {
-  const { client } = useClientAuth();
+  const { client: authClient } = useClientAuth();
+  const client = authClient as any;
   const [loading, setLoading] = useState(true);
   const [clientPrograms, setClientPrograms] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -34,6 +35,7 @@ function ClientWorkouts() {
             description,
             duration_weeks,
             difficulty_level,
+            coach_id,
             coach:coaches (
               full_name,
               specialization
@@ -64,10 +66,11 @@ function ClientWorkouts() {
 
       // Format data
       const formattedWorkouts = (clientProgramsData || []).map(cp => {
-        if (!cp.program) return null;
+        const program = cp.program as any;
+        if (!program) return null;
 
         // Flatten exercises for preview
-        const allExercises = cp.program.program_sessions?.flatMap((s: any) =>
+        const allExercises = program.program_sessions?.flatMap((s: any) =>
           s.session?.session_exercises?.map((se: any) => se.exercise?.name) || []
         ) || [];
 
@@ -76,15 +79,15 @@ function ClientWorkouts() {
 
         return {
           id: cp.id,
-          name: cp.program.name,
-          coachName: cp.program.coach?.full_name || 'Coach',
-          description: cp.program.description,
-          duration: cp.program.duration_weeks,
-          difficulty: cp.program.difficulty_level,
+          name: program.name,
+          coachName: program.coach?.full_name || 'Coach',
+          description: program.description,
+          duration: program.duration_weeks,
+          difficulty: program.difficulty_level,
           startDate: cp.start_date,
           status: cp.status,
           progress: cp.progress || 0,
-          totalSessions: cp.program.program_sessions?.length || 0,
+          totalSessions: program.program_sessions?.length || 0,
           previewExercises: uniqueExercises
         };
       }).filter(Boolean);
