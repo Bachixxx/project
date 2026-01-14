@@ -1,7 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Users, UserX, Search, AlertTriangle, CheckCircle, Ban, Unlock } from 'lucide-react';
+import {
+  Shield,
+  Users,
+  UserX,
+  Search,
+  AlertTriangle,
+  CheckCircle,
+  Ban,
+  Unlock,
+  Clock,
+  Mail,
+  Copy,
+  List
+} from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface Coach {
   id: string;
@@ -30,14 +44,40 @@ interface Client {
   };
 }
 
-type AccountType = 'coaches' | 'clients';
+interface WaitlistEntry {
+  id: string;
+  email: string;
+  created_at: string;
+}
+
+type AccountType = 'coaches' | 'clients' | 'waitlist';
 
 function Admin() {
   const { user } = useAuth();
+  const { language } = useLanguage();
+
+  const dateFormatOptions: Intl.DateTimeFormatOptions = {
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric'
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US', dateFormatOptions);
+  };
+
+  const formatDateTime = (dateString: string) => {
+    return new Date(dateString).toLocaleString(language === 'fr' ? 'fr-FR' : 'en-US', {
+      ...dateFormatOptions,
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [coaches, setCoaches] = useState<Coach[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
+  const [waitlistEntries, setWaitlistEntries] = useState<WaitlistEntry[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTab, setSelectedTab] = useState<AccountType>('coaches');
   const [showBanModal, setShowBanModal] = useState(false);
@@ -88,7 +128,7 @@ function Admin() {
 
         if (error) throw error;
         setCoaches(data || []);
-      } else {
+      } else if (selectedTab === 'clients') {
         const { data: clientsData, error: clientsError } = await supabase
           .from('clients')
           .select(`
@@ -99,19 +139,23 @@ function Admin() {
           `)
           .order('created_at', { ascending: false });
 
-        if (clientsError) {
-          console.error('Error fetching clients:', clientsError);
-        }
+        if (clientsError) throw clientsError;
 
-        // Supabase returns the relationship as an object or array depending on cardinality.
-        // Assuming coach_id is a foreign key to coaches.id (single), it should return an object or null.
-        // However, typescript might complain if the return type of select isn't perfectly inferred or if it returns an array.
-        // It's safe to cast or trust the interface if it matches the runtime shape.
-        // To be safe and since we can't easily check runtime here without running, 
-        // I will assume the standard Supabase behavior for M:1 which matches the interface `coach: { full_name: string }`.
+        // Handle potentially array-wrapped relations
+        const processedClients = (clientsData || []).map((client: any) => ({
+          ...client,
+          coach: Array.isArray(client.coach) ? client.coach[0] : client.coach
+        }));
 
-        console.log('Fetched clients:', clientsData?.length);
-        setClients(clientsData || []);
+        setClients(processedClients);
+      } else if (selectedTab === 'waitlist') {
+        const { data, error } = await supabase
+          .from('waitlist')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        setWaitlistEntries(data || []);
       }
     } catch (error) {
       console.error('Error fetching accounts:', error);
@@ -186,6 +230,11 @@ function Admin() {
     }
   };
 
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    alert('Email copié !');
+  };
+
   const filteredCoaches = coaches.filter(coach =>
     coach.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     coach.email.toLowerCase().includes(searchQuery.toLowerCase())
@@ -196,268 +245,324 @@ function Admin() {
     client.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const filteredWaitlist = waitlistEntries.filter(entry =>
+    entry.email.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
       </div>
     );
   }
 
   if (!isAdmin) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="text-center">
+      <div className="flex items-center justify-center min-h-screen bg-gray-900">
+        <div className="text-center p-8 glass-card max-w-md w-full">
           <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Accès refusé</h1>
-          <p className="text-gray-600">Vous n'avez pas les permissions pour accéder à cette page.</p>
+          <h1 className="text-2xl font-bold text-white mb-2">Accès refusé</h1>
+          <p className="text-gray-400">Vous n'avez pas les permissions pour accéder à cette page.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <div className="flex items-center mb-2">
-            <Shield className="w-8 h-8 text-blue-600 mr-3" />
-            <h1 className="text-3xl font-bold text-gray-900">Panneau d'administration</h1>
+    <div className="p-6 max-w-[2000px] mx-auto space-y-8 animate-fade-in text-white min-h-screen">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+            <Shield className="w-8 h-8 text-primary-500" />
+            <h1 className="text-3xl font-bold">Administration</h1>
           </div>
-          <p className="text-gray-600">Gérez les comptes et bannissez les utilisateurs problématiques</p>
+          <p className="text-gray-400">Gérez les utilisateurs et la file d'attente</p>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-          <div className="border-b border-gray-200">
-            <div className="flex">
-              <button
-                onClick={() => setSelectedTab('coaches')}
-                className={`flex-1 px-6 py-4 text-sm font-medium ${selectedTab === 'coaches'
-                    ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
-                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                  }`}
-              >
-                <div className="flex items-center justify-center">
-                  <Users className="w-5 h-5 mr-2" />
-                  Coachs ({coaches.length})
-                </div>
-              </button>
-              <button
-                onClick={() => setSelectedTab('clients')}
-                className={`flex-1 px-6 py-4 text-sm font-medium ${selectedTab === 'clients'
-                    ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
-                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                  }`}
-              >
-                <div className="flex items-center justify-center">
-                  <Users className="w-5 h-5 mr-2" />
-                  Clients ({clients.length})
-                </div>
-              </button>
-            </div>
+        <div className="glass-card px-4 py-2 flex items-center gap-2">
+          <List className="w-4 h-4 text-gray-400" />
+          <span className="text-sm text-gray-400">Total File d'attente:</span>
+          <span className="text-lg font-bold text-white">{waitlistEntries.length}</span>
+        </div>
+      </div>
+
+      <div className="glass-card overflow-hidden">
+        <div className="border-b border-white/10">
+          <div className="flex">
+            <button
+              onClick={() => setSelectedTab('coaches')}
+              className={`flex-1 px-6 py-4 text-sm font-medium transition-colors relative ${selectedTab === 'coaches'
+                ? 'text-primary-400'
+                : 'text-gray-400 hover:text-white hover:bg-white/5'
+                }`}
+            >
+              <div className="flex items-center justify-center">
+                <Users className="w-5 h-5 mr-2" />
+                Coachs ({coaches.length})
+              </div>
+              {selectedTab === 'coaches' && (
+                <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary-500" />
+              )}
+            </button>
+            <button
+              onClick={() => setSelectedTab('clients')}
+              className={`flex-1 px-6 py-4 text-sm font-medium transition-colors relative ${selectedTab === 'clients'
+                ? 'text-primary-400'
+                : 'text-gray-400 hover:text-white hover:bg-white/5'
+                }`}
+            >
+              <div className="flex items-center justify-center">
+                <Users className="w-5 h-5 mr-2" />
+                Clients ({clients.length})
+              </div>
+              {selectedTab === 'clients' && (
+                <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary-500" />
+              )}
+            </button>
+            <button
+              onClick={() => setSelectedTab('waitlist')}
+              className={`flex-1 px-6 py-4 text-sm font-medium transition-colors relative ${selectedTab === 'waitlist'
+                ? 'text-primary-400'
+                : 'text-gray-400 hover:text-white hover:bg-white/5'
+                }`}
+            >
+              <div className="flex items-center justify-center">
+                <Clock className="w-5 h-5 mr-2" />
+                File d'attente ({waitlistEntries.length})
+              </div>
+              {selectedTab === 'waitlist' && (
+                <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary-500" />
+              )}
+            </button>
+          </div>
+        </div>
+
+        <div className="p-6">
+          <div className="mb-6 relative">
+            <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Rechercher..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
           </div>
 
-          <div className="p-6">
-            <div className="mb-6">
-              <div className="relative">
-                <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Rechercher par nom ou email..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Nom
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Email
-                    </th>
-                    {selectedTab === 'clients' && (
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Coach
-                      </th>
-                    )}
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Statut
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Date de création
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="text-left border-b border-white/10">
+                  {selectedTab === 'waitlist' ? (
+                    <>
+                      <th className="pb-4 pl-4 text-xs font-medium text-gray-400 uppercase tracking-wider">Email</th>
+                      <th className="pb-4 text-xs font-medium text-gray-400 uppercase tracking-wider">Date d'inscription</th>
+                      <th className="pb-4 text-xs font-medium text-gray-400 uppercase tracking-wider">Actions</th>
+                    </>
+                  ) : (
+                    <>
+                      <th className="pb-4 pl-4 text-xs font-medium text-gray-400 uppercase tracking-wider">Utilisateur</th>
+                      <th className="pb-4 text-xs font-medium text-gray-400 uppercase tracking-wider">Email</th>
+                      {selectedTab === 'clients' && <th className="pb-4 text-xs font-medium text-gray-400 uppercase tracking-wider">Coach</th>}
+                      <th className="pb-4 text-xs font-medium text-gray-400 uppercase tracking-wider">Statut</th>
+                      <th className="pb-4 text-xs font-medium text-gray-400 uppercase tracking-wider">Depuis le</th>
+                      <th className="pb-4 text-xs font-medium text-gray-400 uppercase tracking-wider">Actions</th>
+                    </>
+                  )}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {selectedTab === 'coaches' && filteredCoaches.map((coach) => (
+                  <tr key={coach.id} className="group hover:bg-white/5 transition-colors">
+                    <td className="py-4 pl-4">
+                      <div className="flex items-center">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center text-xs font-bold text-white mr-3">
+                          {coach.full_name.charAt(0)}
+                        </div>
+                        <div>
+                          <div className="font-medium text-white">{coach.full_name}</div>
+                          {coach.specialization && (
+                            <div className="text-xs text-gray-500">{coach.specialization}</div>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-4 text-gray-300 text-sm">{coach.email}</td>
+                    <td className="py-4">
+                      {coach.is_banned ? (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20">
+                          <UserX className="w-3 h-3 mr-1" /> Banni
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-400 border border-green-500/20">
+                          <CheckCircle className="w-3 h-3 mr-1" /> Actif
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-4 text-gray-400 text-sm">
+                      {formatDate(coach.created_at)}
+                    </td>
+                    <td className="py-4">
+                      {coach.id !== user?.id && (
+                        coach.is_banned ? (
+                          <button
+                            onClick={() => handleUnban(coach.id, 'coaches')}
+                            disabled={processing}
+                            className="p-2 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors"
+                            title="Débannir"
+                          >
+                            <Unlock className="w-4 h-4" />
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleBanClick(coach.id, coach.full_name, 'coaches')}
+                            disabled={processing}
+                            className="p-2 hover:bg-red-500/20 rounded-lg text-gray-400 hover:text-red-400 transition-colors"
+                            title="Bannir"
+                          >
+                            <Ban className="w-4 h-4" />
+                          </button>
+                        )
+                      )}
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {selectedTab === 'coaches' &&
-                    filteredCoaches.map((coach) => (
-                      <tr key={coach.id} className={coach.is_banned ? 'bg-red-50' : ''}>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div>
-                              <div className="text-sm font-medium text-gray-900">{coach.full_name}</div>
-                              {coach.specialization && (
-                                <div className="text-sm text-gray-500">{coach.specialization}</div>
-                              )}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{coach.email}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {coach.is_banned ? (
-                            <div>
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                <UserX className="w-3 h-3 mr-1" />
-                                Banni
-                              </span>
-                              {coach.banned_reason && (
-                                <div className="text-xs text-gray-500 mt-1">Raison: {coach.banned_reason}</div>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                              <CheckCircle className="w-3 h-3 mr-1" />
-                              Actif
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {new Date(coach.created_at).toLocaleDateString('fr-FR')}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          {coach.id !== user?.id && (
-                            coach.is_banned ? (
-                              <button
-                                onClick={() => handleUnban(coach.id, 'coaches')}
-                                disabled={processing}
-                                className="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-sm text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
-                              >
-                                <Unlock className="w-4 h-4 mr-1" />
-                                Débannir
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() => handleBanClick(coach.id, coach.full_name, 'coaches')}
-                                disabled={processing}
-                                className="inline-flex items-center px-3 py-1 border border-red-300 rounded-md text-sm text-red-700 bg-white hover:bg-red-50 disabled:opacity-50"
-                              >
-                                <Ban className="w-4 h-4 mr-1" />
-                                Bannir
-                              </button>
-                            )
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  {selectedTab === 'clients' &&
-                    filteredClients.map((client) => (
-                      <tr key={client.id} className={client.is_banned ? 'bg-red-50' : ''}>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">{client.full_name}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{client.email}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-500">
-                            {client.coach?.full_name || 'Aucun coach'}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {client.is_banned ? (
-                            <div>
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                <UserX className="w-3 h-3 mr-1" />
-                                Banni
-                              </span>
-                              {client.banned_reason && (
-                                <div className="text-xs text-gray-500 mt-1">Raison: {client.banned_reason}</div>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                              <CheckCircle className="w-3 h-3 mr-1" />
-                              Actif
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {new Date(client.created_at).toLocaleDateString('fr-FR')}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          {client.is_banned ? (
-                            <button
-                              onClick={() => handleUnban(client.id, 'clients')}
-                              disabled={processing}
-                              className="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-sm text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
-                            >
-                              <Unlock className="w-4 h-4 mr-1" />
-                              Débannir
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => handleBanClick(client.id, client.full_name, 'clients')}
-                              disabled={processing}
-                              className="inline-flex items-center px-3 py-1 border border-red-300 rounded-md text-sm text-red-700 bg-white hover:bg-red-50 disabled:opacity-50"
-                            >
-                              <Ban className="w-4 h-4 mr-1" />
-                              Bannir
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
-            </div>
+                ))}
+
+                {selectedTab === 'clients' && filteredClients.map((client) => (
+                  <tr key={client.id} className="group hover:bg-white/5 transition-colors">
+                    <td className="py-4 pl-4">
+                      <div className="flex items-center">
+                        <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-xs font-bold text-white mr-3">
+                          {client.full_name.charAt(0)}
+                        </div>
+                        <div className="font-medium text-white">{client.full_name}</div>
+                      </div>
+                    </td>
+                    <td className="py-4 text-gray-300 text-sm">{client.email}</td>
+                    <td className="py-4 text-gray-400 text-sm">{client.coach?.full_name || '-'}</td>
+                    <td className="py-4">
+                      {client.is_banned ? (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20">
+                          <UserX className="w-3 h-3 mr-1" /> Banni
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-400 border border-green-500/20">
+                          <CheckCircle className="w-3 h-3 mr-1" /> Actif
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-4 text-gray-400 text-sm">
+                      {formatDate(client.created_at)}
+                    </td>
+                    <td className="py-4">
+                      {client.is_banned ? (
+                        <button
+                          onClick={() => handleUnban(client.id, 'clients')}
+                          disabled={processing}
+                          className="p-2 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors"
+                          title="Débannir"
+                        >
+                          <Unlock className="w-4 h-4" />
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleBanClick(client.id, client.full_name, 'clients')}
+                          disabled={processing}
+                          className="p-2 hover:bg-red-500/20 rounded-lg text-gray-400 hover:text-red-400 transition-colors"
+                          title="Bannir"
+                        >
+                          <Ban className="w-4 h-4" />
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+
+                {selectedTab === 'waitlist' && filteredWaitlist.map((entry) => (
+                  <tr key={entry.id} className="group hover:bg-white/5 transition-colors">
+                    <td className="py-4 pl-4">
+                      <div className="flex items-center text-gray-300">
+                        <Mail className="w-4 h-4 mr-2 text-gray-500" />
+                        {entry.email}
+                      </div>
+                    </td>
+                    <td className="py-4 text-gray-400 text-sm">
+                      {formatDateTime(entry.created_at)}
+                    </td>
+                    <td className="py-4">
+                      <button
+                        onClick={() => copyToClipboard(entry.email)}
+                        className="p-2 hover:bg-white/10 rounded-lg text-gray-400 hover:text-primary-400 transition-colors"
+                        title="Copier l'email"
+                      >
+                        <Copy className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+
+                {/* Empty States */}
+                {selectedTab === 'coaches' && filteredCoaches.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="py-8 text-center text-gray-400">
+                      Aucun coach trouvé
+                    </td>
+                  </tr>
+                )}
+                {selectedTab === 'clients' && filteredClients.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="py-8 text-center text-gray-400">
+                      Aucun client trouvé
+                    </td>
+                  </tr>
+                )}
+                {selectedTab === 'waitlist' && filteredWaitlist.length === 0 && (
+                  <tr>
+                    <td colSpan={3} className="py-8 text-center text-gray-400">
+                      La file d'attente est vide
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
 
       {showBanModal && selectedAccount && (
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <div className="flex items-center mb-4">
-              <AlertTriangle className="w-6 h-6 text-red-500 mr-2" />
-              <h3 className="text-lg font-medium text-gray-900">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="glass-card max-w-md w-full p-6 border border-white/10">
+            <div className="flex items-center mb-4 text-red-400">
+              <AlertTriangle className="w-6 h-6 mr-2" />
+              <h3 className="text-lg font-medium text-white">
                 Bannir {selectedAccount.name}
               </h3>
             </div>
-            <p className="text-sm text-gray-500 mb-4">
-              Cette action empêchera l'utilisateur d'accéder à la plateforme. Veuillez fournir une raison pour le bannissement.
+            <p className="text-sm text-gray-400 mb-4">
+              Cette action empêchera l'utilisateur d'accéder à la plateforme.
             </p>
             <textarea
               value={banReason}
               onChange={(e) => setBanReason(e.target.value)}
               placeholder="Raison du bannissement..."
               rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-red-500"
             />
             <div className="mt-6 flex justify-end space-x-3">
               <button
                 onClick={() => setShowBanModal(false)}
                 disabled={processing}
-                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                className="px-4 py-2 border border-white/10 rounded-lg text-sm font-medium text-gray-300 hover:bg-white/5 transition-colors"
               >
                 Annuler
               </button>
               <button
                 onClick={handleBan}
                 disabled={processing || !banReason.trim()}
-                className="px-4 py-2 bg-red-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+                className="px-4 py-2 bg-red-500/20 border border-red-500/50 rounded-lg text-sm font-medium text-red-400 hover:bg-red-500/30 transition-colors disabled:opacity-50"
               >
-                {processing ? 'Traitement...' : 'Bannir'}
+                {processing ? 'Traitement...' : 'Confirmer le bannissement'}
               </button>
             </div>
           </div>
