@@ -188,8 +188,8 @@ function SessionsPage() {
                       <h3 className="text-xl font-bold text-white mb-1 group-hover:text-blue-400 transition-colors">{session.name}</h3>
                       <div className="flex items-center gap-2 text-sm text-gray-400">
                         <span className={`px-2 py-0.5 rounded text-xs font-medium border ${session.difficulty_level === 'Débutant' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
-                            session.difficulty_level === 'Intermédiaire' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' :
-                              'bg-red-500/10 text-red-400 border-red-500/20'
+                          session.difficulty_level === 'Intermédiaire' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' :
+                            'bg-red-500/10 text-red-400 border-red-500/20'
                           }`}>
                           {session.difficulty_level}
                         </span>
@@ -268,8 +268,8 @@ function SessionsPage() {
 
                   <div className="mt-6 pt-4 border-t border-white/5 flex justify-between items-center">
                     <span className={`text-xs px-2 py-1 rounded-full border ${session.session_type === 'group_public' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
-                        session.session_type === 'group_private' ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' :
-                          'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                      session.session_type === 'group_private' ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' :
+                        'bg-blue-500/10 text-blue-400 border-blue-500/20'
                       }`}>
                       {session.session_type === 'group_public' ? 'Groupe Public' :
                         session.session_type === 'group_private' ? 'Groupe Privé' :
@@ -450,8 +450,8 @@ function SessionModal({ session, onClose, onSave }: any) {
       setError(null);
       const { data, error } = await supabase
         .from('exercises')
-        .select('id, name, category, difficulty_level')
-        .eq('coach_id', user?.id)
+        .select('id, name, category, difficulty_level, coach_id')
+        .or(`coach_id.eq.${user?.id},coach_id.is.null`)
         .order('name');
 
       if (error) throw error;
@@ -820,14 +820,22 @@ function SessionModal({ session, onClose, onSave }: any) {
 function ExerciseSelector({ exercises, selectedExercises, onSelect, onClose, loading }: any) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [sourceFilter, setSourceFilter] = useState<'all' | 'mine' | 'system'>('all');
 
   const categories = [...new Set(exercises.map((e: any) => e.category))];
 
   const filteredExercises = exercises.filter((exercise: any) => {
     const matchesSearch = exercise.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = !selectedCategory || exercise.category === selectedCategory;
-    // const isNotSelected = !selectedExercises.find(se => se.exercise.id === exercise.id); // Allow duplicates? Usually yes for circuits.
-    return matchesSearch && matchesCategory;
+
+    let matchesSource = true;
+    if (sourceFilter === 'mine') {
+      matchesSource = exercise.coach_id !== null;
+    } else if (sourceFilter === 'system') {
+      matchesSource = exercise.coach_id === null;
+    }
+
+    return matchesSearch && matchesCategory && matchesSource;
   });
 
   return (
@@ -844,27 +852,50 @@ function ExerciseSelector({ exercises, selectedExercises, onSelect, onClose, loa
             </button>
           </div>
 
-          <div className="flex gap-4 mb-6">
-            <div className="flex-1 relative">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Rechercher..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="input-field pl-9 w-full"
-              />
+          <div className="flex flex-col gap-4 mb-6">
+            <div className="flex gap-4">
+              <div className="flex-1 relative">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Rechercher..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="input-field pl-9 w-full"
+                />
+              </div>
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="input-field appearance-none cursor-pointer w-auto"
+              >
+                <option value="" className="bg-gray-800">Toutes catégories</option>
+                {categories.map((category: any) => (
+                  <option key={category} value={category} className="bg-gray-800">{category}</option>
+                ))}
+              </select>
             </div>
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="input-field appearance-none cursor-pointer w-auto"
-            >
-              <option value="" className="bg-gray-800">Toutes catégories</option>
-              {categories.map((category: any) => (
-                <option key={category} value={category} className="bg-gray-800">{category}</option>
-              ))}
-            </select>
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => setSourceFilter('all')}
+                className={`px-3 py-1.5 text-xs rounded-md transition-colors ${sourceFilter === 'all' ? 'bg-primary-500 text-white font-medium' : 'bg-white/5 text-gray-400 hover:text-white hover:bg-white/10'}`}
+              >
+                Tous
+              </button>
+              <button
+                onClick={() => setSourceFilter('mine')}
+                className={`px-3 py-1.5 text-xs rounded-md transition-colors ${sourceFilter === 'mine' ? 'bg-primary-500 text-white font-medium' : 'bg-white/5 text-gray-400 hover:text-white hover:bg-white/10'}`}
+              >
+                Mes Exercices
+              </button>
+              <button
+                onClick={() => setSourceFilter('system')}
+                className={`px-3 py-1.5 text-xs rounded-md transition-colors ${sourceFilter === 'system' ? 'bg-primary-500 text-white font-medium' : 'bg-white/5 text-gray-400 hover:text-white hover:bg-white/10'}`}
+              >
+                Système
+              </button>
+            </div>
           </div>
 
           {loading ? (
@@ -885,7 +916,18 @@ function ExerciseSelector({ exercises, selectedExercises, onSelect, onClose, loa
                         <Dumbbell className="w-5 h-5" />
                       </div>
                       <div>
-                        <h4 className="font-semibold text-white">{exercise.name}</h4>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-semibold text-white">{exercise.name}</h4>
+                          {exercise.coach_id === null ? (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] uppercase font-bold bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                              Système
+                            </span>
+                          ) : (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] uppercase font-bold bg-primary-500/20 text-primary-400 border border-primary-500/30">
+                              Perso
+                            </span>
+                          )}
+                        </div>
                         <div className="flex items-center gap-2 text-xs text-gray-400">
                           <span className="px-1.5 py-0.5 rounded bg-gray-700/50 border border-gray-600/30">{exercise.category}</span>
                           <span>•</span>

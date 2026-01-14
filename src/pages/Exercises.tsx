@@ -11,7 +11,8 @@ import {
   Ruler,
   Filter,
   List,
-  AlertCircle
+  AlertCircle,
+  Shield
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -19,6 +20,7 @@ import { t } from '../i18n';
 
 interface Exercise {
   id: string;
+  coach_id: string | null; // Added
   name: string;
   description: string;
   category: string;
@@ -34,6 +36,7 @@ function ExercisesPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [sourceFilter, setSourceFilter] = useState<'all' | 'mine' | 'system'>('all'); // New Filter
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
   const { user } = useAuth();
@@ -52,18 +55,12 @@ function ExercisesPage() {
     t('exercises.difficulty.advanced'),
   ];
 
-  useEffect(() => {
-    if (user) {
-      fetchExercises();
-    }
-  }, [user]);
-
   const fetchExercises = async () => {
     try {
       const { data, error } = await supabase
         .from('exercises')
         .select('*')
-        .eq('coach_id', user?.id)
+        .or(`coach_id.eq.${user?.id},coach_id.is.null`) // Fetch BOTH
         .order('name');
 
       if (error) throw error;
@@ -75,12 +72,29 @@ function ExercisesPage() {
     }
   };
 
+  useEffect(() => {
+    if (user) {
+      fetchExercises();
+    }
+  }, [user]);
+
   const filteredExercises = exercises.filter(exercise => {
     const matchesSearch = exercise.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       exercise.description?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = !selectedCategory || exercise.category === selectedCategory;
-    return matchesSearch && matchesCategory;
+
+    // New Source Filtering Logic
+    let matchesSource = true;
+    if (sourceFilter === 'mine') {
+      matchesSource = exercise.coach_id === user?.id;
+    } else if (sourceFilter === 'system') {
+      matchesSource = exercise.coach_id === null;
+    }
+
+    return matchesSearch && matchesCategory && matchesSource;
   });
+
+  // ... (tracking helper functions remain same)
 
   const getTrackingIcon = (type: string) => {
     switch (type) {
@@ -98,13 +112,29 @@ function ExercisesPage() {
     }
   };
 
+  const handleDelete = async (id: string) => {
+    if (!window.confirm(t('common.confirmDelete'))) return;
+
+    try {
+      const { error } = await supabase
+        .from('exercises')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      fetchExercises();
+    } catch (error) {
+      console.error('Error deleting exercise:', error);
+    }
+  };
+
   return (
     <div className="p-6 max-w-[2000px] mx-auto space-y-8 animate-fade-in">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">{t('exercises.title')}</h1>
           <p className="text-gray-400">
-            {exercises.length} {exercises.length === 1 ? 'exercice' : 'exercices'} {t('common.created').toLowerCase()}
+            Accédez à vos exercices et à la bibliothèque système
           </p>
         </div>
         <button
@@ -119,8 +149,8 @@ function ExercisesPage() {
         </button>
       </div>
 
-      {/* Search Bar */}
-      <div className="glass-card p-4 flex gap-4">
+      {/* Search and Filters */}
+      <div className="glass-card p-4 flex flex-col md:flex-row gap-4">
         <div className="flex-1 relative">
           <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
           <input
@@ -131,10 +161,32 @@ function ExercisesPage() {
             className="input-field pl-10"
           />
         </div>
+
+        <div className="flex gap-2 bg-gray-900/50 p-1 rounded-lg">
+          <button
+            onClick={() => setSourceFilter('all')}
+            className={`px-3 py-1.5 text-sm rounded-md transition-colors ${sourceFilter === 'all' ? 'bg-primary-500 text-white font-medium' : 'text-gray-400 hover:text-white'}`}
+          >
+            Tous
+          </button>
+          <button
+            onClick={() => setSourceFilter('mine')}
+            className={`px-3 py-1.5 text-sm rounded-md transition-colors ${sourceFilter === 'mine' ? 'bg-primary-500 text-white font-medium' : 'text-gray-400 hover:text-white'}`}
+          >
+            Mes Exercices
+          </button>
+          <button
+            onClick={() => setSourceFilter('system')}
+            className={`px-3 py-1.5 text-sm rounded-md transition-colors ${sourceFilter === 'system' ? 'bg-primary-500 text-white font-medium' : 'text-gray-400 hover:text-white'}`}
+          >
+            Système
+          </button>
+        </div>
+
         <select
           value={selectedCategory}
           onChange={(e) => setSelectedCategory(e.target.value)}
-          className="input-field w-full md:w-64 appearance-none cursor-pointer"
+          className="input-field w-full md:w-48 appearance-none cursor-pointer"
         >
           <option value="" className="bg-gray-800">{t('exercises.categories.all')}</option>
           {categories.map(category => (
@@ -160,7 +212,7 @@ function ExercisesPage() {
                 >
                   <img
                     src={(() => {
-                      const url = exercise.video_url;
+                      const url = exercise.video_url || '';
                       let videoId = '';
                       if (url.includes('youtube.com/watch?v=')) {
                         videoId = url.split('watch?v=')[1]?.split('&')[0];
@@ -189,39 +241,48 @@ function ExercisesPage() {
               )}
 
               <div className="p-6 flex flex-col flex-grow">
-                <div className="flex justify-between items-start mb-4">
-                  <h3 className="text-xl font-bold text-white group-hover:text-primary-400 transition-colors">
-                    {exercise.name}
-                  </h3>
-                  <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={() => {
-                        setSelectedExercise(exercise);
-                        setIsModalOpen(true);
-                      }}
-                      className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-                      title={t('common.edit')}
-                    >
-                      <Edit className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={async () => {
-                        if (window.confirm(t('common.confirmDelete'))) {
-                          const { error } = await supabase
-                            .from('exercises')
-                            .delete()
-                            .eq('id', exercise.id);
-
-                          if (!error) {
-                            fetchExercises();
-                          }
-                        }
-                      }}
-                      className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
-                      title={t('common.delete')}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex items-center gap-2 overflow-hidden">
+                    <h3 className="font-semibold text-white truncate pr-2">{exercise.name}</h3>
+                    {exercise.coach_id === null ? (
+                      <span className="flex-shrink-0 px-1.5 py-0.5 rounded text-[10px] uppercase font-bold bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                        Système
+                      </span>
+                    ) : (
+                      <span className="flex-shrink-0 px-1.5 py-0.5 rounded text-[10px] uppercase font-bold bg-primary-500/20 text-primary-400 border border-primary-500/30">
+                        Perso
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex gap-2 flex-shrink-0 ml-2">
+                    {exercise.coach_id === user?.id ? (
+                      <>
+                        <button
+                          onClick={() => {
+                            setSelectedExercise(exercise);
+                            setIsModalOpen(true);
+                          }}
+                          className="p-1 hover:bg-white/10 rounded text-gray-400 hover:text-white transition-colors"
+                          title={t('common.edit')}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(exercise.id)}
+                          className="p-1 hover:bg-red-500/20 rounded text-gray-400 hover:text-red-400 transition-colors"
+                          title={t('common.delete')}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        className="p-1 opacity-50 cursor-not-allowed text-gray-600"
+                        title="Lecture seule"
+                      >
+                        <Shield className="w-3 h-3" />
+                      </button>
+                    )}
                   </div>
                 </div>
 

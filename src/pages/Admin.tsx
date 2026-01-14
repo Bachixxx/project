@@ -11,7 +11,13 @@ import {
   Clock,
   Mail,
   Copy,
-  List
+  List,
+  Dumbbell,
+  Plus,
+  Edit2,
+  Trash2,
+  X,
+  Save
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -50,7 +56,17 @@ interface WaitlistEntry {
   created_at: string;
 }
 
-type AccountType = 'coaches' | 'clients' | 'waitlist';
+interface Exercise {
+  id: string;
+  name: string;
+  category: string;
+  difficulty_level: string;
+  description: string;
+  video_url?: string;
+  created_at: string;
+}
+
+type AccountType = 'coaches' | 'clients' | 'waitlist' | 'exercises';
 
 function Admin() {
   const { user } = useAuth();
@@ -73,16 +89,34 @@ function Admin() {
       minute: '2-digit'
     });
   };
+
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // Data State
   const [coaches, setCoaches] = useState<Coach[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [waitlistEntries, setWaitlistEntries] = useState<WaitlistEntry[]>([]);
+  const [exercises, setExercises] = useState<Exercise[]>([]);
+
+  // UI State
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTab, setSelectedTab] = useState<AccountType>('coaches');
   const [showBanModal, setShowBanModal] = useState(false);
+  const [showExerciseModal, setShowExerciseModal] = useState(false);
+
+  // Selection / Editing State
   const [selectedAccount, setSelectedAccount] = useState<{ id: string; name: string; type: AccountType } | null>(null);
   const [banReason, setBanReason] = useState('');
+  const [editingExercise, setEditingExercise] = useState<Exercise | null>(null);
+  const [exerciseForm, setExerciseForm] = useState({
+    name: '',
+    category: 'strength',
+    difficulty_level: 'intermediate',
+    description: '',
+    video_url: ''
+  });
+
   const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
@@ -141,7 +175,6 @@ function Admin() {
 
         if (clientsError) throw clientsError;
 
-        // Handle potentially array-wrapped relations
         const processedClients = (clientsData || []).map((client: any) => ({
           ...client,
           coach: Array.isArray(client.coach) ? client.coach[0] : client.coach
@@ -156,9 +189,18 @@ function Admin() {
 
         if (error) throw error;
         setWaitlistEntries(data || []);
+      } else if (selectedTab === 'exercises') {
+        const { data, error } = await supabase
+          .from('exercises')
+          .select('*')
+          .is('coach_id', null)
+          .order('name', { ascending: true });
+
+        if (error) throw error;
+        setExercises(data || []);
       }
     } catch (error) {
-      console.error('Error fetching accounts:', error);
+      console.error('Error fetching data:', error);
     }
   };
 
@@ -235,6 +277,88 @@ function Admin() {
     alert('Email copié !');
   };
 
+  /* Exercise Handlers */
+  const openNewExerciseModal = () => {
+    setEditingExercise(null);
+    setExerciseForm({
+      name: '',
+      category: 'strength',
+      difficulty_level: 'intermediate',
+      description: '',
+      video_url: ''
+    });
+    setShowExerciseModal(true);
+  };
+
+  const openEditExerciseModal = (exercise: Exercise) => {
+    setEditingExercise(exercise);
+    setExerciseForm({
+      name: exercise.name,
+      category: exercise.category,
+      difficulty_level: exercise.difficulty_level || 'intermediate',
+      description: exercise.description || '',
+      video_url: exercise.video_url || ''
+    });
+    setShowExerciseModal(true);
+  };
+
+  const handleSaveExercise = async () => {
+    if (!exerciseForm.name) {
+      alert('Le nom est requis');
+      return;
+    }
+
+    setProcessing(true);
+    try {
+      const exerciseData = {
+        ...exerciseForm,
+        coach_id: null // System exercise
+      };
+
+      if (editingExercise) {
+        const { error } = await supabase
+          .from('exercises')
+          .update(exerciseData)
+          .eq('id', editingExercise.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('exercises')
+          .insert([exerciseData]);
+        if (error) throw error;
+      }
+
+      alert('Exercice sauvegardé');
+      setShowExerciseModal(false);
+      fetchAccounts();
+    } catch (error) {
+      console.error('Error saving exercise:', error);
+      alert('Erreur lors de la sauvegarde');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleDeleteExercise = async (id: string) => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer cet exercice ?')) return;
+
+    setProcessing(true);
+    try {
+      const { error } = await supabase
+        .from('exercises')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      fetchAccounts();
+    } catch (error) {
+      console.error('Error deleting exercise:', error);
+      alert('Erreur lors de la suppression');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   const filteredCoaches = coaches.filter(coach =>
     coach.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     coach.email.toLowerCase().includes(searchQuery.toLowerCase())
@@ -247,6 +371,11 @@ function Admin() {
 
   const filteredWaitlist = waitlistEntries.filter(entry =>
     entry.email.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredExercises = exercises.filter(ex =>
+    ex.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    ex.category.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   if (loading) {
@@ -277,14 +406,24 @@ function Admin() {
             <Shield className="w-8 h-8 text-primary-500" />
             <h1 className="text-3xl font-bold">Administration</h1>
           </div>
-          <p className="text-gray-400">Gérez les utilisateurs et la file d'attente</p>
+          <p className="text-gray-400">Gérez les utilisateurs, la file d'attente et le contenu global</p>
         </div>
 
-        <div className="glass-card px-4 py-2 flex items-center gap-2">
-          <List className="w-4 h-4 text-gray-400" />
-          <span className="text-sm text-gray-400">Total File d'attente:</span>
-          <span className="text-lg font-bold text-white">{waitlistEntries.length}</span>
-        </div>
+        {selectedTab === 'exercises' ? (
+          <button
+            onClick={openNewExerciseModal}
+            className="primary-button flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Exercice Système
+          </button>
+        ) : (
+          <div className="glass-card px-4 py-2 flex items-center gap-2">
+            <List className="w-4 h-4 text-gray-400" />
+            <span className="text-sm text-gray-400">File d'attente:</span>
+            <span className="text-lg font-bold text-white">{waitlistEntries.length}</span>
+          </div>
+        )}
       </div>
 
       <div className="glass-card overflow-hidden">
@@ -301,9 +440,7 @@ function Admin() {
                 <Users className="w-5 h-5 mr-2" />
                 Coachs ({coaches.length})
               </div>
-              {selectedTab === 'coaches' && (
-                <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary-500" />
-              )}
+              {selectedTab === 'coaches' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary-500" />}
             </button>
             <button
               onClick={() => setSelectedTab('clients')}
@@ -316,9 +453,7 @@ function Admin() {
                 <Users className="w-5 h-5 mr-2" />
                 Clients ({clients.length})
               </div>
-              {selectedTab === 'clients' && (
-                <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary-500" />
-              )}
+              {selectedTab === 'clients' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary-500" />}
             </button>
             <button
               onClick={() => setSelectedTab('waitlist')}
@@ -331,9 +466,20 @@ function Admin() {
                 <Clock className="w-5 h-5 mr-2" />
                 File d'attente ({waitlistEntries.length})
               </div>
-              {selectedTab === 'waitlist' && (
-                <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary-500" />
-              )}
+              {selectedTab === 'waitlist' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary-500" />}
+            </button>
+            <button
+              onClick={() => setSelectedTab('exercises')}
+              className={`flex-1 px-6 py-4 text-sm font-medium transition-colors relative ${selectedTab === 'exercises'
+                ? 'text-primary-400'
+                : 'text-gray-400 hover:text-white hover:bg-white/5'
+                }`}
+            >
+              <div className="flex items-center justify-center">
+                <Dumbbell className="w-5 h-5 mr-2" />
+                Exercices ({exercises.length})
+              </div>
+              {selectedTab === 'exercises' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary-500" />}
             </button>
           </div>
         </div>
@@ -354,7 +500,14 @@ function Admin() {
             <table className="w-full">
               <thead>
                 <tr className="text-left border-b border-white/10">
-                  {selectedTab === 'waitlist' ? (
+                  {selectedTab === 'exercises' ? (
+                    <>
+                      <th className="pb-4 pl-4 text-xs font-medium text-gray-400 uppercase tracking-wider">Nom</th>
+                      <th className="pb-4 text-xs font-medium text-gray-400 uppercase tracking-wider">Catégorie</th>
+                      <th className="pb-4 text-xs font-medium text-gray-400 uppercase tracking-wider">Difficulté</th>
+                      <th className="pb-4 text-xs font-medium text-gray-400 uppercase tracking-wider">Actions</th>
+                    </>
+                  ) : selectedTab === 'waitlist' ? (
                     <>
                       <th className="pb-4 pl-4 text-xs font-medium text-gray-400 uppercase tracking-wider">Email</th>
                       <th className="pb-4 text-xs font-medium text-gray-400 uppercase tracking-wider">Date d'inscription</th>
@@ -382,49 +535,39 @@ function Admin() {
                         </div>
                         <div>
                           <div className="font-medium text-white">{coach.full_name}</div>
-                          {coach.specialization && (
-                            <div className="text-xs text-gray-500">{coach.specialization}</div>
-                          )}
+                          {coach.specialization && <div className="text-xs text-gray-500">{coach.specialization}</div>}
                         </div>
                       </div>
                     </td>
                     <td className="py-4 text-gray-300 text-sm">{coach.email}</td>
                     <td className="py-4">
                       {coach.is_banned ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20">
-                          <UserX className="w-3 h-3 mr-1" /> Banni
-                        </span>
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20">Banni</span>
                       ) : (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-400 border border-green-500/20">
-                          <CheckCircle className="w-3 h-3 mr-1" /> Actif
-                        </span>
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-400 border border-green-500/20">Actif</span>
                       )}
                     </td>
-                    <td className="py-4 text-gray-400 text-sm">
-                      {formatDate(coach.created_at)}
-                    </td>
+                    <td className="py-4 text-gray-400 text-sm">{formatDate(coach.created_at)}</td>
                     <td className="py-4">
                       {coach.id !== user?.id && (
                         coach.is_banned ? (
-                          <button
-                            onClick={() => handleUnban(coach.id, 'coaches')}
-                            disabled={processing}
-                            className="p-2 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors"
-                            title="Débannir"
-                          >
-                            <Unlock className="w-4 h-4" />
-                          </button>
+                          <button onClick={() => handleUnban(coach.id, 'coaches')} className="p-2 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white"><Unlock className="w-4 h-4" /></button>
                         ) : (
-                          <button
-                            onClick={() => handleBanClick(coach.id, coach.full_name, 'coaches')}
-                            disabled={processing}
-                            className="p-2 hover:bg-red-500/20 rounded-lg text-gray-400 hover:text-red-400 transition-colors"
-                            title="Bannir"
-                          >
-                            <Ban className="w-4 h-4" />
-                          </button>
+                          <button onClick={() => handleBanClick(coach.id, coach.full_name, 'coaches')} className="p-2 hover:bg-red-500/20 rounded-lg text-gray-400 hover:text-red-400"><Ban className="w-4 h-4" /></button>
                         )
                       )}
+                    </td>
+                  </tr>
+                ))}
+
+                {selectedTab === 'exercises' && filteredExercises.map((ex) => (
+                  <tr key={ex.id} className="group hover:bg-white/5 transition-colors">
+                    <td className="py-4 pl-4 font-medium text-white">{ex.name}</td>
+                    <td className="py-4 text-gray-300 text-sm capitalize">{ex.category}</td>
+                    <td className="py-4 text-gray-300 text-sm capitalize">{ex.difficulty_level}</td>
+                    <td className="py-4 flex gap-2">
+                      <button onClick={() => openEditExerciseModal(ex)} className="p-2 hover:bg-white/10 rounded-lg text-gray-400 hover:text-primary-400"><Edit2 className="w-4 h-4" /></button>
+                      <button onClick={() => handleDeleteExercise(ex.id)} className="p-2 hover:bg-white/10 rounded-lg text-gray-400 hover:text-red-400"><Trash2 className="w-4 h-4" /></button>
                     </td>
                   </tr>
                 ))}
@@ -443,37 +586,17 @@ function Admin() {
                     <td className="py-4 text-gray-400 text-sm">{client.coach?.full_name || '-'}</td>
                     <td className="py-4">
                       {client.is_banned ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20">
-                          <UserX className="w-3 h-3 mr-1" /> Banni
-                        </span>
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20">Banni</span>
                       ) : (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-400 border border-green-500/20">
-                          <CheckCircle className="w-3 h-3 mr-1" /> Actif
-                        </span>
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-400 border border-green-500/20">Actif</span>
                       )}
                     </td>
-                    <td className="py-4 text-gray-400 text-sm">
-                      {formatDate(client.created_at)}
-                    </td>
+                    <td className="py-4 text-gray-400 text-sm">{formatDate(client.created_at)}</td>
                     <td className="py-4">
                       {client.is_banned ? (
-                        <button
-                          onClick={() => handleUnban(client.id, 'clients')}
-                          disabled={processing}
-                          className="p-2 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors"
-                          title="Débannir"
-                        >
-                          <Unlock className="w-4 h-4" />
-                        </button>
+                        <button onClick={() => handleUnban(client.id, 'clients')} className="p-2 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white"><Unlock className="w-4 h-4" /></button>
                       ) : (
-                        <button
-                          onClick={() => handleBanClick(client.id, client.full_name, 'clients')}
-                          disabled={processing}
-                          className="p-2 hover:bg-red-500/20 rounded-lg text-gray-400 hover:text-red-400 transition-colors"
-                          title="Bannir"
-                        >
-                          <Ban className="w-4 h-4" />
-                        </button>
+                        <button onClick={() => handleBanClick(client.id, client.full_name, 'clients')} className="p-2 hover:bg-red-500/20 rounded-lg text-gray-400 hover:text-red-400"><Ban className="w-4 h-4" /></button>
                       )}
                     </td>
                   </tr>
@@ -501,35 +624,13 @@ function Admin() {
                     </td>
                   </tr>
                 ))}
-
-                {/* Empty States */}
-                {selectedTab === 'coaches' && filteredCoaches.length === 0 && (
-                  <tr>
-                    <td colSpan={5} className="py-8 text-center text-gray-400">
-                      Aucun coach trouvé
-                    </td>
-                  </tr>
-                )}
-                {selectedTab === 'clients' && filteredClients.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="py-8 text-center text-gray-400">
-                      Aucun client trouvé
-                    </td>
-                  </tr>
-                )}
-                {selectedTab === 'waitlist' && filteredWaitlist.length === 0 && (
-                  <tr>
-                    <td colSpan={3} className="py-8 text-center text-gray-400">
-                      La file d'attente est vide
-                    </td>
-                  </tr>
-                )}
               </tbody>
             </table>
           </div>
         </div>
       </div>
 
+      {/* Ban Modal */}
       {showBanModal && selectedAccount && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="glass-card max-w-md w-full p-6 border border-white/10">
@@ -563,6 +664,100 @@ function Admin() {
                 className="px-4 py-2 bg-red-500/20 border border-red-500/50 rounded-lg text-sm font-medium text-red-400 hover:bg-red-500/30 transition-colors disabled:opacity-50"
               >
                 {processing ? 'Traitement...' : 'Confirmer le bannissement'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Exercise Modal */}
+      {showExerciseModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="glass-card max-w-lg w-full p-6 border border-white/10">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-bold text-white">
+                {editingExercise ? 'Modifier l\'exercice' : 'Nouvel Exercice Système'}
+              </h3>
+              <button onClick={() => setShowExerciseModal(false)} className="text-gray-400 hover:text-white">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Nom</label>
+                <input
+                  type="text"
+                  value={exerciseForm.name}
+                  onChange={e => setExerciseForm({ ...exerciseForm, name: e.target.value })}
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">Catégorie</label>
+                  <select
+                    value={exerciseForm.category}
+                    onChange={e => setExerciseForm({ ...exerciseForm, category: e.target.value })}
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500 text-sm"
+                  >
+                    <option value="strength">Musculation</option>
+                    <option value="cardio">Cardio</option>
+                    <option value="flexibility">Souplesse</option>
+                    <option value="hiit">HIIT</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">Difficulté</label>
+                  <select
+                    value={exerciseForm.difficulty_level}
+                    onChange={e => setExerciseForm({ ...exerciseForm, difficulty_level: e.target.value })}
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500 text-sm"
+                  >
+                    <option value="beginner">Débutant</option>
+                    <option value="intermediate">Intermédiaire</option>
+                    <option value="advanced">Avancé</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Description</label>
+                <textarea
+                  value={exerciseForm.description}
+                  onChange={e => setExerciseForm({ ...exerciseForm, description: e.target.value })}
+                  rows={3}
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Vidéo URL (Optionnel)</label>
+                <input
+                  type="text"
+                  value={exerciseForm.video_url}
+                  onChange={e => setExerciseForm({ ...exerciseForm, video_url: e.target.value })}
+                  placeholder="https://youtube.com/..."
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500"
+                />
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                onClick={() => setShowExerciseModal(false)}
+                className="px-4 py-2 text-gray-400 hover:text-white"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleSaveExercise}
+                disabled={processing}
+                className="primary-button flex items-center gap-2"
+              >
+                <Save className="w-4 h-4" />
+                Sauvegarder
               </button>
             </div>
           </div>

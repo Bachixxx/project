@@ -789,7 +789,7 @@ function CreateSessionModal({ onClose, onSave }: any) {
       const { data, error } = await supabase
         .from('exercises')
         .select('id, name, category, difficulty_level, tracking_type')
-        .eq('coach_id', user?.id)
+        .or(`coach_id.eq.${user?.id},coach_id.is.null`)
         .order('name');
 
       if (error) throw error;
@@ -1114,7 +1114,7 @@ function EditSessionModal({ session, onClose, onSave }: any) {
     // In a real app we'd reuse the logic from the original file.
     const fetchDetailed = async () => {
       // ... fetching logic
-      const { data } = await supabase.from('exercises').select('*').eq('coach_id', user?.id);
+      const { data } = await supabase.from('exercises').select('*').or(`coach_id.eq.${user?.id},coach_id.is.null`);
       setExercises(data || []);
 
       const { data: se } = await supabase.from('session_exercises').select('*, exercise:exercises(*)').eq('session_id', session.id);
@@ -1223,14 +1223,22 @@ function EditSessionModal({ session, onClose, onSave }: any) {
 function ExerciseSelectorModal({ exercises, selectedExercises, onSelect, onClose }: any) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
-  const [showCreateExercise, setShowCreateExercise] = useState(false);
+  const [sourceFilter, setSourceFilter] = useState<'all' | 'mine' | 'system'>('all');
 
   const categories = [...new Set(exercises.map((e: any) => e.category))];
   const filteredExercises = exercises.filter((exercise: any) => {
     const matchesSearch = exercise.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = !selectedCategory || exercise.category === selectedCategory;
     const isNotSelected = !selectedExercises.find((se: any) => se.exercise.id === exercise.id);
-    return matchesSearch && matchesCategory && isNotSelected;
+    
+    let matchesSource = true;
+    if (sourceFilter === 'mine') {
+      matchesSource = exercise.coach_id !== null;
+    } else if (sourceFilter === 'system') {
+      matchesSource = exercise.coach_id === null;
+    }
+
+    return matchesSearch && matchesCategory && isNotSelected && matchesSource;
   });
 
   return (
@@ -1248,15 +1256,38 @@ function ExerciseSelectorModal({ exercises, selectedExercises, onSelect, onClose
             </button>
           </div>
 
-          <div className="flex gap-4 mb-6">
-            <div className="flex-1 relative">
-              <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <input type="text" placeholder="Rechercher..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="input-field pl-10" />
+          <div className="flex flex-col gap-4 mb-6">
+            <div className="flex gap-4">
+              <div className="flex-1 relative">
+                <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input type="text" placeholder="Rechercher..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="input-field pl-10" />
+              </div>
+              <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="input-field sm:w-48 appearance-none cursor-pointer">
+                <option value="" className="bg-gray-800">Toutes les catégories</option>
+                {categories.map((c: any) => <option key={c} value={c} className="bg-gray-800">{c}</option>)}
+              </select>
             </div>
-            <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="input-field sm:w-48 appearance-none cursor-pointer">
-              <option value="" className="bg-gray-800">Toutes les catégories</option>
-              {categories.map((c: any) => <option key={c} value={c} className="bg-gray-800">{c}</option>)}
-            </select>
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => setSourceFilter('all')}
+                className={`px-3 py-1.5 text-xs rounded-md transition-colors ${sourceFilter === 'all' ? 'bg-primary-500 text-white font-medium' : 'bg-white/5 text-gray-400 hover:text-white hover:bg-white/10'}`}
+              >
+                Tous
+              </button>
+              <button
+                onClick={() => setSourceFilter('mine')}
+                className={`px-3 py-1.5 text-xs rounded-md transition-colors ${sourceFilter === 'mine' ? 'bg-primary-500 text-white font-medium' : 'bg-white/5 text-gray-400 hover:text-white hover:bg-white/10'}`}
+              >
+                Mes Exercices
+              </button>
+              <button
+                onClick={() => setSourceFilter('system')}
+                className={`px-3 py-1.5 text-xs rounded-md transition-colors ${sourceFilter === 'system' ? 'bg-primary-500 text-white font-medium' : 'bg-white/5 text-gray-400 hover:text-white hover:bg-white/10'}`}
+              >
+                Système
+              </button>
+            </div>
           </div>
 
           <div className="space-y-3">
@@ -1264,7 +1295,18 @@ function ExerciseSelectorModal({ exercises, selectedExercises, onSelect, onClose
               <button key={ex.id} onClick={() => onSelect(ex)} className="flex items-center gap-4 p-4 w-full bg-white/5 border border-white/5 rounded-lg hover:bg-white/10 transition-colors text-left group">
                 <div className="p-2 bg-accent-500/10 rounded-lg text-accent-400"><Dumbbell className="w-6 h-6" /></div>
                 <div className="flex-1">
-                  <h4 className="font-medium text-white">{ex.name}</h4>
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-medium text-white">{ex.name}</h4>
+                    {ex.coach_id === null ? (
+                      <span className="px-1.5 py-0.5 rounded text-[10px] uppercase font-bold bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                        Système
+                      </span>
+                    ) : (
+                      <span className="px-1.5 py-0.5 rounded text-[10px] uppercase font-bold bg-primary-500/20 text-primary-400 border border-primary-500/30">
+                        Perso
+                      </span>
+                    )}
+                  </div>
                   <p className="text-sm text-gray-400">{ex.category} • {ex.difficulty_level}</p>
                 </div>
               </button>
