@@ -406,8 +406,10 @@ function ClientDashboard() {
                       backgroundColor: '#18181b',
                       border: '1px solid rgba(255,255,255,0.1)',
                       borderRadius: '0.75rem',
-                      color: '#fff'
+                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
                     }}
+                    itemStyle={{ color: '#fff' }}
+                    labelStyle={{ color: '#9ca3af', marginBottom: '0.5rem' }}
                   />
                   <Bar dataKey="minutes" radius={[4, 4, 4, 4]}>
                     {weeklyActivity.map((entry, index) => (
