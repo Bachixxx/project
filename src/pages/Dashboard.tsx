@@ -209,8 +209,8 @@ function Dashboard() {
         ? ((currentMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100
         : 0;
 
-      // Get recent activities
-      const { data: recentActivitiesData } = await supabase
+      // Get recent activities (Programs, Workouts, Payments)
+      const { data: recentPrograms } = await supabase
         .from('client_programs')
         .select(`
           id,
@@ -220,6 +220,61 @@ function Dashboard() {
         `)
         .order('start_date', { ascending: false })
         .limit(5);
+
+      const { data: recentWorkouts } = await supabase
+        .from('workout_sessions')
+        .select(`
+          id,
+          date,
+          client_program:client_programs(
+            client:clients(full_name),
+            program:programs(name)
+          )
+        `)
+        .order('date', { ascending: false })
+        .limit(5);
+
+      const { data: recentPayments } = await supabase
+        .from('payments')
+        .select(`
+          id,
+          amount,
+          payment_date,
+          client:clients(full_name)
+        `)
+        .eq('status', 'paid')
+        .order('payment_date', { ascending: false })
+        .limit(5);
+
+      // Merge and sort activities
+      const activities = [
+        ...(recentPrograms?.map((p: any) => ({
+          id: `prog-${p.id}`,
+          type: 'program_start',
+          date: new Date(p.start_date),
+          clientName: Array.isArray(p.client) ? p.client[0]?.full_name : p.client?.full_name, // Supabase often returns single object for FKs, but if it was array, we'd handle it.
+          // If TS complains about array, we cast p to any.
+          detail: p.program?.name,
+          rawDate: p.start_date
+        })) || []),
+        ...(recentWorkouts?.map((w: any) => ({
+          id: `workout-${w.id}`,
+          type: 'workout_complete',
+          date: new Date(w.date),
+          clientName: Array.isArray(w.client_program?.client) ? w.client_program?.client[0]?.full_name : w.client_program?.client?.full_name,
+          detail: w.client_program?.program?.name,
+          rawDate: w.date
+        })) || []),
+        ...(recentPayments?.map((p: any) => ({
+          id: `pay-${p.id}`,
+          type: 'payment',
+          date: new Date(p.payment_date),
+          clientName: Array.isArray(p.client) ? p.client[0]?.full_name : p.client?.full_name,
+          detail: `${p.amount} CHF`,
+          rawDate: p.payment_date
+        })) || [])
+      ].sort((a, b) => b.date.getTime() - a.date.getTime())
+        .slice(0, 5);
 
       // Get client progress
       const { data: clientProgressData } = await supabase
@@ -244,7 +299,7 @@ function Dashboard() {
         avgProgramCompletion,
       });
 
-      setRecentActivities(recentActivitiesData || []);
+      setRecentActivities(activities);
       setClientProgress(clientProgressData || []);
       // Revenue data is set by useEffect via processChartData
 
@@ -462,14 +517,20 @@ function Dashboard() {
             <div className="space-y-6">
               {recentActivities.map((activity: any, index) => (
                 <div key={activity.id} className="relative pl-6 pb-6 last:pb-0 border-l border-white/10 last:border-0">
-                  <div className="absolute left-[-5px] top-0 w-2.5 h-2.5 rounded-full bg-primary-500 ring-4 ring-gray-900" />
+                  <div className={`absolute left-[-5px] top-0 w-2.5 h-2.5 rounded-full ring-4 ring-gray-900 ${activity.type === 'payment' ? 'bg-emerald-500' :
+                      activity.type === 'workout_complete' ? 'bg-purple-500' :
+                        'bg-primary-500'
+                    }`} />
                   <div className="flex flex-col gap-1">
                     <p className="text-sm text-gray-300">
-                      <span className="font-medium text-white">{activity.client.full_name}</span> a commencé le programme <span className="text-primary-400">{activity.program.name}</span>
+                      <span className="font-medium text-white">{activity.clientName || 'Client inconnu'}</span>
+                      {activity.type === 'program_start' && <> a commencé le programme <span className="text-primary-400">{activity.detail}</span></>}
+                      {activity.type === 'workout_complete' && <> a terminé une séance du programme <span className="text-purple-400">{activity.detail}</span></>}
+                      {activity.type === 'payment' && <> a payé <span className="text-emerald-400 font-bold">{activity.detail}</span></>}
                     </p>
                     <span className="text-xs text-gray-500 flex items-center gap-1">
                       <Clock className="w-3 h-3" />
-                      {new Date(activity.start_date).toLocaleDateString()}
+                      {activity.date.toLocaleDateString()}
                     </span>
                   </div>
                 </div>
