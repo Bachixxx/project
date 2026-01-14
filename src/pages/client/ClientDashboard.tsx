@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Activity, Calendar, TrendingUp, Clock, PlayCircle, Dumbbell, ChevronRight, Award, Flame } from 'lucide-react';
+import { Activity, Calendar, TrendingUp, Clock, PlayCircle, Dumbbell, ChevronRight, Award, Flame, Info, X } from 'lucide-react';
 import { useClientAuth } from '../../contexts/ClientAuthContext';
 import { supabase } from '../../lib/supabase';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 function ClientDashboard() {
   const { client: authClient, loading: authLoading } = useClientAuth();
@@ -11,6 +12,8 @@ function ClientDashboard() {
   const [clientPrograms, setClientPrograms] = useState<any[]>([]);
   const [workoutSessions, setWorkoutSessions] = useState<any[]>([]);
   const [upcomingSessions, setUpcomingSessions] = useState<any[]>([]);
+  const [showLevelsModal, setShowLevelsModal] = useState(false);
+  const [weeklyActivity, setWeeklyActivity] = useState<any[]>([]);
   const [stats, setStats] = useState({
     workoutsCount: 0,
     totalDuration: 0,
@@ -73,11 +76,73 @@ function ClientDashboard() {
       // Calculate simple stats
       const totalDuration = sessions.reduce((acc, curr) => acc + (curr.duration_minutes || 0), 0);
 
-      // Mock streak calculation (would need more complex logic in real app)
+      // Calculate Weekly Activity (last 7 days)
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const last7Days = Array.from({ length: 7 }).map((_, i) => {
+        const d = new Date(today);
+        d.setDate(today.getDate() - i);
+        return d;
+      }).reverse(); // To get them in chronological order
+
+      const activityData = last7Days.map(date => {
+        const dayName = date.toLocaleDateString('fr-FR', { weekday: 'short' });
+        // Find sessions on this day
+        const daySessions = sessions.filter((s: any) => {
+          const sessionDate = new Date(s.date);
+          sessionDate.setHours(0, 0, 0, 0);
+          return sessionDate.getTime() === date.getTime();
+        });
+
+        // Use actual_duration if available, otherwise fallback to session.duration_minutes
+        const duration = daySessions.reduce((acc: number, curr: any) => {
+          const sessionTime = curr.actual_duration || curr.session?.duration_minutes || 0; // Corrected to access session.duration_minutes
+          return acc + sessionTime;
+        }, 0);
+
+        return {
+          day: dayName.charAt(0).toUpperCase() + dayName.slice(1),
+          minutes: duration,
+          date: date.toISOString()
+        };
+      });
+      setWeeklyActivity(activityData);
+
+      // Calculate Real Streak
+      let currentStreak = 0;
+      if (sessions.length > 0) {
+        // `today` is already defined above
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+
+        // Get unique dates of workouts
+        const workoutDates = [...new Set(sessions.map(s => {
+          const d = new Date(s.date);
+          d.setHours(0, 0, 0, 0);
+          return d.getTime();
+        }))].sort((a, b) => b - a); // Descending
+
+        // Check if streak is alive (workout today or yesterday)
+        const lastWorkoutTime = workoutDates[0];
+        if (lastWorkoutTime === today.getTime() || lastWorkoutTime === yesterday.getTime()) {
+          currentStreak = 1;
+          let checkDate = new Date(lastWorkoutTime);
+
+          for (let i = 1; i < workoutDates.length; i++) {
+            checkDate.setDate(checkDate.getDate() - 1); // Expected previous day
+            if (workoutDates[i] === checkDate.getTime()) {
+              currentStreak++;
+            } else {
+              break; // Streak broken
+            }
+          }
+        }
+      }
+
       setStats({
         workoutsCount: sessions.length,
         totalDuration: Math.round(totalDuration / 60), // in hours
-        streak: sessions.length > 0 ? 3 : 0 // Mock streak
+        streak: currentStreak
       });
 
       // Fetch upcoming scheduled sessions
@@ -110,6 +175,14 @@ function ClientDashboard() {
     }
   };
 
+  const getUserLevel = (count: number) => {
+    if (count < 10) return { label: 'Débutant', color: 'text-yellow-500', bg: 'bg-yellow-500/10' };
+    if (count < 50) return { label: 'Intermédiaire', color: 'text-blue-500', bg: 'bg-blue-500/10' };
+    return { label: 'Expert', color: 'text-purple-500', bg: 'bg-purple-500/10' };
+  };
+
+  const level = getUserLevel(stats.workoutsCount);
+
   const getTimeGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Bonjour';
@@ -127,33 +200,64 @@ function ClientDashboard() {
 
   // Determine the primary action (Next Workout)
   const getNextAction = () => {
-    // Priority 1: Scheduled Session today/soon
-    if (upcomingSessions.length > 0) {
-      const next = upcomingSessions[0];
-      const sessionDate = new Date(next.scheduled_date);
-      const isToday = new Date().toDateString() === sessionDate.toDateString();
-      const isPast = new Date() > sessionDate;
-      const isReadyCurrent = isToday || isPast;
+    try {
+      // Priority 1: Scheduled Session today/soon
+      if (upcomingSessions.length > 0) {
+        const next = upcomingSessions[0];
+        if (next && next.scheduled_date) {
+          const sessionDate = new Date(next.scheduled_date);
+          const isToday = new Date().toDateString() === sessionDate.toDateString();
+          const isPast = new Date() > sessionDate;
+          const isReadyCurrent = isToday || isPast;
 
-      return {
-        type: 'scheduled',
-        data: next,
-        title: next.session?.name || "Session planifiée",
-        subtitle: sessionDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }),
-        link: isReadyCurrent ? `/client/live-workout/${next.id}` : `/client/appointments`
-      };
-    }
+          return {
+            type: 'scheduled',
+            data: next,
+            title: next.session?.name || "Session planifiée",
+            subtitle: sessionDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }),
+            link: isReadyCurrent ? `/client/live-workout/${next.id}` : `/client/appointments`
+          };
+        }
+      }
 
-    // Priority 2: Active Program
-    if (clientPrograms.length > 0) {
-      const prog = clientPrograms[0];
-      return {
-        type: 'program',
-        data: prog,
-        title: prog.program?.name || "Programme en cours",
-        subtitle: "Continuer votre progression",
-        link: `/client/workout/${prog.id}` // Link to the specific program details
-      };
+      // Priority 2: Active Program - Smart Next Session
+      if (clientPrograms.length > 0) {
+        const prog = clientPrograms[0];
+
+        // Safety check: ensure program relation exists
+        if (prog && prog.program) {
+          const programSessions = prog.program.program_sessions?.sort((a: any, b: any) => a.order_index - b.order_index) || [];
+
+          if (programSessions.length > 0) {
+            // Count how many sessions from this program have been completed
+            // Logic: Count workout sessions that happened AFTER the program start date
+            const programStartDate = new Date(prog.start_date || new Date());
+            const sessionsCompletedCount = workoutSessions.filter((ws: any) =>
+              ws.date && new Date(ws.date) >= programStartDate
+            ).length;
+
+            // The next session is the one at index 'sessionsCompletedCount' % totalSessions (cycling)
+            // or just clamp to the last one if linear. Let's assume cycling for now or linear.
+            // If linear:
+            const nextSessionIndex = Math.min(sessionsCompletedCount, programSessions.length - 1);
+            // Ensure index is valid
+            const safeIndex = Math.max(0, nextSessionIndex);
+            const nextSession = programSessions[safeIndex];
+
+            if (nextSession) {
+              return {
+                type: 'program',
+                data: prog,
+                title: nextSession.session?.name || "Prochaine séance",
+                subtitle: `${prog.program.name} • Séance ${safeIndex + 1}`,
+                link: `/client/workout/${prog.id}` // Ideally deep link to session, but program view works
+              };
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error in getNextAction:", error);
     }
 
     // Fallback: No active content
@@ -169,11 +273,7 @@ function ClientDashboard() {
 
   return (
     <div className="min-h-screen bg-[#09090b] text-white font-sans p-4 pb-24 md:p-8">
-      {/* Background Gradients */}
-      <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-[100px]" />
-        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-cyan-500/10 rounded-full blur-[100px]" />
-      </div>
+      {/* ... (Background Gradients and Header) */}
 
       <div className="relative z-10 max-w-7xl mx-auto space-y-8">
 
@@ -185,11 +285,25 @@ function ClientDashboard() {
               {getTimeGreeting()}, <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">{client?.full_name?.split(' ')[0]}</span>
             </h1>
           </div>
-          <Link to="/client/profile" className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 hover:bg-white/10 border border-white/5 transition-colors text-sm font-medium">
-            <Award className="w-4 h-4 text-yellow-500" />
-            <span>Niveau Débutant</span>
-          </Link>
+          <div className="flex items-center gap-2">
+            <div className={`flex items-center gap-2 px-4 py-2 rounded-full ${level.bg} ${level.color} border border-white/5 transition-colors text-sm font-medium`}>
+              <Award className="w-4 h-4" />
+              <span>Niveau {level.label}</span>
+            </div>
+            <button
+              onClick={() => setShowLevelsModal(true)}
+              className="p-2 rounded-full bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors border border-white/5"
+              title="Voir les niveaux"
+            >
+              <Info className="w-4 h-4" />
+            </button>
+          </div>
         </div>
+
+        {/* ... (Rest of dashboard content) */}
+
+        {/* ... (Existing Quick Actions link to profile can remain or be removed if redundant, keeping header one is cleaner) */}
+
 
         {/* Hero / Next Action Card */}
         <div className="grid lg:grid-cols-3 gap-6 animate-fade-in delay-100">
@@ -258,6 +372,40 @@ function ClientDashboard() {
                   <p className="text-xl lg:text-2xl font-bold text-white">{stats.totalDuration}h</p>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Weekly Activity Chart */}
+        <div className="animate-fade-in delay-200">
+          <div className="glass-card p-6 rounded-3xl border border-white/10">
+            <h3 className="text-xl font-bold text-white mb-6">Activité de la semaine (min)</h3>
+            <div className="h-48 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={weeklyActivity}>
+                  <XAxis
+                    dataKey="day"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: '#9ca3af', fontSize: 12 }}
+                    dy={10}
+                  />
+                  <Tooltip
+                    cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
+                    contentStyle={{
+                      backgroundColor: '#18181b',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      borderRadius: '0.75rem',
+                      color: '#fff'
+                    }}
+                  />
+                  <Bar dataKey="minutes" radius={[4, 4, 4, 4]}>
+                    {weeklyActivity.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.minutes > 0 ? '#3b82f6' : 'rgba(255,255,255,0.1)'} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           </div>
         </div>
@@ -343,6 +491,77 @@ function ClientDashboard() {
 
         </div>
       </div>
+
+      {/* Level Info Modal */}
+      {showLevelsModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-[#18181b] border border-white/10 rounded-2xl p-6 max-w-md w-full relative animate-slide-in">
+            <button
+              onClick={() => setShowLevelsModal(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center text-blue-400 mx-auto mb-4">
+                <Award className="w-8 h-8" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">Niveaux d'entraînement</h3>
+              <p className="text-gray-400 text-sm">
+                Accumulez des séances pour monter en niveau et débloquer votre potentiel !
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <div className={`p-4 rounded-xl border flex items-center justify-between ${stats.workoutsCount < 10 ? 'bg-yellow-500/10 border-yellow-500/30 ring-1 ring-yellow-500/50' : 'bg-white/5 border-white/5 opacity-60'}`}>
+                <div className="flex items-center gap-3">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${stats.workoutsCount < 10 ? 'bg-yellow-500 text-black' : 'bg-gray-700 text-gray-400'}`}>
+                    1
+                  </div>
+                  <div>
+                    <p className={`font-bold ${stats.workoutsCount < 10 ? 'text-yellow-400' : 'text-gray-300'}`}>Débutant</p>
+                    <p className="text-xs text-gray-500">0 - 9 séances</p>
+                  </div>
+                </div>
+                {stats.workoutsCount < 10 && <span className="text-xs font-bold text-yellow-400 uppercase tracking-wider">Actuel</span>}
+              </div>
+
+              <div className={`p-4 rounded-xl border flex items-center justify-between ${stats.workoutsCount >= 10 && stats.workoutsCount < 50 ? 'bg-blue-500/10 border-blue-500/30 ring-1 ring-blue-500/50' : 'bg-white/5 border-white/5 opacity-60'}`}>
+                <div className="flex items-center gap-3">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${stats.workoutsCount >= 10 && stats.workoutsCount < 50 ? 'bg-blue-500 text-white' : 'bg-gray-700 text-gray-400'}`}>
+                    2
+                  </div>
+                  <div>
+                    <p className={`font-bold ${stats.workoutsCount >= 10 && stats.workoutsCount < 50 ? 'text-blue-400' : 'text-gray-300'}`}>Intermédiaire</p>
+                    <p className="text-xs text-gray-500">10 - 49 séances</p>
+                  </div>
+                </div>
+                {stats.workoutsCount >= 10 && stats.workoutsCount < 50 && <span className="text-xs font-bold text-blue-400 uppercase tracking-wider">Actuel</span>}
+              </div>
+
+              <div className={`p-4 rounded-xl border flex items-center justify-between ${stats.workoutsCount >= 50 ? 'bg-purple-500/10 border-purple-500/30 ring-1 ring-purple-500/50' : 'bg-white/5 border-white/5 opacity-60'}`}>
+                <div className="flex items-center gap-3">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${stats.workoutsCount >= 50 ? 'bg-purple-500 text-white' : 'bg-gray-700 text-gray-400'}`}>
+                    3
+                  </div>
+                  <div>
+                    <p className={`font-bold ${stats.workoutsCount >= 50 ? 'text-purple-400' : 'text-gray-300'}`}>Expert</p>
+                    <p className="text-xs text-gray-500">50+ séances</p>
+                  </div>
+                </div>
+                {stats.workoutsCount >= 50 && <span className="text-xs font-bold text-purple-400 uppercase tracking-wider">Actuel</span>}
+              </div>
+            </div>
+
+            <div className="mt-6 pt-6 border-t border-white/10 text-center">
+              <p className="text-sm text-gray-400">
+                Vous avez terminé <strong className="text-white">{stats.workoutsCount}</strong> séances au total.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
