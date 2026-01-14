@@ -38,12 +38,15 @@ function Dashboard() {
     upcomingSessions: 0,
     monthlyRevenue: 0,
     monthlyGrowth: 0,
+    newClientsThisMonth: 0,
+    avgProgramCompletion: 0,
   });
   const [recentActivities, setRecentActivities] = useState<any[]>([]);
   const [clientProgress, setClientProgress] = useState<any[]>([]);
   const [revenueData, setRevenueData] = useState<{ name: string, value: number }[]>([]);
   const [timeRange, setTimeRange] = useState<'6months' | 'year'>('6months');
   const [allPayments, setAllPayments] = useState<any[]>([]);
+  const [upcomingAppointments, setUpcomingAppointments] = useState<any[]>([]);
 
   useEffect(() => {
     if (user) {
@@ -130,17 +133,49 @@ function Dashboard() {
       const nextWeek = new Date();
       nextWeek.setDate(nextWeek.getDate() + 7);
 
-      const { count: upcomingSessions } = await supabase
+      const { data: upcomingSessionsData, count: upcomingSessionsCount } = await supabase
         .from('appointments')
-        .select('*', { count: 'exact', head: true })
+        .select(`
+          id,
+          title,
+          start,
+          duration,
+          client:clients(full_name),
+          type
+        `, { count: 'exact' })
         .eq('coach_id', user?.id)
         .gte('start', new Date().toISOString())
         .lte('start', nextWeek.toISOString())
-        .eq('status', 'scheduled');
+        .eq('status', 'scheduled')
+        .order('start', { ascending: true })
+        .limit(5);
+
+      if (upcomingSessionsData) {
+        setUpcomingAppointments(upcomingSessionsData);
+      }
+
+      const upcomingSessions = upcomingSessionsCount; // Keep variable name for stats update below
 
       // Calculate monthly revenue and growth
       const now = new Date();
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+      // Get new clients this month
+      const { count: newClientsThisMonth } = await supabase
+        .from('clients')
+        .select('*', { count: 'exact', head: true })
+        .eq('coach_id', user?.id)
+        .gte('created_at', startOfMonth.toISOString());
+
+      // Get avg program completion
+      const { data: activeProgramsProgress } = await supabase
+        .from('client_programs')
+        .select('progress')
+        .eq('status', 'active');
+
+      const avgProgramCompletion = activeProgramsProgress?.length
+        ? Math.round(activeProgramsProgress.reduce((acc, curr) => acc + (curr.progress || 0), 0) / activeProgramsProgress.length)
+        : 0;
 
       const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
@@ -205,6 +240,8 @@ function Dashboard() {
         upcomingSessions: upcomingSessions || 0,
         monthlyRevenue: currentMonthRevenue,
         monthlyGrowth,
+        newClientsThisMonth: newClientsThisMonth || 0,
+        avgProgramCompletion,
       });
 
       setRecentActivities(recentActivitiesData || []);
@@ -266,18 +303,17 @@ function Dashboard() {
         <StatCard
           title={t('dashboard.stats.totalClients', language)}
           value={stats.totalClients}
-          subValue="+3 ce mois"
+          subValue={`+${stats.newClientsThisMonth} ce mois`}
           icon={Users}
           color="blue"
-          trend={12}
+          trend={stats.newClientsThisMonth > 0 ? stats.newClientsThisMonth : undefined}
         />
         <StatCard
           title={t('dashboard.stats.activePrograms', language)}
           value={stats.activePrograms}
-          subValue="85% de complétion"
+          subValue={`${stats.avgProgramCompletion}% de complétion`}
           icon={Activity}
           color="purple"
-          trend={5}
         />
         <StatCard
           title={t('dashboard.stats.upcomingSessions', language)}
@@ -445,20 +481,31 @@ function Dashboard() {
           <div className="glass-card p-6">
             <h3 className="text-lg font-semibold text-white mb-6">Prochaines Séances</h3>
             <div className="space-y-4">
-              {[1, 2, 3].map((_, i) => (
-                <div key={i} className="group p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors border border-white/5 hover:border-white/10 cursor-pointer">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-lg bg-gray-800 flex flex-col items-center justify-center border border-white/10">
-                      <span className="text-xs text-gray-400">OCT</span>
-                      <span className="text-lg font-bold text-white">{14 + i}</span>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-white group-hover:text-primary-400 transition-colors">HIIT Training</h4>
-                      <p className="text-xs text-gray-400">10:00 AM • Sophie M.</p>
-                    </div>
-                  </div>
+              {upcomingAppointments.length === 0 ? (
+                <div className="text-gray-400 text-sm text-center py-4 bg-white/5 rounded-xl border border-white/5">
+                  Aucune séance prévue
                 </div>
-              ))}
+              ) : (
+                upcomingAppointments.map((session) => {
+                  const startDate = new Date(session.start);
+                  return (
+                    <div key={session.id} className="group p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors border border-white/5 hover:border-white/10 cursor-pointer">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-lg bg-gray-800 flex flex-col items-center justify-center border border-white/10">
+                          <span className="text-[10px] text-gray-400 uppercase">{startDate.toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US', { month: 'short' })}</span>
+                          <span className="text-lg font-bold text-white">{startDate.getDate()}</span>
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-medium text-white group-hover:text-primary-400 transition-colors">{session.title}</h4>
+                          <p className="text-xs text-gray-400">
+                            {startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {session.client?.full_name || 'Client inconnu'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
         </div>
