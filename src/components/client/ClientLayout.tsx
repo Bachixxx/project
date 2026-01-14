@@ -5,6 +5,7 @@ import {
   User, LogOut, Menu, X, ShoppingBag
 } from 'lucide-react';
 import { useClientAuth } from '../../contexts/ClientAuthContext';
+import ClientBottomNav from './ClientBottomNav';
 
 function ClientLayout() {
   const location = useLocation();
@@ -32,7 +33,7 @@ function ClientLayout() {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="p-2 rounded-lg text-white hover:bg-white/10 lg:hidden"
+                className="p-2 rounded-lg text-white hover:bg-white/10 lg:hidden hidden" // Hidden on mobile now
               >
                 {isMobileMenuOpen ? (
                   <X className="w-6 h-6" />
@@ -84,7 +85,7 @@ function ClientLayout() {
         </div>
       </nav>
 
-      <div className="flex pt-16 w-full">
+      <div className="flex pt-16 w-full pb-20 lg:pb-0">
         {/* Mobile Sidebar */}
         <div
           className={`fixed inset-0 bg-black/70 backdrop-blur-sm z-40 lg:hidden transition-opacity duration-300 ${isMobileMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
@@ -131,8 +132,11 @@ function ClientLayout() {
           </nav>
         </aside>
 
+        {/* Mobile Bottom Navigation */}
+        <ClientBottomNav />
+
         {/* Main Content */}
-        <main className="flex-1 w-full p-4 overflow-x-hidden">
+        <main className="flex-1 w-full p-0 lg:p-8 overflow-x-hidden">
           <Outlet />
         </main>
       </div>

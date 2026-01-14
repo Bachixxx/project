@@ -223,39 +223,39 @@ function ClientDashboard() {
           </div>
 
           {/* Quick Stats */}
-          <div className="space-y-6">
-            <div className="glass-card p-6 rounded-3xl border border-white/10 hover:border-blue-500/30 transition-colors">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-orange-500/20 flex items-center justify-center text-orange-400">
-                  <Flame className="w-6 h-6 fill-current" />
+          <div className="grid grid-cols-2 lg:grid-cols-1 gap-4">
+            <div className="glass-card p-4 lg:p-6 rounded-3xl border border-white/10 hover:border-blue-500/30 transition-colors">
+              <div className="flex flex-col lg:flex-row items-start lg:items-center gap-3 lg:gap-4">
+                <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-2xl bg-orange-500/20 flex items-center justify-center text-orange-400">
+                  <Flame className="w-5 h-5 lg:w-6 lg:h-6 fill-current" />
                 </div>
                 <div>
-                  <p className="text-gray-400 text-sm font-medium">Série en cours</p>
-                  <p className="text-2xl font-bold text-white">{stats.streak} jours</p>
+                  <p className="text-gray-400 text-xs lg:text-sm font-medium">Série</p>
+                  <p className="text-xl lg:text-2xl font-bold text-white">{stats.streak} j</p>
                 </div>
               </div>
             </div>
 
-            <div className="glass-card p-6 rounded-3xl border border-white/10 hover:border-blue-500/30 transition-colors">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-green-500/20 flex items-center justify-center text-green-400">
-                  <Dumbbell className="w-6 h-6" />
+            <div className="glass-card p-4 lg:p-6 rounded-3xl border border-white/10 hover:border-blue-500/30 transition-colors">
+              <div className="flex flex-col lg:flex-row items-start lg:items-center gap-3 lg:gap-4">
+                <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-2xl bg-green-500/20 flex items-center justify-center text-green-400">
+                  <Dumbbell className="w-5 h-5 lg:w-6 lg:h-6" />
                 </div>
                 <div>
-                  <p className="text-gray-400 text-sm font-medium">Séances terminées</p>
-                  <p className="text-2xl font-bold text-white">{stats.workoutsCount}</p>
+                  <p className="text-gray-400 text-xs lg:text-sm font-medium">Séances</p>
+                  <p className="text-xl lg:text-2xl font-bold text-white">{stats.workoutsCount}</p>
                 </div>
               </div>
             </div>
 
-            <div className="glass-card p-6 rounded-3xl border border-white/10 hover:border-blue-500/30 transition-colors">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-purple-500/20 flex items-center justify-center text-purple-400">
-                  <Clock className="w-6 h-6" />
+            <div className="col-span-2 lg:col-span-1 glass-card p-4 lg:p-6 rounded-3xl border border-white/10 hover:border-blue-500/30 transition-colors">
+              <div className="flex flex-col lg:flex-row items-start lg:items-center gap-3 lg:gap-4">
+                <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-2xl bg-purple-500/20 flex items-center justify-center text-purple-400">
+                  <Clock className="w-5 h-5 lg:w-6 lg:h-6" />
                 </div>
                 <div>
-                  <p className="text-gray-400 text-sm font-medium">Temps total</p>
-                  <p className="text-2xl font-bold text-white">{stats.totalDuration}h</p>
+                  <p className="text-gray-400 text-xs lg:text-sm font-medium">Temps total</p>
+                  <p className="text-xl lg:text-2xl font-bold text-white">{stats.totalDuration}h</p>
                 </div>
               </div>
             </div>
