@@ -58,19 +58,32 @@ function ClientDashboard() {
       if (programsError) throw programsError;
       setClientPrograms(programsData || []);
 
-      // Fetch recent workout sessions for history and stats
+      // Fetch recent scheduled sessions (completed) for history and stats
       const { data: sessionsData, error: sessionsError } = await supabase
-        .from('workout_sessions')
+        .from('scheduled_sessions')
         .select(`
           *,
-          session:sessions(name)
+          session:sessions (
+            id,
+            name,
+            duration_minutes
+          )
         `)
         .eq('client_id', client?.id)
-        .order('date', { ascending: false });
+        .eq('status', 'completed')
+        .order('completed_at', { ascending: false });
 
       if (sessionsError) throw sessionsError;
 
-      const sessions = sessionsData || [];
+      // Map scheduled_sessions to the format expected by the dashboard
+      const sessions = (sessionsData || []).map(s => ({
+        id: s.id,
+        date: s.completed_at || s.scheduled_date,
+        duration_minutes: s.actual_duration || s.session?.duration_minutes || 0,
+        actual_duration: s.actual_duration,
+        session: s.session
+      }));
+
       setWorkoutSessions(sessions.slice(0, 5)); // Keep only last 5 for display
 
       // Calculate simple stats
@@ -94,11 +107,8 @@ function ClientDashboard() {
           return sessionDate.getTime() === date.getTime();
         });
 
-        // Use actual_duration if available, otherwise fallback to session.duration_minutes
-        const duration = daySessions.reduce((acc: number, curr: any) => {
-          const sessionTime = curr.actual_duration || curr.session?.duration_minutes || 0; // Corrected to access session.duration_minutes
-          return acc + sessionTime;
-        }, 0);
+        // Use mapped duration_minutes which already handles actual_duration vs planned
+        const duration = daySessions.reduce((acc: number, curr: any) => acc + (curr.duration_minutes || 0), 0);
 
         return {
           day: dayName.charAt(0).toUpperCase() + dayName.slice(1),
