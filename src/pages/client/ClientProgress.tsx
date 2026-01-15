@@ -96,8 +96,8 @@ function ClientProgress() {
         }
       }
 
-      // Generate weight data (mock for now since we don't have weight tracking)
-      generateWeightData();
+      // Fetch real weight history
+      fetchWeightHistory();
 
     } catch (error) {
       console.error('Error fetching progress data:', error);
@@ -106,25 +106,29 @@ function ClientProgress() {
     }
   };
 
-  const generateWeightData = () => {
-    // Generate mock weight data based on last 30 days
-    const mockDates = Array.from({ length: 15 }, (_, i) => {
-      const d = new Date();
-      d.setDate(d.getDate() - (15 - i) * 2);
-      return d;
-    });
+  const fetchWeightHistory = async () => {
+    const clientData = client as any;
+    if (!clientData?.id) return;
 
-    const weightData = mockDates.map((date, index) => {
-      // Mock fluctuation
-      const baseWeight = 85;
-      const weightLoss = index * 0.2 + (Math.random() * 0.4 - 0.2);
-      return {
-        date: date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }),
-        value: Math.round((baseWeight - weightLoss) * 10) / 10
-      };
-    });
+    try {
+      const { data, error } = await supabase
+        .from('client_weight_history')
+        .select('weight, date')
+        .eq('client_id', clientData.id)
+        .order('date', { ascending: true });
 
-    setWeightData(weightData);
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        const historyData = data.map(entry => ({
+          date: new Date(entry.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }),
+          value: entry.weight
+        }));
+        setWeightData(historyData);
+      }
+    } catch (err) {
+      console.error('Error fetching weight history:', err);
+    }
   };
 
   const generateStrengthData = () => {
