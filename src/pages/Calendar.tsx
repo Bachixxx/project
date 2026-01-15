@@ -181,77 +181,104 @@ function CalendarPage() {
         </button>
       </div>
 
-      <div className="glass-card p-6 flex-1 overflow-hidden flex flex-col">
+      <div className="glass-card p-0 flex-1 overflow-hidden flex flex-col rounded-2xl shadow-2xl border border-white/5 bg-[#09090b]">
         <style>{`
-          .rbc-calendar { font-family: inherit; color: #e5e7eb; }
+          .rbc-calendar { font-family: 'Inter', system-ui, sans-serif; color: #a1a1aa; }
           
           /* Toolbar */
+          .rbc-toolbar {
+            padding: 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            margin-bottom: 0 !important;
+          }
           .rbc-toolbar button { 
             color: #d1d5db !important; 
             border: 1px solid rgba(255,255,255,0.1) !important;
-            background: rgba(255,255,255,0.05) !important;
+            background: rgba(255,255,255,0.03) !important;
             font-weight: 500 !important;
+            border-radius: 8px !important;
+            padding: 6px 12px !important;
+            font-size: 0.875rem !important;
           }
           .rbc-toolbar button:hover { 
-            background: rgba(255,255,255,0.1) !important; 
+            background: rgba(255,255,255,0.08) !important; 
             color: white !important; 
           }
           .rbc-toolbar button.rbc-active { 
-            background: rgba(6, 182, 212, 0.1) !important;
-            color: #22d3ee !important;
-            border-color: rgba(6, 182, 212, 0.3) !important;
+            background: rgba(255,255,255,0.1) !important;
+            color: white !important;
+            border-color: rgba(255,255,255,0.2) !important;
             box-shadow: none !important;
           }
           
           /* Header (Days) */
           .rbc-header { 
-            padding: 12px 0 !important; 
+            padding: 16px 0 !important; 
             font-weight: 600; 
             color: #fff;
-            background: transparent !important; /* Ensure transparency */
-            border-bottom: 1px solid rgba(255,255,255,0.1) !important;
-            border-left: 1px solid rgba(255,255,255,0.1) !important;
+            background: rgba(24, 24, 27, 0.95) !important;
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255,255,255,0.05) !important;
+            border-left: none !important;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            position: sticky;
+            top: 0;
+            z-index: 10;
           }
-          .rbc-header + .rbc-header { 
-            border-left: 1px solid rgba(255,255,255,0.1) !important; 
-          }
-          .rbc-time-header-content {
-              border-left: 1px solid rgba(255,255,255,0.1) !important;
-          }
-          .rbc-time-view {
-              border: 1px solid rgba(255,255,255,0.1) !important;
-          }
+          .rbc-header + .rbc-header { border-left: none !important; }
+          .rbc-time-header-content { border-left: none !important; }
+          .rbc-time-view { border: none !important; }
           
           /* Grid & Cells */
           .rbc-day-bg { 
             background: transparent !important; 
-            border-left: 1px solid rgba(255,255,255,0.05) !important; 
+            border-left: 1px solid rgba(255,255,255,0.03) !important; 
           }
-          .rbc-time-content { border-top: 1px solid rgba(255,255,255,0.1) !important; }
-          .rbc-timeslot-group { border-bottom: 1px solid rgba(255,255,255,0.05) !important; }
-          .rbc-day-slot .rbc-time-slot { border-top: 1px solid rgba(255,255,255,0.05) !important; }
-          .rbc-time-gutter .rbc-timeslot-group { border-right: 1px solid rgba(255,255,255,0.1) !important; }
+          .rbc-time-content { border-top: none !important; }
+          .rbc-timeslot-group { 
+            border-bottom: 1px solid rgba(255,255,255,0.03) !important; 
+            min-height: 60px !important; /* Taller slots for cleaner look */
+          }
+          .rbc-day-slot .rbc-time-slot { border-top: none !important; }
+          .rbc-time-gutter .rbc-timeslot-group { border-right: 1px solid rgba(255,255,255,0.05) !important; }
           
           /* Today Highlight */
-          .rbc-today { 
-            background-color: rgba(6, 182, 212, 0.05) !important; /* Subtle cyan tint */
+          .rbc-day-slot.rbc-today { 
+            background-color: transparent !important; 
           }
+          
+          /* Time Indicator */
           .rbc-current-time-indicator { 
-            background-color: #22d3ee !important; 
-            height: 1px !important; 
+            background-color: #ef4444 !important; 
+            height: 1px !important;
+            opacity: 1 !important;
+          }
+          .rbc-current-time-indicator::before {
+            content: '';
+            position: absolute;
+            left: -3px;
+            top: -3px;
+            width: 7px;
+            height: 7px;
+            background-color: #ef4444;
+            border-radius: 50%;
+            z-index: 11;
           }
           
           /* Events */
           .rbc-event { 
             border-radius: 6px !important; 
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
-            border: 1px solid rgba(255,255,255,0.1) !important;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1) !important;
+            border: none !important;
+            margin: 1px 4px !important;
+            width: calc(100% - 8px) !important;
           }
+          .rbc-event-label { display: none !important; } /* Clean up label */
           
           /* Off Range */
-          .rbc-off-range-bg { 
-            background: transparent !important; 
-          }
+          .rbc-off-range-bg { background: transparent !important; }
         `}</style>
         <BigCalendar
           localizer={localizer}
@@ -269,21 +296,34 @@ function CalendarPage() {
           formats={formats}
           min={new Date(0, 0, 0, 6, 0, 0)}
           max={new Date(0, 0, 0, 22, 0, 0)}
+          slotPropGetter={(date) => {
+            const hour = date.getHours();
+            const isWorkingHour = hour >= 9 && hour < 18;
+            return {
+              className: isWorkingHour ? 'bg-zinc-900/30' : 'bg-black/60',
+              style: {
+                // borderTop: 'none'
+              }
+            };
+          }}
           eventPropGetter={(event: Appointment) => ({
-            className: `${event.type === 'private' ? 'bg-blue-600/80' : 'bg-emerald-600/80'} backdrop-blur-md`,
+            className: `${event.type === 'private' ? 'bg-blue-600/90' : 'bg-emerald-600/90'} backdrop-blur-md`,
             style: {
               fontSize: '0.85rem',
-              padding: '4px 8px',
+              padding: '6px 10px',
+              borderLeft: event.type === 'private' ? '3px solid #60a5fa' : '3px solid #34d399'
             }
           })}
           components={{
             event: ({ event }: any) => (
-              <div className="w-full h-full flex flex-col">
-                <div className="flex items-center gap-1 mb-1">
-                  {event.type === 'private' ? <User className="w-3 h-3" /> : <Users className="w-3 h-3" />}
-                  <span className="font-semibold leading-tight truncate">{event.title}</span>
+              <div className="w-full h-full flex flex-col justify-center">
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  {event.type === 'private' ? <User className="w-3 h-3 text-blue-200" /> : <Users className="w-3 h-3 text-emerald-200" />}
+                  <span className="font-semibold leading-tight truncate text-sm shadow-sm">{event.title}</span>
                 </div>
-                {/* <span className="text-xs opacity-80">{format(event.start, 'HH:mm')} - {format(event.end, 'HH:mm')}</span> */}
+                <div className="text-xs opacity-75 truncate pl-4.5">
+                  {format(event.start, 'HH:mm')} - {format(event.end, 'HH:mm')}
+                </div>
               </div>
             ),
           }}
@@ -703,8 +743,8 @@ function AppointmentModal({ appointment, selectedSlot, clients, onClose, onSave 
                   type="button"
                   onClick={() => setFormData(prev => ({ ...prev, payment_method: 'online' }))}
                   className={`p-4 rounded-xl border transition-all ${formData.payment_method === 'online'
-                      ? 'border-primary-500 bg-primary-500/10 ring-1 ring-primary-500/50'
-                      : 'border-white/10 bg-white/5 hover:bg-white/10 text-gray-400'
+                    ? 'border-primary-500 bg-primary-500/10 ring-1 ring-primary-500/50'
+                    : 'border-white/10 bg-white/5 hover:bg-white/10 text-gray-400'
                     }`}
                 >
                   <div className="flex flex-col items-center gap-2">
@@ -724,8 +764,8 @@ function AppointmentModal({ appointment, selectedSlot, clients, onClose, onSave 
                   type="button"
                   onClick={() => setFormData(prev => ({ ...prev, payment_method: 'in_person' }))}
                   className={`p-4 rounded-xl border transition-all ${formData.payment_method === 'in_person'
-                      ? 'border-primary-500 bg-primary-500/10 ring-1 ring-primary-500/50'
-                      : 'border-white/10 bg-white/5 hover:bg-white/10 text-gray-400'
+                    ? 'border-primary-500 bg-primary-500/10 ring-1 ring-primary-500/50'
+                    : 'border-white/10 bg-white/5 hover:bg-white/10 text-gray-400'
                     }`}
                 >
                   <div className="flex flex-col items-center gap-2">
