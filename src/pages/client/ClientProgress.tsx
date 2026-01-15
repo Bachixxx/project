@@ -274,8 +274,8 @@ function ClientProgress() {
                 </div>
                 {weightDifference !== null && (
                   <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold border ${!weightDifference.isPositive
-                      ? 'text-green-400 bg-green-500/10 border-green-500/20'
-                      : 'text-red-400 bg-red-500/10 border-red-500/20'
+                    ? 'text-green-400 bg-green-500/10 border-green-500/20'
+                    : 'text-red-400 bg-red-500/10 border-red-500/20'
                     }`}>
                     {!weightDifference.isPositive ? <TrendingDown className="w-4 h-4" /> : <TrendingUp className="w-4 h-4" />}
                     <span>
@@ -338,7 +338,7 @@ function ClientProgress() {
 
             {/* Graphique de Force */}
             <div className="glass-card p-6 rounded-3xl border border-white/10 flex flex-col h-[450px]">
-              <div className="flex items-center justify-between mb-8">
+              <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
                 <div className="flex items-center gap-3">
                   <div className="p-2.5 bg-purple-500/20 rounded-xl">
                     <Dumbbell className="w-6 h-6 text-purple-400" />
@@ -350,11 +350,11 @@ function ClientProgress() {
                 </div>
 
                 {exercises.length > 0 && (
-                  <div className="relative group">
+                  <div className="relative group w-full md:w-auto">
                     <select
                       value={selectedExercise}
                       onChange={(e) => setSelectedExercise(e.target.value)}
-                      className="appearance-none bg-white/5 border border-white/10 text-white text-sm rounded-xl px-4 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer hover:bg-white/10 transition-colors"
+                      className="w-full md:w-auto appearance-none bg-white/5 border border-white/10 text-white text-sm rounded-xl px-4 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer hover:bg-white/10 transition-colors"
                     >
                       {exercises.map(exercise => (
                         <option key={exercise.id} value={exercise.id} className="bg-slate-900 text-white">

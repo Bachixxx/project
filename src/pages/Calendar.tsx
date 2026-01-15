@@ -19,7 +19,11 @@ import {
   QrCode,
   Link as LinkIcon,
   Calendar as CalendarIcon,
-  Check
+  Check,
+  List as ListView,
+  ChevronLeft,
+  ChevronRight,
+  MapPin
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { supabase } from '../lib/supabase';
@@ -108,7 +112,26 @@ function CalendarPage() {
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<{ start: Date; end: Date } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
+  const [currentDate, setCurrentDate] = useState(new Date());
   const { user } = useAuth();
+
+  // Set default view based on screen size
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 1024) {
+        setViewMode('list');
+      } else {
+        setViewMode('calendar');
+      }
+    };
+
+    // Initial check
+    handleResize();
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -163,25 +186,72 @@ function CalendarPage() {
   };
 
   return (
-    <div className="p-6 max-w-[2560px] mx-auto animate-fade-in flex flex-col h-[calc(100vh-2rem)]">
-      <div className="flex justify-between items-center mb-6">
+    <div className="p-4 lg:p-6 max-w-[2560px] mx-auto animate-fade-in flex flex-col h-[calc(100vh-5rem)] lg:h-[calc(100vh-2rem)]">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
         <div>
           <h1 className="text-3xl font-bold text-white mb-1">{t('calendar.title')}</h1>
-          <p className="text-gray-400">Gérez votre emploi du temps et vos séances</p>
+          <p className="text-gray-400 hidden lg:block">Gérez votre emploi du temps et vos séances</p>
         </div>
-        <button
-          onClick={() => {
-            setSelectedAppointment(null);
-            setIsModalOpen(true);
-          }}
-          className="primary-button flex items-center gap-2 shadow-lg shadow-blue-500/20"
-        >
-          <Plus className="w-5 h-5" />
-          {t('calendar.newSession')}
-        </button>
+
+        {/* Mobile View Toggle & Date Navigation */}
+        <div className="flex items-center gap-3 w-full lg:w-auto justify-between lg:justify-end">
+          <div className="flex bg-white/5 p-1 rounded-xl lg:hidden">
+            <button
+              onClick={() => setViewMode('list')}
+              className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
+            >
+              <ListView className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => setViewMode('calendar')}
+              className={`p-2 rounded-lg transition-all ${viewMode === 'calendar' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
+            >
+              <CalendarIcon className="w-5 h-5" />
+            </button>
+          </div>
+
+          <button
+            onClick={() => {
+              setSelectedAppointment(null);
+              setIsModalOpen(true);
+            }}
+            className="primary-button flex items-center gap-2 shadow-lg shadow-blue-500/20"
+          >
+            <Plus className="w-5 h-5" />
+            <span className="hidden sm:inline">{t('calendar.newSession')}</span>
+            <span className="sm:hidden">Créer</span>
+          </button>
+        </div>
       </div>
 
-      <div className="glass p-0 flex-1 overflow-hidden flex flex-col rounded-2xl shadow-xl border border-white/5 bg-zinc-900">
+      {/* List View Navigation (Mobile Only) */}
+      {viewMode === 'list' && (
+        <div className="flex items-center justify-between mb-6 bg-white/5 p-4 rounded-2xl border border-white/5 lg:hidden">
+          <button
+            onClick={handlePrevDay}
+            className="p-2 hover:bg-white/10 rounded-full text-white transition-colors"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <div className="text-center">
+            <h3 className="text-lg font-bold text-white capitalize">
+              {format(currentDate, 'EEEE d MMMM', { locale: fr })}
+            </h3>
+            <p className="text-sm text-gray-400">
+              {selectedDateEvents.length} événement{selectedDateEvents.length > 1 ? 's' : ''}
+            </p>
+          </div>
+          <button
+            onClick={handleNextDay}
+            className="p-2 hover:bg-white/10 rounded-full text-white transition-colors"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
+        </div>
+      )}
+
+      {/* Calendar View */}
+      <div className={`glass p-0 flex-1 overflow-hidden flex flex-col rounded-2xl shadow-xl border border-white/5 bg-zinc-900 ${viewMode === 'list' ? 'hidden lg:flex' : 'flex'}`}>
         <style>{`
           .rbc-calendar { font-family: 'Inter', system-ui, sans-serif; color: #a1a1aa; }
           
@@ -382,6 +452,94 @@ function CalendarPage() {
           }}
         />
       </div>
+
+      {/* List View Content (Mobile Only) */}
+      {viewMode === 'list' && (
+        <div className="flex-1 overflow-y-auto space-y-3 pb-20 lg:hidden custom-scrollbar">
+          {selectedDateEvents.length > 0 ? (
+            selectedDateEvents.map((event) => (
+              <div
+                key={event.id}
+                onClick={() => handleSelectEvent(event)}
+                className="glass p-4 rounded-xl border border-white/5 hover:bg-white/5 transition-all cursor-pointer group active:scale-[0.98]"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-4">
+                    <div className="flex flex-col items-center justify-center p-3 bg-white/5 rounded-xl min-w-[4rem]">
+                      <span className="text-lg font-bold text-white">
+                        {format(new Date(event.start), 'HH:mm')}
+                      </span>
+                      <span className="text-xs text-gray-400">
+                        {event.duration} min
+                      </span>
+                    </div>
+
+                    <div className="space-y-1">
+                      <h4 className="font-bold text-white text-lg leading-tight group-hover:text-blue-400 transition-colors">
+                        {event.title}
+                      </h4>
+                      <div className="flex items-center gap-2 text-sm text-gray-300">
+                        <User className="w-3.5 h-3.5 text-blue-400" />
+                        <span>
+                          {event.type === 'private'
+                            ? clients.find(c => c.id === event.client_id)?.full_name || 'Client inconnu'
+                            : `${event.current_participants}/${event.max_participants} participants`
+                          }
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                        {event.payment_method === 'online' ? (
+                          <div className="flex items-center gap-1 text-green-400/80">
+                            <CreditCard className="w-3 h-3" />
+                            <span>En ligne</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1 text-amber-400/80">
+                            <Banknote className="w-3 h-3" />
+                            <span>Sur place</span>
+                          </div>
+                        )}
+                        <span className="w-1 h-1 rounded-full bg-gray-700"></span>
+                        <div className="flex items-center gap-1">
+                          {event.payment_status === 'paid' ? (
+                            <span className="text-green-400">Payé</span>
+                          ) : (
+                            <span className="text-amber-400">En attente</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className={`w-1.5 h-12 rounded-full ${event.type === 'private' ? 'bg-blue-500' : 'bg-emerald-500'
+                    }`} />
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="flex flex-col items-center justify-center h-64 text-center p-6 glass rounded-2xl border border-dashed border-white/10">
+              <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-4">
+                <CalendarIcon className="w-8 h-8 text-gray-500" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">Aucune séance</h3>
+              <p className="text-gray-400 text-sm">
+                Aucune séance programmée pour le <br />
+                <span className="text-blue-400">{format(currentDate, 'd MMMM', { locale: fr })}</span>
+              </p>
+              <button
+                onClick={() => {
+                  setSelectedSlot({ start: new Date(currentDate.setHours(9, 0, 0, 0)), end: new Date(currentDate.setHours(10, 0, 0, 0)) });
+                  setSelectedAppointment(null);
+                  setIsModalOpen(true);
+                }}
+                className="mt-6 text-sm text-blue-400 hover:text-blue-300 font-medium"
+              >
+                + Ajouter une séance
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {isModalOpen && (
         <AppointmentModal

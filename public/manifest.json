@@ -8,9 +8,9 @@
     "theme_color": "#0f172a",
     "icons": [
         {
-            "src": "/logo.png",
+            "src": "/app-logo.jpg",
             "sizes": "192x192 512x512",
-            "type": "image/png"
+            "type": "image/jpeg"
         }
     ]
 }
