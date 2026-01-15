@@ -238,7 +238,7 @@ function CalendarPage() {
           .rbc-time-content { border-top: none !important; }
           
           .rbc-timeslot-group { 
-            border-bottom: 1px dashed rgba(255,255,255,0.04) !important; /* Subtle dashed lines */
+            border-bottom: 1px dashed rgba(255,255,255,0.05) !important; /* Extremely subtle dashed lines */
             min-height: 60px !important; 
           }
           
@@ -255,7 +255,7 @@ function CalendarPage() {
           
           /* Today Highlight */
           .rbc-day-slot.rbc-today { 
-            background-color: transparent !important; 
+            background-color: rgba(59, 130, 246, 0.05) !important; /* Subtle blue tint for today column */
           }
           /* Highlight today's header text */
           .rbc-header.rbc-today {
