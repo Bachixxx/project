@@ -300,6 +300,30 @@ function CalendarPage() {
             justify-content: center;
           }
           
+          /* Explicitly transparent containers to prevent "black bar" issues */
+          .rbc-time-header, .rbc-time-header-content, .rbc-time-view {
+             background: transparent !important;
+          }
+          
+          /* Disable default hover effects */
+          .rbc-day-slot:hover, 
+          .rbc-day-bg:hover,
+          .rbc-time-slot:hover,
+          .rbc-timeslot-group:hover {
+            background: transparent !important;
+          }
+
+          /* Ensure proper z-indexing and visibility */
+          .rbc-time-header {
+            z-index: 20 !important;
+            position: relative; 
+          }
+          
+          /* Just in case: force no background on all-day row if present */
+          .rbc-allday-cell {
+             display: none !important; /* Hide all-day row if not used or stylistically inconsistent */
+          }
+          
           /* Off Range */
           .rbc-off-range-bg { background: transparent !important; }
         `}</style>
