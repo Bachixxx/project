@@ -181,7 +181,7 @@ function CalendarPage() {
         </button>
       </div>
 
-      <div className="glass-card p-0 flex-1 overflow-hidden flex flex-col rounded-2xl shadow-xl border border-white/5 bg-zinc-900">
+      <div className="glass p-0 flex-1 overflow-hidden flex flex-col rounded-2xl shadow-xl border border-white/5 bg-zinc-900">
         <style>{`
           .rbc-calendar { font-family: 'Inter', system-ui, sans-serif; color: #a1a1aa; }
           
