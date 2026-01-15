@@ -305,11 +305,16 @@ function CalendarPage() {
              background: transparent !important;
           }
           
-          /* Disable default hover effects */
+          /* AGGRESSIVELY Disable default hover effects */
           .rbc-day-slot:hover, 
           .rbc-day-bg:hover,
           .rbc-time-slot:hover,
-          .rbc-timeslot-group:hover {
+          .rbc-timeslot-group:hover,
+          .rbc-day-slot .rbc-time-slot:hover,
+          .rbc-time-view:hover,
+          .rbc-time-content:hover,
+          .rbc-time-column:hover {
+            background-color: transparent !important;
             background: transparent !important;
           }
 
@@ -347,8 +352,11 @@ function CalendarPage() {
             const hour = date.getHours();
             const isWorkingHour = hour >= 9 && hour < 18;
             return {
-              className: isWorkingHour ? '' : 'bg-black/20', /* Lighter contrast for off-hours */
-              style: {}
+              /* Ensure the base class has !important to override any library defaults */
+              className: isWorkingHour ? '' : 'bg-black/20',
+              style: {
+                backgroundColor: isWorkingHour ? 'transparent' : 'rgba(0,0,0,0.2)'
+              }
             };
           }}
           eventPropGetter={(event: Appointment) => ({
