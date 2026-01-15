@@ -7,7 +7,7 @@ import startOfWeek from 'date-fns/startOfWeek';
 import getDay from 'date-fns/getDay';
 import fr from 'date-fns/locale/fr';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
-import { Calendar, Users, User, Loader, X, Clock, DollarSign, FileText, Dumbbell, CheckCircle, Play } from 'lucide-react';
+import { Calendar, Users, User, Loader, X, Clock, DollarSign, FileText, Dumbbell, CheckCircle, Play, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useClientAuth } from '../../contexts/ClientAuthContext';
 import { supabase } from '../../lib/supabase';
 
@@ -55,6 +55,24 @@ function ClientAppointments() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [registering, setRegistering] = useState(false);
   const [loadingExercises, setLoadingExercises] = useState(false);
+  const [viewDate, setViewDate] = useState(new Date());
+
+  const navigateWeek = (direction: 'prev' | 'next') => {
+    const newDate = new Date(viewDate);
+    newDate.setDate(viewDate.getDate() + (direction === 'next' ? 7 : -7));
+    setViewDate(newDate);
+  };
+
+  const getWeekDays = (date: Date) => {
+    const start = startOfWeek(date, { locale: fr, weekStartsOn: 1 });
+    return Array.from({ length: 7 }, (_, i) => {
+      const day = new Date(start);
+      day.setDate(start.getDate() + i);
+      return day;
+    });
+  };
+
+  const weekDays = getWeekDays(viewDate);
 
   useEffect(() => {
     if (client) {
@@ -429,7 +447,96 @@ function ClientAppointments() {
         </div>
       ) : (
         <div className="grid gap-6 grid-cols-1 xl:grid-cols-4 w-full">
-          <div className="xl:col-span-3 glass p-6 w-full rounded-2xl">
+          {/* Mobile View */}
+          <div className="md:hidden col-span-1 space-y-4">
+            <div className="flex items-center justify-between bg-white/5 p-4 rounded-xl border border-white/5">
+              <button
+                onClick={() => navigateWeek('prev')}
+                className="p-2 hover:bg-white/10 rounded-lg text-white/70 hover:text-white transition-colors"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <span className="text-white font-medium">
+                {format(weekDays[0], 'd MMM', { locale: fr })} - {format(weekDays[6], 'd MMM yyyy', { locale: fr })}
+              </span>
+              <button
+                onClick={() => navigateWeek('next')}
+                className="p-2 hover:bg-white/10 rounded-lg text-white/70 hover:text-white transition-colors"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {weekDays.map((day) => {
+                const dayEvents = currentSessions.filter(event =>
+                  new Date(event.start).getDate() === day.getDate() &&
+                  new Date(event.start).getMonth() === day.getMonth() &&
+                  new Date(event.start).getFullYear() === day.getFullYear()
+                ).sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
+
+                const isToday = new Date().toDateString() === day.toDateString();
+
+                return (
+                  <div key={day.toISOString()} className={`rounded-xl border ${isToday ? 'bg-white/5 border-blue-500/30' : 'bg-transparent border-transparent'}`}>
+                    <div className="px-4 py-2 flex items-center gap-2">
+                      <span className={`text-sm font-medium ${isToday ? 'text-blue-400' : 'text-white/60'}`}>
+                        {format(day, 'EEEE d', { locale: fr })}
+                      </span>
+                      {dayEvents.length > 0 && (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-white/10 text-white/60">
+                          {dayEvents.length}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="space-y-2 px-2 pb-2">
+                      {dayEvents.length > 0 ? (
+                        dayEvents.map(event => (
+                          <div
+                            key={event.id}
+                            onClick={() => handleSelectEvent(event)}
+                            className={`p-3 rounded-lg border border-white/5 cursor-pointer transition-colors ${event.type === 'personal'
+                              ? 'bg-blue-500/10 hover:bg-blue-500/20 border-l-4 border-l-blue-500'
+                              : 'bg-emerald-500/10 hover:bg-emerald-500/20 border-l-4 border-l-emerald-500'
+                              }`}
+                          >
+                            <div className="flex justify-between items-start mb-1">
+                              <span className="font-medium text-white text-sm">{event.title}</span>
+                              {event.registered && (
+                                <CheckCircle className="w-4 h-4 text-emerald-400" />
+                              )}
+                            </div>
+                            <div className="flex items-center gap-3 text-xs text-white/60">
+                              <span className="flex items-center gap-1">
+                                <Clock className="w-3 h-3" />
+                                {format(event.start, 'HH:mm')} - {format(event.end, 'HH:mm')}
+                              </span>
+                              {event.coach && (
+                                <span className="flex items-center gap-1">
+                                  <User className="w-3 h-3" />
+                                  {event.coach.full_name}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        isToday && (
+                          <div className="p-4 text-center text-sm text-white/40 italic">
+                            Aucun événement aujourd'hui
+                          </div>
+                        )
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Desktop View */}
+          <div className="hidden md:block xl:col-span-3 glass p-6 w-full rounded-2xl">
             <style>{`
           .rbc-calendar { font-family: 'Inter', system-ui, sans-serif; color: #a1a1aa; }
           
