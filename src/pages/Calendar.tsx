@@ -185,6 +185,23 @@ function CalendarPage() {
     setIsModalOpen(true);
   };
 
+  const handlePrevDay = () => {
+    const newDate = new Date(currentDate);
+    newDate.setDate(newDate.getDate() - 1);
+    setCurrentDate(newDate);
+  };
+
+  const handleNextDay = () => {
+    const newDate = new Date(currentDate);
+    newDate.setDate(newDate.getDate() + 1);
+    setCurrentDate(newDate);
+  };
+
+  const selectedDateEvents = appointments.filter(event => {
+    const eventDate = new Date(event.start);
+    return eventDate.toDateString() === currentDate.toDateString();
+  }).sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
+
   return (
     <div className="p-4 lg:p-6 max-w-[2560px] mx-auto animate-fade-in flex flex-col h-[calc(100vh-5rem)] lg:h-[calc(100vh-2rem)]">
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
