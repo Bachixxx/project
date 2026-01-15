@@ -89,7 +89,10 @@ function Layout() {
                   <Menu className="w-6 h-6" />
                 )}
               </button>
-              <span className="text-xl font-bold text-white ml-2 lg:ml-0">Coachency</span>
+              <div className="ml-2 lg:ml-0 flex items-center gap-2">
+                <img src="/app-logo.jpg" alt="Coachency" className="h-8 w-8 rounded-lg" />
+                <span className="text-xl font-bold text-white">Coachency</span>
+              </div>
             </div>
             <div className="flex items-center gap-2">
               {/* Language Selector */}
@@ -108,9 +111,8 @@ function Layout() {
                       <button
                         key={code}
                         onClick={() => handleLanguageChange(code as Language)}
-                        className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${
-                          language === code ? 'bg-gray-50 text-blue-600 font-medium' : 'text-gray-700'
-                        }`}
+                        className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${language === code ? 'bg-gray-50 text-blue-600 font-medium' : 'text-gray-700'
+                          }`}
                       >
                         {name}
                       </button>
@@ -125,7 +127,7 @@ function Layout() {
               >
                 <User className="w-5 h-5" />
               </Link>
-              <button 
+              <button
                 onClick={handleSignOut}
                 className="p-2 rounded-full hover:bg-white/10 text-white"
                 title={t('auth.logout', language)}
@@ -140,17 +142,15 @@ function Layout() {
       <div className="flex h-full pt-16">
         {/* Mobile Sidebar Overlay */}
         <div
-          className={`fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden transition-opacity duration-300 ${
-            isMobileMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
-          }`}
+          className={`fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden transition-opacity duration-300 ${isMobileMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+            }`}
           onClick={() => setIsMobileMenuOpen(false)}
         />
 
         {/* Sidebar */}
         <aside
-          className={`fixed lg:sticky top-16 w-64 h-[calc(100vh-4rem)] bg-black/40 backdrop-blur-xl border-r border-white/5 z-40 transform transition-transform duration-300 lg:transform-none ${
-            isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-          }`}
+          className={`fixed lg:sticky top-16 w-64 h-[calc(100vh-4rem)] bg-black/40 backdrop-blur-xl border-r border-white/5 z-40 transform transition-transform duration-300 lg:transform-none ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+            }`}
         >
           <nav className="h-full overflow-y-auto py-8 px-4">
             <div className="space-y-2">
@@ -161,14 +161,13 @@ function Layout() {
                 active={isActive('/dashboard')}
                 onClick={() => setIsMobileMenuOpen(false)}
               />
-              
+
               {/* Workout Menu (Replaces Exercises and Programs) */}
               <div className="relative">
                 <button
                   onClick={() => setIsWorkoutMenuOpen(!isWorkoutMenuOpen)}
-                  className={`flex items-center w-full px-4 py-3 text-white rounded-lg hover:bg-white/10 transition-colors ${
-                    isActiveParent(['/exercises', '/programs', '/sessions']) ? 'bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-blue-500/30' : ''
-                  }`}
+                  className={`flex items-center w-full px-4 py-3 text-white rounded-lg hover:bg-white/10 transition-colors ${isActiveParent(['/exercises', '/programs', '/sessions']) ? 'bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-blue-500/30' : ''
+                    }`}
                 >
                   <Dumbbell className="w-5 h-5 mr-3" />
                   <span className="text-base xl:text-lg flex-1">Entraînements</span>
@@ -178,7 +177,7 @@ function Layout() {
                     <ChevronRight className="w-4 h-4" />
                   )}
                 </button>
-                
+
                 {isWorkoutMenuOpen && (
                   <div className="pl-4 mt-1 space-y-1">
                     <NavLink
@@ -208,7 +207,7 @@ function Layout() {
                   </div>
                 )}
               </div>
-              
+
               <NavLink
                 to="/clients"
                 icon={<Users className="w-5 h-5" />}
@@ -283,9 +282,8 @@ function NavLink({ to, icon, text, active, className = '', onClick }) {
     <Link
       to={to}
       onClick={onClick}
-      className={`flex items-center px-4 py-3 text-white rounded-lg hover:bg-white/10 transition-colors ${
-        active ? 'bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-blue-500/30' : ''
-      } ${className}`}
+      className={`flex items-center px-4 py-3 text-white rounded-lg hover:bg-white/10 transition-colors ${active ? 'bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-blue-500/30' : ''
+        } ${className}`}
     >
       {icon}
       <span className="ml-3 text-base xl:text-lg">{text}</span>
