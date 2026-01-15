@@ -181,84 +181,97 @@ function CalendarPage() {
         </button>
       </div>
 
-      <div className="glass-card p-0 flex-1 overflow-hidden flex flex-col rounded-2xl shadow-2xl border border-white/5 bg-[#09090b]">
+      <div className="glass-card p-0 flex-1 overflow-hidden flex flex-col rounded-2xl shadow-xl border border-white/5 bg-zinc-900">
         <style>{`
           .rbc-calendar { font-family: 'Inter', system-ui, sans-serif; color: #a1a1aa; }
           
           /* Toolbar */
           .rbc-toolbar {
-            padding: 16px;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
+            padding: 12px 16px;
             margin-bottom: 0 !important;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
           }
           .rbc-toolbar button { 
-            color: #d1d5db !important; 
-            border: 1px solid rgba(255,255,255,0.1) !important;
-            background: rgba(255,255,255,0.03) !important;
+            color: #9ca3af !important; 
+            border: none !important;
+            background: transparent !important;
             font-weight: 500 !important;
-            border-radius: 8px !important;
+            border-radius: 6px !important;
             padding: 6px 12px !important;
             font-size: 0.875rem !important;
+            transition: all 0.2s;
           }
           .rbc-toolbar button:hover { 
-            background: rgba(255,255,255,0.08) !important; 
+            background: rgba(255,255,255,0.05) !important; 
             color: white !important; 
           }
           .rbc-toolbar button.rbc-active { 
-            background: rgba(255,255,255,0.1) !important;
+            background: rgba(255,255,255,0.08) !important;
             color: white !important;
-            border-color: rgba(255,255,255,0.2) !important;
             box-shadow: none !important;
+            font-weight: 600 !important;
           }
           
           /* Header (Days) */
           .rbc-header { 
-            padding: 16px 0 !important; 
+            padding: 20px 0 12px 0 !important; 
             font-weight: 600; 
-            color: #fff;
-            background: rgba(24, 24, 27, 0.95) !important;
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid rgba(255,255,255,0.05) !important;
+            color: #e4e4e7;
+            background: transparent !important;
+            border-bottom: none !important;
             border-left: none !important;
             text-transform: uppercase;
             font-size: 0.75rem;
             letter-spacing: 0.05em;
-            position: sticky;
-            top: 0;
-            z-index: 10;
+            text-align: center !important;
           }
           .rbc-header + .rbc-header { border-left: none !important; }
           .rbc-time-header-content { border-left: none !important; }
           .rbc-time-view { border: none !important; }
-          
+          .rbc-row.rbc-time-header-cell { border-bottom: 1px solid rgba(255,255,255,0.03) !important; }
+
           /* Grid & Cells */
           .rbc-day-bg { 
             background: transparent !important; 
-            border-left: 1px solid rgba(255,255,255,0.03) !important; 
+            border-left: none !important; /* No vertical borders */
           }
           .rbc-time-content { border-top: none !important; }
+          
           .rbc-timeslot-group { 
-            border-bottom: 1px solid rgba(255,255,255,0.03) !important; 
-            min-height: 60px !important; /* Taller slots for cleaner look */
+            border-bottom: 1px dashed rgba(255,255,255,0.04) !important; /* Subtle dashed lines */
+            min-height: 60px !important; 
           }
+          
+          /* Remove side borders in gutter */
+          .rbc-time-gutter .rbc-timeslot-group { 
+            border-right: none !important; 
+            border-bottom: none !important; /* Clean gutter */
+          }
+          .rbc-time-gutter {
+             border-right: 1px solid rgba(255,255,255,0.03) !important; /* Separator only for time labels */
+          }
+          
           .rbc-day-slot .rbc-time-slot { border-top: none !important; }
-          .rbc-time-gutter .rbc-timeslot-group { border-right: 1px solid rgba(255,255,255,0.05) !important; }
           
           /* Today Highlight */
           .rbc-day-slot.rbc-today { 
             background-color: transparent !important; 
+          }
+          /* Highlight today's header text */
+          .rbc-header.rbc-today {
+            color: #3b82f6 !important;
           }
           
           /* Time Indicator */
           .rbc-current-time-indicator { 
             background-color: #ef4444 !important; 
             height: 1px !important;
-            opacity: 1 !important;
+            opacity: 0.8 !important;
           }
           .rbc-current-time-indicator::before {
             content: '';
             position: absolute;
-            left: -3px;
+            left: -4px;
             top: -3px;
             width: 7px;
             height: 7px;
@@ -270,12 +283,22 @@ function CalendarPage() {
           /* Events */
           .rbc-event { 
             border-radius: 6px !important; 
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1) !important;
+            box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.3) !important;
             border: none !important;
-            margin: 1px 4px !important;
-            width: calc(100% - 8px) !important;
+            margin: 0 6px !important; /* More space between events and "invisible" cols */
+            width: calc(100% - 12px) !important;
           }
-          .rbc-event-label { display: none !important; } /* Clean up label */
+          .rbc-event-label { display: none !important; }
+          
+          /* Time labels */
+          .rbc-time-gutter .rbc-timeslot-group {
+            color: #52525b;
+            font-size: 0.75rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
           
           /* Off Range */
           .rbc-off-range-bg { background: transparent !important; }
@@ -300,10 +323,8 @@ function CalendarPage() {
             const hour = date.getHours();
             const isWorkingHour = hour >= 9 && hour < 18;
             return {
-              className: isWorkingHour ? 'bg-zinc-900/30' : 'bg-black/60',
-              style: {
-                // borderTop: 'none'
-              }
+              className: isWorkingHour ? '' : 'bg-black/20', /* Lighter contrast for off-hours */
+              style: {}
             };
           }}
           eventPropGetter={(event: Appointment) => ({
