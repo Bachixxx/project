@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
-import { TrendingUp, Scale, Target, Award, Loader, Dumbbell, Calendar, ChevronDown, Activity, ArrowUpRight } from 'lucide-react';
+import { TrendingUp, TrendingDown, Scale, Target, Award, Loader, Dumbbell, Calendar, ChevronDown, Activity, ArrowUpRight } from 'lucide-react';
 import { useClientAuth } from '../../contexts/ClientAuthContext';
 import { supabase } from '../../lib/supabase';
 
@@ -24,6 +24,7 @@ function ClientProgress() {
   const { client } = useClientAuth();
   const [loading, setLoading] = useState(true);
   const [weightData, setWeightData] = useState<any[]>([]);
+  const [weightDifference, setWeightDifference] = useState<{ value: number, isPositive: boolean } | null>(null);
   const [strengthData, setStrengthData] = useState<any[]>([]);
   const [workoutLogs, setWorkoutLogs] = useState<WorkoutLog[]>([]);
   const [exercises, setExercises] = useState<Exercise[]>([]);
@@ -125,6 +126,17 @@ function ClientProgress() {
           value: entry.weight
         }));
         setWeightData(historyData);
+
+        // Calculate difference
+        if (historyData.length >= 1) {
+          const firstWeight = historyData[0].value;
+          const lastWeight = historyData[historyData.length - 1].value;
+          const diff = lastWeight - firstWeight;
+          setWeightDifference({
+            value: Number(Math.abs(diff).toFixed(1)),
+            isPositive: diff > 0
+          });
+        }
       }
     } catch (err) {
       console.error('Error fetching weight history:', err);
@@ -260,10 +272,15 @@ function ClientProgress() {
                     <p className="text-xs text-gray-400">Est. basé sur les données</p>
                   </div>
                 </div>
-                {weightData.length > 0 && (
-                  <div className="flex items-center gap-2 text-green-400 bg-green-500/10 px-3 py-1.5 rounded-lg text-sm font-bold border border-green-500/20">
-                    <TrendingUp className="w-4 h-4" />
-                    <span>-2.4 kg</span>
+                {weightDifference !== null && (
+                  <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold border ${!weightDifference.isPositive
+                      ? 'text-green-400 bg-green-500/10 border-green-500/20'
+                      : 'text-red-400 bg-red-500/10 border-red-500/20'
+                    }`}>
+                    {!weightDifference.isPositive ? <TrendingDown className="w-4 h-4" /> : <TrendingUp className="w-4 h-4" />}
+                    <span>
+                      {weightDifference.isPositive ? '+' : '-'}{weightDifference.value} kg
+                    </span>
                   </div>
                 )}
               </div>
