@@ -85,8 +85,8 @@ function App() {
                 <Route path="/privacy" element={<Privacy />} />
                 <Route path="/legal" element={<Legal />} />
                 <Route path="/client/login" element={<ClientLogin />} />
-                <Route path="/client/check-email" element={<CheckEmail />} />
-                <Route path="/client/register" element={<ClientRegister />} />
+                <Route path="/client/check-email" element={<Waitlist />} />
+                <Route path="/client/register" element={<Waitlist />} />
 
                 {/* Routes coach */}
                 <Route element={<Layout />}>

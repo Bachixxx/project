@@ -57,10 +57,10 @@ function Pricing() {
                             Connexion Coach
                         </Link>
                         <Link
-                            to="/register"
+                            to="/waitlist"
                             className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white px-5 py-2 rounded-lg font-medium shadow-lg shadow-blue-500/25 transition-all hover:scale-105"
                         >
-                            Essai Gratuit
+                            Liste d'attente
                         </Link>
                     </div>
 
@@ -80,7 +80,7 @@ function Pricing() {
                         <Link to="/client/login" className="text-gray-300 py-2">Espace Client</Link>
                         <div className="h-px bg-white/10 my-2"></div>
                         <Link to="/login" className="bg-white/10 text-center py-3 rounded-lg text-white font-medium">Connexion Coach</Link>
-                        <Link to="/register" className="bg-blue-600 text-center py-3 rounded-lg text-white font-medium">Commencer gratuitement</Link>
+                        <Link to="/waitlist" className="bg-blue-600 text-center py-3 rounded-lg text-white font-medium">Rejoindre la liste d'attente</Link>
                     </div>
                 )}
             </nav>
@@ -123,8 +123,8 @@ function Pricing() {
                             <FeatureItem text="Multi-coachs" included={true} />
                         </div>
 
-                        <Link to="/register" className="w-full py-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold text-center transition-all">
-                            Commencer Gratuitement
+                        <Link to="/waitlist" className="w-full py-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold text-center transition-all">
+                            Rejoindre la liste d'attente
                         </Link>
                     </div>
 
@@ -156,8 +156,8 @@ function Pricing() {
                             <FeatureItem text="Multi-coachs" included={true} />
                         </div>
 
-                        <Link to="/register" className="w-full py-4 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-bold text-center shadow-lg shadow-blue-500/25 transition-all transform hover:scale-105">
-                            Essayer 14 jours gratuitement
+                        <Link to="/waitlist" className="w-full py-4 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-bold text-center shadow-lg shadow-blue-500/25 transition-all transform hover:scale-105">
+                            Rejoindre la liste d'attente
                         </Link>
                     </div>
                 </div>

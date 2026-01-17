@@ -34,10 +34,10 @@ function Features() {
                             Connexion Coach
                         </Link>
                         <Link
-                            to="/register"
+                            to="/waitlist"
                             className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white px-5 py-2 rounded-lg font-medium shadow-lg shadow-blue-500/25 transition-all hover:scale-105"
                         >
-                            Essai Gratuit
+                            Liste d'attente
                         </Link>
                     </div>
 
@@ -56,7 +56,7 @@ function Features() {
                         <Link to="/client/login" className="text-gray-300 py-2">Espace Client</Link>
                         <div className="h-px bg-white/10 my-2"></div>
                         <Link to="/login" className="bg-white/10 text-center py-3 rounded-lg text-white font-medium">Connexion Coach</Link>
-                        <Link to="/register" className="bg-blue-600 text-center py-3 rounded-lg text-white font-medium">Commencer gratuitement</Link>
+                        <Link to="/waitlist" className="bg-blue-600 text-center py-3 rounded-lg text-white font-medium">Rejoindre la liste d'attente</Link>
                     </div>
                 )}
             </nav>
@@ -115,8 +115,8 @@ function Features() {
                                     <li className="flex items-center gap-3 text-gray-300"><CheckCircle className="w-5 h-5 text-blue-500" /> Suivi financier en temps réel</li>
                                     <li className="flex items-center gap-3 text-gray-300"><CheckCircle className="w-5 h-5 text-blue-500" /> Accès rapide aux tâches urgentes</li>
                                 </ul>
-                                <Link to="/register" className="text-blue-400 font-bold hover:text-blue-300 flex items-center gap-2 group-hover:gap-3 transition-all">
-                                    Essayer maintenant <ArrowRight className="w-4 h-4" />
+                                <Link to="/waitlist" className="text-blue-400 font-bold hover:text-blue-300 flex items-center gap-2 group-hover:gap-3 transition-all">
+                                    Rejoindre la liste <ArrowRight className="w-4 h-4" />
                                 </Link>
                             </div>
                             <div className="flex-1 order-1 md:order-2 bg-[#1e293b] rounded-xl border border-white/10 p-2 shadow-2xl rotate-2 group-hover:rotate-0 transition-transform duration-500">
@@ -227,7 +227,7 @@ function Features() {
                     <h2 className="text-3xl font-bold text-white mb-8">Prêt à commencer ?</h2>
                     <div className="flex flex-col sm:flex-row gap-6 justify-center">
                         <Link
-                            to="/register"
+                            to="/waitlist"
                             className="px-8 py-4 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-xl font-bold shadow-lg shadow-blue-500/25 transition-all w-full sm:w-auto"
                         >
                             Je suis un Coach
