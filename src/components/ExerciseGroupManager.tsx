@@ -52,31 +52,31 @@ export function ExerciseGroupManager({
   onShowExercisePicker,
 }: ExerciseGroupManagerProps) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {groups.map((group, groupIndex) => (
         <div
           key={group.id}
-          className="p-4 bg-gradient-to-r from-green-50 to-blue-50 border-2 border-green-200 rounded-xl"
+          className="p-4 bg-white/5 border border-emerald-500/30 rounded-xl relative group"
         >
-          <div className="flex items-center justify-between mb-3">
+          {/* Group Header */}
+          <div className="flex items-center justify-between mb-4 pb-4 border-b border-white/5">
             <div className="flex items-center gap-3">
-              <div className="px-3 py-1 bg-green-600 text-white rounded-lg font-semibold text-sm">
+              <div className="px-3 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-lg font-semibold text-sm flex items-center gap-2">
                 Groupe {groupIndex + 1}
               </div>
-              <h3 className="font-bold text-gray-900">{group.name}</h3>
-              <span className="px-2 py-1 bg-white rounded-lg text-sm text-gray-700">
-                × {group.repetitions} {group.repetitions > 1 ? 'répétitions' : 'répétition'}
-              </span>
+              <h3 className="font-bold text-white text-lg">{group.name}</h3>
+              <div className="px-3 py-1 bg-black/40 rounded-lg text-sm text-gray-400 border border-white/5">
+                <span className="text-white font-bold">{group.repetitions}</span> tours
+              </div>
             </div>
             <div className="flex gap-2">
               <button
                 type="button"
                 onClick={() => onShowExercisePicker(group.id)}
-                className="flex items-center gap-1 px-3 py-1.5 text-sm text-green-700 bg-white hover:bg-green-50 rounded-lg border border-green-300"
-                title="Ajouter un exercice au groupe"
+                className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 rounded-lg border border-emerald-500/20 transition-colors"
               >
                 <Plus className="w-4 h-4" />
-                Ajouter exercice
+                Ajouter
               </button>
               <button
                 type="button"
@@ -87,8 +87,8 @@ export function ExerciseGroupManager({
                     onUpdateGroup(group.id, newName, parseInt(newReps));
                   }
                 }}
-                className="p-2 text-blue-600 hover:bg-white rounded-lg"
-                title="Modifier le groupe"
+                className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                title="Modifier"
               >
                 <Edit2 className="w-4 h-4" />
               </button>
@@ -99,293 +99,178 @@ export function ExerciseGroupManager({
                     onDeleteGroup(group.id);
                   }
                 }}
-                className="p-2 text-red-600 hover:bg-white rounded-lg"
-                title="Supprimer le groupe"
+                className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors"
+                title="Supprimer"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
             </div>
           </div>
 
-          <div className="space-y-3 ml-4">
+          <div className="space-y-3 pl-4 border-l-2 border-emerald-500/10">
             {group.exercises.length === 0 && (
-              <div className="text-center py-4 bg-white rounded-lg text-gray-500 text-sm">
-                Ce groupe ne contient pas encore d'exercices. Cliquez sur "Ajouter exercice" pour en ajouter.
+              <div className="text-center py-6 border-2 border-dashed border-white/10 rounded-xl text-gray-500 text-sm">
+                Groupe vide
               </div>
             )}
             {group.exercises.map((exercise, exerciseIndex) => (
-              <div
+              <ExerciseCardContent
                 key={exerciseIndex}
-                className="p-4 bg-white border-2 border-gray-200 rounded-lg"
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="flex items-center justify-center w-7 h-7 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold">
-                        {exerciseIndex + 1}
-                      </div>
-                      <h4 className="font-semibold text-gray-900">{exercise.exercise.name}</h4>
-                    </div>
-                    <div className="flex items-center gap-2 ml-9">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
-                        {exercise.exercise.category}
-                      </span>
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
-                        {exercise.exercise.difficulty_level}
-                      </span>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => onRemoveExerciseFromGroup(group.id, exerciseIndex)}
-                    className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
-                    title="Retirer du groupe"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ml-9">
-                  <div className="flex flex-col">
-                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                      <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                      Instructions (séries, répétitions, etc.)
-                    </label>
-                    <input
-                      type="text"
-                      value={exercise.instructions || ''}
-                      onChange={(e) => {
-                        const globalIndex = standaloneExercises.length + groups
-                          .slice(0, groupIndex)
-                          .reduce((acc, g) => acc + g.exercises.length, 0) + exerciseIndex;
-                        onUpdateExercise(globalIndex, { instructions: e.target.value });
-                      }}
-                      className="w-full h-11 px-4 py-2.5 rounded-lg border-2 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900 placeholder-gray-400 transition-all duration-150"
-                      placeholder="Ex: 3 séries de 12 répétitions"
-                    />
-                  </div>
-
-                  {exercise.tracking_type === 'duration' ? (
-                    <div className="flex flex-col">
-                      <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                        Durée (secondes)
-                      </label>
-                      <input
-                        type="number"
-                        value={exercise.duration_seconds || 0}
-                        onChange={(e) => {
-                          const globalIndex = standaloneExercises.length + groups
-                            .slice(0, groupIndex)
-                            .reduce((acc, g) => acc + g.exercises.length, 0) + exerciseIndex;
-                          onUpdateExercise(globalIndex, { duration_seconds: parseInt(e.target.value) || 0 });
-                        }}
-                        min="0"
-                        step="10"
-                        className="w-full h-11 px-4 py-2.5 rounded-lg border-2 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900 placeholder-gray-400 transition-all duration-150"
-                      />
-                    </div>
-                  ) : exercise.tracking_type === 'distance' ? (
-                    <div className="flex flex-col">
-                      <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                        Distance (mètres)
-                      </label>
-                      <input
-                        type="number"
-                        value={exercise.distance_meters || 0}
-                        onChange={(e) => {
-                          const globalIndex = standaloneExercises.length + groups
-                            .slice(0, groupIndex)
-                            .reduce((acc, g) => acc + g.exercises.length, 0) + exerciseIndex;
-                          onUpdateExercise(globalIndex, { distance_meters: parseInt(e.target.value) || 0 });
-                        }}
-                        min="0"
-                        step="100"
-                        className="w-full h-11 px-4 py-2.5 rounded-lg border-2 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900 placeholder-gray-400 transition-all duration-150"
-                      />
-                    </div>
-                  ) : (
-                    <>
-                      <div className="flex flex-col">
-                        <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">Séries</label>
-                        <input
-                          type="number"
-                          value={exercise.sets}
-                          onChange={(e) => {
-                            const globalIndex = standaloneExercises.length + groups
-                              .slice(0, groupIndex)
-                              .reduce((acc, g) => acc + g.exercises.length, 0) + exerciseIndex;
-                            onUpdateExercise(globalIndex, { sets: parseInt(e.target.value) || 0 });
-                          }}
-                          min="1"
-                          className="w-full h-11 px-4 py-2.5 rounded-lg border-2 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900 placeholder-gray-400 transition-all duration-150"
-                        />
-                      </div>
-                      <div className="flex flex-col">
-                        <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">Reps</label>
-                        <input
-                          type="number"
-                          value={exercise.reps}
-                          onChange={(e) => {
-                            const globalIndex = standaloneExercises.length + groups
-                              .slice(0, groupIndex)
-                              .reduce((acc, g) => acc + g.exercises.length, 0) + exerciseIndex;
-                            onUpdateExercise(globalIndex, { reps: parseInt(e.target.value) || 0 });
-                          }}
-                          min="1"
-                          className="w-full h-11 px-4 py-2.5 rounded-lg border-2 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900 placeholder-gray-400 transition-all duration-150"
-                        />
-                      </div>
-                    </>
-                  )}
-                  <div className="flex flex-col max-w-[200px]">
-                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2 whitespace-nowrap">
-                      <svg className="w-4 h-4 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      Temps de repos (secondes)
-                    </label>
-                    <input
-                      type="number"
-                      value={exercise.rest_time}
-                      onChange={(e) => {
-                        const globalIndex = standaloneExercises.length + groups
-                          .slice(0, groupIndex)
-                          .reduce((acc, g) => acc + g.exercises.length, 0) + exerciseIndex;
-                        onUpdateExercise(globalIndex, { rest_time: parseInt(e.target.value) });
-                      }}
-                      min="0"
-                      className="w-full h-11 px-4 py-2.5 rounded-lg border-2 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900 placeholder-gray-400 transition-all duration-150"
-                      placeholder="60"
-                    />
-                  </div>
-                </div>
-              </div>
+                exercise={exercise}
+                exerciseIndex={exerciseIndex}
+                indexLabel={`${exerciseIndex + 1}`}
+                isGroup={true}
+                onUpdate={(updates) => {
+                  const globalIndex = standaloneExercises.length + groups
+                    .slice(0, groupIndex)
+                    .reduce((acc, g) => acc + g.exercises.length, 0) + exerciseIndex;
+                  onUpdateExercise(globalIndex, updates);
+                }}
+                onRemove={() => onRemoveExerciseFromGroup(group.id, exerciseIndex)}
+              />
             ))}
           </div>
         </div>
       ))}
 
-      {standaloneExercises.map((exercise, index) => (
-        <div
-          key={index}
-          className="relative p-5 bg-white border-2 border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200"
-        >
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold">
-                  {groups.reduce((acc, g) => acc + g.exercises.length, 0) + index + 1}
-                </div>
-                <h4 className="font-semibold text-gray-900 text-lg">{exercise.exercise.name}</h4>
-              </div>
-              <div className="flex items-center gap-2 ml-10">
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
-                  {exercise.exercise.category}
-                </span>
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
-                  {exercise.exercise.difficulty_level}
-                </span>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => onRemoveExercise(index)}
-              className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors duration-150"
-              title="Retirer l'exercice"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
+      {standaloneExercises.length > 0 && (
+        <div className="space-y-3">
+          {groups.length > 0 && <div className="h-px bg-white/10 my-6" />}
+          {standaloneExercises.map((exercise, index) => (
+            <ExerciseCardContent
+              key={index}
+              exercise={exercise}
+              exerciseIndex={index}
+              indexLabel={`${groups.reduce((acc, g) => acc + g.exercises.length, 0) + index + 1}`}
+              isGroup={false}
+              onUpdate={(updates) => onUpdateExercise(index, updates)}
+              onRemove={() => onRemoveExercise(index)}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ml-10">
-            <div className="flex flex-col">
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                Instructions (séries, répétitions, etc.)
-              </label>
-              <input
-                type="text"
-                value={exercise.instructions || ''}
-                onChange={(e) => onUpdateExercise(index, { instructions: e.target.value })}
-                className="w-full h-11 px-4 py-2.5 rounded-lg border-2 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900 placeholder-gray-400 transition-all duration-150"
-                placeholder="Ex: 3 séries de 12 répétitions"
-              />
-            </div>
-            {exercise.tracking_type === 'duration' ? (
-              <div className="flex flex-col">
-                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                  Durée (secondes)
-                </label>
-                <input
-                  type="number"
-                  value={exercise.duration_seconds || 0}
-                  onChange={(e) => onUpdateExercise(index, { duration_seconds: parseInt(e.target.value) || 0 })}
-                  min="0"
-                  step="10"
-                  className="w-full h-11 px-4 py-2.5 rounded-lg border-2 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900 placeholder-gray-400 transition-all duration-150"
-                />
-              </div>
-            ) : exercise.tracking_type === 'distance' ? (
-              <div className="flex flex-col">
-                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                  Distance (mètres)
-                </label>
-                <input
-                  type="number"
-                  value={exercise.distance_meters || 0}
-                  onChange={(e) => onUpdateExercise(index, { distance_meters: parseInt(e.target.value) || 0 })}
-                  min="0"
-                  step="100"
-                  className="w-full h-11 px-4 py-2.5 rounded-lg border-2 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900 placeholder-gray-400 transition-all duration-150"
-                />
-              </div>
-            ) : (
-              <>
-                <div className="flex flex-col">
-                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">Séries</label>
-                  <input
-                    type="number"
-                    value={exercise.sets}
-                    onChange={(e) => onUpdateExercise(index, { sets: parseInt(e.target.value) || 0 })}
-                    min="1"
-                    className="w-full h-11 px-4 py-2.5 rounded-lg border-2 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900 placeholder-gray-400 transition-all duration-150"
-                  />
-                </div>
-                <div className="flex flex-col">
-                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">Reps</label>
-                  <input
-                    type="number"
-                    value={exercise.reps}
-                    onChange={(e) => onUpdateExercise(index, { reps: parseInt(e.target.value) || 0 })}
-                    min="1"
-                    className="w-full h-11 px-4 py-2.5 rounded-lg border-2 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900 placeholder-gray-400 transition-all duration-150"
-                  />
-                </div>
-              </>
-            )}
-            <div className="flex flex-col max-w-[200px]">
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2 whitespace-nowrap">
-                <svg className="w-4 h-4 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                Temps de repos (secondes)
-              </label>
-              <input
-                type="number"
-                value={exercise.rest_time}
-                onChange={(e) => onUpdateExercise(index, { rest_time: parseInt(e.target.value) })}
-                min="0"
-                className="w-full h-11 px-4 py-2.5 rounded-lg border-2 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900 placeholder-gray-400 transition-all duration-150"
-                placeholder="60"
-              />
+// Sub-component for consistent card layout
+function ExerciseCardContent({
+  exercise,
+  exerciseIndex,
+  indexLabel,
+  isGroup,
+  onUpdate,
+  onRemove
+}: {
+  exercise: SessionExercise,
+  exerciseIndex: number, // Kept to match usage above, though unused in body, it's fine.
+  indexLabel: string,
+  isGroup: boolean,
+  onUpdate: (updates: Partial<SessionExercise>) => void,
+  onRemove: () => void
+}) {
+  return (
+    <div className="p-4 bg-[#1e293b]/50 border border-white/10 rounded-xl hover:border-white/20 transition-colors">
+      {/* Header: Name and Type */}
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div className={`flex items-center justify-center w-8 h-8 rounded-lg font-bold text-sm ${isGroup ? 'bg-emerald-500/10 text-emerald-400' : 'bg-blue-500/10 text-blue-400'}`}>
+            {indexLabel}
+          </div>
+          <div>
+            <h4 className="font-bold text-white text-lg leading-tight">{exercise.exercise.name}</h4>
+            <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
+              <span className="capitalize">{exercise.exercise.category}</span>
+              <span>•</span>
+              <span className="capitalize">{exercise.exercise.difficulty_level}</span>
             </div>
           </div>
         </div>
-      ))}
+        <button
+          type="button"
+          onClick={onRemove}
+          className="p-2 text-gray-500 hover:text-red-400 hover:bg-white/5 rounded-lg transition-colors"
+        >
+          <X className="w-5 h-5" />
+        </button>
+      </div>
+
+      {/* Content: Horizontal Layout */}
+      <div className="flex flex-col lg:flex-row gap-4 ml-11">
+        {/* Instructions Field (Full width or grow) */}
+        <div className="flex-1 min-w-[200px]">
+          <input
+            type="text"
+            value={exercise.instructions || ''}
+            onChange={(e) => onUpdate({ instructions: e.target.value })}
+            className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-300 placeholder-gray-600 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all"
+            placeholder="Instructions spéciales (ex: tempo 3-0-1)"
+          />
+        </div>
+
+        {/* Metrics: Sets/Reps/Rest Row */}
+        <div className="flex gap-3 items-center shrink-0">
+          {exercise.tracking_type === 'duration' ? (
+            <div className="flex items-center gap-2 bg-black/20 px-3 py-1.5 rounded-lg border border-white/5">
+              <span className="text-xs text-gray-500 uppercase font-bold">Secs</span>
+              <input
+                type="number"
+                value={exercise.duration_seconds || 0}
+                onChange={(e) => onUpdate({ duration_seconds: parseInt(e.target.value) || 0 })}
+                className="w-16 bg-transparent text-white font-mono text-center focus:outline-none"
+                step="10"
+              />
+            </div>
+          ) : exercise.tracking_type === 'distance' ? (
+            <div className="flex items-center gap-2 bg-black/20 px-3 py-1.5 rounded-lg border border-white/5">
+              <span className="text-xs text-gray-500 uppercase font-bold">Mètres</span>
+              <input
+                type="number"
+                value={exercise.distance_meters || 0}
+                onChange={(e) => onUpdate({ distance_meters: parseInt(e.target.value) || 0 })}
+                className="w-20 bg-transparent text-white font-mono text-center focus:outline-none"
+                step="100"
+              />
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center gap-2 bg-black/20 px-3 py-1.5 rounded-lg border border-white/5">
+                <span className="text-xs text-gray-500 uppercase font-bold">Séries</span>
+                <input
+                  type="number"
+                  value={exercise.sets}
+                  onChange={(e) => onUpdate({ sets: parseInt(e.target.value) || 0 })}
+                  className="w-12 bg-transparent text-white font-mono text-center focus:outline-none"
+                />
+              </div>
+              <span className="text-gray-600 text-sm">×</span>
+              <div className="flex items-center gap-2 bg-black/20 px-3 py-1.5 rounded-lg border border-white/5">
+                <span className="text-xs text-gray-500 uppercase font-bold">Reps</span>
+                <input
+                  type="number"
+                  value={exercise.reps}
+                  onChange={(e) => onUpdate({ reps: parseInt(e.target.value) || 0 })}
+                  className="w-12 bg-transparent text-white font-mono text-center focus:outline-none"
+                />
+              </div>
+            </>
+          )}
+
+          <div className="w-px h-8 bg-white/10 mx-1" />
+
+          <div className="flex items-center gap-2 bg-black/20 px-3 py-1.5 rounded-lg border border-white/5" title="Temps de repos">
+            <span className="text-xs text-gray-500 uppercase font-bold">Repos</span>
+            <input
+              type="number"
+              value={exercise.rest_time}
+              onChange={(e) => onUpdate({ rest_time: parseInt(e.target.value) })}
+              className="w-12 bg-transparent text-gray-400 focus:text-white font-mono text-center focus:outline-none"
+              placeholder="60"
+            />
+            <span className="text-xs text-gray-600">s</span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -406,64 +291,61 @@ export function GroupModal({ onClose, onCreate }: GroupModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[60]">
-      <div className="bg-white rounded-lg max-w-md w-full p-6">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[60] animate-fade-in">
+      <div className="glass-card max-w-md w-full p-6 animate-slide-in">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Créer un groupe d'exercices</h2>
+          <h2 className="text-xl font-bold text-white">Créer un groupe</h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-full"
+            className="p-2 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white"
           >
-            <X className="w-6 h-6 text-gray-700" />
+            <X className="w-6 h-6" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-800 mb-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
               Nom du groupe
             </label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-4 py-2 rounded-lg border-2 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900"
-              placeholder="Ex: Circuit A, Superset 1"
+              className="input-field"
+              placeholder="Ex: Circuit A"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-800 mb-2">
-              Nombre de répétitions du groupe
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Répétitions du circuit
             </label>
             <input
               type="number"
               value={repetitions}
               onChange={(e) => setRepetitions(parseInt(e.target.value))}
-              className="w-full px-4 py-2 rounded-lg border-2 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-gray-900"
+              className="input-field"
               min="1"
               max="20"
               required
             />
-            <p className="text-sm text-gray-600 mt-1">
-              Le client devra répéter tous les exercices de ce groupe {repetitions} fois
-            </p>
           </div>
 
-          <div className="flex justify-end gap-4 mt-6">
+          <div className="flex justify-end gap-3 mt-6">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700"
+              className="px-4 py-2 border border-white/10 rounded-xl hover:bg-white/5 text-gray-300 transition-colors"
             >
               Annuler
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+              className="primary-button"
             >
-              Créer le groupe
+              Créer
             </button>
           </div>
         </form>

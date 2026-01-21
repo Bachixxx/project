@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Edit, Trash2, X, Dumbbell, Clock, Calendar, Check, Filter, Play } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, X, Dumbbell, Clock } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { ExerciseGroupManager, GroupModal } from '../components/ExerciseGroupManager';
-import { t } from '../i18n';
 
 interface Session {
   id: string;
@@ -479,7 +478,7 @@ function SessionModal({ session, onClose, onSave }: any) {
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
-      <div className="glass-card w-full max-w-4xl max-h-[90vh] overflow-y-auto animate-slide-in">
+      <div className="glass-card w-full max-w-7xl max-h-[90vh] overflow-y-auto animate-slide-in flex flex-col">
         <div className="p-6 border-b border-white/10 flex justify-between items-center sticky top-0 bg-[#0f172a]/95 backdrop-blur-xl z-20">
           <h2 className="text-2xl font-bold text-white">
             {session ? 'Modifier la séance' : 'Créer une séance'}
@@ -492,14 +491,15 @@ function SessionModal({ session, onClose, onSave }: any) {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="flex-1 flex flex-col lg:flex-row overflow-hidden">
           {error && (
             <div className="bg-red-500/10 border border-red-500/20 text-red-200 p-4 rounded-xl">
               {error}
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Left Column (Settings) */}
+          <div className="w-full lg:w-[350px] shrink-0 p-6 space-y-6 border-b lg:border-b-0 lg:border-r border-white/10 overflow-y-auto custom-scrollbar">
             <div className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">Nom de la séance</label>
@@ -569,200 +569,205 @@ function SessionModal({ session, onClose, onSave }: any) {
               </div>
             </div>
 
-            <div className="glass-card bg-white/5 p-6 rounded-xl border border-white/10 flex flex-col h-full">
-              <div className="flex justify-between items-center mb-6">
-                <label className="text-lg font-semibold text-white">
-                  Exercices
-                </label>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowGroupModal(true)}
-                    className="px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 text-xs font-medium flex items-center gap-1 transition-colors"
-                  >
-                    <Plus className="w-3.5 h-3.5" /> Groupe
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowExerciseModal(true)}
-                    className="px-3 py-1.5 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 text-xs font-medium flex items-center gap-1 transition-colors"
-                  >
-                    <Plus className="w-3.5 h-3.5" /> Exercice
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 -mr-2 space-y-4 max-h-[500px]">
-                {selectedExercises.length > 0 || exerciseGroups.length > 0 ? (
-                  <ExerciseGroupManager
-                    groups={exerciseGroups}
-                    standaloneExercises={selectedExercises.filter(ex => !ex.group_id)}
-                    onCreateGroup={(name, repetitions) => {
-                      const newGroup: ExerciseGroup = {
-                        id: `temp-group-${Date.now()}`,
-                        name,
-                        repetitions,
-                        order_index: exerciseGroups.length,
-                        exercises: [],
-                      };
-                      setExerciseGroups([...exerciseGroups, newGroup]);
-                    }}
-                    onUpdateGroup={(groupId, name, repetitions) => {
-                      setExerciseGroups(exerciseGroups.map(g =>
-                        g.id === groupId ? { ...g, name, repetitions } : g
-                      ));
-                    }}
-                    onDeleteGroup={(groupId) => {
-                      const group = exerciseGroups.find(g => g.id === groupId);
-                      if (group) {
-                        const exercisesFromGroup = group.exercises.map(ex => ({ ...ex, group_id: null }));
-                        setSelectedExercises([...selectedExercises, ...exercisesFromGroup]);
-                      }
-                      setExerciseGroups(exerciseGroups.filter(g => g.id !== groupId));
-                    }}
-                    onAddExercisesToGroup={(groupId, exercises) => {
-                      setExerciseGroups(exerciseGroups.map(g =>
-                        g.id === groupId ? { ...g, exercises: [...g.exercises, ...exercises] } : g
-                      ));
-                    }}
-                    onRemoveExerciseFromGroup={(groupId, exerciseIndex) => {
-                      setExerciseGroups(exerciseGroups.map(g => {
-                        if (g.id === groupId) {
-                          // remove explicitly from group logic
-                          // Note: logic in ExerciseGroupManager might vary, but typical behavior:
-                          // Re-add to standalone? Or delete?
-                          // Assuming user wants to remove from session entirely for now, or just from group.
-                          // The logic in previous file moved it to standalone. Let's keep that.
-                          const removedExercise = { ...g.exercises[exerciseIndex], group_id: null };
-                          setSelectedExercises([...selectedExercises, removedExercise]);
-
-                          return {
-                            ...g,
-                            exercises: g.exercises.filter((_, i) => i !== exerciseIndex),
-                          };
-                        }
-                        return g;
-                      }));
-                    }}
-                    onUpdateExercise={(exerciseIndex, updates) => {
-                      // Identify if standalone or in group based on flattened 'ExerciseGroupManager' logic?
-                      // Note: The ExerciseGroupManager provided likely iterates groups then standalone.
-                      // This complex index mapping is error prone.
-                      // Ideally ExerciseGroupManager should handle update callbacks with IDs.
-                      // Assuming implementation is consistent:
-
-                      // Check if we can find the exercise easily.
-                      // This logic mimics the original file's behavior.
-                      const standaloneCount = selectedExercises.filter(ex => !ex.group_id).length;
-                      // Oops, ExerciseGroupManager usually renders Groups FIRST, then Standalone.
-                      // But the logic below assumes Standalone first?
-                      // Let's look at original logic:
-                      // if (exerciseIndex < standaloneCount)...
-
-                      // Actually, the previous implementation was:
-                      // groups are separate list in state. standalone are in selectedExercises.
-
-                      // Let's simplify and assume the Manager passes specific identifyiers or we keep original logic if it worked.
-                      // Logic from original file:
-
-                      if (exerciseIndex < standaloneCount) {
-                        // This assumes Standalone are rendered first...? The previous render mapped groups THEN standalone.
-                        // If render is Group -> Standalone:
-                        // Index 0..N are groups? No, onUpdateExercise is called on an *exercise* row.
-                        // It seems messy.
-
-                        // Alternative: Since we are fully rewriting, let's trust the logic copied and ensure it matches the render order in ExerciseGroupManager.
-                        // If ExerciseGroupManager renders Groups first, this `if (exerciseIndex < standaloneCount)` logic is BUGGY if it matched standard array generic indexing.
-
-                        // Let's try to be safer.
-                        // We will copy the exact logic from the previous file to minimize logic regressions, 
-                        // assuming `ExerciseGroupManager` calls back with a global index relative to its display order.
-
-                        // Original:
-                        // if (exerciseIndex < standaloneCount) { ... } else { ... }
-
-                        // Wait, if `ExerciseGroupManager` displays Groups first, `exerciseIndex` 0 would be the first exercise of the first group.
-                        // If `standaloneCount` is > 0, then `0 < standaloneCount` is true -> updates standalone list.
-                        // This implies Standalone exercises are displayed FIRST in the manager.
-                        // Let's verify `ExerciseGroupManager` render if possible? No time.
-                        // I will stick to the previous file's logic to be safe.
-
-                        const newExercises = [...selectedExercises];
-                        // We need to find the correct exercise in the array to update.
-                        // Since we filter `selectedExercises` often, `newExercises[exerciseIndex]` might point to wrong one if `selectedExercises` contains grouped ones too?
-                        // In the previous code `selectedExercises` contained ALL exercises? 
-                        // No, `standaloneExercises` was `selectedExercises.filter(ex => !ex.group_id)`.
-
-                        // Okay, I will implement a robust update by creating two helpers to avoid index hell.
-                        // But `ExerciseGroupManager` prop `onUpdateExercise` likely gives an index.
-                        // I will use the exact logic from the previous file.
-
-                        if (exerciseIndex < standaloneCount) {
-                          const newExercises = [...selectedExercises];
-                          // Make sure we are targeting the STANDALONE ones
-                          // This is tricky without knowing the exact implementation of Manager.
-                          // I'll leave it as is, assuming it works.
-                          newExercises[exerciseIndex] = { ...newExercises[exerciseIndex], ...updates };
-                          setSelectedExercises(newExercises);
-                        } else {
-                          let remaining = exerciseIndex - standaloneCount;
-                          setExerciseGroups(exerciseGroups.map(g => {
-                            if (remaining < g.exercises.length) {
-                              const newExercises = [...g.exercises];
-                              newExercises[remaining] = { ...newExercises[remaining], ...updates };
-                              return { ...g, exercises: newExercises };
-                            }
-                            remaining -= g.exercises.length;
-                            return g;
-                          }));
-                        }
-                      }
-                    }}
-                    onRemoveExercise={(exerciseIndex) => {
-                      const newExercises = selectedExercises.filter((_, i) => i !== exerciseIndex);
-                      setSelectedExercises(newExercises);
-                    }}
-                    onShowExercisePicker={(groupId) => {
-                      setActiveGroupId(groupId);
-                      setShowExerciseModal(true);
-                    }}
-                  />
-                ) : (
-                  <div className="text-center py-12 flex flex-col items-center text-gray-400">
-                    <Dumbbell className="w-12 h-12 text-gray-600 mb-3" />
-                    <p>Aucun exercice ajouté.</p>
-                    <div className="flex gap-2 mt-4">
-                      <button
-                        type="button"
-                        onClick={() => setShowExerciseModal(true)}
-                        className="text-sm text-blue-400 hover:text-blue-300 underline"
-                      >
-                        Ajouter des exercices
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
+            {/* Action Buttons (Mobile only, hidden on LG) */}
+            <div className="lg:hidden flex gap-3 pt-4">
+              <button type="button" onClick={onClose} className="flex-1 py-3 rounded-xl border border-white/10 hover:bg-white/5 text-gray-300">Annuler</button>
+              <button type="submit" className="flex-1 primary-button">Sauvegarder</button>
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-6 border-t border-white/10 sticky bottom-0 bg-[#0f172a]/95 backdrop-blur-xl p-4 -mx-6 -mb-6 z-20">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-6 py-2 rounded-xl border border-white/10 hover:bg-white/5 text-gray-300 transition-colors"
-            >
-              Annuler
-            </button>
-            <button
-              type="submit"
-              className="primary-button"
-            >
-              {session ? 'Mettre à jour' : 'Créer'}
-            </button>
+          <div className="flex-1 bg-black/20 p-6 flex flex-col h-full overflow-hidden relative">
+            <div className="flex justify-between items-center mb-6">
+              <label className="text-lg font-semibold text-white">
+                Exercices
+              </label>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowGroupModal(true)}
+                  className="px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 text-xs font-medium flex items-center gap-1 transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Groupe
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowExerciseModal(true)}
+                  className="px-3 py-1.5 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 text-xs font-medium flex items-center gap-1 transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Exercice
+                </button>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 -mr-2 space-y-4 max-h-[500px]">
+              {selectedExercises.length > 0 || exerciseGroups.length > 0 ? (
+                <ExerciseGroupManager
+                  groups={exerciseGroups}
+                  standaloneExercises={selectedExercises.filter(ex => !ex.group_id)}
+                  onCreateGroup={(name, repetitions) => {
+                    const newGroup: ExerciseGroup = {
+                      id: `temp-group-${Date.now()}`,
+                      name,
+                      repetitions,
+                      order_index: exerciseGroups.length,
+                      exercises: [],
+                    };
+                    setExerciseGroups([...exerciseGroups, newGroup]);
+                  }}
+                  onUpdateGroup={(groupId, name, repetitions) => {
+                    setExerciseGroups(exerciseGroups.map(g =>
+                      g.id === groupId ? { ...g, name, repetitions } : g
+                    ));
+                  }}
+                  onDeleteGroup={(groupId) => {
+                    const group = exerciseGroups.find(g => g.id === groupId);
+                    if (group) {
+                      const exercisesFromGroup = group.exercises.map(ex => ({ ...ex, group_id: null }));
+                      setSelectedExercises([...selectedExercises, ...exercisesFromGroup]);
+                    }
+                    setExerciseGroups(exerciseGroups.filter(g => g.id !== groupId));
+                  }}
+                  onAddExercisesToGroup={(groupId, exercises) => {
+                    setExerciseGroups(exerciseGroups.map(g =>
+                      g.id === groupId ? { ...g, exercises: [...g.exercises, ...exercises] } : g
+                    ));
+                  }}
+                  onRemoveExerciseFromGroup={(groupId, exerciseIndex) => {
+                    setExerciseGroups(exerciseGroups.map(g => {
+                      if (g.id === groupId) {
+                        // remove explicitly from group logic
+                        // Note: logic in ExerciseGroupManager might vary, but typical behavior:
+                        // Re-add to standalone? Or delete?
+                        // Assuming user wants to remove from session entirely for now, or just from group.
+                        // The logic in previous file moved it to standalone. Let's keep that.
+                        const removedExercise = { ...g.exercises[exerciseIndex], group_id: null };
+                        setSelectedExercises([...selectedExercises, removedExercise]);
+
+                        return {
+                          ...g,
+                          exercises: g.exercises.filter((_, i) => i !== exerciseIndex),
+                        };
+                      }
+                      return g;
+                    }));
+                  }}
+                  onUpdateExercise={(exerciseIndex, updates) => {
+                    // Identify if standalone or in group based on flattened 'ExerciseGroupManager' logic?
+                    // Note: The ExerciseGroupManager provided likely iterates groups then standalone.
+                    // This complex index mapping is error prone.
+                    // Ideally ExerciseGroupManager should handle update callbacks with IDs.
+                    // Assuming implementation is consistent:
+
+                    // Check if we can find the exercise easily.
+                    // This logic mimics the original file's behavior.
+                    const standaloneCount = selectedExercises.filter(ex => !ex.group_id).length;
+                    // Oops, ExerciseGroupManager usually renders Groups FIRST, then Standalone.
+                    // But the logic below assumes Standalone first?
+                    // Let's look at original logic:
+                    // if (exerciseIndex < standaloneCount)...
+
+                    // Actually, the previous implementation was:
+                    // groups are separate list in state. standalone are in selectedExercises.
+
+                    // Let's simplify and assume the Manager passes specific identifyiers or we keep original logic if it worked.
+                    // Logic from original file:
+
+                    if (exerciseIndex < standaloneCount) {
+                      // This assumes Standalone are rendered first...? The previous render mapped groups THEN standalone.
+                      // If render is Group -> Standalone:
+                      // Index 0..N are groups? No, onUpdateExercise is called on an *exercise* row.
+                      // It seems messy.
+
+                      // Alternative: Since we are fully rewriting, let's trust the logic copied and ensure it matches the render order in ExerciseGroupManager.
+                      // If ExerciseGroupManager renders Groups first, this `if (exerciseIndex < standaloneCount)` logic is BUGGY if it matched standard array generic indexing.
+
+                      // Let's try to be safer.
+                      // We will copy the exact logic from the previous file to minimize logic regressions, 
+                      // assuming `ExerciseGroupManager` calls back with a global index relative to its display order.
+
+                      // Original:
+                      // if (exerciseIndex < standaloneCount) { ... } else { ... }
+
+                      // Wait, if `ExerciseGroupManager` displays Groups first, `exerciseIndex` 0 would be the first exercise of the first group.
+                      // If `standaloneCount` is > 0, then `0 < standaloneCount` is true -> updates standalone list.
+                      // This implies Standalone exercises are displayed FIRST in the manager.
+                      // Let's verify `ExerciseGroupManager` render if possible? No time.
+                      // I will stick to the previous file's logic to be safe.
+
+                      const newExercises = [...selectedExercises];
+                      // We need to find the correct exercise in the array to update.
+                      // Since we filter `selectedExercises` often, `newExercises[exerciseIndex]` might point to wrong one if `selectedExercises` contains grouped ones too?
+                      // In the previous code `selectedExercises` contained ALL exercises? 
+                      // No, `standaloneExercises` was `selectedExercises.filter(ex => !ex.group_id)`.
+
+                      // Okay, I will implement a robust update by creating two helpers to avoid index hell.
+                      // But `ExerciseGroupManager` prop `onUpdateExercise` likely gives an index.
+                      // I will use the exact logic from the previous file.
+
+                      if (exerciseIndex < standaloneCount) {
+                        const newExercises = [...selectedExercises];
+                        // Make sure we are targeting the STANDALONE ones
+                        // This is tricky without knowing the exact implementation of Manager.
+                        // I'll leave it as is, assuming it works.
+                        newExercises[exerciseIndex] = { ...newExercises[exerciseIndex], ...updates };
+                        setSelectedExercises(newExercises);
+                      } else {
+                        let remaining = exerciseIndex - standaloneCount;
+                        setExerciseGroups(exerciseGroups.map(g => {
+                          if (remaining < g.exercises.length) {
+                            const newExercises = [...g.exercises];
+                            newExercises[remaining] = { ...newExercises[remaining], ...updates };
+                            return { ...g, exercises: newExercises };
+                          }
+                          remaining -= g.exercises.length;
+                          return g;
+                        }));
+                      }
+                    }
+                  }}
+                  onRemoveExercise={(exerciseIndex) => {
+                    const newExercises = selectedExercises.filter((_, i) => i !== exerciseIndex);
+                    setSelectedExercises(newExercises);
+                  }}
+                  onShowExercisePicker={(groupId) => {
+                    setActiveGroupId(groupId);
+                    setShowExerciseModal(true);
+                  }}
+                />
+              ) : (
+                <div className="text-center py-12 flex flex-col items-center text-gray-400">
+                  <Dumbbell className="w-12 h-12 text-gray-600 mb-3" />
+                  <p>Aucun exercice ajouté.</p>
+                  <div className="flex gap-2 mt-4">
+                    <button
+                      type="button"
+                      onClick={() => setShowExerciseModal(true)}
+                      className="text-sm text-blue-400 hover:text-blue-300 underline"
+                    >
+                      Ajouter des exercices
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="hidden lg:flex absolute bottom-6 right-8 gap-3 z-30">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-6 py-2.5 rounded-xl bg-[#0f172a] border border-white/10 hover:border-white/20 text-gray-300 shadow-xl transition-all"
+              >
+                Annuler
+              </button>
+              <button
+                type="submit"
+                className="primary-button py-2.5 px-8 shadow-xl shadow-blue-500/20"
+              >
+                {session ? 'Enregistrer les modifications' : 'Créer la séance'}
+              </button>
+            </div>
           </div>
         </form>
-      </div>
+      </div >
 
       {showExerciseModal && (
         <ExerciseSelector
@@ -796,24 +801,27 @@ function SessionModal({ session, onClose, onSave }: any) {
           }}
           loading={loading}
         />
-      )}
+      )
+      }
 
-      {showGroupModal && (
-        <GroupModal
-          onClose={() => setShowGroupModal(false)}
-          onCreate={(name, repetitions) => {
-            const newGroup: ExerciseGroup = {
-              id: `temp-group-${Date.now()}`,
-              name,
-              repetitions,
-              order_index: exerciseGroups.length,
-              exercises: [],
-            };
-            setExerciseGroups([...exerciseGroups, newGroup]);
-          }}
-        />
-      )}
-    </div>
+      {
+        showGroupModal && (
+          <GroupModal
+            onClose={() => setShowGroupModal(false)}
+            onCreate={(name, repetitions) => {
+              const newGroup: ExerciseGroup = {
+                id: `temp-group-${Date.now()}`,
+                name,
+                repetitions,
+                order_index: exerciseGroups.length,
+                exercises: [],
+              };
+              setExerciseGroups([...exerciseGroups, newGroup]);
+            }}
+          />
+        )
+      }
+    </div >
   );
 }
 
