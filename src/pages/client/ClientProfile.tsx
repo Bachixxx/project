@@ -545,6 +545,31 @@ function ClientProfile() {
                   <Bell className="w-5 h-5" />
                   Activer les notifications Push
                 </button>
+
+                <button
+                  onClick={async () => {
+                    if (!client?.auth_id) {
+                      alert("Erreur: Votre compte n'est pas lié correctement (Auth ID manquant).");
+                      return;
+                    }
+                    try {
+                      alert("Envoi du test...");
+                      const { data, error } = await supabase.functions.invoke('send-push', {
+                        body: { type: 'TEST', user_id: client.auth_id }
+                      });
+                      if (error) throw error;
+                      alert("Test envoyé ! Si vous ne recevez rien, vérifiez que l'application est bien fermée (en arrière-plan) ou verrouillez votre écran.");
+                    } catch (err: any) {
+                      console.error("Test error:", err);
+                      const errorMessage = err?.message || JSON.stringify(err);
+                      alert(`Erreur lors du test: ${errorMessage}`);
+                    }
+                  }}
+                  className="w-full py-3 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 font-medium rounded-xl transition-all border border-blue-500/20 flex items-center justify-center gap-2 mt-2"
+                >
+                  <Bell className="w-5 h-5" />
+                  M'envoyer une notif de TEST
+                </button>
               </div>
             </div>
 

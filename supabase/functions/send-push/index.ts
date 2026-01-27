@@ -123,6 +123,19 @@ serve(async (req) => {
             }
         }
 
+        // 4. Manual Test Notification
+        if (type === 'TEST') {
+            console.log(`Processing TEST notification for Auth ID: ${payload.user_id}`);
+            if (payload.user_id) {
+                notification = {
+                    headings: { en: "Test Notification", fr: "🔔 Test de Notification" },
+                    contents: { en: "If you see this, push works!", fr: "Si tu vois ça, les notifications fonctionnent !" },
+                    include_aliases: { external_id: [payload.user_id] },
+                    data: { type: 'test_notification' }
+                }
+            }
+        }
+
         if (notification) {
             console.log("Sending OneSignal Notification:", notification);
             const response = await fetch("https://onesignal.com/api/v1/notifications", {
