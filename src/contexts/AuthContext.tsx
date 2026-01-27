@@ -32,6 +32,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null);
       } else {
         setUser(session?.user ?? null);
+
+        // OneSignal Login for Coach
+        if (session?.user) {
+          // @ts-ignore
+          if (window.OneSignalDeferred) {
+            // @ts-ignore
+            window.OneSignalDeferred.push(function (OneSignal) {
+              OneSignal.login(session.user.id);
+              OneSignal.User.addTag("role", "coach");
+            });
+          }
+        }
       }
       setLoading(false);
     }).catch(async (error) => {
@@ -127,6 +139,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     try {
       const { error } = await supabase.auth.signOut();
+
+      // OneSignal Logout
+      // @ts-ignore
+      if (window.OneSignalDeferred) {
+        // @ts-ignore
+        window.OneSignalDeferred.push(function (OneSignal) {
+          OneSignal.logout();
+        });
+      }
+
       if (error) throw error;
     } catch (error) {
       console.error('SignOut error:', error);

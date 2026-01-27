@@ -73,6 +73,20 @@ export function ClientAuthProvider({ children }) {
       if (clientData) {
         console.log("Client data found:", clientData);
         setClient(clientData);
+
+        // OneSignal Login for Client
+        // @ts-ignore
+        if (window.OneSignalDeferred) {
+          // @ts-ignore
+          window.OneSignalDeferred.push(function (OneSignal) {
+            OneSignal.login(user.id);
+            OneSignal.User.addTag("role", "client");
+            // Add coach_id tag if available to group clients by coach
+            if (clientData.coach_id) {
+              OneSignal.User.addTag("coach_id", clientData.coach_id);
+            }
+          });
+        }
       } else {
         console.log("No client found with auth_id:", user.id);
 
@@ -163,6 +177,16 @@ export function ClientAuthProvider({ children }) {
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
+
+      // OneSignal Logout
+      // @ts-ignore
+      if (window.OneSignalDeferred) {
+        // @ts-ignore
+        window.OneSignalDeferred.push(function (OneSignal) {
+          OneSignal.logout();
+        });
+      }
+
       setClient(null);
     } catch (error) {
       console.error('Error signing out:', error);
