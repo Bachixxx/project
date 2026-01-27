@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Icon } from 'react-icons-kit';
 import { eyeOff } from 'react-icons-kit/feather/eyeOff';
@@ -14,7 +14,13 @@ function ClientLogin() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { signIn } = useClientAuth();
+  const { signIn, client } = useClientAuth();
+
+  useEffect(() => {
+    if (client) {
+      navigate('/client/dashboard');
+    }
+  }, [client, navigate]);
 
   const handlePasswordToggle = () => {
     if (passwordType === 'password') {

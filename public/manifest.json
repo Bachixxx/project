@@ -2,10 +2,11 @@
     "name": "Coachency",
     "short_name": "Coachency",
     "description": "L'application tout-en-un pour les coachs sportifs.",
-    "start_url": "/",
+    "start_url": "/login",
     "display": "standalone",
     "background_color": "#0f172a",
     "theme_color": "#0f172a",
+    "orientation": "portrait",
     "icons": [
         {
             "src": "/app-logo.jpg",
