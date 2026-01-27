@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Activity, Calendar, TrendingUp, Clock, PlayCircle, Dumbbell, ChevronRight, Award, Flame, Info, X } from 'lucide-react';
 import { useClientAuth } from '../../contexts/ClientAuthContext';
+import { useTheme } from '../../contexts/ThemeContext';
 import { supabase } from '../../lib/supabase';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 function ClientDashboard() {
   const { client: authClient, loading: authLoading } = useClientAuth();
+  const { branding } = useTheme();
   const client = authClient as any;
   const [loading, setLoading] = useState(false);
   const [clientPrograms, setClientPrograms] = useState<any[]>([]);
@@ -155,7 +157,7 @@ function ClientDashboard() {
         streak: currentStreak
       });
 
-      // Fetch upcoming scheduled sessions
+      // Fetch upcoming scheduled sessions (1-on-1 from Programs/Personal)
       const { data: scheduledSessionsData, error: scheduledSessionsError } = await supabase
         .from('scheduled_sessions')
         .select(`
@@ -173,10 +175,53 @@ function ClientDashboard() {
         .eq('status', 'scheduled')
         .gte('scheduled_date', new Date().toISOString())
         .order('scheduled_date', { ascending: true })
-        .limit(3);
+        .limit(5);
 
       if (scheduledSessionsError) throw scheduledSessionsError;
-      setUpcomingSessions(scheduledSessionsData || []);
+
+      // Fetch upcoming appointments registrations (Group Sessions or Direct 1-on-1 Appointments)
+      const { data: appointmentRegistrations, error: appointmentError } = await supabase
+        .from('appointment_registrations')
+        .select(`
+          appointment:appointments (
+            id,
+            title,
+            start,
+            duration,
+            type,
+            coach:coaches(full_name)
+          )
+        `)
+        .eq('client_id', client?.id)
+        .eq('status', 'registered'); // Only confirmed registrations
+
+      if (appointmentError) throw appointmentError;
+
+      // Filter appointments that are in the future
+      const now = new Date();
+      const futureAppointments = (appointmentRegistrations || [])
+        .map((reg: any) => reg.appointment)
+        .filter((apt: any) => new Date(apt.start) >= now)
+        .map((apt: any) => ({
+          id: apt.id,
+          type: 'appointment', // Marker to distinguish
+          scheduled_date: apt.start,
+          status: 'scheduled',
+          session: {
+            name: apt.title,
+            duration_minutes: apt.duration
+          },
+          coach_name: apt.coach?.full_name
+        }));
+
+      // Combine both sources
+      const combinedUpcoming = [
+        ...(scheduledSessionsData || []).map(s => ({ ...s, type: 'session' })),
+        ...futureAppointments
+      ].sort((a, b) => new Date(a.scheduled_date).getTime() - new Date(b.scheduled_date).getTime())
+        .slice(0, 3); // Take top 3
+
+      setUpcomingSessions(combinedUpcoming);
 
     } catch (error) {
       console.error('Error fetching client data:', error);
@@ -292,7 +337,7 @@ function ClientDashboard() {
           <div>
             <p className="text-blue-400 font-medium tracking-wide text-sm uppercase mb-1">{new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
             <h1 className="text-3xl md:text-4xl font-bold text-white">
-              {getTimeGreeting()}, <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">{client?.full_name?.split(' ')[0]}</span>
+              {branding?.welcomeMessage || getTimeGreeting()}, <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">{client?.full_name?.split(' ')[0]}</span>
             </h1>
           </div>
           <div className="flex items-center gap-2">

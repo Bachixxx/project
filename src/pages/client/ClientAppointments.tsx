@@ -10,6 +10,7 @@ import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { Calendar, Users, User, Loader, X, Clock, DollarSign, FileText, Dumbbell, CheckCircle, Play, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useClientAuth } from '../../contexts/ClientAuthContext';
 import { supabase } from '../../lib/supabase';
+import { createCheckoutSession } from '../../lib/stripe';
 
 const locales = {
   'fr': fr,
@@ -126,11 +127,11 @@ function ClientAppointments() {
 
       setPersonalSessions(formattedPersonalSessions);
 
-      const { data: availableGroupSessions, error: groupError } = await supabase
+      const { data: availableGroupSessionsRaw, error: groupError } = await supabase
         .from('scheduled_sessions')
         .select(`
           *,
-          session:sessions!inner (
+          session:sessions (
             id,
             name,
             description,
@@ -140,11 +141,122 @@ function ClientAppointments() {
           ),
           coach:coaches (full_name, email, phone)
         `)
-        .eq('session.session_type', 'group_public')
-        .gte('scheduled_date', new Date().toISOString())
+        .gte('scheduled_date', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
         .order('scheduled_date', { ascending: true });
 
       if (groupError) throw groupError;
+
+      // Filter in JS to avoid inner join RLS issues
+      const availableGroupSessions = (availableGroupSessionsRaw || []).filter(
+        (s: any) => ['group', 'group_public'].includes(s.session?.session_type)
+      );
+
+      // --- FETCH REGISTERED APPOINTMENTS FOR "MY CALENDAR" ---
+      const { data: myRegisteredAppointments, error: myRegAppsError } = await supabase
+        .from('appointment_registrations')
+        .select(`
+          appointment:appointments (
+            id,
+            title,
+            start,
+            duration,
+            status,
+            notes,
+            session_id,
+            coach:coaches (full_name, email, phone),
+            session:sessions (
+              id,
+              name,
+              description,
+              duration_minutes,
+              difficulty_level
+            )
+          )
+        `)
+        .eq('client_id', client.id);
+
+      if (myRegAppsError) {
+        console.error('Error fetching registered appointments:', myRegAppsError);
+      }
+
+      const formattedRegisteredAppointments = (myRegisteredAppointments || []).map((reg: any) => {
+        const apt = reg.appointment;
+        if (!apt) return null;
+        return {
+          id: apt.id,
+          title: apt.title,
+          start: new Date(apt.start),
+          end: new Date(new Date(apt.start).getTime() + (apt.duration || 60) * 60000),
+          status: apt.status,
+          notes: apt.notes,
+          coach: apt.coach,
+          type: 'appointment_registration',
+          session_id: apt.session_id,
+          session: apt.session || { name: apt.title, duration_minutes: apt.duration },
+          registered: true
+        };
+      })
+        .filter(Boolean);
+
+      // --- FETCH REGISTERED SCHEDULED SESSIONS (Group Sessions I joined) ---
+      const { data: mySessionRegs, error: mySessRegError } = await supabase
+        .from('session_registrations')
+        .select('scheduled_session_id')
+        .eq('client_id', client.id);
+
+      if (mySessRegError) console.error('Error fetching session registrations:', mySessRegError);
+
+      const registeredSessionIds = (mySessionRegs || []).map(r => r.scheduled_session_id);
+
+      let formattedRegisteredSessions: any[] = [];
+
+      if (registeredSessionIds.length > 0) {
+        const { data: registeredSessionsData, error: regSessError } = await supabase
+          .from('scheduled_sessions')
+          .select(`
+            *,
+            session:sessions (
+              id,
+              name,
+              description,
+              duration_minutes,
+              difficulty_level,
+              session_type
+            ),
+            coach:coaches (full_name, email, phone)
+          `)
+          .in('id', registeredSessionIds);
+
+        if (regSessError) console.error('Error fetching registered sessions:', regSessError);
+
+        formattedRegisteredSessions = (registeredSessionsData || []).map(s => ({
+          id: s.id,
+          title: s.session?.name || 'Unknown Session',
+          start: new Date(s.scheduled_date),
+          end: new Date(new Date(s.scheduled_date).getTime() + (s.session?.duration_minutes || 60) * 60000),
+          status: s.status,
+          notes: s.notes,
+          session: s.session,
+          coach: s.coach,
+          type: 'group',
+          source: 'scheduled_session',
+          registered: true
+        }));
+      }
+
+      // Merge ALL: personal (1-on-1) + registered appointments + registered group sessions
+      // Deduplicate by ID to be safe
+      const allMySessions = [
+        ...formattedPersonalSessions,
+        ...formattedRegisteredAppointments,
+        ...formattedRegisteredSessions
+      ];
+
+      const uniqueSessions = Array.from(new Map(allMySessions.map(item => [item.id, item])).values());
+
+      setPersonalSessions(uniqueSessions);
+
+      // --- END FETCH REGISTERED APPOINTMENTS ---
 
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -153,10 +265,15 @@ function ClientAppointments() {
         .from('appointments')
         .select(`
           *,
-          coach:coaches (full_name, email, phone)
+          coach:coaches (full_name, email, phone),
+          session:sessions (
+            id,
+            name,
+            description,
+            duration_minutes,
+            difficulty_level
+          )
         `)
-        .eq('type', 'group')
-        .eq('group_visibility', 'public')
         .gte('start', thirtyDaysAgo.toISOString())
         .in('status', ['scheduled', 'confirmed'])
         .order('start', { ascending: true });
@@ -221,7 +338,9 @@ function ClientAppointments() {
         max_participants: a.max_participants,
         current_participants: a.current_participants || 0,
         registered: appointmentRegistrationMap.has(a.id) && appointmentRegistrationMap.get(a.id) !== 'cancelled',
-        registrationStatus: appointmentRegistrationMap.get(a.id)
+        registrationStatus: appointmentRegistrationMap.get(a.id),
+        session_id: a.session_id,
+        session: a.session
       }));
 
       console.log('Formatted group sessions:', formattedGroupSessions);
@@ -300,17 +419,31 @@ function ClientAppointments() {
       setRegistering(true);
 
       if (selectedSession.source === 'appointment') {
-        const { data: appointment } = await supabase
+        const { data: appointments } = await supabase
           .from('appointments')
-          .select('coach_id, current_participants, max_participants')
+          .select('coach_id, current_participants, max_participants, payment_method, price')
           .eq('id', sessionId)
-          .single();
+          .limit(1);
+
+        const appointment = appointments?.[0];
 
         if (!appointment) throw new Error('Appointment not found');
 
         if (appointment.current_participants >= appointment.max_participants) {
           alert('Cette séance est complète');
           return;
+        }
+
+        // Handle online payment via Stripe
+        if (appointment.payment_method === 'online' && appointment.price > 0) {
+          try {
+            await createCheckoutSession(undefined, client.id, sessionId);
+            return; // Exit here, redirection will happen
+          } catch (error: any) {
+            console.error('Payment initialization error:', error);
+            alert(error.message || 'Erreur lors de l\'initialisation du paiement');
+            return;
+          }
         }
 
         const { error: regError } = await supabase
@@ -365,11 +498,13 @@ function ClientAppointments() {
       setRegistering(true);
 
       if (selectedSession.source === 'appointment') {
-        const { data: appointment } = await supabase
+        const { data: appointments } = await supabase
           .from('appointments')
           .select('current_participants')
           .eq('id', sessionId)
-          .single();
+          .limit(1);
+
+        const appointment = appointments?.[0];
 
         if (!appointment) throw new Error('Appointment not found');
 
@@ -809,7 +944,11 @@ function ClientAppointments() {
           onRegister={handleRegister}
           onUnregister={handleUnregister}
           onStartTraining={() => {
-            navigate(`/client/live-workout/${selectedSession.id}`);
+            if (selectedSession.source === 'appointment') {
+              navigate(`/client/live-workout/appointment/${selectedSession.id}`);
+            } else {
+              navigate(`/client/live-workout/${selectedSession.id}`);
+            }
           }}
           registering={registering}
         />
@@ -920,6 +1059,9 @@ function SessionModal({ session, exercises, loadingExercises, onClose, onRegiste
                   Détails de la séance
                 </h3>
                 <div className="space-y-3">
+                  {session.session.name && (
+                    <h4 className="text-white font-semibold">{session.session.name}</h4>
+                  )}
                   {session.session.description && (
                     <p className="text-white/90 text-sm">{session.session.description}</p>
                   )}
@@ -1011,8 +1153,18 @@ function SessionModal({ session, exercises, loadingExercises, onClose, onRegiste
                   Commencer l'entraînement
                 </button>
               )}
-              {session.type === 'group' && session.start > new Date() && (
+              {session.type === 'group' && (
                 <>
+                  {session.registered && session.session_id && (
+                    <button
+                      onClick={onStartTraining}
+                      className="px-6 py-2 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 rounded-lg text-white font-medium transition-all flex items-center gap-2 shadow-lg hover:shadow-xl"
+                    >
+                      <Play className="w-5 h-5" />
+                      Lancer la séance
+                    </button>
+                  )}
+
                   {session.registered ? (
                     <button
                       onClick={() => onUnregister(session.id)}
@@ -1022,13 +1174,15 @@ function SessionModal({ session, exercises, loadingExercises, onClose, onRegiste
                       {registering ? 'Désinscription...' : 'Se désinscrire'}
                     </button>
                   ) : (
-                    <button
-                      onClick={() => onRegister(session.id)}
-                      disabled={registering}
-                      className="px-6 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-800 disabled:opacity-50 rounded-lg text-white transition-colors"
-                    >
-                      {registering ? 'Inscription...' : 'S\'inscrire'}
-                    </button>
+                    session.start > new Date() && (
+                      <button
+                        onClick={() => onRegister(session.id)}
+                        disabled={registering}
+                        className="px-6 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-800 disabled:opacity-50 rounded-lg text-white transition-colors"
+                      >
+                        {registering ? 'Inscription...' : 'S\'inscrire'}
+                      </button>
+                    )
                   )}
                 </>
               )}

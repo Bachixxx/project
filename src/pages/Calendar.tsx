@@ -581,6 +581,7 @@ function CalendarPage() {
                 payment_method: appointmentData.payment_method,
                 payment_status: 'pending',
                 coach_id: user?.id,
+                session_id: appointmentData.session_id, // Save the link
               };
 
               if (selectedAppointment) {
@@ -659,8 +660,10 @@ function AppointmentModal({ appointment, selectedSlot, clients, onClose, onSave 
     notes: appointment?.notes || '',
     price: appointment?.price || 0,
     payment_method: appointment?.payment_method || 'in_person',
+    session_id: appointment?.session_id || null, // Linked session
   });
   const [selectedClients, setSelectedClients] = useState<string[]>([]);
+  const [sessions, setSessions] = useState<any[]>([]); // Available sessions
   const [registeredParticipants, setRegisteredParticipants] = useState<any[]>([]);
   const [loadingParticipants, setLoadingParticipants] = useState(false);
   const [paymentLink, setPaymentLink] = useState(appointment?.payment_link || '');
@@ -669,6 +672,7 @@ function AppointmentModal({ appointment, selectedSlot, clients, onClose, onSave 
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
+    fetchSessions(); // Fetch available templates
     if (appointment?.id && appointment?.type === 'group') {
       fetchRegisteredParticipants();
     }
@@ -676,6 +680,22 @@ function AppointmentModal({ appointment, selectedSlot, clients, onClose, onSave 
       setPaymentLink(appointment.payment_link);
     }
   }, [appointment?.id, appointment?.payment_link]);
+
+  const fetchSessions = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('sessions')
+        .select('id, name, duration_minutes')
+        .eq('session_type', 'private') // Use 'private' templates as base? Or maybe we need a 'template' type? 
+        // Assuming 'private' means created by coach for general use, while 'scheduled' uses them.
+        .order('name');
+
+      if (error) throw error;
+      setSessions(data || []);
+    } catch (error) {
+      console.error('Error fetching sessions:', error);
+    }
+  };
 
   const fetchRegisteredParticipants = async () => {
     try {
@@ -777,6 +797,29 @@ function AppointmentModal({ appointment, selectedSlot, clients, onClose, onSave 
                 className="input-field"
                 placeholder="Ex: Séance Jambes, Yoga..."
               />
+            </div>
+
+            {/* Session Linking */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Contenu de la séance (optionnel)
+              </label>
+              <select
+                name="session_id"
+                value={formData.session_id || ''}
+                onChange={handleChange}
+                className="input-field"
+              >
+                <option value="">-- Sélectionner une séance type --</option>
+                {sessions.map(s => (
+                  <option key={s.id} value={s.id}>
+                    {s.name} ({s.duration_minutes} min)
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-500 mt-1">
+                Permet aux clients de lancer la séance et d'enregistrer leurs performances.
+              </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

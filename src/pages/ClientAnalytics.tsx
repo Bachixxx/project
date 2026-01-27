@@ -117,8 +117,24 @@ function ClientAnalytics() {
         }
       }
 
-      // 4. Generate Weight Data (Mock for now)
-      generateWeightData();
+      // 4. Fetch Weight History
+      const { data: weightHistoryData, error: weightError } = await supabase
+        .from('client_weight_history')
+        .select('weight, date')
+        .eq('client_id', clientId)
+        .order('date', { ascending: true });
+
+      if (weightError) throw weightError;
+
+      if (weightHistoryData && weightHistoryData.length > 0) {
+        const historyData = weightHistoryData.map(entry => ({
+          date: new Date(entry.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }),
+          value: entry.weight
+        }));
+        setWeightData(historyData);
+      } else {
+        setWeightData([]);
+      }
 
     } catch (error) {
       console.error('Error fetching analytics:', error);
@@ -128,25 +144,6 @@ function ClientAnalytics() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const generateWeightData = () => {
-    const mockDates = Array.from({ length: 15 }, (_, i) => {
-      const d = new Date();
-      d.setDate(d.getDate() - (15 - i) * 2);
-      return d;
-    });
-
-    const weightData = mockDates.map((date, index) => {
-      const baseWeight = 85;
-      const weightLoss = index * 0.2 + (Math.random() * 0.4 - 0.2);
-      return {
-        date: date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }),
-        value: Math.round((baseWeight - weightLoss) * 10) / 10
-      };
-    });
-
-    setWeightData(weightData);
   };
 
   const generateStrengthData = () => {

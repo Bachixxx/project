@@ -5,12 +5,14 @@ import {
   User, LogOut, Menu, X, ShoppingBag
 } from 'lucide-react';
 import { useClientAuth } from '../../contexts/ClientAuthContext';
+import { useTheme } from '../../contexts/ThemeContext';
 import ClientBottomNav from './ClientBottomNav';
 
 function ClientLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const { client, signOut } = useClientAuth();
+  const { branding } = useTheme();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleSignOut = async () => {
@@ -42,9 +44,9 @@ function ClientLayout() {
                 )}
               </button>
               <div className="ml-2 lg:ml-0 flex items-center gap-3">
-                <img src="/app-logo.jpg" alt="Coachency" className="h-8 w-8 rounded-lg shadow-lg" />
+                <img src={branding?.logoUrl || "/app-logo.jpg"} alt="Coachency" className="h-8 w-8 rounded-lg shadow-lg" />
                 <span className="text-xl font-bold text-white bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent">
-                  Coachency Client
+                  {branding?.appName || 'Coachency Client'}
                   {client && (
                     <span className="hidden md:inline-block text-sm font-normal ml-2 text-white/70">
                       • {client.full_name}

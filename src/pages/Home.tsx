@@ -58,7 +58,7 @@ function Home() {
         {/* Announcement Banner */}
         <div className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white text-xs md:text-sm font-medium py-2 px-4 text-center">
           <p>
-            🚀 Lancement imminent ! <Link to="/waitlist" className="underline hover:text-blue-100 font-bold">Rejoignez la liste d'attente</Link> pour un accès prioritaire.
+            🚀 Ouverture prochaine ! <Link to="/waitlist" className="underline hover:text-blue-100 font-bold">Rejoindre la liste d'attente</Link>
           </p>
         </div>
 
@@ -102,6 +102,7 @@ function Home() {
           </button>
         </div>
 
+
         {/* Mobile Menu */}
         {mobileMenuOpen && (
           <div className="md:hidden absolute top-full left-0 right-0 bg-[#0f172a] border-b border-white/10 p-6 flex flex-col gap-4 animate-fade-in shadow-2xl">
@@ -136,7 +137,7 @@ function Home() {
                 to="/waitlist"
                 className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-xl font-bold shadow-lg shadow-blue-500/25 transition-all hover:scale-105 flex items-center justify-center gap-2"
               >
-                Rejoindre la liste d'attente <ArrowRight className="w-5 h-5" />
+                Rejoindre la liste <ArrowRight className="w-5 h-5" />
               </Link>
               <Link
                 to="/features"

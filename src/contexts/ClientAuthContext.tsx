@@ -11,8 +11,8 @@ export function ClientAuthProvider({ children }) {
     supabase.auth.getSession().then(async ({ data: { session }, error }) => {
       if (error) {
         // Gérer silencieusement les erreurs de token de rafraîchissement
-        if (error.message?.includes('refresh_token_not_found') || 
-            error.message?.includes('Invalid Refresh Token')) {
+        if (error.message?.includes('refresh_token_not_found') ||
+          error.message?.includes('Invalid Refresh Token')) {
           console.log('Client session expired, user will need to re-authenticate');
           await supabase.auth.signOut();
         } else {
@@ -40,7 +40,7 @@ export function ClientAuthProvider({ children }) {
       } else if (event === 'SIGNED_OUT') {
         console.log('Client signed out');
       }
-      
+
       if (session?.user) {
         fetchClientData(session.user);
       } else {
@@ -57,12 +57,14 @@ export function ClientAuthProvider({ children }) {
       console.log("Fetching client data for user:", user.id);
 
       // First try to fetch client data using auth_id
-      const { data: clientData, error } = await supabase
+      const { data: clients, error } = await supabase
         .from('clients')
         .select('*')
         .eq('auth_id', user.id)
-        .maybeSingle();
-      
+        .limit(1);
+
+      const clientData = clients?.[0];
+
       if (error) {
         console.error("Error fetching client by auth_id:", error);
         throw error;
@@ -73,22 +75,24 @@ export function ClientAuthProvider({ children }) {
         setClient(clientData);
       } else {
         console.log("No client found with auth_id:", user.id);
-        
+
         // Try to fetch by email as fallback
-        const { data: emailClientData, error: emailError } = await supabase
+        const { data: emailClients, error: emailError } = await supabase
           .from('clients')
           .select('*')
           .eq('email', user.email)
-          .maybeSingle();
-        
+          .limit(1);
+
+        const emailClientData = emailClients?.[0];
+
         if (emailError) {
           console.error("Error fetching client by email:", emailError);
           throw emailError;
         }
-        
+
         if (emailClientData) {
           console.log("Client found by email, updating auth_id:", emailClientData);
-          
+
           // Update the client with the auth_id
           const { error: updateError } = await supabase
             .from('clients')

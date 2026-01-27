@@ -167,10 +167,10 @@ function ClientsPage() {
                     {client.full_name}
                   </h3>
                   <div className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-1 ${client.status === 'active'
-                      ? 'bg-green-500/10 text-green-400 border border-green-500/20'
-                      : client.status === 'inactive'
-                        ? 'bg-gray-500/10 text-gray-400 border border-gray-500/20'
-                        : 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'
+                    ? 'bg-green-500/10 text-green-400 border border-green-500/20'
+                    : client.status === 'inactive'
+                      ? 'bg-gray-500/10 text-gray-400 border border-gray-500/20'
+                      : 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'
                     }`}>
                     {client.status.charAt(0).toUpperCase() + client.status.slice(1)}
                   </div>
@@ -241,25 +241,33 @@ function ClientsPage() {
           onClose={() => setIsModalOpen(false)}
           onSave={async (clientData: any) => {
             try {
+              // Sanitize numeric fields
+              const sanitizedData = {
+                ...clientData,
+                height: clientData.height === '' ? null : parseFloat(clientData.height),
+                weight: clientData.weight === '' ? null : parseFloat(clientData.weight),
+              };
+
               if (selectedClient) {
                 const { error } = await supabase
                   .from('clients')
-                  .update(clientData)
+                  .update(sanitizedData)
                   .eq('id', selectedClient.id);
 
                 if (error) throw error;
               } else {
                 const { error } = await supabase
                   .from('clients')
-                  .insert([{ ...clientData, coach_id: user?.id }]);
+                  .insert([{ ...sanitizedData, coach_id: user?.id }]);
 
                 if (error) throw error;
               }
 
               fetchClients();
               setIsModalOpen(false);
-            } catch (error) {
+            } catch (error: any) {
               console.error('Error saving client:', error);
+              alert(error.message || 'Une erreur est survenue lors de la création du client');
             }
           }}
         />

@@ -17,7 +17,7 @@ export const getStripe = async () => {
 };
 
 export async function createSubscriptionSession(
-  coachId: string, 
+  coachId: string,
   priceId: string,
   successUrl: string,
   cancelUrl: string
@@ -47,7 +47,7 @@ export async function createSubscriptionSession(
       throw error;
     }
 
-    console.log("DATA",data)
+    console.log("DATA", data)
 
     if (!data?.url) {
       throw new Error('No checkout URL received from server');
@@ -60,32 +60,55 @@ export async function createSubscriptionSession(
   }
 }
 
-export async function createCheckoutSession(programId: string, clientId: string) {
+export async function createCheckoutSession(programId: string | undefined, clientId: string, appointmentId?: string) {
   try {
-    console.log('Fetching program details for:', programId);
-    const { data: program, error: programError } = await supabase
-      .from('programs')
-      .select('coach_id')
-      .eq('id', programId)
-      .single();
+    let coachId = '';
 
-    if (programError) {
-      console.error('Program fetch error:', programError);
-      throw new Error(`Impossible de récupérer les détails du programme: ${programError.message}`);
+    if (programId) {
+      console.log('Fetching program details for:', programId);
+      const { data: program, error: programError } = await supabase
+        .from('programs')
+        .select('coach_id')
+        .eq('id', programId)
+        .single();
+
+      if (programError) {
+        console.error('Program fetch error:', programError);
+        throw new Error(`Impossible de récupérer les détails du programme: ${programError.message}`);
+      }
+      coachId = program?.coach_id;
+    } else if (appointmentId) {
+      console.log('Fetching appointment details for:', appointmentId);
+      const { data: appointment, error: appointmentError } = await supabase
+        .from('appointments')
+        .select('coach_id')
+        .eq('id', appointmentId)
+        .single();
+
+      if (appointmentError) {
+        console.error('Appointment fetch error:', appointmentError);
+        throw new Error(`Impossible de récupérer les détails de la séance: ${appointmentError.message}`);
+      }
+      coachId = appointment?.coach_id;
     }
 
-    if (!program?.coach_id) {
-      throw new Error('ID du coach introuvable pour ce programme');
+    if (!coachId) {
+      throw new Error('ID du coach introuvable');
     }
 
     console.log('Invoking create-checkout-session function...');
     const { data, error } = await supabase.functions.invoke('create-checkout-session', {
       body: {
         programId,
+        appointmentId,
         clientId,
-        coachId: program.coach_id,
-        successUrl: `${window.location.origin}/client/workouts?payment=success`,
-        cancelUrl: `${window.location.origin}/marketplace?payment=cancelled`
+        coachId,
+        successUrl: appointmentId
+          ? `${window.location.origin}/client/appointments?payment=success`
+          : `${window.location.origin}/client/workouts?payment=success`,
+        cancelUrl: appointmentId
+          ? `${window.location.origin}/client/appointments?payment=cancelled`
+          : `${window.location.origin}/marketplace?payment=cancelled`
       }
     });
 

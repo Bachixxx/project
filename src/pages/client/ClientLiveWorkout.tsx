@@ -20,7 +20,7 @@ interface Exercise {
 }
 
 function ClientLiveWorkout() {
-  const { scheduledSessionId } = useParams();
+  const { scheduledSessionId, appointmentId } = useParams();
   const navigate = useNavigate();
   const { client } = useClientAuth();
   const [loading, setLoading] = useState(true);
@@ -48,10 +48,12 @@ function ClientLiveWorkout() {
   } | null>(null);
 
   useEffect(() => {
-    if (client && scheduledSessionId) {
-      fetchSessionData();
+    if (client) {
+      if (scheduledSessionId || appointmentId) {
+        fetchSessionData();
+      }
     }
-  }, [client, scheduledSessionId]);
+  }, [client, scheduledSessionId, appointmentId]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -72,7 +74,6 @@ function ClientLiveWorkout() {
 
           if (prev.isPreStart) {
             if (prev.preStartTimeLeft <= 1) {
-              // End of pre-start
               if (navigator.vibrate) navigator.vibrate(200);
               return { ...prev, isPreStart: false, preStartTimeLeft: 0 };
             }
@@ -80,8 +81,6 @@ function ClientLiveWorkout() {
           }
 
           if (prev.timeLeft <= 1) {
-            // Timer finished
-            // Play sound or vibrate here if possible
             if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
             return { ...prev, timeLeft: 0, isRunning: false };
           }
@@ -130,34 +129,116 @@ function ClientLiveWorkout() {
   const fetchSessionData = async () => {
     try {
       setLoading(true);
+      let targetSessionId;
 
-      // First, fetch the scheduled session with basic session info
-      const { data: scheduledSession, error } = await supabase
-        .from('scheduled_sessions')
-        .select(`
-          *,
-          session:sessions!inner (
-            id,
-            name,
-            description,
-            duration_minutes,
-            difficulty_level
-          )
-        `)
-        .eq('id', scheduledSessionId)
-        .eq('client_id', client.id)
-        .single();
+      if (scheduledSessionId) {
+        const { data: scheduledSessionsData, error } = await supabase
+          .from('scheduled_sessions')
+          .select(`
+            *,
+            session:sessions!inner (
+              id,
+              name,
+              description,
+              duration_minutes,
+              difficulty_level
+            )
+          `)
+          .eq('id', scheduledSessionId)
+          .eq('client_id', client.id)
+          .limit(1);
 
-      if (error) {
-        console.error('Error fetching scheduled session:', error);
-        throw error;
+        if (error) throw error;
+        const scheduledSession = scheduledSessionsData?.[0];
+
+        if (!scheduledSession) throw new Error('Séance introuvable');
+
+        setSessionData(scheduledSession);
+        targetSessionId = scheduledSession.session.id;
+
+      } else if (appointmentId) {
+        console.log('Fetching appointment flow for ID:', appointmentId);
+
+        // 1. Verify Registration
+        const { data: registration, error: regError } = await supabase
+          .from('appointment_registrations')
+          .select('*')
+          .eq('appointment_id', appointmentId)
+          .eq('client_id', client.id)
+          .limit(1)
+          .maybeSingle();
+
+        if (regError) {
+          console.error('Registration fetch error:', regError);
+          throw regError;
+        }
+        if (!registration) {
+          console.error('Registration not found for client:', client.id, 'appointment:', appointmentId);
+          throw new Error('Vous n\'êtes pas inscrit à cette séance');
+        }
+
+        // 2. Fetch Appointment (Simple)
+        const { data: appointment, error: appError } = await supabase
+          .from('appointments')
+          .select('*')
+          .eq('id', appointmentId)
+          .limit(1)
+          .maybeSingle();
+
+        if (appError) {
+          console.error('Appointment fetch error:', appError);
+          throw appError;
+        }
+        if (!appointment) {
+          console.error('Appointment NOT found (possibly RLS blocking):', appointmentId);
+          throw new Error('Séance introuvable (Accès refusé au rendez-vous)');
+        }
+
+        console.log('Appointment found:', appointment);
+
+        // 3. Fetch Session content
+        if (!appointment.session_id) {
+          throw new Error('Cette séance n\'a pas de contenu associé (session_id manquant)');
+        }
+
+        const { data: sessionDataObj, error: sessionError } = await supabase
+          .from('sessions')
+          .select('id, name, description, duration_minutes, difficulty_level')
+          .eq('id', appointment.session_id)
+          .limit(1)
+          .maybeSingle();
+
+        if (sessionError) {
+          console.error('Session fetch error:', sessionError);
+          throw sessionError;
+        }
+        if (!sessionDataObj) throw new Error('Contenu de la séance introuvable (Session deleted?)');
+
+        // 10-minute window check
+        const now = new Date();
+        const start = new Date(appointment.start);
+        const diffMs = start.getTime() - now.getTime();
+        const tenMinutesMs = 10 * 60 * 1000;
+
+        if (diffMs > tenMinutesMs) {
+          setLoading(false);
+          setSessionData({
+            isTooEarly: true,
+            start: appointment.start,
+            title: appointment.title
+          });
+          return;
+        }
+
+        setSessionData({
+          session: sessionDataObj,
+          scheduled_date: appointment.start,
+          notes: null
+        });
+        targetSessionId = sessionDataObj.id;
       }
 
-      if (!scheduledSession) {
-        throw new Error('Session not found');
-      }
-
-      setSessionData(scheduledSession);
+      if (!targetSessionId) throw new Error('Session ID not found');
 
       // Now fetch the session exercises separately
       const { data: exercisesData, error: exercisesError } = await supabase
@@ -180,13 +261,10 @@ function ClientLiveWorkout() {
           duration_seconds,
           distance_meters
         `)
-        .eq('session_id', scheduledSession.session.id)
+        .eq('session_id', targetSessionId)
         .order('order_index', { ascending: true });
 
-      if (exercisesError) {
-        console.error('Error fetching exercises:', exercisesError);
-        throw exercisesError;
-      }
+      if (exercisesError) throw exercisesError;
 
       const exerciseList = (exercisesData || []).map(se => ({
         id: se.exercise.id,
@@ -218,9 +296,10 @@ function ClientLiveWorkout() {
       });
       setCompletedExercises(initialCompleted);
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching session:', error);
-      alert('Erreur lors du chargement de la séance');
+      alert(`Erreur: ${error.message || 'Erreur lors du chargement de la séance'}`);
+      // navigate('/client/appointments'); // Stay on page to see error, or redirect? Redirect acts as a "hard crash" for user.
       navigate('/client/appointments');
     } finally {
       setLoading(false);
@@ -249,28 +328,37 @@ function ClientLiveWorkout() {
     }));
 
     if (newCompletedState) {
-      // Log the set to the database
       try {
+        const logData: any = {
+          client_id: client.id,
+          exercise_id: currentExercise.id,
+          set_number: setIndex + 1,
+          reps: currentSet.reps,
+          weight: currentSet.weight,
+          duration_seconds: currentSet.duration_seconds,
+          distance_meters: currentSet.distance_meters,
+          completed_at: new Date().toISOString()
+        };
+
+        let conflictTarget = '';
+        if (scheduledSessionId) {
+          logData.scheduled_session_id = scheduledSessionId;
+          conflictTarget = 'scheduled_session_id,exercise_id,set_number';
+        } else if (appointmentId) {
+          logData.appointment_id = appointmentId;
+          // We created a constraint for this: idx_workout_logs_appointment_unique
+          // BUT supbase-js onConflict expects column names.
+          // The constraint is on (appointment_id, exercise_id, set_number).
+          conflictTarget = 'appointment_id,exercise_id,set_number';
+        }
+
         const { error } = await supabase
           .from('workout_logs')
-          .upsert({
-            client_id: client.id,
-            scheduled_session_id: scheduledSessionId,
-            exercise_id: currentExercise.id,
-            set_number: setIndex + 1,
-            reps: currentSet.reps,
-            weight: currentSet.weight,
-            duration_seconds: currentSet.duration_seconds,
-            distance_meters: currentSet.distance_meters,
-            completed_at: new Date().toISOString()
-          }, {
-            onConflict: 'scheduled_session_id,exercise_id,set_number'
+          .upsert(logData, {
+            onConflict: conflictTarget
           });
 
-        if (error) {
-          console.error('Error logging workout:', error);
-          // Revert UI on error? Or just silence for now but maybe show toast
-        }
+        if (error) console.error('Error logging workout:', error);
       } catch (err) {
         console.error('Error logging workout:', err);
       }
@@ -279,18 +367,18 @@ function ClientLiveWorkout() {
         setRestTimer(currentExercise.rest_time);
       }
     } else {
-      // Optional: Remove log if unchecked? 
-      // For now, we keep the log but maybe the UI just reflects it's not "done" in this session view.
-      // Or we could delete it.
       try {
+        const matchQuery: any = {
+          exercise_id: currentExercise.id,
+          set_number: setIndex + 1
+        };
+        if (scheduledSessionId) matchQuery.scheduled_session_id = scheduledSessionId;
+        else if (appointmentId) matchQuery.appointment_id = appointmentId;
+
         await supabase
           .from('workout_logs')
           .delete()
-          .match({
-            scheduled_session_id: scheduledSessionId,
-            exercise_id: currentExercise.id,
-            set_number: setIndex + 1
-          });
+          .match(matchQuery);
       } catch (err) {
         console.error('Error removing workout log:', err);
       }
@@ -329,17 +417,19 @@ function ClientLiveWorkout() {
 
   const handleCompleteWorkout = async () => {
     try {
-      const { error } = await supabase
-        .from('scheduled_sessions')
-        .update({
-          status: 'completed',
-          completed_at: new Date().toISOString(),
-          notes: notes
-        })
-        .eq('id', scheduledSessionId);
-
-      if (error) throw error;
-
+      if (scheduledSessionId) {
+        const { error } = await supabase
+          .from('scheduled_sessions')
+          .update({
+            status: 'completed',
+            completed_at: new Date().toISOString(),
+            notes: notes
+          })
+          .eq('id', scheduledSessionId);
+        if (error) throw error;
+      }
+      // For appointments, we don't have a specific 'completed' status per client on the appointment itself.
+      // We rely on logs. Maybe update registration?
       navigate('/client/appointments');
     } catch (error) {
       console.error('Error completing workout:', error);
@@ -355,6 +445,44 @@ function ClientLiveWorkout() {
     return (
       <div className="min-h-screen bg-[#09090b] flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  if (sessionData?.isTooEarly) {
+    return (
+      <div className="min-h-screen bg-[#09090b] flex flex-col items-center justify-center p-6 text-center animate-fade-in relative overflow-hidden">
+        {/* Background Gradients */}
+        <div className="absolute top-[-20%] right-[-20%] w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[128px]" />
+        <div className="absolute bottom-[-20%] left-[-20%] w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[128px]" />
+
+        <div className="relative z-10 max-w-md w-full bg-[#1e293b]/50 backdrop-blur-xl border border-white/5 p-8 rounded-3xl shadow-2xl">
+          <div className="w-20 h-20 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-blue-500/20">
+            <Timer className="w-10 h-10 text-blue-400" />
+          </div>
+
+          <h1 className="text-2xl font-bold text-white mb-2">{sessionData.title}</h1>
+          <p className="text-gray-400 mb-8">
+            La séance n'a pas encore commencé. L'accès sera débloqué 10 minutes avant le début du cours.
+          </p>
+
+          <div className="bg-black/40 rounded-xl p-4 mb-8 border border-white/5">
+            <p className="text-sm text-gray-500 uppercase tracking-widest font-bold mb-1">Début du cours</p>
+            <p className="text-3xl font-black text-white tabular-nums">
+              {new Date(sessionData.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </p>
+            <p className="text-sm text-gray-500 mt-1">
+              {new Date(sessionData.start).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}
+            </p>
+          </div>
+
+          <button
+            onClick={() => navigate('/client/appointments')}
+            className="w-full py-3 bg-white/5 hover:bg-white/10 rounded-xl text-white font-medium transition-colors border border-white/5"
+          >
+            Retour au planning
+          </button>
+        </div>
       </div>
     );
   }
@@ -497,8 +625,8 @@ function ClientLiveWorkout() {
                   {activeTimer && activeTimer.setIndex === idx ? (
                     /* Active Timer View */
                     <div className={`rounded-xl p-4 border text-center animate-fade-in relative overflow-hidden ${activeTimer.isPreStart
-                        ? 'bg-red-600/20 border-red-500/30'
-                        : 'bg-blue-600/20 border-blue-500/30'
+                      ? 'bg-red-600/20 border-red-500/30'
+                      : 'bg-blue-600/20 border-blue-500/30'
                       }`}>
                       <div className={`absolute inset-0 animate-pulse z-0 ${activeTimer.isPreStart ? 'bg-red-500/5' : 'bg-blue-500/5'
                         }`}></div>

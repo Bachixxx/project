@@ -5,6 +5,32 @@
 @layer base {
   :root {
     --glow-color: 14, 165, 233;
+
+    /* Primary Palette (Sky) */
+    --color-primary-50: 240 249 255;
+    --color-primary-100: 224 242 254;
+    --color-primary-200: 186 230 253;
+    --color-primary-300: 125 211 252;
+    --color-primary-400: 56 189 248;
+    --color-primary-500: 14 165 233;
+    --color-primary-600: 2 132 199;
+    --color-primary-700: 3 105 161;
+    --color-primary-800: 7 89 133;
+    --color-primary-900: 12 74 110;
+    --color-primary-950: 8 47 73;
+
+    /* Accent Palette (Fuchsia) */
+    --color-accent-50: 253 244 255;
+    --color-accent-100: 250 232 255;
+    --color-accent-200: 245 208 254;
+    --color-accent-300: 240 171 252;
+    --color-accent-400: 232 121 249;
+    --color-accent-500: 217 70 239;
+    --color-accent-600: 192 38 211;
+    --color-accent-700: 162 28 175;
+    --color-accent-800: 134 25 143;
+    --color-accent-900: 112 26 117;
+    --color-accent-950: 74 4 78;
   }
 
   html {

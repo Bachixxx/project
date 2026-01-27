@@ -52,36 +52,100 @@ Deno.serve(async (req) => {
     const request = await req.json();
     console.log('Request body:', JSON.stringify(request, null, 2));
 
-    const { programId, clientId, coachId, successUrl, cancelUrl } = request;
+    const { programId, clientId, coachId, appointmentId, successUrl, cancelUrl } = request;
 
-    if (!programId || !clientId || !coachId) {
-      throw new Error('Missing required parameters: programId, clientId, or coachId');
+    if ((!programId && !appointmentId) || !clientId || !coachId) {
+      throw new Error('Missing required parameters: programId OR appointmentId, clientId, and coachId');
     }
-    
-    // Get program details
-    const { data: program, error: programError } = await supabase
-      .from('programs')
-      .select('*, coach:coaches(stripe_account_id)')
-      .eq('id', programId)
-      .single();
 
-    if (programError) {
-      return new Response(
-        JSON.stringify({ error: programError.message }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 400 
-        }
-      );
+    let productData: any = {};
+    let unitAmount = 0;
+    let applicationFeeAmount = 0;
+    let destinationAccount = '';
+
+    // CASE 1: Program Purchase
+    if (programId) {
+      // Get program details
+      const { data: program, error: programError } = await supabase
+        .from('programs')
+        .select('*, coach:coaches(stripe_account_id)')
+        .eq('id', programId)
+        .single();
+
+      if (programError) {
+        return new Response(
+          JSON.stringify({ error: programError.message }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 400
+          }
+        );
+      }
+      if (!program) {
+        return new Response(
+          JSON.stringify({ error: 'Program not found' }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 404
+          }
+        );
+      }
+
+      productData = {
+        name: program.name,
+      };
+
+      // Only include description if it's not empty
+      if (program.description && program.description.trim() !== '') {
+        productData.description = program.description;
+      }
+
+      unitAmount = Math.round(program.price * 100);
+
+      if (program.coach.stripe_account_id) {
+        applicationFeeAmount = Math.round(program.price * 100 * 0.1);
+        destinationAccount = program.coach.stripe_account_id;
+      }
     }
-    if (!program) {
-      return new Response(
-        JSON.stringify({ error: 'Program not found' }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 404 
-        }
-      );
+    // CASE 2: Appointment Purchase
+    else if (appointmentId) {
+      // Get appointment details
+      const { data: appointment, error: appointmentError } = await supabase
+        .from('appointments')
+        .select('*, coach:coaches(stripe_account_id)')
+        .eq('id', appointmentId)
+        .single();
+
+      if (appointmentError) {
+        return new Response(
+          JSON.stringify({ error: appointmentError.message }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 400
+          }
+        );
+      }
+      if (!appointment) {
+        return new Response(
+          JSON.stringify({ error: 'Appointment not found' }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 404
+          }
+        );
+      }
+
+      productData = {
+        name: appointment.title,
+        description: `Séance ${appointment.type === 'group' ? 'de groupe' : 'privée'}`,
+      };
+
+      unitAmount = Math.round(appointment.price * 100);
+
+      if (appointment.coach.stripe_account_id) {
+        applicationFeeAmount = Math.round(appointment.price * 100 * 0.1);
+        destinationAccount = appointment.coach.stripe_account_id;
+      }
     }
 
     // Get client details
@@ -94,18 +158,18 @@ Deno.serve(async (req) => {
     if (clientError) {
       return new Response(
         JSON.stringify({ error: clientError.message }),
-        { 
+        {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 400 
+          status: 400
         }
       );
     }
     if (!client) {
       return new Response(
         JSON.stringify({ error: 'Client not found' }),
-        { 
+        {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 404 
+          status: 404
         }
       );
     }
@@ -129,16 +193,6 @@ Deno.serve(async (req) => {
         .eq('id', client.id);
     }
 
-    // Create checkout session
-    const productData: any = {
-      name: program.name,
-    };
-
-    // Only include description if it's not empty
-    if (program.description && program.description.trim() !== '') {
-      productData.description = program.description;
-    }
-
     const sessionConfig: any = {
       customer: stripeCustomerId,
       payment_method_types: ['card'],
@@ -147,7 +201,7 @@ Deno.serve(async (req) => {
           price_data: {
             currency: 'chf',
             product_data: productData,
-            unit_amount: Math.round(program.price * 100),
+            unit_amount: unitAmount,
           },
           quantity: 1,
         },
@@ -157,17 +211,21 @@ Deno.serve(async (req) => {
       cancel_url: cancelUrl,
       metadata: {
         programId: programId,
+        appointmentId: appointmentId,
         clientId: clientId,
         coachId: coachId,
       },
+      invoice_creation: {
+        enabled: true,
+      },
     };
 
-    // Only add payment_intent_data if coach has Stripe connected
-    if (program.coach.stripe_account_id) {
+    // Only add payment_intent_data if coach has Stripe connected AND destination is valid
+    if (destinationAccount) {
       sessionConfig.payment_intent_data = {
-        application_fee_amount: Math.round(program.price * 100 * 0.1),
+        application_fee_amount: applicationFeeAmount,
         transfer_data: {
-          destination: program.coach.stripe_account_id,
+          destination: destinationAccount,
         },
       };
     }
