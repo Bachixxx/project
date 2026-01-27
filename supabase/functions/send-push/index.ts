@@ -32,14 +32,55 @@ serve(async (req) => {
         if (table === 'appointments' && type === 'INSERT') {
             if (record.client_id) {
                 console.log(`Targeting Client ID: ${record.client_id}`);
-                notification = {
-                    headings: { en: "Nouveau rendez-vous", fr: "Nouveau rendez-vous" },
-                    contents: { en: `New appointment: ${record.title}`, fr: `Nouveau rendez-vous : ${record.title}` },
-                    include_aliases: { external_id: [record.client_id] },
-                    data: { type: 'appointment', id: record.id }
+
+                // Fetch the Auth ID (Supabase User ID) which is what OneSignal uses
+                const { data: clientData } = await supabase
+                    .from('clients')
+                    .select('auth_id')
+                    .eq('id', record.client_id)
+                    .single();
+
+                if (clientData?.auth_id) {
+                    notification = {
+                        headings: { en: "Nouveau rendez-vous", fr: "Nouveau rendez-vous" },
+                        contents: { en: `New appointment: ${record.title}`, fr: `Nouveau rendez-vous : ${record.title}` },
+                        include_aliases: { external_id: [clientData.auth_id] },
+                        data: { type: 'appointment', id: record.id }
+                    }
+                } else {
+                    console.log("Client has no auth_id linked.");
                 }
             } else {
                 console.log("No client_id in appointment record");
+            }
+        }
+
+        // 1.5 New Scheduled Session (Clients Page)
+        if (table === 'scheduled_sessions' && type === 'INSERT') {
+            if (record.client_id && record.session_id) {
+                const { data: sessionData } = await supabase
+                    .from('sessions')
+                    .select('name')
+                    .eq('id', record.session_id)
+                    .single();
+
+                // Fetch ID
+                const { data: clientData } = await supabase
+                    .from('clients')
+                    .select('auth_id')
+                    .eq('id', record.client_id)
+                    .single();
+
+                if (clientData?.auth_id) {
+                    const sessionName = sessionData?.name || "Session privée";
+
+                    notification = {
+                        headings: { en: "New Session Scheduled", fr: "Nouvelle séance programmée" },
+                        contents: { en: `New session: ${sessionName}`, fr: `Nouvelle séance : ${sessionName}` },
+                        include_aliases: { external_id: [clientData.auth_id] },
+                        data: { type: 'scheduled_session', id: record.id }
+                    }
+                }
             }
         }
 
