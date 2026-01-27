@@ -5,6 +5,17 @@ const ONESIGNAL_APP_ID = "4554f523-0919-4c97-9df2-acdd2f459914"
 const ONESIGNAL_API_KEY = Deno.env.get('ONESIGNAL_API_KEY')
 
 serve(async (req) => {
+    // CORS Headers
+    const corsHeaders = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    }
+
+    // Handle OPTIONS request
+    if (req.method === 'OPTIONS') {
+        return new Response('ok', { headers: corsHeaders })
+    }
+
     // Debug logging
     console.log("Request received");
 
@@ -12,7 +23,7 @@ serve(async (req) => {
         console.error("Missing ONESIGNAL_API_KEY");
         return new Response(
             JSON.stringify({ error: 'ONESIGNAL_API_KEY not set' }),
-            { status: 500, headers: { 'Content-Type': 'application/json' } }
+            { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
         )
     }
 
@@ -125,12 +136,22 @@ serve(async (req) => {
 
         // 4. Manual Test Notification
         if (type === 'TEST') {
-            console.log(`Processing TEST notification for Auth ID: ${payload.user_id}`);
-            if (payload.user_id) {
+            const { user_id, subscription_id } = payload;
+            console.log(`Processing TEST notification. Auth ID: ${user_id}, Sub ID: ${subscription_id}`);
+
+            if (subscription_id) {
                 notification = {
-                    headings: { en: "Test Notification", fr: "🔔 Test de Notification" },
-                    contents: { en: "If you see this, push works!", fr: "Si tu vois ça, les notifications fonctionnent !" },
-                    include_aliases: { external_id: [payload.user_id] },
+                    headings: { en: "Test (Direct)", fr: "🔔 Test (Direct)" },
+                    contents: { en: "Direct to Subscription ID successful!", fr: "Test direct réussi ! Votre appareil est bien connecté." },
+                    include_player_ids: [subscription_id], // Legacy name, but works for Sub IDs in many SDK versions, or try include_subscription_ids
+                    data: { type: 'test_notification' }
+                }
+                // Note: OneSignal API v1 uses include_player_ids for device records. 
+            } else if (user_id) {
+                notification = {
+                    headings: { en: "Test (User ID)", fr: "🔔 Test (Identifiant)" },
+                    contents: { en: "Mapped to User ID successful!", fr: "Test par Identifiant réussi !" },
+                    include_aliases: { external_id: [user_id] },
                     data: { type: 'test_notification' }
                 }
             }
@@ -160,13 +181,13 @@ serve(async (req) => {
         }
 
         return new Response(JSON.stringify({ success: true }), {
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', ...corsHeaders },
         })
 
     } catch (err) {
         console.error("Error processing request:", err);
         return new Response(JSON.stringify({ error: err.message }), {
-            status: 400, headers: { 'Content-Type': 'application/json' }
+            status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders }
         })
     }
 })
