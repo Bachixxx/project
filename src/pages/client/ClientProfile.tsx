@@ -6,6 +6,12 @@ import { useNavigate } from 'react-router-dom';
 
 import { t } from '../../i18n';
 
+declare global {
+  interface Window {
+    OneSignal: any;
+  }
+}
+
 function ClientProfile() {
   const { client, signOut } = useClientAuth();
   const navigate = useNavigate();
@@ -511,23 +517,34 @@ function ClientProfile() {
                 </div>
                 <h3 className="text-lg font-bold text-white">{t('profile.notifications')}</h3>
               </div>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-2">
-                  <span className="text-gray-300 text-sm">{t('profile.reminders')}</span>
-                  <div className="flex relative items-center gap-2 cursor-pointer">
-                    <div className="w-11 h-6 bg-blue-600 rounded-full relative">
-                      <div className="absolute top-1 right-1 w-4 h-4 bg-white rounded-full"></div>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between p-2">
-                  <span className="text-gray-300 text-sm">{t('profile.newPrograms')}</span>
-                  <div className="flex relative items-center gap-2 cursor-pointer">
-                    <div className="w-11 h-6 bg-blue-600 rounded-full relative">
-                      <div className="absolute top-1 right-1 w-4 h-4 bg-white rounded-full"></div>
-                    </div>
-                  </div>
-                </div>
+              <div className="space-y-4">
+                <p className="text-sm text-gray-400 mb-4">
+                  Activez les notifications pour recevoir des rappels pour vos séances et vos nouveaux programmes.
+                </p>
+                <button
+                  onClick={async () => {
+                    if (window.OneSignal) {
+                      // Check if already subscribed
+                      const isPushSupported = window.OneSignal.Notifications.isPushSupported();
+                      if (isPushSupported) {
+                        // This prompts the native browser permission request 
+                        // or the OneSignal Slidedown if configured
+                        await window.OneSignal.Notifications.requestPermission();
+                        // Also try manual opt-in
+                        await window.OneSignal.User.PushSubscription.optIn();
+                        alert("Notifications activées !");
+                      } else {
+                        alert("Les notifications ne sont pas supportées sur ce navigateur.");
+                      }
+                    } else {
+                      alert("Erreur: OneSignal non chargé. Essayez de rafraîchir la page.");
+                    }
+                  }}
+                  className="w-full py-3 bg-white/10 hover:bg-white/20 text-white font-medium rounded-xl transition-all border border-white/10 flex items-center justify-center gap-2"
+                >
+                  <Bell className="w-5 h-5" />
+                  Activer les notifications Push
+                </button>
               </div>
             </div>
 
