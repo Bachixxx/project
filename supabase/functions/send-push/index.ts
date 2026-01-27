@@ -35,7 +35,7 @@ serve(async (req) => {
                 notification = {
                     headings: { en: "Nouveau rendez-vous", fr: "Nouveau rendez-vous" },
                     contents: { en: `New appointment: ${record.title}`, fr: `Nouveau rendez-vous : ${record.title}` },
-                    include_external_user_ids: [record.client_id],
+                    include_aliases: { external_id: [record.client_id] },
                     data: { type: 'appointment', id: record.id }
                 }
             } else {
@@ -63,7 +63,7 @@ serve(async (req) => {
                     notification = {
                         headings: { en: "Workout Completed", fr: "Séance terminée !" },
                         contents: { en: `${clientName} finished ${program.name}`, fr: `${clientName} a terminé ${program.name}` },
-                        include_external_user_ids: [program.coach_id],
+                        include_aliases: { external_id: [program.coach_id] },
                         data: { type: 'workout_completed', id: record.id }
                     }
                 }
@@ -76,7 +76,7 @@ serve(async (req) => {
                 notification = {
                     headings: { en: "New Payment", fr: "Nouveau Paiement 💰" },
                     contents: { en: `Received ${record.amount}€`, fr: `Vous avez reçu un paiement de ${record.amount}€` },
-                    include_external_user_ids: [record.coach_id],
+                    include_aliases: { external_id: [record.coach_id] },
                     data: { type: 'payment', id: record.id }
                 }
             }
@@ -97,9 +97,9 @@ serve(async (req) => {
             })
             const result = await response.json()
             console.log("OneSignal API Result:", result)
-            
+
             if (result.errors) {
-                 console.error("OneSignal Errors:", result.errors);
+                console.error("OneSignal Errors:", result.errors);
             }
         } else {
             console.log("No notification criteria met.");
