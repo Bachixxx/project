@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { getStripe } from '../lib/stripe';
+import { createSubscriptionSession } from '../lib/stripe';
 
 export interface SubscriptionInfo {
   type: 'free' | 'paid';
@@ -15,6 +15,7 @@ export function useSubscription() {
   const [subscriptionInfo, setSubscriptionInfo] =
     useState<SubscriptionInfo | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -58,6 +59,7 @@ export function useSubscription() {
 
   const upgradeSubscription = async () => {
     try {
+      setError(null);
       // Get subscription plan details
       const { data: plan, error: planError } = await supabase
         .from('subscription_plans')
@@ -99,6 +101,7 @@ export function useSubscription() {
   return {
     subscriptionInfo,
     loading,
+    error,
     upgradeSubscription,
     refreshSubscriptionInfo: fetchSubscriptionInfo,
   };
