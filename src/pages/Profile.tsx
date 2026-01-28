@@ -176,7 +176,20 @@ function ProfilePage() {
             </div>
           </div>
 
-          {/* Subscription Status */}
+// ... imports
+          import {createPortalSession} from '../lib/stripe'; // Add this import
+
+// ... inside component
+  const handleManageSubscription = async () => {
+    try {
+            await createPortalSession();
+    } catch (error) {
+            console.error('Error opening portal:', error);
+          alert('Impossible d\'ouvrir le portail de gestion. Veuillez réessayer.');
+    }
+  };
+
+          // ... inside return JSX (Subscription Section)
           <div className="bg-white/5 border border-white/10 backdrop-blur-lg rounded-xl p-6">
             <div className="flex flex-col md:flex-row items-center md:items-center justify-between gap-4 text-center md:text-left">
               <div>
@@ -198,13 +211,20 @@ function ProfilePage() {
                   </p>
                 )}
               </div>
-              {subscriptionInfo?.type === 'free' && (
+              {subscriptionInfo?.type === 'free' ? (
                 <Link
                   to="/upgrade"
                   className="w-full md:w-auto px-4 py-2 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white rounded-lg hover:from-yellow-600 hover:to-yellow-700 text-center"
                 >
                   Passer à Pro
                 </Link>
+              ) : (
+                <button
+                  onClick={handleManageSubscription}
+                  className="w-full md:w-auto px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors"
+                >
+                  Gérer l'abonnement
+                </button>
               )}
             </div>
           </div>
