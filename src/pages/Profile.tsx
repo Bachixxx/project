@@ -98,9 +98,9 @@ function ProfilePage() {
         <div className="grid gap-6">
           {/* Profile Header */}
           <div className="bg-white/5 border border-white/10 backdrop-blur-lg rounded-xl p-6">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-6">
-                <div className="w-24 h-24 rounded-full bg-white/10 flex items-center justify-center">
+            <div className="flex flex-col md:flex-row items-center md:items-start justify-between gap-4">
+              <div className="flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
+                <div className="w-24 h-24 rounded-full bg-white/10 flex items-center justify-center shrink-0">
                   {coach?.profile_image_url ? (
                     <img
                       src={coach.profile_image_url}
@@ -115,7 +115,7 @@ function ProfilePage() {
                   <h1 className="text-3xl font-bold text-white mb-2">
                     {coach?.full_name}
                   </h1>
-                  <div className="flex items-center gap-4 text-white/80">
+                  <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4 text-white/80">
                     <span className="flex items-center gap-2">
                       <Mail className="w-4 h-4" />
                       {coach?.email}
@@ -131,7 +131,7 @@ function ProfilePage() {
               </div>
               <button
                 onClick={() => setIsEditing(!isEditing)}
-                className="px-4 py-2 bg-white/10 hover:bg-white/10 hover:border-white/20 rounded-lg text-white"
+                className="w-full md:w-auto px-4 py-2 bg-white/10 hover:bg-white/10 hover:border-white/20 rounded-lg text-white"
               >
                 {isEditing ? 'Annuler' : 'Modifier'}
               </button>
@@ -140,9 +140,9 @@ function ProfilePage() {
 
           {/* Subscription Status */}
           <div className="bg-white/5 border border-white/10 backdrop-blur-lg rounded-xl p-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col md:flex-row items-center md:items-center justify-between gap-4 text-center md:text-left">
               <div>
-                <h2 className="text-xl font-semibold text-white mb-2 flex items-center gap-2">
+                <h2 className="text-xl font-semibold text-white mb-2 flex items-center justify-center md:justify-start gap-2">
                   <Crown className="w-5 h-5" />
                   Abonnement
                 </h2>
@@ -154,7 +154,7 @@ function ProfilePage() {
                   )}
                 </p>
                 {subscriptionInfo?.type === 'paid' && subscriptionInfo.subscriptionEnd && (
-                  <p className="text-white/60 text-sm flex items-center gap-2 mt-1">
+                  <p className="text-white/60 text-sm flex items-center justify-center md:justify-start gap-2 mt-1">
                     <Clock className="w-4 h-4" />
                     Prochain renouvellement le {new Date(subscriptionInfo.subscriptionEnd).toLocaleDateString()}
                   </p>
@@ -163,7 +163,7 @@ function ProfilePage() {
               {subscriptionInfo?.type === 'free' && (
                 <Link
                   to="/upgrade"
-                  className="px-4 py-2 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white rounded-lg hover:from-yellow-600 hover:to-yellow-700"
+                  className="w-full md:w-auto px-4 py-2 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white rounded-lg hover:from-yellow-600 hover:to-yellow-700 text-center"
                 >
                   Passer à Pro
                 </Link>

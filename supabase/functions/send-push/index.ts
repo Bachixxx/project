@@ -53,10 +53,15 @@ serve(async (req) => {
 
                 if (clientData?.auth_id) {
                     notification = {
-                        headings: { en: "Nouveau rendez-vous", fr: "Nouveau rendez-vous" },
-                        contents: { en: `New appointment: ${record.title}`, fr: `Nouveau rendez-vous : ${record.title}` },
+                        headings: { en: "New Appointment 📅", fr: "Nouveau Rendez-vous 📅" },
+                        subtitle: { en: record.title, fr: record.title },
+                        contents: { en: "Tap to view details in the app.", fr: "Appuyez pour voir les détails." },
                         include_aliases: { external_id: [clientData.auth_id] },
-                        data: { type: 'appointment', id: record.id }
+                        target_channel: "push",
+                        data: { type: 'appointment', id: record.id },
+                        ios_badgeType: 'Increase',
+                        ios_badgeCount: 1,
+                        buttons: [{ id: "view", text: "Voir le rendez-vous" }]
                     }
                 } else {
                     console.log("Client has no auth_id linked.");
@@ -76,26 +81,44 @@ serve(async (req) => {
                     .single();
 
                 // Fetch ID
-                const { data: clientData } = await supabase
+                const { data: clientData, error: clientError } = await supabase
                     .from('clients')
                     .select('auth_id')
                     .eq('id', record.client_id)
                     .single();
 
+                if (clientError) {
+                    console.error("Error fetching client for scheduled_session:", clientError);
+                }
+
+                console.log(`Scheduled Session - Client Lookup Result:`, clientData);
+
                 if (clientData?.auth_id) {
                     const sessionName = sessionData?.name || "Session privée";
+                    // Format Date for subtitle
+                    const dateObj = new Date(record.scheduled_date);
+                    const formattedDate = dateObj.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
 
                     notification = {
-                        headings: { en: "New Session Scheduled", fr: "Nouvelle séance programmée" },
-                        contents: { en: `New session: ${sessionName}`, fr: `Nouvelle séance : ${sessionName}` },
+                        headings: { en: "New Workout Session 💪", fr: "Nouvelle Séance 💪" },
+                        subtitle: { en: sessionName, fr: sessionName },
+                        contents: { en: `Scheduled for ${formattedDate}`, fr: `Prévue pour le ${formattedDate}` },
                         include_aliases: { external_id: [clientData.auth_id] },
-                        data: { type: 'scheduled_session', id: record.id }
+                        target_channel: "push",
+                        data: { type: 'scheduled_session', id: record.id },
+                        ios_badgeType: 'Increase',
+                        ios_badgeCount: 1,
+                        buttons: [{ id: "view_session", text: "Voir mon planning" }]
                     }
+                } else {
+                    console.error(`SCHEDULED SESSION ERROR: No Auth ID found for client ${record.client_id}. Check if client has signed up/logged in.`);
                 }
+            } else {
+                console.error("SCHEDULED SESSION ERROR: Missing client_id or session_id in record", record);
             }
         }
 
-        // 2. Workout Completed
+        // 2. Workout Completed (For Coach)
         if (table === 'client_programs' && type === 'UPDATE') {
             if (record.status === 'completed') {
                 const { data: program } = await supabase
@@ -113,23 +136,30 @@ serve(async (req) => {
                 if (program?.coach_id) {
                     const clientName = client?.full_name || "Un client";
                     notification = {
-                        headings: { en: "Workout Completed", fr: "Séance terminée !" },
-                        contents: { en: `${clientName} finished ${program.name}`, fr: `${clientName} a terminé ${program.name}` },
+                        headings: { en: "Workout Completed ✅", fr: "Séance Terminée ! ✅" },
+                        contents: { en: `${clientName} crushed ${program.name}!`, fr: `${clientName} a terminé ${program.name} !` },
                         include_aliases: { external_id: [program.coach_id] },
-                        data: { type: 'workout_completed', id: record.id }
+                        target_channel: "push",
+                        data: { type: 'workout_completed', id: record.id },
+                        ios_badgeType: 'Increase',
+                        ios_badgeCount: 1
                     }
                 }
             }
         }
 
-        // 3. Payment Received
+        // 3. Payment Received (For Coach)
         if (table === 'payments' && type === 'INSERT') {
             if (record.coach_id) {
                 notification = {
-                    headings: { en: "New Payment", fr: "Nouveau Paiement 💰" },
-                    contents: { en: `Received ${record.amount}€`, fr: `Vous avez reçu un paiement de ${record.amount}€` },
+                    headings: { en: "New Payment 💰", fr: "Nouveau Paiement 💰" },
+                    contents: { en: `You received ${record.amount}€`, fr: `Vous avez reçu ${record.amount}€` },
                     include_aliases: { external_id: [record.coach_id] },
-                    data: { type: 'payment', id: record.id }
+                    target_channel: "push",
+                    data: { type: 'payment', id: record.id },
+                    ios_badgeType: 'Increase',
+                    ios_badgeCount: 1,
+                    ios_sound: "cash_register.wav"
                 }
             }
         }
@@ -139,20 +169,26 @@ serve(async (req) => {
             const { user_id, subscription_id } = payload;
             console.log(`Processing TEST notification. Auth ID: ${user_id}, Sub ID: ${subscription_id}`);
 
+            const testNotificationBase = {
+                headings: { en: "Test (Style) 🎨", fr: "Test Stylé 🎨" },
+                subtitle: { en: "Looking good?", fr: "C'est mieux comme ça ?" },
+                contents: { en: "This is a rich notification test.", fr: "Voici à quoi ressemblent les nouvelles notifications." },
+                data: { type: 'test_notification' },
+                ios_badgeType: 'Increase',
+                ios_badgeCount: 1,
+                buttons: [{ id: "cool", text: "Stylé !" }, { id: "meh", text: "Bof" }]
+            };
+
             if (subscription_id) {
                 notification = {
-                    headings: { en: "Test (Direct)", fr: "🔔 Test (Direct)" },
-                    contents: { en: "Direct to Subscription ID successful!", fr: "Test direct réussi ! Votre appareil est bien connecté." },
-                    include_player_ids: [subscription_id], // Legacy name, but works for Sub IDs in many SDK versions, or try include_subscription_ids
-                    data: { type: 'test_notification' }
+                    ...testNotificationBase,
+                    include_player_ids: [subscription_id]
                 }
-                // Note: OneSignal API v1 uses include_player_ids for device records. 
             } else if (user_id) {
                 notification = {
-                    headings: { en: "Test (User ID)", fr: "🔔 Test (Identifiant)" },
-                    contents: { en: "Mapped to User ID successful!", fr: "Test par Identifiant réussi !" },
+                    ...testNotificationBase,
                     include_aliases: { external_id: [user_id] },
-                    data: { type: 'test_notification' }
+                    target_channel: "push"
                 }
             }
         }
@@ -184,7 +220,7 @@ serve(async (req) => {
             headers: { 'Content-Type': 'application/json', ...corsHeaders },
         })
 
-    } catch (err) {
+    } catch (err: any) {
         console.error("Error processing request:", err);
         return new Response(JSON.stringify({ error: err.message }), {
             status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders }

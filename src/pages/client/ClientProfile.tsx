@@ -546,46 +546,7 @@ function ClientProfile() {
                   Activer les notifications Push
                 </button>
 
-                <button
-                  onClick={async () => {
-                    if (!client?.auth_id) {
-                      alert("Erreur: Votre compte n'est pas lié correctement (Auth ID manquant).");
-                      return;
-                    }
 
-                    let subscriptionId = '';
-                    if (window.OneSignal) {
-                      // Modern SDK v16+
-                      subscriptionId = window.OneSignal.User.PushSubscription.id;
-                    }
-
-                    if (!subscriptionId) {
-                      alert("Attention: Impossible de récupérer votre ID d'appareil (Subscription ID). Vérifiez que vous avez bien accepté les notifications.");
-                      // We continue anyway to test the Alias mapping
-                    }
-
-                    try {
-                      alert(`Envoi du test...\nAuth ID: ${client.auth_id}\nSub ID: ${subscriptionId || 'Non détecté'}`);
-                      const { data, error } = await supabase.functions.invoke('send-push', {
-                        body: {
-                          type: 'TEST',
-                          user_id: client.auth_id,
-                          subscription_id: subscriptionId
-                        }
-                      });
-                      if (error) throw error;
-                      alert("Test envoyé au serveur ! Si ça ne s'affiche pas, le problème vient de OneSignal/Apple/Android.");
-                    } catch (err: any) {
-                      console.error("Test error:", err);
-                      const errorMessage = err?.message || JSON.stringify(err);
-                      alert(`Erreur lors du test: ${errorMessage}`);
-                    }
-                  }}
-                  className="w-full py-3 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 font-medium rounded-xl transition-all border border-blue-500/20 flex items-center justify-center gap-2 mt-2"
-                >
-                  <Bell className="w-5 h-5" />
-                  M'envoyer une notif de TEST
-                </button>
               </div>
             </div>
 
