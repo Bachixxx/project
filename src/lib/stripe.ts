@@ -153,10 +153,10 @@ export async function createCheckoutSession(programId: string | undefined, clien
   }
 }
 
-export async function createPortalSession(clientId: string) {
+export async function createPortalSession(clientId?: string) {
   try {
     const { data, error } = await supabase.functions.invoke('create-portal-session', {
-      body: { clientId }
+      body: clientId ? { clientId } : {}
     });
 
     if (error) {

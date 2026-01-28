@@ -30,70 +30,86 @@ const getStripe = (): Stripe => {
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { 
+    return new Response(null, {
       headers: corsHeaders,
-      status: 200 
+      status: 200
     });
   }
 
+
   try {
     const stripe = getStripe();
-    const { clientId } = await req.json();
+    const requestData = await req.json().catch(() => ({})); // Handle empty body
+    const { clientId } = requestData;
 
-    // Get client details
-    const { data: client, error: clientError } = await supabase
-      .from('clients')
-      .select('*')
-      .eq('id', clientId)
-      .single();
+    let stripeCustomerId: string | null = null;
+    let returnUrl = `${req.headers.get('origin')}/dashboard`;
 
-    if (clientError) {
-      return new Response(
-        JSON.stringify({ error: clientError.message }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 400 
-        }
-      );
+    // 1. If clientId is provided, it's for a Client (existing logic)
+    if (clientId) {
+      const { data: client, error: clientError } = await supabase
+        .from('clients')
+        .select('*')
+        .eq('id', clientId)
+        .single();
+
+      if (clientError || !client) {
+        throw new Error(clientError?.message || 'Client not found');
+      }
+      stripeCustomerId = client.stripe_customer_id;
     }
-    if (!client) {
-      return new Response(
-        JSON.stringify({ error: 'Client not found' }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 404 
-        }
-      );
+    // 2. If no clientId, it's for the Authenticated Coach
+    else {
+      // Verify user authorization
+      const authHeader = req.headers.get('Authorization');
+      if (!authHeader) {
+        throw new Error('Missing Authorization header');
+      }
+
+      const { data: { user }, error: userError } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
+
+      if (userError || !user) {
+        throw new Error('Invalid user token');
+      }
+
+      const { data: coach, error: coachError } = await supabase
+        .from('coaches')
+        .select('stripe_customer_id')
+        .eq('id', user.id)
+        .single();
+
+      if (coachError || !coach) {
+        throw new Error(coachError?.message || 'Coach profile not found');
+      }
+
+      stripeCustomerId = coach.stripe_customer_id;
+      returnUrl = `${req.headers.get('origin')}/profile`;
     }
-    if (!client.stripe_customer_id) {
-      return new Response(
-        JSON.stringify({ error: 'No Stripe customer found' }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 400 
-        }
-      );
+
+    if (!stripeCustomerId) {
+      throw new Error('No Stripe customer found for this account');
     }
 
     // Create portal session
     const session = await stripe.billingPortal.sessions.create({
-      customer: client.stripe_customer_id,
-      return_url: `${req.headers.get('origin')}/dashboard`,
+      customer: stripeCustomerId,
+      return_url: returnUrl,
     });
 
     return new Response(
       JSON.stringify({ url: session.url }),
-      { 
+      {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200 
+        status: 200
       }
     );
-  } catch (error) {
+  } catch (error: any) {
+    console.error('Error:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
-      { 
+      {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400 
+        status: 400
       }
     );
   }
