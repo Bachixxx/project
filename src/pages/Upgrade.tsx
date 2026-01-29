@@ -4,27 +4,21 @@ import { Check, Calendar, ChevronLeft, AlertCircle } from 'lucide-react';
 import { t } from '../i18n';
 import { useSubscription } from '../hooks/useSubscription';
 import { useAuth } from '../contexts/AuthContext';
-import { createSubscriptionSession } from '../lib/stripe';
 import { supabase } from '../lib/supabase';
 
-interface SubscriptionPlan {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  interval: string;
-  features: string[];
-  stripe_price_id: string;
-}
+// NEW: Constants for Stripe Price IDs
+const PRICE_IDS = {
+  month: 'price_1Qp9ZyKjaGJ8zmprMs2hVbte',
+  year: 'price_1Qp9asKjaGJ8zmprq2QoGlim'
+};
 
 function UpgradePage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { subscriptionInfo, refreshSubscriptionInfo, upgradeSubscription } = useSubscription();
+  const { refreshSubscriptionInfo, upgradeSubscription } = useSubscription();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [billingInterval, setBillingInterval] = useState<'month' | 'year'>('month');
 
   useEffect(() => {
@@ -32,24 +26,7 @@ function UpgradePage() {
     if (paymentStatus === 'success') {
       handleSuccessfulPayment();
     }
-    fetchPlans();
   }, [searchParams]);
-
-  const fetchPlans = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('subscription_plans')
-        .select('*')
-        .eq('is_test', true); // Assuming active plans are 'is_test' true based on previous code ? checking existing logic.
-      // Or remove .eq('is_test', true) if we want production plans. Previous code used it.
-
-      if (error) throw error;
-      setPlans(data || []);
-    } catch (error) {
-      console.error('Error fetching plans:', error);
-      setError('Failed to load subscription plans');
-    }
-  };
 
   const handleSuccessfulPayment = async () => {
     try {
@@ -81,15 +58,13 @@ function UpgradePage() {
       setError(null);
       setIsLoading(true);
 
-      const selectedPlan = plans.find(p => p.interval === interval);
-      // Fallback or alert if plan not found in DB
-      if (!selectedPlan?.stripe_price_id) {
-        // If we can't find it dynamically, maybe we should ask user for ID.
-        // For now throw error.
-        throw new Error(`Plan ${interval} not found in database.`);
+      const priceId = PRICE_IDS[interval];
+
+      if (!priceId) {
+        throw new Error(`Price ID not found for ${interval}`);
       }
 
-      await upgradeSubscription(selectedPlan.stripe_price_id);
+      await upgradeSubscription(priceId);
 
     } catch (error) {
       console.error('Error creating subscription session:', error);
@@ -240,4 +215,4 @@ function UpgradePage() {
   );
 }
 
-export default UpgradePage
+export default UpgradePage;
