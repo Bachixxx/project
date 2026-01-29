@@ -21,33 +21,33 @@ function UpgradePage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { subscriptionInfo, refreshSubscriptionInfo } = useSubscription();
+  const { subscriptionInfo, refreshSubscriptionInfo, upgradeSubscription } = useSubscription();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [plan, setPlan] = useState<SubscriptionPlan | null>(null);
-  
+  const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
+  const [billingInterval, setBillingInterval] = useState<'month' | 'year'>('month');
+
   useEffect(() => {
     const paymentStatus = searchParams.get('payment');
     if (paymentStatus === 'success') {
       handleSuccessfulPayment();
     }
-    fetchPlan();
+    fetchPlans();
   }, [searchParams]);
 
-  const fetchPlan = async () => {
+  const fetchPlans = async () => {
     try {
       const { data, error } = await supabase
         .from('subscription_plans')
         .select('*')
-        .eq('interval', 'month')
-        .eq('is_test', true)
-        .single();
+        .eq('is_test', true); // Assuming active plans are 'is_test' true based on previous code ? checking existing logic.
+      // Or remove .eq('is_test', true) if we want production plans. Previous code used it.
 
       if (error) throw error;
-      setPlan(data);
+      setPlans(data || []);
     } catch (error) {
-      console.error('Error fetching plan:', error);
-      setError('Failed to load subscription plan');
+      console.error('Error fetching plans:', error);
+      setError('Failed to load subscription plans');
     }
   };
 
@@ -76,28 +76,21 @@ function UpgradePage() {
     }
   };
 
-  const handleUpgrade = async () => {
+  const handleUpgrade = async (interval: 'month' | 'year') => {
     try {
       setError(null);
       setIsLoading(true);
-      
-      if (!user?.id || !plan?.stripe_price_id) {
-        throw new Error('Missing required data for subscription');
+
+      const selectedPlan = plans.find(p => p.interval === interval);
+      // Fallback or alert if plan not found in DB
+      if (!selectedPlan?.stripe_price_id) {
+        // If we can't find it dynamically, maybe we should ask user for ID.
+        // For now throw error.
+        throw new Error(`Plan ${interval} not found in database.`);
       }
 
-      const data = await createSubscriptionSession(
-        user.id,
-        plan.stripe_price_id,
-        `${window.location.origin}/upgrade?payment=success`,
-        `${window.location.origin}/upgrade`
-      );
+      await upgradeSubscription(selectedPlan.stripe_price_id);
 
-      if (!data.url) {
-        throw new Error('No checkout URL received from payment provider');
-      }
-
-      // Redirect to Stripe Checkout
-      window.open(data.url, '_self');
     } catch (error) {
       console.error('Error creating subscription session:', error);
       setError(error instanceof Error ? error.message : 'An unexpected error occurred while setting up your subscription');
@@ -131,14 +124,6 @@ function UpgradePage() {
     );
   }
 
-  if (!plan) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 py-12 px-4">
       <div className="max-w-7xl mx-auto">
@@ -149,12 +134,37 @@ function UpgradePage() {
           <ChevronLeft className="w-5 h-5 mr-1" />
           Retour au tableau de bord
         </Link>
-        
+
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-white mb-4">{t('auth.choosePlan')}</h1>
-          <p className="text-xl text-white/80 max-w-2xl mx-auto">
+          <p className="text-xl text-white/80 max-w-2xl mx-auto mb-8">
             Passez à la version Pro pour débloquer toutes les fonctionnalités et développer votre activité de coaching
           </p>
+
+          {/* Billing Toggle */}
+          <div className="inline-flex items-center p-1 bg-white/10 rounded-xl backdrop-blur-sm border border-white/10">
+            <button
+              onClick={() => setBillingInterval('month')}
+              className={`px-6 py-2 rounded-lg text-sm font-medium transition-all ${billingInterval === 'month'
+                  ? 'bg-primary-500 text-white shadow-lg'
+                  : 'text-gray-400 hover:text-white'
+                }`}
+            >
+              Mensuel
+            </button>
+            <button
+              onClick={() => setBillingInterval('year')}
+              className={`px-6 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${billingInterval === 'year'
+                  ? 'bg-primary-500 text-white shadow-lg'
+                  : 'text-gray-400 hover:text-white'
+                }`}
+            >
+              Annuel
+              <span className="text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full border border-green-500/20">
+                -17%
+              </span>
+            </button>
+          </div>
         </div>
 
         {error && (
@@ -167,26 +177,39 @@ function UpgradePage() {
         )}
 
         <div className="max-w-xl mx-auto">
-          <div className="bg-white rounded-2xl shadow-xl transition-all transform hover:scale-105">
+          <div className="bg-white rounded-2xl shadow-xl transition-all transform hover:scale-[1.02] relative overflow-hidden">
+
+            {/* 14 Day Trial Badge */}
+            <div className="absolute top-0 right-0 bg-green-500 text-white text-xs font-bold px-4 py-1 rounded-bl-xl shadow-lg">
+              14 JOURS GRATUITS
+            </div>
+
             <div className="p-8">
               <div className="flex items-center justify-between mb-8">
                 <div>
                   <Calendar className="w-8 h-8 text-blue-500" />
-                  <h3 className="text-gray-900 text-2xl font-bold mt-4">{plan.name}</h3>
-                  <p className="text-gray-600 mt-2">{plan.description}</p>
+                  <h3 className="text-gray-900 text-2xl font-bold mt-4">Pro {billingInterval === 'month' ? 'Mensuel' : 'Annuel'}</h3>
+                  <p className="text-gray-600 mt-2">Accès complet à Coachency</p>
                 </div>
                 <div className="text-right">
                   <div className="text-4xl font-bold text-gray-900">
-                    {plan.price} <span className="text-lg">CHF</span>
+                    {billingInterval === 'month' ? '49.90' : '499'} <span className="text-lg">CHF</span>
                   </div>
                   <div className="text-gray-500">
-                    /{t('auth.perMonth')}
+                    /{billingInterval === 'month' ? 'mois' : 'an'}
                   </div>
                 </div>
               </div>
 
               <div className="space-y-4">
-                {plan.features.map((feature, index) => (
+                {/* Features Hardcoded for now mostly, or from plan if available */}
+                {[
+                  "Nombre illimité de clients",
+                  "Création de programmes avancée",
+                  "Suivi des performances",
+                  "Bibliothèque d'exercices complète",
+                  "Support prioritaire"
+                ].map((feature, index) => (
                   <div key={index} className="flex items-start">
                     <Check className="w-5 h-5 text-green-500 mt-0.5 mr-3 flex-shrink-0" />
                     <span className="text-gray-600">{feature}</span>
@@ -195,19 +218,19 @@ function UpgradePage() {
               </div>
 
               <button
-                onClick={handleUpgrade}
+                onClick={() => handleUpgrade(billingInterval)}
                 disabled={isLoading}
-                className={`w-full mt-8 py-4 rounded-xl text-center font-semibold ${
-                  isLoading 
-                    ? 'bg-blue-400 cursor-not-allowed' 
+                className={`w-full mt-8 py-4 rounded-xl text-center font-semibold ${isLoading
+                    ? 'bg-blue-400 cursor-not-allowed'
                     : 'bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 shadow-lg shadow-blue-500/25'
-                } text-white transition-colors block`}
+                  } text-white transition-colors block`}
               >
-                {isLoading ? 'Chargement...' : `Passer à ${plan.name}`}
+                {isLoading ? 'Chargement...' : 'Commencer l\'essai gratuit'}
               </button>
 
               <p className="mt-4 text-sm text-gray-500 text-center">
-                Deviens le Coach de demain.
+                14 jours offerts, puis {billingInterval === 'month' ? '49.90' : '499'} CHF/{billingInterval === 'month' ? 'mois' : 'an'}.<br />
+                Annulable à tout moment.
               </p>
             </div>
           </div>

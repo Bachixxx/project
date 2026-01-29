@@ -94,30 +94,36 @@ export function useSubscription() {
     }
   }
 
-  const upgradeSubscription = async () => {
+  const upgradeSubscription = async (priceId?: string) => {
     try {
       setError(null);
-      // Get subscription plan details
-      const { data: plan, error: planError } = await supabase
-        .from('subscription_plans')
-        .select('*')
-        .eq('interval', 'month')
-        .eq('is_test', true)
-        .single();
 
-      if (planError) {
-        console.error('Error fetching plan:', planError);
-        throw new Error('Plan not found');
+      let finalPriceId = priceId;
+
+      // If no price ID provided, fallback to default monthly plan
+      if (!finalPriceId) {
+        const { data: plan, error: planError } = await supabase
+          .from('subscription_plans')
+          .select('*')
+          .eq('interval', 'month')
+          .eq('is_test', true)
+          .single();
+
+        if (planError) {
+          console.error('Error fetching plan:', planError);
+          throw new Error('Plan not found');
+        }
+        finalPriceId = plan?.stripe_price_id;
       }
 
       // Create Stripe checkout session
-      if (!user?.id || !plan?.stripe_price_id) {
+      if (!user?.id || !finalPriceId) {
         throw new Error('Missing required data for subscription');
       }
 
       const data = await createSubscriptionSession(
         user.id,
-        plan.stripe_price_id,
+        finalPriceId,
         `${window.location.origin}/upgrade?payment=success`,
         `${window.location.origin}/upgrade`
       );
