@@ -130,12 +130,12 @@ function Pricing() {
                 <div className="max-w-md mx-auto mb-20">
 
                     {/* Pro Tier (Highlighted) */}
-                    <div className="relative p-8 rounded-3xl bg-gradient-to-b from-[#1e293b] to-[#0f172a] border border-blue-500/50 flex flex-col shadow-2xl shadow-blue-500/10 transform animate-fade-in z-10 group overflow-hidden">
+                    <div className="relative p-8 rounded-3xl bg-gradient-to-b from-[#1e293b] to-[#0f172a] border border-blue-500/50 flex flex-col shadow-2xl shadow-blue-500/10 transform animate-fade-in z-10 group">
 
                         {/* Glowing border effect */}
                         <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-blue-500 to-transparent opacity-50"></div>
 
-                        <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-blue-500 to-cyan-500 px-4 py-1.5 rounded-full text-xs font-bold text-white tracking-wide uppercase shadow-lg flex items-center gap-1.5">
+                        <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-blue-500 to-cyan-500 px-4 py-1.5 rounded-full text-xs font-bold text-white tracking-wide uppercase shadow-lg flex items-center gap-1.5 z-20">
                             <Sparkles className="w-3 h-3" />
                             14 Jours Offerts
                         </div>
