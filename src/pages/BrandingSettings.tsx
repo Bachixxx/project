@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { Upload, Save, Eye, Palette, Layout, Smartphone } from 'lucide-react';
+import { useSubscription } from '../hooks/useSubscription';
 
 interface BrandingSettings {
     primaryColor?: string;
@@ -12,6 +13,9 @@ interface BrandingSettings {
 
 function BrandingSettings() {
     const { user } = useAuth();
+    // NEW: Use subscription hook
+    const { subscriptionInfo, loading: subLoading, subscribeToBranding } = useSubscription();
+
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [settings, setSettings] = useState<BrandingSettings>({
@@ -143,6 +147,68 @@ function BrandingSettings() {
         }
     };
 
+    // NEW: Handle Branding Subscription
+    const handleSubscribe = async () => {
+        try {
+            await subscribeToBranding();
+        } catch (err) {
+            alert("Erreur lors de la redirection vers le paiement.");
+        }
+    }
+
+    if (subLoading) {
+        return <div className="p-8 text-center text-gray-400">Chargement...</div>;
+    }
+
+    // NEW: Lock Screen Check
+    if (!subscriptionInfo?.hasBranding) {
+        return (
+            <div className="container mx-auto px-4 py-8 relative min-h-[80vh] flex flex-col items-center justify-center">
+                {/* Blurred Background Content */}
+                <div className="absolute inset-0 overflow-hidden opacity-20 pointer-events-none filter blur-sm">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div className="glass-card p-6 h-64"></div>
+                        <div className="border-[8px] rounded-[2.5rem] h-[600px] w-[320px] bg-gray-900 mx-auto"></div>
+                    </div>
+                </div>
+
+                <div className="glass-card max-w-lg w-full p-8 relative z-10 text-center border-primary-500/30 shadow-2xl shadow-primary-500/10">
+                    <div className="w-16 h-16 bg-gradient-to-br from-primary-500 to-accent-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-primary-500/30">
+                        <Palette className="w-8 h-8 text-white" />
+                    </div>
+
+                    <h2 className="text-2xl font-bold text-white mb-2">Image de Marque Premium</h2>
+                    <p className="text-gray-400 mb-8">
+                        Personnalisez l'application client à vos couleurs, ajoutez votre logo et offrez une expérience 100% professionnelle à vos athlètes.
+                    </p>
+
+                    <ul className="text-left space-y-3 mb-8 bg-white/5 p-6 rounded-xl border border-white/10">
+                        <li className="flex items-center gap-3 text-sm text-gray-200">
+                            <div className="w-5 h-5 rounded-full bg-green-500/20 text-green-500 flex items-center justify-center"><Layout className="w-3 h-3" /></div>
+                            Logo personnalisé sur l'app client
+                        </li>
+                        <li className="flex items-center gap-3 text-sm text-gray-200">
+                            <div className="w-5 h-5 rounded-full bg-green-500/20 text-green-500 flex items-center justify-center"><Palette className="w-3 h-3" /></div>
+                            Couleurs de votre marque
+                        </li>
+                        <li className="flex items-center gap-3 text-sm text-gray-200">
+                            <div className="w-5 h-5 rounded-full bg-green-500/20 text-green-500 flex items-center justify-center"><Smartphone className="w-3 h-3" /></div>
+                            Message d'accueil personnalisé
+                        </li>
+                    </ul>
+
+                    <button
+                        onClick={handleSubscribe}
+                        className="w-full py-3 bg-gradient-to-r from-primary-600 to-accent-600 hover:from-primary-500 hover:to-accent-500 text-white font-bold rounded-xl shadow-lg transition-all transform hover:scale-[1.02] flex items-center justify-center gap-2"
+                    >
+                        Activer l'option (5 CHF / mois)
+                    </button>
+                    <p className="text-xs text-gray-500 mt-4">14 jours d'essai gratuit • Annulable à tout moment</p>
+                </div>
+            </div>
+        );
+    }
+
     const colorPresets = [
         '#0ea5e9', // Sky (Default)
         '#ef4444', // Red
@@ -158,7 +224,6 @@ function BrandingSettings() {
     ];
 
     // Calculate dynamic style for preview
-    // Map all shades to the selected color for consistency in preview if specific shades aren't calculated
     const rgb = getRgbString(settings.primaryColor);
     const previewStyle = {
         '--color-primary-50': rgb,
@@ -172,7 +237,7 @@ function BrandingSettings() {
         '--color-primary-800': rgb,
         '--color-primary-900': rgb,
         '--color-primary-950': rgb,
-        '--color-accent-400': rgb, // Also override accent for preview if needed
+        '--color-accent-400': rgb,
         '--color-accent-500': rgb,
     } as React.CSSProperties;
 
@@ -303,21 +368,7 @@ function BrandingSettings() {
                             <div
                                 id="preview-container"
                                 className="h-full flex flex-col"
-                                style={{
-                                    '--color-primary-50': rgb,
-                                    '--color-primary-100': rgb,
-                                    '--color-primary-200': rgb,
-                                    '--color-primary-300': rgb,
-                                    '--color-primary-400': rgb,
-                                    '--color-primary-500': rgb,
-                                    '--color-primary-600': rgb,
-                                    '--color-primary-700': rgb,
-                                    '--color-primary-800': rgb,
-                                    '--color-primary-900': rgb,
-                                    '--color-primary-950': rgb,
-                                    '--color-accent-400': rgb,
-                                    '--color-accent-500': rgb,
-                                } as React.CSSProperties}
+                                style={previewStyle}
                             >
                                 {/* Header */}
                                 <div className="px-6 mb-6 flex justify-between items-center">

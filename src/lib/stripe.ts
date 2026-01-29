@@ -20,14 +20,16 @@ export async function createSubscriptionSession(
   coachId: string,
   priceId: string,
   successUrl: string,
-  cancelUrl: string
+  cancelUrl: string,
+  metadata?: Record<string, any>
 ) {
   try {
     console.log('Creating subscription session with:', {
       coachId,
       priceId,
       successUrl,
-      cancelUrl
+      cancelUrl,
+      metadata
     });
 
     const { data, error } = await supabase.functions.invoke(
@@ -37,7 +39,8 @@ export async function createSubscriptionSession(
           coachId: coachId,
           priceId: priceId,
           successUrl: successUrl,
-          cancelUrl: cancelUrl
+          cancelUrl: cancelUrl,
+          metadata: metadata
         }
       }
     );

@@ -36,7 +36,6 @@ serve(async (req) => {
     });
   }
 
-
   try {
     const stripe = getStripe();
     const requestData = await req.json().catch(() => ({})); // Handle empty body
@@ -74,7 +73,7 @@ serve(async (req) => {
 
       const { data: coach, error: coachError } = await supabase
         .from('coaches')
-        .select('stripe_customer_id')
+        .select('*')
         .eq('id', user.id)
         .single();
 
@@ -83,17 +82,77 @@ serve(async (req) => {
       }
 
       stripeCustomerId = coach.stripe_customer_id;
+
+      // Smart Recovery Logic:
+      // If no ID exists, OR if the existing ID has no active subscriptions, try to find a better one.
+      let needsRecovery = !stripeCustomerId;
+
+      if (stripeCustomerId && !clientId) {
+        // Check if the current customer actually has subscriptions
+        try {
+          const customer = await stripe.customers.retrieve(stripeCustomerId, { expand: ['subscriptions'] });
+          if (!customer.deleted && customer.subscriptions && customer.subscriptions.data.length === 0) {
+            console.log(`Current customer ${stripeCustomerId} has NO subscriptions. Initiating recovery search...`);
+            needsRecovery = true;
+          }
+        } catch (err) {
+          console.error(`Error checking customer ${stripeCustomerId}, forcing recovery:`, err);
+          needsRecovery = true;
+        }
+      }
+
+      if (needsRecovery && coach.email) {
+        console.log(`Searching for better Stripe Customer match for email ${coach.email}...`);
+
+        try {
+          const customers = await stripe.customers.list({
+            email: coach.email,
+            limit: 5,
+            expand: ['data.subscriptions']
+          });
+
+          // Find customer with ACTIVE or TRIALING subscription
+          const bestMatch = customers.data.find((c: any) =>
+            c.subscriptions &&
+            c.subscriptions.data.length > 0 &&
+            ['active', 'trialing'].includes(c.subscriptions.data[0].status)
+          );
+
+          if (bestMatch) {
+            console.log(`Found better match: Customer ${bestMatch.id} has active subscription.`);
+            stripeCustomerId = bestMatch.id;
+
+            // Update DB with the correct ID
+            await supabase
+              .from('coaches')
+              .update({ stripe_customer_id: stripeCustomerId })
+              .eq('id', coach.id);
+          } else if (!stripeCustomerId && customers.data.length > 0) {
+            // Fallback: If we had NO ID at all, just take the most recent one even if no sub
+            stripeCustomerId = customers.data[0].id;
+            // Update DB
+            await supabase
+              .from('coaches')
+              .update({ stripe_customer_id: stripeCustomerId })
+              .eq('id', coach.id);
+          }
+        } catch (searchError) {
+          console.error("Error during recovery search:", searchError);
+        }
+      }
+
       returnUrl = `${req.headers.get('origin')}/profile`;
     }
 
     if (!stripeCustomerId) {
-      throw new Error('No Stripe customer found for this account');
+      throw new Error('Aucun compte client Stripe trouvé. Veuillez contacter le support.');
     }
 
     // Create portal session
     const session = await stripe.billingPortal.sessions.create({
       customer: stripeCustomerId,
       return_url: returnUrl,
+      configuration: 'bpc_1Suwh9KjaGJ8zmprXtNMraQl', // Specific config with Cancel/Update
     });
 
     return new Response(

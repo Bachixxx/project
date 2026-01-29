@@ -66,36 +66,54 @@ Deno.serve(async (req) => {
         if (session.mode === 'subscription') {
           const metadata = session.metadata || {};
           const coachId = metadata.coachId;
+          const type = metadata.type; // 'branding_addon' or undefined (default)
 
           if (!coachId) {
             throw new Error('No coachId in metadata');
           }
 
-          const { error: updateError } = await supabase
-            .from('coaches')
-            .update({
-              subscription_type: 'paid',
-              client_limit: null, // unlimited clients
-              stripe_subscription_id: session.subscription,
-              subscription_end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-            })
-            .eq('id', coachId);
+          if (type === 'branding_addon') {
+            // Handle Branding Add-on
+            const { error: updateError } = await supabase
+              .from('coaches')
+              .update({
+                has_branding: true,
+                branding_subscription_id: session.subscription,
+              })
+              .eq('id', coachId);
 
-          if (updateError) {
-            throw updateError;
+            if (updateError) throw updateError;
+            console.log('Successfully activated Branding for coach:', coachId);
+
+          } else {
+            // Handle Main Subscription (Pro)
+            const { error: updateError } = await supabase
+              .from('coaches')
+              .update({
+                subscription_type: 'paid',
+                client_limit: null, // unlimited clients
+                stripe_subscription_id: session.subscription,
+                subscription_end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+              })
+              .eq('id', coachId);
+
+            if (updateError) {
+              throw updateError;
+            }
+
+            await supabase
+              .from('subscription_history')
+              .insert({
+                coach_id: coachId,
+                previous_type: 'free',
+                new_type: 'paid',
+                payment_id: session.payment_intent,
+                notes: 'Subscription upgraded via Stripe checkout',
+              });
+
+            console.log('Successfully processed Main Subscription for coach:', coachId);
           }
 
-          await supabase
-            .from('subscription_history')
-            .insert({
-              coach_id: coachId,
-              previous_type: 'free',
-              new_type: 'paid',
-              payment_id: session.payment_intent,
-              notes: 'Subscription upgraded via Stripe checkout',
-            });
-
-          console.log('Successfully processed subscription for coach:', coachId);
         } else if (session.mode === 'payment') {
           const metadata = session.metadata || {};
           const { programId, clientId, coachId, appointmentId } = metadata;
@@ -152,35 +170,6 @@ Deno.serve(async (req) => {
             }
 
             // 2. Create or Update Payment Record
-            const { error: paymentError } = await supabase
-              .from('payments')
-              .upsert({
-                appointment_id: appointmentId,
-                client_id: clientId,
-                amount: session.amount_total ? session.amount_total / 100 : 0,
-                status: 'paid',
-                payment_method: 'online',
-                payment_date: new Date().toISOString(),
-                notes: 'Paid via Stripe Checkout'
-              }, { onConflict: 'appointment_id,client_id' }); // Assuming there's a unique constraint or index? 
-            // If no unique constraint on payments(appointment_id, client_id), upsert might duplicate if ID not provided.
-            // Better to select first or just insert? 
-            // Actually, we usually want one payment per appointment-client pair. 
-            // Let's use INSERT and ignore if exists? Or just INSERT.
-            // Wait, previous code used UPDATE.
-            // Let's check if we can rely on ID.
-
-            // To be safe and avoid duplicates if the trigger somehow fired (unlikely for group), 
-            // we will first try to UPDATE, if no rows, then INSERT.
-
-            // Actually, best approach:
-            // The trigger for 1-on-1 might have created a row.
-            // The group session has no trigger yet.
-            // So we use UPSERT if we have a unique key. 
-            // The schema has `payments_appointment_id_idx` and `payments_client_id_idx` but no composite unique constraint visible in the file I read.
-            // So UPSERT might not work without a specific constraint.
-
-            // Manual Upsert logic:
             const { data: existingPayment } = await supabase
               .from('payments')
               .select('id')
@@ -217,35 +206,55 @@ Deno.serve(async (req) => {
         const subscription = event.data.object;
         const metadata = subscription.metadata || {};
         const coachId = metadata.coachId;
+        const subscriptionId = subscription.id;
 
         if (!coachId) {
           throw new Error('No coachId in metadata');
         }
 
-        const { error: updateError } = await supabase
+        // Get current coach state to check which subscription is being deleted
+        const { data: coachData, error: fetchError } = await supabase
           .from('coaches')
-          .update({
-            subscription_type: 'free',
-            client_limit: 5,
-            stripe_subscription_id: null,
-            subscription_end_date: null,
-          })
-          .eq('id', coachId);
+          .select('stripe_subscription_id, branding_subscription_id')
+          .eq('id', coachId)
+          .single();
 
-        if (updateError) {
-          throw updateError;
+        if (fetchError) throw fetchError;
+
+        if (coachData.branding_subscription_id === subscriptionId) {
+          // Deleting Branding Subscription
+          await supabase
+            .from('coaches')
+            .update({ has_branding: false, branding_subscription_id: null })
+            .eq('id', coachId);
+          console.log('Successfully deactivated Branding for coach:', coachId);
+
+        } else if (coachData.stripe_subscription_id === subscriptionId) {
+          // Deleting Main Subscription
+          const { error: updateError } = await supabase
+            .from('coaches')
+            .update({
+              subscription_type: 'free',
+              client_limit: 5,
+              stripe_subscription_id: null,
+              subscription_end_date: null,
+            })
+            .eq('id', coachId);
+
+          if (updateError) throw updateError;
+
+          await supabase
+            .from('subscription_history')
+            .insert({
+              coach_id: coachId,
+              previous_type: 'paid',
+              new_type: 'free',
+              notes: 'Subscription cancelled',
+            });
+          console.log('Successfully processed Main Subscription cancellation for coach:', coachId);
+        } else {
+          console.log('Deleted subscription did not match known active subscriptions for coach:', coachId);
         }
-
-        await supabase
-          .from('subscription_history')
-          .insert({
-            coach_id: coachId,
-            previous_type: 'paid',
-            new_type: 'free',
-            notes: 'Subscription cancelled',
-          });
-
-        console.log('Successfully processed subscription cancellation for coach:', coachId);
         break;
       }
 

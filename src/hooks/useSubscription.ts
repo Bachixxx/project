@@ -9,6 +9,8 @@ export interface SubscriptionInfo {
   currentClients: number;
   canAddClient: boolean;
   subscriptionEnd?: string;
+  hasBranding: boolean;
+  brandingSubscriptionId?: string;
 }
 
 export function useSubscription() {
@@ -49,6 +51,8 @@ export function useSubscription() {
           coachData.subscription_type === 'paid' ||
           (currentClients || 0) < coachData.client_limit,
         subscriptionEnd: coachData.subscription_end_date,
+        hasBranding: coachData.has_branding || false,
+        brandingSubscriptionId: coachData.branding_subscription_id,
       });
     } catch (error) {
       console.error('Error fetching subscription info:', error);
@@ -56,6 +60,39 @@ export function useSubscription() {
       setLoading(false);
     }
   };
+
+  const subscribeToBranding = async () => {
+    try {
+      setError(null);
+
+      // Branding Price ID provided by user
+      const brandingPriceId = 'price_1SubaaKjaGJ8zmprmJAOHsmh';
+
+      if (!user?.id) {
+        throw new Error('User not authenticated');
+      }
+
+      const data = await createSubscriptionSession(
+        user.id,
+        brandingPriceId,
+        `${window.location.origin}/branding?payment=success`,
+        `${window.location.origin}/branding`,
+        { type: 'branding_addon' } // Metadata to distinguish from main sub
+      );
+
+      if (!data.url) {
+        throw new Error('No checkout URL received');
+      }
+
+      // Redirect to Stripe Checkout
+      window.open(data.url, '_self');
+    }
+    catch (error) {
+      console.error('Error creating branding subscription session:', error);
+      setError(error instanceof Error ? error.message : 'An unexpected error occurred');
+      throw error;
+    }
+  }
 
   const upgradeSubscription = async () => {
     try {
@@ -103,6 +140,7 @@ export function useSubscription() {
     loading,
     error,
     upgradeSubscription,
+    subscribeToBranding,
     refreshSubscriptionInfo: fetchSubscriptionInfo,
   };
 }

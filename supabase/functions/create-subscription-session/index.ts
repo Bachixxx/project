@@ -31,24 +31,24 @@ const getStripe = (): Stripe => {
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: { ...corsHeaders     }, status: 200 })
-  } 
+    return new Response('ok', { headers: { ...corsHeaders }, status: 200 })
+  }
 
   try {
     // Parse request body
     const body = await req.json();
-    const { coachId, priceId, successUrl, cancelUrl } = body;
+    const { coachId, priceId, successUrl, cancelUrl, metadata = {} } = body;
 
     // Validate required parameters
     if (!coachId || !priceId || !successUrl || !cancelUrl) {
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           error: 'Missing required parameters',
           details: 'coachId, priceId, successUrl, and cancelUrl are required'
         }),
-        { 
+        {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 400 
+          status: 400
         }
       );
     }
@@ -63,20 +63,20 @@ serve(async (req) => {
     if (coachError) {
       console.error('Error fetching coach:', coachError);
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           error: 'Failed to fetch coach details',
           details: coachError.message
         }),
-        { 
+        {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 400 
+          status: 400
         }
       );
     }
 
     // Create or retrieve Stripe customer
     const stripe = getStripe();
-    
+
     let stripeCustomerId = coach.stripe_customer_id;
     if (!stripeCustomerId) {
       const customer = await stripe.customers.create({
@@ -96,7 +96,7 @@ serve(async (req) => {
     }
 
     // Create checkout session
-    const session = await stripe.checkout.sessions.create({
+    const sessionData: Stripe.Checkout.SessionCreateParams = {
       customer: stripeCustomerId,
       payment_method_types: ['card'],
       line_items: [
@@ -110,6 +110,7 @@ serve(async (req) => {
       cancel_url: cancelUrl,
       metadata: {
         coachId: coachId,
+        ...metadata // Merge custom metadata (e.g., type: 'branding_addon')
       },
       allow_promotion_codes: true,
       billing_address_collection: 'required',
@@ -119,27 +120,30 @@ serve(async (req) => {
       subscription_data: {
         metadata: {
           coachId: coachId,
+          ...metadata // Also put in subscription metadata for webhook retrieval
         },
-        trial_period_days: 14,
+        trial_period_days: metadata.type === 'branding_addon' ? undefined : 14, // No trial for add-on unless specified
       },
-    });
+    };
+
+    const session = await stripe.checkout.sessions.create(sessionData);
 
     return new Response(
       JSON.stringify({ url: session.url }),
-      { 
+      {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200 
+        status: 200
       }
     );
   } catch (error) {
     console.error('Error:', error);
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         error: error.message
       }),
-      { 
+      {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500 
+        status: 500
       }
     );
   }
