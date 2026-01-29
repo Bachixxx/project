@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Dumbbell, Menu, X, Check, X as XIcon, HelpCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { Dumbbell, Menu, X, Check, X as XIcon, HelpCircle, ChevronDown, ChevronUp, Palette, Sparkles } from 'lucide-react';
 
 function Pricing() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
+    const [billingInterval, setBillingInterval] = useState<'month' | 'year'>('month');
 
     const toggleFaq = (index: number) => {
         setOpenFaqIndex(openFaqIndex === index ? null : index);
@@ -30,7 +31,10 @@ function Pricing() {
     ];
 
     return (
-        <div className="min-h-screen bg-[#0f172a] text-white selection:bg-blue-500/30 font-sans overflow-x-hidden">
+        <div className="min-h-screen bg-[#0f172a] text-white selection:bg-blue-500/30 font-sans overflow-x-hidden relative">
+            {/* Background Gradients (consistent with Login/Upgrade) */}
+            <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-[128px] pointer-events-none" />
+            <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-cyan-500/10 rounded-full blur-[128px] pointer-events-none" />
 
             {/* Navbar */}
             <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0f172a]/80 backdrop-blur-xl border-b border-white/5 py-4">
@@ -86,23 +90,48 @@ function Pricing() {
             </nav>
 
             {/* Hero Section */}
-            <section className="pt-40 pb-20 container mx-auto px-6 text-center">
+            <section className="pt-40 pb-20 container mx-auto px-6 text-center relative z-10">
                 <h1 className="text-4xl md:text-6xl font-bold mb-6 animate-slide-in">
                     Des tarifs simples et <br />
                     <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">Transparents</span>
                 </h1>
-                <p className="text-xl text-gray-400 max-w-2xl mx-auto mb-12 animate-slide-in delay-100">
+                <p className="text-xl text-gray-400 max-w-2xl mx-auto mb-10 animate-slide-in delay-100">
                     Commencez gratuitement, évoluez à votre rythme. Aucun engagement, aucune carte requise pour commencer.
                 </p>
+
+                {/* Billing Toggle */}
+                <div className="inline-flex p-1 bg-white/5 rounded-2xl backdrop-blur-md border border-white/10 animate-slide-in delay-150">
+                    <button
+                        onClick={() => setBillingInterval('month')}
+                        className={`px-6 md:px-8 py-3 rounded-xl text-sm font-bold transition-all ${billingInterval === 'month'
+                                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg'
+                                : 'text-gray-400 hover:text-white hover:bg-white/5'
+                            }`}
+                    >
+                        Mensuel
+                    </button>
+                    <button
+                        onClick={() => setBillingInterval('year')}
+                        className={`px-6 md:px-8 py-3 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${billingInterval === 'year'
+                                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg'
+                                : 'text-gray-400 hover:text-white hover:bg-white/5'
+                            }`}
+                    >
+                        Annuel
+                        <span className="text-[10px] bg-green-500 text-white px-2 py-0.5 rounded-full font-bold shadow-sm">
+                            -17%
+                        </span>
+                    </button>
+                </div>
             </section>
 
             {/* Pricing Tables */}
-            <section className="pb-32 container mx-auto px-6">
-                <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <section className="pb-20 container mx-auto px-6 relative z-10">
+                <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto mb-20">
 
                     {/* Free Tier */}
-                    <div className="glass-card p-8 rounded-3xl border border-white/10 flex flex-col animate-fade-in delay-200 hover:border-white/20 transition-all group">
-                        <div className="mb-6">
+                    <div className="glass-card p-8 rounded-3xl border border-white/10 flex flex-col animate-fade-in delay-200 hover:border-white/20 transition-all group relative overflow-hidden">
+                        <div className="mb-6 relative z-10">
                             <h3 className="text-xl font-bold text-white mb-2">Découverte</h3>
                             <div className="flex items-baseline gap-1">
                                 <span className="text-4xl font-bold text-white">0</span>
@@ -112,7 +141,7 @@ function Pricing() {
                             <p className="text-gray-400 mt-4 text-sm">Pour les coachs qui débutent leur activité.</p>
                         </div>
 
-                        <div className="flex-1 space-y-4 mb-8">
+                        <div className="flex-1 space-y-4 mb-8 relative z-10">
                             <FeatureItem text="Jusqu'à 5 clients" included={true} />
                             <FeatureItem text="Jusqu'à 5 programmes" included={true} />
                             <FeatureItem text="Bibliothèque d'exercices illimitée" included={true} />
@@ -123,23 +152,30 @@ function Pricing() {
                             <FeatureItem text="Multi-coachs" included={true} />
                         </div>
 
-                        <Link to="/waitlist" className="w-full py-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold text-center transition-all">
+                        <Link to="/waitlist" className="w-full py-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold text-center transition-all relative z-10">
                             Rejoindre la liste d'attente
                         </Link>
                     </div>
 
                     {/* Pro Tier (Highlighted) */}
-                    <div className="relative p-8 rounded-3xl bg-gradient-to-b from-[#1e293b] to-[#0f172a] border border-blue-500/50 flex flex-col shadow-2xl shadow-blue-500/10 transform md:-translate-y-4 animate-fade-in z-10">
-                        <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-blue-500 to-cyan-500 px-4 py-1 rounded-full text-xs font-bold text-white tracking-wide uppercase shadow-lg">
-                            Le Plus Populaire
+                    <div className="relative p-8 rounded-3xl bg-gradient-to-b from-[#1e293b] to-[#0f172a] border border-blue-500/50 flex flex-col shadow-2xl shadow-blue-500/10 transform md:-translate-y-4 animate-fade-in z-10 group overflow-hidden">
+
+                        {/* Glowing border effect */}
+                        <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-blue-500 to-transparent opacity-50"></div>
+
+                        <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-blue-500 to-cyan-500 px-4 py-1.5 rounded-full text-xs font-bold text-white tracking-wide uppercase shadow-lg flex items-center gap-1.5">
+                            <Sparkles className="w-3 h-3" />
+                            14 Jours Offerts
                         </div>
 
-                        <div className="mb-6">
+                        <div className="mb-6 mt-2">
                             <h3 className="text-xl font-bold text-blue-400 mb-2">Professionnel</h3>
                             <div className="flex items-baseline gap-1">
-                                <span className="text-5xl font-bold text-white">49.90</span>
+                                <span className="text-5xl font-bold text-white">
+                                    {billingInterval === 'month' ? '49.90' : '499'}
+                                </span>
                                 <span className="text-xl font-bold text-white">CHF</span>
-                                <span className="text-gray-400">/mois</span>
+                                <span className="text-gray-400">/{billingInterval === 'month' ? 'mois' : 'an'}</span>
                             </div>
                             <p className="text-gray-400 mt-4 text-sm">Tout ce qu'il faut pour scaler votre business.</p>
                         </div>
@@ -152,19 +188,56 @@ function Pricing() {
                             <FeatureItem text="Traitement des paiements" included={true} />
                             <FeatureItem text="Suivi des progrès clients" included={true} />
                             <FeatureItem text="Analyses avancées" included={true} />
-
                             <FeatureItem text="Multi-coachs" included={true} />
                         </div>
 
                         <Link to="/waitlist" className="w-full py-4 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-bold text-center shadow-lg shadow-blue-500/25 transition-all transform hover:scale-105">
-                            Rejoindre la liste d'attente
+                            Commencer l'essai gratuit
                         </Link>
+                    </div>
+                </div>
+
+                {/* Branding Add-on Section */}
+                <div className="max-w-4xl mx-auto animate-fade-in delay-300">
+                    <div className="glass-card rounded-3xl p-1 relative overflow-hidden">
+                        {/* Gradient Border content */}
+                        <div className="bg-[#0f172a]/90 backdrop-blur-xl rounded-[22px] p-8 md:p-10 flex flex-col md:flex-row items-center gap-8 md:gap-12 relative overflow-hidden">
+
+                            {/* Decorative Blobs inside card */}
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/10 rounded-full blur-[80px] pointer-events-none" />
+
+                            <div className="flex-1 relative z-10 text-center md:text-left">
+                                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-xs font-bold uppercase tracking-wider mb-4">
+                                    <Palette className="w-3 h-3" />
+                                    Option Add-on
+                                </div>
+                                <h3 className="text-2xl font-bold text-white mb-2">Option Branding</h3>
+                                <p className="text-gray-400 leading-relaxed">
+                                    Personnalisez l'expérience de vos clients avec votre propre identité visuelle. Logo, couleurs, et thèmes personnalisés pour une application à votre image.
+                                </p>
+                            </div>
+
+                            <div className="flex flex-col items-center md:items-end justify-center relative z-10 min-w-[200px]">
+                                <div className="text-center md:text-right mb-4">
+                                    <div className="flex items-baseline justify-center md:justify-end gap-1">
+                                        <span className="text-3xl font-bold text-white">+5</span>
+                                        <span className="text-lg font-bold text-white">CHF</span>
+                                        <span className="text-gray-400">/mois</span>
+                                    </div>
+                                    <p className="text-xs text-gray-500 mt-1">S'ajoute à votre forfait Pro</p>
+                                </div>
+                                <Link to="/waitlist" className="px-6 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold shadow-lg shadow-purple-500/25 transition-all transform hover:scale-105 flex items-center gap-2">
+                                    <Palette className="w-4 h-4" />
+                                    Ajouter le Branding
+                                </Link>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
 
             {/* FAQ Section */}
-            <section className="py-20 bg-white/5 border-t border-white/5">
+            <section className="py-20 bg-white/5 border-t border-white/5 relative z-10">
                 <div className="container mx-auto px-6 max-w-3xl">
                     <h2 className="text-3xl font-bold text-center mb-12">Questions Fréquentes</h2>
                     <div className="space-y-4">
@@ -195,8 +268,8 @@ function Pricing() {
                 </div>
             </section>
 
-            {/* Footer (Simplified) */}
-            <footer className="bg-[#0b1120] py-8 border-t border-white/5 text-center text-gray-500 text-sm">
+            {/* Footer */}
+            <footer className="bg-[#0b1120] py-8 border-t border-white/5 text-center text-gray-500 text-sm relative z-10">
                 <p>© {new Date().getFullYear()} Coachency. Tous droits réservés.</p>
             </footer>
 
