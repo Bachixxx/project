@@ -43,9 +43,12 @@ function Terminal() {
             if (data?.url) {
                 setQrUrl(data.url);
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error generating payment link:', error);
-            alert("Erreur lors de la création du paiement.");
+            // Try to extract the error message from the response if possible, logic depends on Supabase client
+            // But usually error.message or error.context gives hints.
+            // Let's rely on the console for details, but show a more descriptive alert if possible.
+            alert(`Erreur: ${error.message || "Impossible de créer le paiement."}`);
         } finally {
             setGenerating(false);
         }
