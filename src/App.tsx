@@ -47,6 +47,7 @@ const CoachProgramDetails = lazy(() => import('./pages/CoachProgramDetails'));
 const LiveWorkout = lazy(() => import('./pages/LiveWorkout'));
 const MonthlyRevenue = lazy(() => import('./pages/MonthlyRevenue'));
 const Payments = lazy(() => import('./pages/Payments'));
+const Terminal = lazy(() => import('./pages/Terminal'));
 const Profile = lazy(() => import('./pages/Profile'));
 const MultiClientCoaching = lazy(() => import('./pages/MultiClientCoaching'));
 const Admin = lazy(() => import('./pages/Admin'));
@@ -197,6 +198,14 @@ function App() {
                         element={
                           <PrivateRoute>
                             <Payments />
+                          </PrivateRoute>
+                        }
+                      />
+                      <Route
+                        path="/terminal"
+                        element={
+                          <PrivateRoute>
+                            <Terminal />
                           </PrivateRoute>
                         }
                       />

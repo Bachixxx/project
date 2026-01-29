@@ -18,6 +18,7 @@ import {
   UsersRound,
   Shield,
   Palette,
+  Smartphone,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSubscription } from '../hooks/useSubscription';
@@ -235,6 +236,13 @@ function Layout() {
                 icon={<DollarSign className="w-5 h-5" />}
                 text="Paiements"
                 active={isActive('/payments')}
+                onClick={() => setIsMobileMenuOpen(false)}
+              />
+              <NavLink
+                to="/terminal"
+                icon={<Smartphone className="w-5 h-5" />}
+                text="Terminal"
+                active={isActive('/terminal')}
                 onClick={() => setIsMobileMenuOpen(false)}
               />
               <NavLink
