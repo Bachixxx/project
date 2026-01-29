@@ -119,6 +119,67 @@ function Terminal() {
     }
 
     // Active View
+    const [amount, setAmount] = React.useState('');
+    const [description, setDescription] = React.useState('');
+    const [qrUrl, setQrUrl] = React.useState<string | null>(null);
+    const [generating, setGenerating] = React.useState(false);
+    const [hasStripeAccount, setHasStripeAccount] = React.useState<boolean | null>(null);
+    const [checkingStripe, setCheckingStripe] = React.useState(true);
+
+    // Check Stripe Connect Status
+    React.useEffect(() => {
+        const checkStripeStatus = async () => {
+            if (!user?.id) return;
+            try {
+                const { data, error } = await supabase
+                    .from('coaches')
+                    .select('stripe_account_id')
+                    .eq('id', user.id)
+                    .single();
+
+                if (!error && data?.stripe_account_id) {
+                    setHasStripeAccount(true);
+                } else {
+                    setHasStripeAccount(false);
+                }
+            } catch (err) {
+                console.error("Error checking checkStripeStatus:", err);
+                setHasStripeAccount(false);
+            } finally {
+                setCheckingStripe(false);
+            }
+        };
+        checkStripeStatus();
+    }, [user]);
+
+    // Active View
+    if (checkingStripe) {
+        return <div className="p-8 text-center text-gray-400">Vérification du compte...</div>;
+    }
+
+    if (!hasStripeAccount) {
+        return (
+            <div className="container mx-auto px-4 py-8">
+                <div className="glass-card max-w-lg w-full p-8 mx-auto text-center border-yellow-500/30 shadow-2xl shadow-yellow-500/10">
+                    <div className="w-16 h-16 bg-yellow-500/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                        <CreditCard className="w-8 h-8 text-yellow-500" />
+                    </div>
+
+                    <h2 className="text-2xl font-bold text-white mb-2">Configuration requise</h2>
+                    <p className="text-gray-400 mb-8">
+                        Pour encaisser des paiements, vous devez connecter votre compte bancaire (Stripe) sur votre profil.
+                    </p>
+
+                    <a
+                        href="/profile"
+                        className="w-full py-3 bg-yellow-600 hover:bg-yellow-500 text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"
+                    >
+                        Configurer mes paiements
+                    </a>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="container mx-auto px-4 py-8">
