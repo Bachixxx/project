@@ -203,7 +203,7 @@ function BrandingSettings() {
                     >
                         Activer l'option (5 CHF / mois)
                     </button>
-                    <p className="text-xs text-gray-500 mt-4">14 jours d'essai gratuit • Annulable à tout moment</p>
+                    <p className="text-xs text-gray-500 mt-4">Annulable à tout moment</p>
                 </div>
             </div>
         );
