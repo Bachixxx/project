@@ -11,6 +11,8 @@ export interface SubscriptionInfo {
   subscriptionEnd?: string;
   hasBranding: boolean;
   brandingSubscriptionId?: string;
+  hasTerminal: boolean;
+  terminalSubscriptionId?: string;
 }
 
 export function useSubscription() {
@@ -53,6 +55,8 @@ export function useSubscription() {
         subscriptionEnd: coachData.subscription_end_date,
         hasBranding: coachData.has_branding || false,
         brandingSubscriptionId: coachData.branding_subscription_id,
+        hasTerminal: coachData.has_terminal || false,
+        terminalSubscriptionId: coachData.terminal_subscription_id,
       });
     } catch (error) {
       console.error('Error fetching subscription info:', error);
@@ -89,6 +93,39 @@ export function useSubscription() {
     }
     catch (error) {
       console.error('Error creating branding subscription session:', error);
+      setError(error instanceof Error ? error.message : 'An unexpected error occurred');
+      throw error;
+    }
+  }
+
+  const subscribeToTerminal = async () => {
+    try {
+      setError(null);
+
+      // Terminal Price ID - Using a placeholder for now, user needs to create this product
+      const terminalPriceId = 'price_1QpA0AKjaGJ8zmprS2sQfQe8';
+
+      if (!user?.id) {
+        throw new Error('User not authenticated');
+      }
+
+      const data = await createSubscriptionSession(
+        user.id,
+        terminalPriceId,
+        `${window.location.origin}/pricing?payment=success`,
+        `${window.location.origin}/pricing`,
+        { type: 'terminal_addon' }
+      );
+
+      if (!data.url) {
+        throw new Error('No checkout URL received');
+      }
+
+      // Redirect to Stripe Checkout
+      window.open(data.url, '_self');
+    }
+    catch (error) {
+      console.error('Error creating terminal subscription session:', error);
       setError(error instanceof Error ? error.message : 'An unexpected error occurred');
       throw error;
     }
@@ -147,6 +184,7 @@ export function useSubscription() {
     error,
     upgradeSubscription,
     subscribeToBranding,
+    subscribeToTerminal,
     refreshSubscriptionInfo: fetchSubscriptionInfo,
   };
 }

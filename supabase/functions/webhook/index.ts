@@ -85,6 +85,19 @@ Deno.serve(async (req) => {
             if (updateError) throw updateError;
             console.log('Successfully activated Branding for coach:', coachId);
 
+          } else if (type === 'terminal_addon') {
+            // Handle Terminal Add-on
+            const { error: updateError } = await supabase
+              .from('coaches')
+              .update({
+                has_terminal: true,
+                terminal_subscription_id: session.subscription,
+              })
+              .eq('id', coachId);
+
+            if (updateError) throw updateError;
+            console.log('Successfully activated Terminal for coach:', coachId);
+
           } else {
             // Handle Main Subscription (Pro)
             const { error: updateError } = await supabase
@@ -215,7 +228,7 @@ Deno.serve(async (req) => {
         // Get current coach state to check which subscription is being deleted
         const { data: coachData, error: fetchError } = await supabase
           .from('coaches')
-          .select('stripe_subscription_id, branding_subscription_id')
+          .select('stripe_subscription_id, branding_subscription_id, terminal_subscription_id')
           .eq('id', coachId)
           .single();
 
@@ -228,6 +241,14 @@ Deno.serve(async (req) => {
             .update({ has_branding: false, branding_subscription_id: null })
             .eq('id', coachId);
           console.log('Successfully deactivated Branding for coach:', coachId);
+
+        } else if (coachData.terminal_subscription_id === subscriptionId) {
+          // Deleting Terminal Subscription
+          await supabase
+            .from('coaches')
+            .update({ has_terminal: false, terminal_subscription_id: null })
+            .eq('id', coachId);
+          console.log('Successfully deactivated Terminal for coach:', coachId);
 
         } else if (coachData.stripe_subscription_id === subscriptionId) {
           // Deleting Main Subscription

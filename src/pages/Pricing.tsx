@@ -206,6 +206,44 @@ function Pricing() {
                         </div>
                     </div>
                 </div>
+
+                {/* Terminal Add-on Section */}
+                <div className="max-w-4xl mx-auto animate-fade-in delay-300 mt-8">
+                    <div className="glass-card rounded-3xl p-1 relative overflow-hidden">
+                        {/* Gradient Border content */}
+                        <div className="bg-[#0f172a]/90 backdrop-blur-xl rounded-[22px] p-8 md:p-10 flex flex-col md:flex-row items-center gap-8 md:gap-12 relative overflow-hidden">
+
+                            {/* Decorative Blobs inside card */}
+                            <div className="absolute bottom-0 left-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-[80px] pointer-events-none" />
+
+                            <div className="flex-1 relative z-10 text-center md:text-left">
+                                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold uppercase tracking-wider mb-4">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8" /><path d="M12 18V6" /></svg>
+                                    Option Add-on
+                                </div>
+                                <h3 className="text-2xl font-bold text-white mb-2">Terminal Sans Contact</h3>
+                                <p className="text-gray-400 leading-relaxed">
+                                    Encaissez vos clients en personne directement depuis votre téléphone ou un terminal compatible. Solution de paiement sans contact intégrée.
+                                </p>
+                            </div>
+
+                            <div className="flex flex-col items-center md:items-end justify-center relative z-10 min-w-[200px]">
+                                <div className="text-center md:text-right mb-4">
+                                    <div className="flex items-baseline justify-center md:justify-end gap-1">
+                                        <span className="text-3xl font-bold text-white">+9.90</span>
+                                        <span className="text-lg font-bold text-white">CHF</span>
+                                        <span className="text-gray-400">/mois</span>
+                                    </div>
+                                    <p className="text-xs text-gray-500 mt-1">S'ajoute à votre forfait Pro</p>
+                                </div>
+                                <Link to="/waitlist" className="px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold shadow-lg shadow-emerald-500/25 transition-all transform hover:scale-105 flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="16" height="10" x="2" y="7" rx="2" ry="2" /><line x1="2" x2="22" y1="11" y2="11" /></svg>
+                                    Ajouter le Terminal
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </section>
 
             {/* FAQ Section */}

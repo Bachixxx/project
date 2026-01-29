@@ -122,7 +122,7 @@ serve(async (req) => {
           coachId: coachId,
           ...metadata // Also put in subscription metadata for webhook retrieval
         },
-        trial_period_days: metadata.type === 'branding_addon' ? undefined : 14, // No trial for add-on unless specified
+        trial_period_days: (metadata.type === 'branding_addon' || metadata.type === 'terminal_addon') ? undefined : 14, // No trial for add-ons unless specified
       },
     };
 
