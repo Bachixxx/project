@@ -111,45 +111,6 @@ function Terminal() {
     }
 
     // Active View
-    const [amount, setAmount] = React.useState('');
-    const [description, setDescription] = React.useState('');
-    const [qrUrl, setQrUrl] = React.useState<string | null>(null);
-    const [generating, setGenerating] = React.useState(false);
-    const { user } = useAuth(); // Need user ID for the edge function
-
-    const generatePaymentLink = async () => {
-        if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
-            alert("Veuillez entrer un montant valide.");
-            return;
-        }
-
-        try {
-            setGenerating(true);
-            const { data, error } = await supabase.functions.invoke('create-terminal-payment', {
-                body: {
-                    coachId: user?.id,
-                    amount: Number(amount),
-                    description: description
-                }
-            });
-
-            if (error) throw error;
-            if (data?.url) {
-                setQrUrl(data.url);
-            }
-        } catch (error) {
-            console.error('Error generating payment link:', error);
-            alert("Erreur lors de la création du paiement.");
-        } finally {
-            setGenerating(false);
-        }
-    };
-
-    const resetTerminal = () => {
-        setQrUrl(null);
-        setAmount('');
-        setDescription('');
-    };
 
     return (
         <div className="container mx-auto px-4 py-8">
