@@ -1,5 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7'
-import Stripe from 'https://esm.sh/stripe@17.5.0?target=deno'
+import Stripe from 'https://esm.sh/stripe@17.6.0?target=deno'
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -16,8 +16,8 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey)
 let _stripe: Stripe | null = null
 const getStripe = (): Stripe => {
     if (!_stripe) {
+        // @ts-ignore
         _stripe = new Stripe(stripeSecretKey, {
-            apiVersion: '2023-10-16',
             httpClient: Stripe.createFetchHttpClient(),
         })
     }
