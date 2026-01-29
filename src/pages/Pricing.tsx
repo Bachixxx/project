@@ -104,8 +104,8 @@ function Pricing() {
                     <button
                         onClick={() => setBillingInterval('month')}
                         className={`px-6 md:px-8 py-3 rounded-xl text-sm font-bold transition-all ${billingInterval === 'month'
-                                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg'
-                                : 'text-gray-400 hover:text-white hover:bg-white/5'
+                            ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg'
+                            : 'text-gray-400 hover:text-white hover:bg-white/5'
                             }`}
                     >
                         Mensuel
@@ -113,8 +113,8 @@ function Pricing() {
                     <button
                         onClick={() => setBillingInterval('year')}
                         className={`px-6 md:px-8 py-3 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${billingInterval === 'year'
-                                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg'
-                                : 'text-gray-400 hover:text-white hover:bg-white/5'
+                            ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg'
+                            : 'text-gray-400 hover:text-white hover:bg-white/5'
                             }`}
                     >
                         Annuel
@@ -127,38 +127,10 @@ function Pricing() {
 
             {/* Pricing Tables */}
             <section className="pb-20 container mx-auto px-6 relative z-10">
-                <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto mb-20">
-
-                    {/* Free Tier */}
-                    <div className="glass-card p-8 rounded-3xl border border-white/10 flex flex-col animate-fade-in delay-200 hover:border-white/20 transition-all group relative overflow-hidden">
-                        <div className="mb-6 relative z-10">
-                            <h3 className="text-xl font-bold text-white mb-2">Découverte</h3>
-                            <div className="flex items-baseline gap-1">
-                                <span className="text-4xl font-bold text-white">0</span>
-                                <span className="text-xl font-bold text-white">CHF</span>
-                                <span className="text-gray-400">/mois</span>
-                            </div>
-                            <p className="text-gray-400 mt-4 text-sm">Pour les coachs qui débutent leur activité.</p>
-                        </div>
-
-                        <div className="flex-1 space-y-4 mb-8 relative z-10">
-                            <FeatureItem text="Jusqu'à 5 clients" included={true} />
-                            <FeatureItem text="Jusqu'à 5 programmes" included={true} />
-                            <FeatureItem text="Bibliothèque d'exercices illimitée" included={true} />
-                            <FeatureItem text="Gestion des rendez-vous" included={true} />
-                            <FeatureItem text="Calendrier de base" included={true} />
-                            <FeatureItem text="Support par email" included={true} />
-                            <FeatureItem text="Analyses avancées" included={true} />
-                            <FeatureItem text="Multi-coachs" included={true} />
-                        </div>
-
-                        <Link to="/waitlist" className="w-full py-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold text-center transition-all relative z-10">
-                            Rejoindre la liste d'attente
-                        </Link>
-                    </div>
+                <div className="max-w-md mx-auto mb-20">
 
                     {/* Pro Tier (Highlighted) */}
-                    <div className="relative p-8 rounded-3xl bg-gradient-to-b from-[#1e293b] to-[#0f172a] border border-blue-500/50 flex flex-col shadow-2xl shadow-blue-500/10 transform md:-translate-y-4 animate-fade-in z-10 group overflow-hidden">
+                    <div className="relative p-8 rounded-3xl bg-gradient-to-b from-[#1e293b] to-[#0f172a] border border-blue-500/50 flex flex-col shadow-2xl shadow-blue-500/10 transform animate-fade-in z-10 group overflow-hidden">
 
                         {/* Glowing border effect */}
                         <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-blue-500 to-transparent opacity-50"></div>
@@ -168,9 +140,9 @@ function Pricing() {
                             14 Jours Offerts
                         </div>
 
-                        <div className="mb-6 mt-2">
+                        <div className="mb-6 mt-2 text-center">
                             <h3 className="text-xl font-bold text-blue-400 mb-2">Professionnel</h3>
-                            <div className="flex items-baseline gap-1">
+                            <div className="flex items-baseline justify-center gap-1">
                                 <span className="text-5xl font-bold text-white">
                                     {billingInterval === 'month' ? '49.90' : '499'}
                                 </span>
