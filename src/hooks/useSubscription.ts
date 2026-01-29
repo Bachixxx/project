@@ -102,8 +102,8 @@ export function useSubscription() {
     try {
       setError(null);
 
-      // Terminal Price ID - Using a placeholder for now, user needs to create this product
-      const terminalPriceId = 'price_1QpA0AKjaGJ8zmprS2sQfQe8';
+      // Terminal Price ID - Updated from user input
+      const terminalPriceId = 'price_1Sv0Y1KjaGJ8zmprX8HCe6QR';
 
       if (!user?.id) {
         throw new Error('User not authenticated');
