@@ -1,7 +1,7 @@
 import React from 'react';
 import { useSubscription } from '../hooks/useSubscription';
 import { supabase } from '../lib/supabase';
-import QRCode from 'qrcode.react';
+import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '../contexts/AuthContext';
 import { CreditCard, Smartphone, ShieldCheck, Check } from 'lucide-react';
 
@@ -198,7 +198,7 @@ function Terminal() {
                             <div className="mt-8 mb-6 relative group">
                                 <div className="absolute -inset-4 bg-gradient-to-tr from-emerald-500 to-teal-500 rounded-3xl opacity-20 blur-xl group-hover:opacity-30 transition-opacity" />
                                 <div className="relative bg-white p-4 rounded-2xl shadow-2xl border border-gray-100">
-                                    <QRCode value={qrUrl} size={256} className="w-64 h-64" />
+                                    <QRCodeSVG value={qrUrl} size={256} className="w-64 h-64" />
                                 </div>
                             </div>
 
