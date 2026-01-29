@@ -112,8 +112,8 @@ export function useSubscription() {
       const data = await createSubscriptionSession(
         user.id,
         terminalPriceId,
-        `${window.location.origin}/pricing?payment=success`,
-        `${window.location.origin}/pricing`,
+        `${window.location.origin}/terminal?payment=success`,
+        `${window.location.origin}/terminal`,
         { type: 'terminal_addon' }
       );
 
