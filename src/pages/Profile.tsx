@@ -4,6 +4,7 @@ import { ChevronLeft, User, Mail, Phone, Award, Crown, Clock, BadgeEuro, Externa
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useSubscription } from '../hooks/useSubscription';
+import { createPortalSession } from '../lib/stripe';
 
 interface Coach {
   id: string;
@@ -96,6 +97,15 @@ function ProfilePage() {
     }
   };
 
+  const handleManageSubscription = async () => {
+    try {
+      await createPortalSession();
+    } catch (error) {
+      console.error('Error opening portal:', error);
+      alert('Impossible d\'ouvrir le portail de gestion. Veuillez réessayer.');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -176,20 +186,7 @@ function ProfilePage() {
             </div>
           </div>
 
-// ... imports
-          import {createPortalSession} from '../lib/stripe'; // Add this import
-
-// ... inside component
-  const handleManageSubscription = async () => {
-    try {
-            await createPortalSession();
-    } catch (error) {
-            console.error('Error opening portal:', error);
-          alert('Impossible d\'ouvrir le portail de gestion. Veuillez réessayer.');
-    }
-  };
-
-          // ... inside return JSX (Subscription Section)
+          {/* Subscription Status */}
           <div className="bg-white/5 border border-white/10 backdrop-blur-lg rounded-xl p-6">
             <div className="flex flex-col md:flex-row items-center md:items-center justify-between gap-4 text-center md:text-left">
               <div>
