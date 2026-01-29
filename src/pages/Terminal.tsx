@@ -24,6 +24,11 @@ function Terminal() {
     }
 
     const generatePaymentLink = async () => {
+        if (!user || !user.id) {
+            alert("Erreur: Utilisateur non trouvé. Essayez de vous reconnecter.");
+            return;
+        }
+
         if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
             alert("Veuillez entrer un montant valide.");
             return;
