@@ -331,7 +331,9 @@ function ClientBodyComposition() {
                     )}
 
                 </div>
-                );
+            </div>
+        </div>
+    );
 }
 
-                export default ClientBodyComposition;
+export default ClientBodyComposition;
