@@ -256,8 +256,8 @@ function ClientBodyComposition() {
                                                 key={metric.id}
                                                 onClick={() => toggleMetric(metric.id as keyof ScanData)}
                                                 className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 ${isSelected
-                                                        ? `${metric.color} text-white shadow-lg ring-2 ring-white/20`
-                                                        : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                                                    ? `${metric.color} text-white shadow-lg ring-2 ring-white/20`
+                                                    : 'bg-white/5 text-gray-400 hover:bg-white/10'
                                                     }`}
                                             >
                                                 {/* Dot indicator if selected */}
@@ -265,39 +265,24 @@ function ClientBodyComposition() {
                                                 {metric.label}
                                             </button>
                                         );
-                                    })}}
+                                    })}
                                 </div>
 
                                 <BiometricTrendChart
                                     data={scanHistory}
-                                    dataKey={selectedMetric}
-                                    color={
-                                        selectedMetric === 'weight' ? '#3b82f6' :
-                                            selectedMetric === 'body_fat_percent' ? '#eab308' :
-                                                selectedMetric === 'skeletal_muscle_mass' ? '#ef4444' :
-                                                    selectedMetric === 'total_body_water_percent' ? '#06b6d4' :
-                                                        selectedMetric === 'bone_mass' ? '#ec4899' :
-                                                            selectedMetric === 'visceral_fat_level' ? '#a855f7' :
-                                                                selectedMetric === 'bmr' ? '#22c55e' :
-                                                                    '#f97316' // metabolic_age
-                                    }
-                                    label={
-                                        selectedMetric === 'weight' ? 'Poids' :
-                                            selectedMetric === 'bmi' ? 'IMC' :
-                                                selectedMetric === 'body_fat_percent' ? 'Masse Grasse' :
-                                                    selectedMetric === 'skeletal_muscle_mass' ? 'Masse Musculaire' :
-                                                        selectedMetric === 'total_body_water_percent' ? 'Eau Corporelle' :
-                                                            selectedMetric === 'bone_mass' ? 'Masse Osseuse' :
-                                                                selectedMetric === 'visceral_fat_level' ? 'Graisse Viscérale' :
-                                                                    selectedMetric === 'bmr' ? 'Métabolisme de Base' :
-                                                                        'Âge Métabolique'
-                                    }
-                                    unit={
-                                        ['body_fat_percent', 'total_body_water_percent'].includes(selectedMetric) ? '%' :
-                                            ['bmr'].includes(selectedMetric) ? 'kcal' :
-                                                ['metabolic_age'].includes(selectedMetric) ? 'ans' :
-                                                    ['visceral_fat_level'].includes(selectedMetric) ? '' :
-                                                        'kg'
+                                    metrics={
+                                        [
+                                            { id: 'weight', label: 'Poids', color: '#3b82f6', unit: 'kg' },
+                                            { id: 'bmi', label: 'IMC', color: '#10b981', unit: 'kg/m²' },
+                                            { id: 'body_fat_percent', label: 'Masse Grasse', color: '#eab308', unit: '%' },
+                                            { id: 'skeletal_muscle_mass', label: 'Masse Musculaire', color: '#ef4444', unit: 'kg' },
+                                            { id: 'total_body_water_percent', label: 'Eau Corporelle', color: '#06b6d4', unit: '%' },
+                                            { id: 'bone_mass', label: 'Masse Osseuse', color: '#ec4899', unit: 'kg' },
+                                            { id: 'visceral_fat_level', label: 'Graisse Viscérale', color: '#a855f7', unit: '' },
+                                            { id: 'bmr', label: 'Métabolisme de Base', color: '#22c55e', unit: 'kcal' },
+                                            { id: 'metabolic_age', label: 'Âge Métabolique', color: '#f97316', unit: 'ans' },
+                                        ]
+                                            .filter(m => selectedMetrics.includes(m.id as keyof ScanData))
                                     }
                                 />
                             </div>
