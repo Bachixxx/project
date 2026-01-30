@@ -20,7 +20,10 @@ export function AddBodyScanModal({ isOpen, onClose, onSuccess }: AddBodyScanModa
         body_fat_percent: '',
         skeletal_muscle_mass: '',
         total_body_water_percent: '',
-        bone_mass: ''
+        bone_mass: '',
+        visceral_fat_level: '',
+        bmr: '',
+        metabolic_age: '',
     });
 
     if (!isOpen) return null;
@@ -41,15 +44,43 @@ export function AddBodyScanModal({ isOpen, onClose, onSuccess }: AddBodyScanModa
         }
 
         try {
+            // Calculate derived values
+            const weight = parseFloat(formData.weight);
+            const height = parseFloat(formData.height);
+            const bodyFatPercent = parseFloat(formData.body_fat_percent);
+            const waterPercent = parseFloat(formData.total_body_water_percent);
+
+            let bmi = null;
+            if (weight && height) {
+                const heightInMeters = height / 100;
+                bmi = parseFloat((weight / (heightInMeters * heightInMeters)).toFixed(2));
+            }
+
+            let bodyFatMass = null;
+            if (weight && bodyFatPercent) {
+                bodyFatMass = parseFloat(((weight * bodyFatPercent) / 100).toFixed(2));
+            }
+
+            let totalBodyWater = null;
+            if (weight && waterPercent) {
+                totalBodyWater = parseFloat(((weight * waterPercent) / 100).toFixed(2));
+            }
+
             const { error: insertError } = await supabase.from('body_scans').insert({
                 client_id: client.id,
                 date: new Date().toISOString().split('T')[0], // Today's date YYYY-MM-DD
-                weight: parseFloat(formData.weight) || null,
-                height: parseFloat(formData.height) || null,
-                body_fat_percent: parseFloat(formData.body_fat_percent) || null,
+                weight: weight || null,
+                height: height || null,
+                bmi: bmi,
+                body_fat_percent: bodyFatPercent || null,
+                body_fat_mass: bodyFatMass,
                 skeletal_muscle_mass: parseFloat(formData.skeletal_muscle_mass) || null,
-                total_body_water_percent: parseFloat(formData.total_body_water_percent) || null,
+                total_body_water_percent: waterPercent || null,
+                total_body_water: totalBodyWater,
                 bone_mass: parseFloat(formData.bone_mass) || null,
+                visceral_fat_level: parseFloat(formData.visceral_fat_level) || null,
+                bmr: parseInt(formData.bmr) || null,
+                metabolic_age: parseInt(formData.metabolic_age) || null,
             });
 
             if (insertError) throw insertError;
@@ -164,6 +195,45 @@ export function AddBodyScanModal({ isOpen, onClose, onSuccess }: AddBodyScanModa
                                 onChange={handleChange}
                                 placeholder="ex: 3.5"
                                 className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition-all placeholder:text-gray-600"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-4">
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold text-purple-400 uppercase">Graisse Viscérale</label>
+                            <input
+                                type="number"
+                                step="0.1"
+                                name="visceral_fat_level"
+                                value={formData.visceral_fat_level}
+                                onChange={handleChange}
+                                placeholder="ex: 4"
+                                className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all placeholder:text-gray-600"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold text-orange-400 uppercase">BMR (kcal)</label>
+                            <input
+                                type="number"
+                                step="1"
+                                name="bmr"
+                                value={formData.bmr}
+                                onChange={handleChange}
+                                placeholder="ex: 1750"
+                                className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all placeholder:text-gray-600"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold text-green-400 uppercase">Âge Métabolique</label>
+                            <input
+                                type="number"
+                                step="1"
+                                name="metabolic_age"
+                                value={formData.metabolic_age}
+                                onChange={handleChange}
+                                placeholder="ex: 25"
+                                className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all placeholder:text-gray-600"
                             />
                         </div>
                     </div>
