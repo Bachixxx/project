@@ -141,7 +141,7 @@ export function BiometricTrendChart({ data, metrics }: BiometricTrendChartProps)
                                 key={metric.id}
                                 type="monotone"
                                 dataKey={metric.id}
-                                yAxisId={metric.id}
+                                yAxisId={getAxisId(metric)}
                                 name={metric.label}
                                 stroke={metric.color}
                                 strokeWidth={3}
