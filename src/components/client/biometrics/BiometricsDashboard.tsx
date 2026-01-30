@@ -269,15 +269,16 @@ export function BiometricsDashboard({ clientId, readOnly = false }: BiometricsDa
                                 metrics={
                                     [
                                         { id: 'weight', label: 'Poids', color: '#3b82f6', unit: 'kg' },
-                                        { id: 'bmi', label: 'IMC', color: '#10b981', unit: 'kg/m²' },
-                                        { id: 'body_fat_percent', label: 'Masse Grasse', color: '#eab308', unit: '%' },
+                                        { id: 'bmi', label: 'IMC', color: '#10b981', unit: 'kg/m²', domain: [0, 50] },
+                                        { id: 'body_fat_percent', label: 'Masse Grasse', color: '#eab308', unit: '%', domain: [0, 100] },
                                         { id: 'skeletal_muscle_mass', label: 'Masse Musculaire', color: '#ef4444', unit: 'kg' },
-                                        { id: 'total_body_water_percent', label: 'Eau Corporelle', color: '#06b6d4', unit: '%' },
+                                        { id: 'total_body_water_percent', label: 'Eau Corporelle', color: '#06b6d4', unit: '%', domain: [0, 100] },
                                         { id: 'bone_mass', label: 'Masse Osseuse', color: '#ec4899', unit: 'kg' },
-                                        { id: 'visceral_fat_level', label: 'Graisse Viscérale', color: '#a855f7', unit: '' },
-                                        { id: 'bmr', label: 'Métabolisme de Base', color: '#22c55e', unit: 'kcal' },
-                                        { id: 'metabolic_age', label: 'Âge Métabolique', color: '#f97316', unit: 'ans' },
+                                        { id: 'visceral_fat_level', label: 'Graisse Viscérale', color: '#a855f7', unit: '', domain: [0, 20] },
+                                        { id: 'bmr', label: 'Métabolisme de Base', color: '#22c55e', unit: 'kcal', domain: [0, 4000] },
+                                        { id: 'metabolic_age', label: 'Âge Métabolique', color: '#f97316', unit: 'ans', domain: [0, 100] },
                                     ]
+                                        // @ts-ignore
                                         .filter(m => selectedMetrics.includes(m.id as keyof ScanData))
                                 }
                             />
