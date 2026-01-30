@@ -34,6 +34,7 @@ interface ScanData {
     segmental_fat_trunk: number;
     segmental_fat_right_leg: number;
     segmental_fat_left_leg: number;
+    metabolic_age: number;
 }
 
 function ClientBodyComposition() {
@@ -330,8 +331,6 @@ function ClientBodyComposition() {
             )}
 
         </div>
-            </div >
-        </div >
     );
 }
 
