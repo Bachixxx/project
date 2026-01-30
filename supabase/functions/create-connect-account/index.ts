@@ -18,7 +18,7 @@ async function stripeRequest(method: string, path: string, body: any) {
         headers: {
             'Authorization': `Bearer ${stripeSecretKey}`,
             'Content-Type': 'application/json',
-            // 'Stripe-Version': '2024-12-18', // Optional: Pin if needed, but V2 might infer
+            'Stripe-Version': '2026-01-28.clover',
         },
         body: JSON.stringify(body)
     });
