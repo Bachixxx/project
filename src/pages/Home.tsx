@@ -26,7 +26,7 @@ function Home() {
   const faqs = [
     {
       question: "Est-ce que Coachency est adapté aux coachs débutants ?",
-      answer: "Absolument. Nous avons conçu la plateforme pour qu'elle soit intuitive. Vous pouvez commencer avec le plan Gratuit pour vos 5 premiers clients et évoluer quand votre activité grandit."
+      answer: "Absolument. Nous proposons un essai gratuit de 14 jours pour tester toutes les fonctionnalités sans engagement. Ensuite, l'abonnement vous donne accès à tout (sauf options Branding & Terminal)."
     },
     {
       question: "Puis-je importer mes clients actuels ?",
