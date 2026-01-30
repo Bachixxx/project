@@ -73,9 +73,6 @@ export function BodySegmentLabel({ label, value, x, y, align = 'left' }: Omit<Bo
                 <span className="block text-xl font-bold text-white tracking-tight">{value}</span>
             </div>
 
-            {/* Connector Dot */}
-            <div className={`w-2 h-2 rounded-full bg-blue-500 absolute ${isRight ? '-left-8 mt-6' : '-right-8 mt-6'} top-0 box-content border-2 border-[#0f172a] z-10 hidden md:block`}></div>
-
             {/* Connector Line */}
             <svg className={`absolute top-0 pointer-events-none md:block hidden ${isRight ? 'left-0 -ml-8' : 'right-0 -mr-8'} w-8 h-10 overflow-visible`} style={{ zIndex: 0 }}>
                 <path
