@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import {
   Dumbbell, Users, Facebook, Twitter, Instagram, Linkedin,
   Mail, MapPin, ArrowRight, CheckCircle, Star, Menu, X,
-  Smartphone, ChevronDown, ChevronUp
+  Smartphone, ChevronDown, ChevronUp, Layers, CreditCard
 } from 'lucide-react';
 
 function Home() {
@@ -192,6 +192,56 @@ function Home() {
           </div>
         </div>
       </header>
+
+      {/* Presentation / Ecosystem Section */}
+      <section className="py-20 relative border-b border-white/5 bg-white/[0.02]">
+        <div className="container mx-auto px-6">
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <h2 className="text-3xl md:text-5xl font-bold mb-6">
+              Plus qu'un outil de coaching. <br />
+              <span className="text-blue-400">Votre écosystème de réussite.</span>
+            </h2>
+            <p className="text-gray-400 text-lg leading-relaxed">
+              Coachency centralise tout ce dont vous avez besoin pour coacher mieux, vendre plus et vivre de votre passion. Fini le bricolage, place au professionnalisme.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {/* Pillar 1 */}
+            <div className="bg-[#1e293b]/50 border border-white/5 p-8 rounded-2xl hover:bg-[#1e293b] transition-colors group">
+              <div className="w-14 h-14 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400 mb-6 group-hover:scale-110 transition-transform">
+                <Smartphone className="w-7 h-7" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-4">L'Expérience Client Ultime</h3>
+              <p className="text-gray-400 leading-relaxed">
+                Offrez à vos élèves une application mobile haut de gamme pour suivre vos programmes, pas des PDF illisibles.
+              </p>
+            </div>
+
+            {/* Pillar 2 */}
+            <div className="bg-[#1e293b]/50 border border-white/5 p-8 rounded-2xl hover:bg-[#1e293b] transition-colors group">
+              <div className="w-14 h-14 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400 mb-6 group-hover:scale-110 transition-transform">
+                <Layers className="w-7 h-7" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-4">L'Organisation Parfaite</h3>
+              <p className="text-gray-400 leading-relaxed">
+                Centralisez programmes, bilans et messagerie au même endroit. Ne perdez plus jamais une info client.
+              </p>
+            </div>
+
+            {/* Pillar 3 */}
+            <div className="bg-[#1e293b]/50 border border-white/5 p-8 rounded-2xl hover:bg-[#1e293b] transition-colors group">
+              <div className="w-14 h-14 rounded-xl bg-green-500/10 flex items-center justify-center text-green-400 mb-6 group-hover:scale-110 transition-transform">
+                <CreditCard className="w-7 h-7" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-4">La Gestion Simplifiée</h3>
+              <p className="text-gray-400 leading-relaxed">
+                Automatisez vos paiements et factures. Concentrez-vous sur le coaching, le système gère l'administratif.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
 
 
 
