@@ -67,6 +67,32 @@ function Terminal() {
         setDescription('');
     };
 
+    // Check Stripe Connect Status
+    React.useEffect(() => {
+        const checkStripeStatus = async () => {
+            if (!user?.id) return;
+            try {
+                const { data, error } = await supabase
+                    .from('coaches')
+                    .select('stripe_account_id')
+                    .eq('id', user.id)
+                    .single();
+
+                if (!error && data?.stripe_account_id) {
+                    setHasStripeAccount(true);
+                } else {
+                    setHasStripeAccount(false);
+                }
+            } catch (err) {
+                console.error("Error checking checkStripeStatus:", err);
+                setHasStripeAccount(false);
+            } finally {
+                setCheckingStripe(false);
+            }
+        };
+        checkStripeStatus();
+    }, [user]);
+
     if (subLoading) {
         return <div className="p-8 text-center text-gray-400">Chargement...</div>;
     }
@@ -119,33 +145,6 @@ function Terminal() {
             </div>
         );
     }
-
-
-    // Check Stripe Connect Status
-    React.useEffect(() => {
-        const checkStripeStatus = async () => {
-            if (!user?.id) return;
-            try {
-                const { data, error } = await supabase
-                    .from('coaches')
-                    .select('stripe_account_id')
-                    .eq('id', user.id)
-                    .single();
-
-                if (!error && data?.stripe_account_id) {
-                    setHasStripeAccount(true);
-                } else {
-                    setHasStripeAccount(false);
-                }
-            } catch (err) {
-                console.error("Error checking checkStripeStatus:", err);
-                setHasStripeAccount(false);
-            } finally {
-                setCheckingStripe(false);
-            }
-        };
-        checkStripeStatus();
-    }, [user]);
 
     // Active View
     if (checkingStripe) {
