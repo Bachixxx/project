@@ -204,3 +204,24 @@ export async function createAppointmentPaymentLink(appointmentId: string) {
     throw error;
   }
 }
+
+export async function createLoginLink() {
+  try {
+    const { data, error } = await supabase.functions.invoke('create-login-link');
+
+    if (error) {
+      console.error('Error creating login link:', error);
+      throw error;
+    }
+
+    if (!data?.url) {
+      throw new Error('No login URL returned from server');
+    }
+
+    // Redirect to the login link
+    window.location.href = data.url;
+  } catch (error) {
+    console.error('Error generating login link:', error);
+    throw error;
+  }
+}

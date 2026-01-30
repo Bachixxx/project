@@ -4,7 +4,7 @@ import { ChevronLeft, User, Mail, Phone, Award, Crown, Clock, BadgeEuro, Externa
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useSubscription } from '../hooks/useSubscription';
-import { createPortalSession } from '../lib/stripe';
+import { createPortalSession, createLoginLink } from '../lib/stripe';
 
 interface Coach {
   id: string;
@@ -244,9 +244,34 @@ function ProfilePage() {
               </div>
 
               {coach?.stripe_account_id ? (
-                <div className="flex items-center gap-2 px-4 py-2 bg-green-500/20 border border-green-500/30 text-green-400 rounded-lg">
-                  <CheckCircle className="w-5 h-5" />
-                  <span className="font-medium">Compte Connecté</span>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2 px-4 py-2 bg-green-500/20 border border-green-500/30 text-green-400 rounded-lg">
+                    <CheckCircle className="w-5 h-5" />
+                    <span className="font-medium">Compte Connecté</span>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      try {
+                        setStripeLoading(true);
+                        await createLoginLink();
+                      } catch (error) {
+                        alert("Impossible d'accéder au tableau de bord Stripe.");
+                      } finally {
+                        setStripeLoading(false);
+                      }
+                    }}
+                    disabled={stripeLoading}
+                    className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors flex items-center gap-2"
+                  >
+                    {stripeLoading ? (
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      <>
+                        <span>Gérer mon compte</span>
+                        <ExternalLink className="w-4 h-4" />
+                      </>
+                    )}
+                  </button>
                 </div>
               ) : (
                 <button
@@ -357,7 +382,7 @@ function ProfilePage() {
           )}
         </div>
       </div>
-    </div>
+    </div >
   );
 }
 
