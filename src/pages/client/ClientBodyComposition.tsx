@@ -239,11 +239,20 @@ function ClientBodyComposition() {
                                 </div>
 
                                 <BodyMap>
-                                    {scanData.segmental_muscle_right_arm && <BodySegmentLabel x={20} y={35} label="Bras Drout" value={`${scanData.segmental_muscle_right_arm} kg`} align="right" />}
-                                    {scanData.segmental_muscle_left_arm && <BodySegmentLabel x={80} y={35} label="Bras Gauche" value={`${scanData.segmental_muscle_left_arm} kg`} align="left" />}
-                                    {scanData.segmental_muscle_trunk && <BodySegmentLabel x={85} y={20} label="Buste" value={`${scanData.segmental_muscle_trunk} kg`} align="left" />}
-                                    {scanData.segmental_muscle_right_leg && <BodySegmentLabel x={20} y={75} label="Jambe Droite" value={`${scanData.segmental_muscle_right_leg} kg`} align="right" />}
-                                    {scanData.segmental_muscle_left_leg && <BodySegmentLabel x={80} y={75} label="Jambe Gauche" value={`${scanData.segmental_muscle_left_leg} kg`} align="left" />}
+                                    {/* Patient Right Arm (Screen Left) */}
+                                    {scanData.segmental_muscle_right_arm && <BodySegmentLabel x={15} y={30} label="Bras Droit" value={`${scanData.segmental_muscle_right_arm} kg`} align="left" />}
+
+                                    {/* Patient Left Arm (Screen Right) */}
+                                    {scanData.segmental_muscle_left_arm && <BodySegmentLabel x={85} y={30} label="Bras Gauche" value={`${scanData.segmental_muscle_left_arm} kg`} align="right" />}
+
+                                    {/* Trunk (Center) - shift slightly right to avoid centered head overlap if any */}
+                                    {scanData.segmental_muscle_trunk && <BodySegmentLabel x={50} y={45} label="Buste" value={`${scanData.segmental_muscle_trunk} kg`} align="right" />}
+
+                                    {/* Patient Right Leg (Screen Left) */}
+                                    {scanData.segmental_muscle_right_leg && <BodySegmentLabel x={15} y={75} label="Jambe Droite" value={`${scanData.segmental_muscle_right_leg} kg`} align="left" />}
+
+                                    {/* Patient Left Leg (Screen Right) */}
+                                    {scanData.segmental_muscle_left_leg && <BodySegmentLabel x={85} y={75} label="Jambe Gauche" value={`${scanData.segmental_muscle_left_leg} kg`} align="right" />}
                                 </BodyMap>
                             </div>
                         </div>
@@ -282,11 +291,20 @@ function ClientBodyComposition() {
                                 </div>
 
                                 <BodyMap>
-                                    {scanData.segmental_fat_right_arm && <BodySegmentLabel x={20} y={35} label="Bras Droit" value={`${scanData.segmental_fat_right_arm} kg`} align="right" />}
-                                    {scanData.segmental_fat_left_arm && <BodySegmentLabel x={80} y={35} label="Bras Gauche" value={`${scanData.segmental_fat_left_arm} kg`} align="left" />}
-                                    {scanData.segmental_fat_trunk && <BodySegmentLabel x={85} y={20} label="Buste" value={`${scanData.segmental_fat_trunk} kg`} align="left" />}
-                                    {scanData.segmental_fat_right_leg && <BodySegmentLabel x={20} y={75} label="Jambe Droite" value={`${scanData.segmental_fat_right_leg} kg`} align="right" />}
-                                    {scanData.segmental_fat_left_leg && <BodySegmentLabel x={80} y={75} label="Jambe Gauche" value={`${scanData.segmental_fat_left_leg} kg`} align="left" />}
+                                    {/* Patient Right Arm (Screen Left) */}
+                                    {scanData.segmental_fat_right_arm && <BodySegmentLabel x={15} y={30} label="Bras Droit" value={`${scanData.segmental_fat_right_arm} kg`} align="left" />}
+
+                                    {/* Patient Left Arm (Screen Right) */}
+                                    {scanData.segmental_fat_left_arm && <BodySegmentLabel x={85} y={30} label="Bras Gauche" value={`${scanData.segmental_fat_left_arm} kg`} align="right" />}
+
+                                    {/* Trunk */}
+                                    {scanData.segmental_fat_trunk && <BodySegmentLabel x={50} y={45} label="Buste" value={`${scanData.segmental_fat_trunk} kg`} align="right" />}
+
+                                    {/* Patient Right Leg (Screen Left) */}
+                                    {scanData.segmental_fat_right_leg && <BodySegmentLabel x={15} y={75} label="Jambe Droite" value={`${scanData.segmental_fat_right_leg} kg`} align="left" />}
+
+                                    {/* Patient Left Leg (Screen Right) */}
+                                    {scanData.segmental_fat_left_leg && <BodySegmentLabel x={85} y={75} label="Jambe Gauche" value={`${scanData.segmental_fat_left_leg} kg`} align="right" />}
                                 </BodyMap>
                             </div>
                         </div>
