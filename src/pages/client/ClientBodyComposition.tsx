@@ -236,7 +236,7 @@ function ClientBodyComposition() {
                                         <button
                                             key={metric.id}
                                             onClick={() => setSelectedMetric(metric.id as keyof ScanData)}
-                                            className={`px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap ${selectedMetric === metric.id
+                                            className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap ${selectedMetric === metric.id
                                                     ? `${metric.color} text-white shadow-lg`
                                                     : 'bg-white/5 text-gray-400 hover:bg-white/10'
                                                 }`}
