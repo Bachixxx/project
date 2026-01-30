@@ -47,7 +47,22 @@ function ClientBodyComposition() {
     const [scanHistory, setScanHistory] = useState<ScanData[]>([]);
     const [loading, setLoading] = useState(true);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-    const [selectedMetric, setSelectedMetric] = useState<keyof ScanData>('weight');
+    const [selectedMetrics, setSelectedMetrics] = useState<Array<keyof ScanData>>(['weight']);
+
+    // Helper to toggle metric selection
+    const toggleMetric = (metricId: keyof ScanData) => {
+        setSelectedMetrics(prev => {
+            if (prev.includes(metricId)) {
+                // Remove it, but keep at least one
+                if (prev.length === 1) return prev;
+                return prev.filter(id => id !== metricId);
+            } else {
+                // Add it
+                // Optional: Limit to 3 max to prevent mess? Let's leave it open for now as requested
+                return [...prev, metricId];
+            }
+        });
+    };
 
     const fetchLatestScan = async () => {
         if (!client?.id) return;
@@ -234,18 +249,23 @@ function ClientBodyComposition() {
                                         { id: 'visceral_fat_level', label: 'Viscérale', color: 'bg-purple-500', text: 'text-purple-500' },
                                         { id: 'bmr', label: 'BMR', color: 'bg-green-500', text: 'text-green-500' },
                                         { id: 'metabolic_age', label: 'Âge Meta.', color: 'bg-orange-500', text: 'text-orange-500' },
-                                    ].map((metric) => (
-                                        <button
-                                            key={metric.id}
-                                            onClick={() => setSelectedMetric(metric.id as keyof ScanData)}
-                                            className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap ${selectedMetric === metric.id
-                                                ? `${metric.color} text-white shadow-lg`
-                                                : 'bg-white/5 text-gray-400 hover:bg-white/10'
-                                                }`}
-                                        >
-                                            {metric.label}
-                                        </button>
-                                    ))}
+                                    ].map((metric) => {
+                                        const isSelected = selectedMetrics.includes(metric.id as keyof ScanData);
+                                        return (
+                                            <button
+                                                key={metric.id}
+                                                onClick={() => toggleMetric(metric.id as keyof ScanData)}
+                                                className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 ${isSelected
+                                                        ? `${metric.color} text-white shadow-lg ring-2 ring-white/20`
+                                                        : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                                                    }`}
+                                            >
+                                                {/* Dot indicator if selected */}
+                                                {isSelected && <span className="w-2 h-2 rounded-full bg-white" />}
+                                                {metric.label}
+                                            </button>
+                                        );
+                                    })}}
                                 </div>
 
                                 <BiometricTrendChart
