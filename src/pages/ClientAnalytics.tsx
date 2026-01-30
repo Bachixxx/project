@@ -467,10 +467,11 @@ function ClientAnalytics() {
               </div>
 
             </div>
-        )}
           </div>
+        )}
+      </div>
     </div>
-      );
+  );
 }
 
-      export default ClientAnalytics;
+export default ClientAnalytics;
