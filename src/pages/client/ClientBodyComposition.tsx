@@ -239,6 +239,7 @@ function ClientBodyComposition() {
                                 <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide no-scrollbar">
                                     {[
                                         { id: 'weight', label: 'Poids', color: 'bg-blue-500', text: 'text-blue-500' },
+                                        { id: 'bmi', label: 'IMC', color: 'bg-emerald-500', text: 'text-emerald-500' },
                                         { id: 'body_fat_percent', label: 'Graisse %', color: 'bg-yellow-500', text: 'text-yellow-500' },
                                         { id: 'skeletal_muscle_mass', label: 'Muscle (kg)', color: 'bg-red-500', text: 'text-red-500' },
                                         { id: 'total_body_water_percent', label: 'Eau %', color: 'bg-cyan-500', text: 'text-cyan-500' },
