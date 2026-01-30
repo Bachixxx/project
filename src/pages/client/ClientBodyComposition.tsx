@@ -54,6 +54,7 @@ function ClientBodyComposition() {
                 .select('*')
                 .eq('client_id', client.id)
                 .order('date', { ascending: false })
+                .order('created_at', { ascending: false })
                 .limit(1)
                 .maybeSingle();
 
