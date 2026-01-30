@@ -96,19 +96,21 @@ export function BiometricTrendChart({ data, metrics }: BiometricTrendChartProps)
                             }}
                             minTickGap={30}
                         />
-                        {metrics.map((metric) => (
+                        {uniqueAxes.map((axis, index) => (
                             <YAxis
-                                key={metric.id}
-                                yAxisId={metric.id}
-                                orientation="left"
+                                key={axis.id}
+                                yAxisId={axis.id}
+                                orientation={index === 0 ? "left" : "right"}
                                 stroke="#9ca3af"
-                                tick={{ fill: metrics.length === 1 ? '#9ca3af' : metric.color, fontSize: 12 }}
+                                tick={{ fill: '#9ca3af', fontSize: 12 }}
                                 tickLine={false}
                                 axisLine={false}
-                                domain={[0, 'auto']}
+                                // @ts-ignore
+                                domain={axis.domain}
                                 tickFormatter={(value) => `${Math.round(value)}`}
                                 width={30}
-                                hide={metrics.length > 1}
+                                // Hide axis lines if we have too many, keep only first (left) and possibly second (right)
+                                hide={index > 1}
                             />
                         ))}
                         <Tooltip

@@ -279,7 +279,7 @@ export function BiometricsDashboard({ clientId, readOnly = false }: BiometricsDa
                                         { id: 'metabolic_age', label: 'Âge Métabolique', color: '#f97316', unit: 'ans', yAxisId: 'common' },
 
                                         // BMR has its own axis because the values are much larger (1000+)
-                                        { id: 'bmr', label: 'Métabolisme de Base', color: '#22c55e', unit: 'kcal', yAxisId: 'bmr', domain: [0, 'auto'] },
+                                        { id: 'bmr', label: 'Métabolisme de Base', color: '#22c55e', unit: 'kcal', yAxisId: 'bmr', domain: [0, 'auto'] as [number, 'auto'] },
                                     ]
                                         // @ts-ignore
                                         .filter(m => selectedMetrics.includes(m.id as keyof ScanData))
