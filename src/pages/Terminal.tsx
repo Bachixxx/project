@@ -14,6 +14,8 @@ function Terminal() {
     const [description, setDescription] = React.useState('');
     const [qrUrl, setQrUrl] = React.useState<string | null>(null);
     const [generating, setGenerating] = React.useState(false);
+    const [hasStripeAccount, setHasStripeAccount] = React.useState<boolean | null>(null);
+    const [checkingStripe, setCheckingStripe] = React.useState(true);
 
     const handleSubscribe = async () => {
         try {
@@ -118,13 +120,6 @@ function Terminal() {
         );
     }
 
-    // Active View
-    const [amount, setAmount] = React.useState('');
-    const [description, setDescription] = React.useState('');
-    const [qrUrl, setQrUrl] = React.useState<string | null>(null);
-    const [generating, setGenerating] = React.useState(false);
-    const [hasStripeAccount, setHasStripeAccount] = React.useState<boolean | null>(null);
-    const [checkingStripe, setCheckingStripe] = React.useState(true);
 
     // Check Stripe Connect Status
     React.useEffect(() => {
