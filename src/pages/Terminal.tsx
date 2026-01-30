@@ -20,10 +20,12 @@ function Terminal() {
     // Active View State
     const [amount, setAmount] = React.useState('');
     const [description, setDescription] = React.useState('');
+    const [clientEmail, setClientEmail] = React.useState('');
     const [qrUrl, setQrUrl] = React.useState<string | null>(null);
     const [generating, setGenerating] = React.useState(false);
     const [hasStripeAccount, setHasStripeAccount] = React.useState<boolean | null>(null);
     const [checkingStripe, setCheckingStripe] = React.useState(true);
+
 
     // Subscription Mode
     const [paymentMode, setPaymentMode] = React.useState<'one_time' | 'subscription'>('one_time');
@@ -70,6 +72,7 @@ function Terminal() {
                 coachId: user?.id,
                 amount: Number(amount),
                 description: description,
+                clientEmail: clientEmail,
                 mode: paymentMode === 'subscription' ? 'subscription' : 'payment',
                 priceId: selectedPlan?.stripe_price_id
             };
@@ -113,6 +116,7 @@ function Terminal() {
         setQrUrl(null);
         setAmount('');
         setDescription('');
+        setClientEmail('');
         setSelectedPlan(null);
     };
 
@@ -289,6 +293,17 @@ function Terminal() {
                                     placeholder="Ex: Séance privée, Matériel..."
                                 />
                             </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">Email du client (pour reçu)</label>
+                                <input
+                                    type="email"
+                                    value={clientEmail}
+                                    onChange={(e) => setClientEmail(e.target.value)}
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-emerald-500 transition-colors"
+                                    placeholder="client@email.com"
+                                />
+                            </div>
                         </div>
                     ) : (
                         <div className="space-y-4 animate-fade-in">
@@ -326,6 +341,17 @@ function Terminal() {
                                     <a href="/offers" className="text-blue-400 text-sm hover:underline mt-2 inline-block">Créer une offre</a>
                                 </div>
                             )}
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">Email du client (Optionnel)</label>
+                                <input
+                                    type="email"
+                                    value={clientEmail}
+                                    onChange={(e) => setClientEmail(e.target.value)}
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-emerald-500 transition-colors"
+                                    placeholder="client@email.com"
+                                />
+                            </div>
                         </div>
                     )}
 

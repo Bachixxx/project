@@ -35,8 +35,8 @@ Deno.serve(async (req) => {
         }
         const stripe = getStripe();
 
-        const { coachId, amount, description, mode, priceId } = await req.json();
-        console.log('Received:', { coachId, amount, description, mode, priceId });
+        const { coachId, amount, description, mode, priceId, clientEmail } = await req.json();
+        console.log('Received:', { coachId, amount, description, mode, priceId, clientEmail });
 
         if (!coachId || (!amount && !priceId)) {
             throw new Error('Missing coachId or amount/priceId');
@@ -52,8 +52,20 @@ Deno.serve(async (req) => {
         if (coachError || !coach) throw new Error('Coach not found');
         if (!coach.stripe_account_id) throw new Error('Coach has not connected their Stripe account');
 
-        // 2. Create Checkout Session
+        // 2. Create a Customer (Required for V2 Accounts / Subscriptions)
+        const customer = await stripe.customers.create({
+            email: clientEmail || `guest_${Date.now()}@coachency.app`,
+            name: clientEmail ? undefined : 'Client Terminal (Anonyme)',
+            metadata: {
+                coachId: coachId,
+                source: 'terminal_v2'
+            }
+        });
+        console.log('Created Customer:', customer.id);
+
+        // 3. Create Checkout Session
         let sessionParams: any = {
+            customer: customer.id, // Mandatory for V2 / Subscriptions
             payment_method_types: ['card'],
             ui_mode: 'hosted',
             metadata: {
