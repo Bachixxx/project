@@ -4,6 +4,7 @@ import { ChevronLeft, Scale, Calendar, Dumbbell, Activity, Target, Award, ArrowU
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
+import { BiometricsDashboard } from '../components/client/biometrics/BiometricsDashboard';
 
 interface WorkoutLog {
   id: string;
@@ -259,108 +260,37 @@ function ClientAnalytics() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-
-            {/* Weight Chart (Mock) */}
-            <div className="bg-[#1e293b]/50 border border-white/5 backdrop-blur-xl p-6 rounded-3xl flex flex-col h-[450px]">
-              <div className="flex items-center justify-between mb-8">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 bg-blue-500/20 rounded-xl">
-                    <Scale className="w-6 h-6 text-blue-400" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-bold text-white">Évolution du Poids</h2>
-                    <p className="text-xs text-gray-400">Suivi corporel (Simulé)</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex-1 w-full min-h-0">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={weightData}>
-                    <defs>
-                      <linearGradient id="colorWeight" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                    <XAxis
-                      dataKey="date"
-                      stroke="rgba(255,255,255,0.3)"
-                      tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 12 }}
-                      tickLine={false}
-                      axisLine={false}
-                      dy={10}
-                    />
-                    <YAxis
-                      stroke="rgba(255,255,255,0.3)"
-                      tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 12 }}
-                      tickLine={false}
-                      axisLine={false}
-                      dx={-10}
-                      domain={['dataMin - 2', 'dataMax + 2']}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: 'rgba(15, 23, 42, 0.9)',
-                        backdropFilter: 'blur(10px)',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        borderRadius: '1rem',
-                        color: 'white',
-                        boxShadow: '0 10px 30px -10px rgba(0,0,0,0.5)'
-                      }}
-                      itemStyle={{ color: '#fff' }}
-                      labelStyle={{ color: '#9ca3af', marginBottom: '0.5rem' }}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="value"
-                      stroke="#3b82f6"
-                      strokeWidth={3}
-                      fillOpacity={1}
-                      fill="url(#colorWeight)"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
+          <div className="space-y-8">
+            {/* NEW: Biometrics Section */}
+            <div className="bg-[#1e293b]/50 border border-white/5 backdrop-blur-xl p-6 rounded-3xl">
+              <BiometricsDashboard clientId={clientId!} readOnly={true} />
             </div>
 
-            {/* Strength Progress Chart */}
-            <div className="bg-[#1e293b]/50 border border-white/5 backdrop-blur-xl p-6 rounded-3xl flex flex-col h-[450px]">
-              <div className="flex items-center justify-between mb-8">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 bg-purple-500/20 rounded-xl">
-                    <Dumbbell className="w-6 h-6 text-purple-400" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-bold text-white">Performance Exercice</h2>
-                    <p className="text-xs text-gray-400">Charge maximale soulevée</p>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+              {/* Weight Chart (Mock) */}
+              <div className="bg-[#1e293b]/50 border border-white/5 backdrop-blur-xl p-6 rounded-3xl flex flex-col h-[450px]">
+                <div className="flex items-center justify-between mb-8">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2.5 bg-blue-500/20 rounded-xl">
+                      <Scale className="w-6 h-6 text-blue-400" />
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-bold text-white">Évolution du Poids</h2>
+                      <p className="text-xs text-gray-400">Suivi corporel (Simulé)</p>
+                    </div>
                   </div>
                 </div>
 
-                {exercises.length > 0 && (
-                  <div className="relative group">
-                    <select
-                      value={selectedExercise}
-                      onChange={(e) => setSelectedExercise(e.target.value)}
-                      className="appearance-none bg-white/5 border border-white/10 text-white text-sm rounded-xl px-4 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer hover:bg-white/10 transition-colors"
-                    >
-                      {exercises.map(exercise => (
-                        <option key={exercise.id} value={exercise.id} className="bg-slate-900 text-white">
-                          {exercise.name}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                  </div>
-                )}
-              </div>
-
-              {strengthData.length > 0 ? (
                 <div className="flex-1 w-full min-h-0">
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={strengthData}>
+                    <AreaChart data={weightData}>
+                      <defs>
+                        <linearGradient id="colorWeight" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                       <XAxis
                         dataKey="date"
@@ -376,6 +306,7 @@ function ClientAnalytics() {
                         tickLine={false}
                         axisLine={false}
                         dx={-10}
+                        domain={['dataMin - 2', 'dataMax + 2']}
                       />
                       <Tooltip
                         contentStyle={{
@@ -386,84 +317,160 @@ function ClientAnalytics() {
                           color: 'white',
                           boxShadow: '0 10px 30px -10px rgba(0,0,0,0.5)'
                         }}
+                        itemStyle={{ color: '#fff' }}
+                        labelStyle={{ color: '#9ca3af', marginBottom: '0.5rem' }}
                       />
-                      <Line
+                      <Area
                         type="monotone"
-                        dataKey="maxWeight"
-                        stroke="#a855f7"
-                        name="Charge Max (kg)"
+                        dataKey="value"
+                        stroke="#3b82f6"
                         strokeWidth={3}
-                        dot={{ fill: '#a855f7', strokeWidth: 0, r: 4 }}
-                        activeDot={{ r: 6, strokeWidth: 0 }}
+                        fillOpacity={1}
+                        fill="url(#colorWeight)"
                       />
-                    </LineChart>
+                    </AreaChart>
                   </ResponsiveContainer>
                 </div>
-              ) : (
-                <div className="flex-1 flex flex-col items-center justify-center text-center p-8 border border-dashed border-white/10 rounded-2xl bg-white/5 mx-auto w-full">
-                  <Activity className="w-8 h-8 text-white/20 mb-3" />
-                  <p className="text-gray-400 text-sm">
-                    Pas assez de données pour cet exercice.
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Goals Progress */}
-            <div className="lg:col-span-2 bg-[#1e293b]/50 border border-white/5 backdrop-blur-xl p-6 rounded-3xl">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-2.5 bg-yellow-500/20 rounded-xl">
-                  <Target className="w-6 h-6 text-yellow-400" />
-                </div>
-                <h2 className="text-lg font-bold text-white">Objectifs Personnels</h2>
               </div>
 
-              {goals.length > 0 ? (
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {goals.map((goal, index) => (
-                    <div key={index} className="bg-gradient-to-br from-white/5 to-white/[0.02] p-5 rounded-2xl border border-white/5 hover:border-white/10 transition-all group relative overflow-hidden">
-                      <div className="absolute top-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <ArrowUpRight className="w-4 h-4 text-white/40" />
-                      </div>
-
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex-1 min-w-0 pr-4">
-                          <h4 className="text-white font-bold truncate">{goal.name}</h4>
-                          <p className="text-xs text-gray-400 mt-1">{goal.target}</p>
-                        </div>
-                        <div className={`flex items-center justify-center w-8 h-8 rounded-full ${goal.progress >= 100 ? 'bg-yellow-500 text-black' : 'bg-white/10 text-gray-400'}`}>
-                          <Award className="w-4 h-4" />
-                        </div>
-                      </div>
-
-                      <div className="relative pt-2">
-                        <div className="flex justify-between text-xs font-semibold mb-1.5">
-                          <span className={goal.progress >= 100 ? 'text-yellow-400' : 'text-blue-400'}>
-                            {goal.progress >= 100 ? 'Atteint !' : `${goal.progress}%`}
-                          </span>
-                        </div>
-                        <div className="w-full h-2 bg-black/40 rounded-full overflow-hidden">
-                          <div
-                            className={`h-full rounded-full transition-all duration-1000 ease-out ${goal.progress >= 100 ? 'bg-yellow-500' : 'bg-gradient-to-r from-blue-500 to-purple-500'}`}
-                            style={{ width: `${Math.min(100, goal.progress)}%` }}
-                          />
-                        </div>
-                      </div>
+              {/* Strength Progress Chart */}
+              <div className="bg-[#1e293b]/50 border border-white/5 backdrop-blur-xl p-6 rounded-3xl flex flex-col h-[450px]">
+                <div className="flex items-center justify-between mb-8">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2.5 bg-purple-500/20 rounded-xl">
+                      <Dumbbell className="w-6 h-6 text-purple-400" />
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-gray-400">
-                  Aucun objectif défini pour ce client.
-                </div>
-              )}
-            </div>
+                    <div>
+                      <h2 className="text-lg font-bold text-white">Performance Exercice</h2>
+                      <p className="text-xs text-gray-400">Charge maximale soulevée</p>
+                    </div>
+                  </div>
 
-          </div>
+                  {exercises.length > 0 && (
+                    <div className="relative group">
+                      <select
+                        value={selectedExercise}
+                        onChange={(e) => setSelectedExercise(e.target.value)}
+                        className="appearance-none bg-white/5 border border-white/10 text-white text-sm rounded-xl px-4 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer hover:bg-white/10 transition-colors"
+                      >
+                        {exercises.map(exercise => (
+                          <option key={exercise.id} value={exercise.id} className="bg-slate-900 text-white">
+                            {exercise.name}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                    </div>
+                  )}
+                </div>
+
+                {strengthData.length > 0 ? (
+                  <div className="flex-1 w-full min-h-0">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={strengthData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                        <XAxis
+                          dataKey="date"
+                          stroke="rgba(255,255,255,0.3)"
+                          tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 12 }}
+                          tickLine={false}
+                          axisLine={false}
+                          dy={10}
+                        />
+                        <YAxis
+                          stroke="rgba(255,255,255,0.3)"
+                          tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 12 }}
+                          tickLine={false}
+                          axisLine={false}
+                          dx={-10}
+                        />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                            backdropFilter: 'blur(10px)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            borderRadius: '1rem',
+                            color: 'white',
+                            boxShadow: '0 10px 30px -10px rgba(0,0,0,0.5)'
+                          }}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="maxWeight"
+                          stroke="#a855f7"
+                          name="Charge Max (kg)"
+                          strokeWidth={3}
+                          dot={{ fill: '#a855f7', strokeWidth: 0, r: 4 }}
+                          activeDot={{ r: 6, strokeWidth: 0 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <div className="flex-1 flex flex-col items-center justify-center text-center p-8 border border-dashed border-white/10 rounded-2xl bg-white/5 mx-auto w-full">
+                    <Activity className="w-8 h-8 text-white/20 mb-3" />
+                    <p className="text-gray-400 text-sm">
+                      Pas assez de données pour cet exercice.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Goals Progress */}
+              <div className="lg:col-span-2 bg-[#1e293b]/50 border border-white/5 backdrop-blur-xl p-6 rounded-3xl">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-2.5 bg-yellow-500/20 rounded-xl">
+                    <Target className="w-6 h-6 text-yellow-400" />
+                  </div>
+                  <h2 className="text-lg font-bold text-white">Objectifs Personnels</h2>
+                </div>
+
+                {goals.length > 0 ? (
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {goals.map((goal, index) => (
+                      <div key={index} className="bg-gradient-to-br from-white/5 to-white/[0.02] p-5 rounded-2xl border border-white/5 hover:border-white/10 transition-all group relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <ArrowUpRight className="w-4 h-4 text-white/40" />
+                        </div>
+
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex-1 min-w-0 pr-4">
+                            <h4 className="text-white font-bold truncate">{goal.name}</h4>
+                            <p className="text-xs text-gray-400 mt-1">{goal.target}</p>
+                          </div>
+                          <div className={`flex items-center justify-center w-8 h-8 rounded-full ${goal.progress >= 100 ? 'bg-yellow-500 text-black' : 'bg-white/10 text-gray-400'}`}>
+                            <Award className="w-4 h-4" />
+                          </div>
+                        </div>
+
+                        <div className="relative pt-2">
+                          <div className="flex justify-between text-xs font-semibold mb-1.5">
+                            <span className={goal.progress >= 100 ? 'text-yellow-400' : 'text-blue-400'}>
+                              {goal.progress >= 100 ? 'Atteint !' : `${goal.progress}%`}
+                            </span>
+                          </div>
+                          <div className="w-full h-2 bg-black/40 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full rounded-full transition-all duration-1000 ease-out ${goal.progress >= 100 ? 'bg-yellow-500' : 'bg-gradient-to-r from-blue-500 to-purple-500'}`}
+                              style={{ width: `${Math.min(100, goal.progress)}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-400">
+                    Aucun objectif défini pour ce client.
+                  </div>
+                )}
+              </div>
+
+            </div>
         )}
-      </div>
+          </div>
     </div>
-  );
+      );
 }
 
-export default ClientAnalytics;
+      export default ClientAnalytics;
