@@ -1,21 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronLeft, Search, Filter, Check, X, DollarSign, Calendar, User, Clock, Users, Plus, Minus, Download, TrendingUp, AlertCircle, CreditCard } from 'lucide-react';
+import { ChevronLeft, Search, Filter, Check, X, DollarSign, Calendar, User, Clock, Users, Plus, Minus, Download, TrendingUp, AlertCircle, CreditCard, Smartphone } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { generateMonthlyIncomeReport } from '../utils/pdfGenerator';
 
 interface Payment {
   id: string;
-  appointment_id: string;
+  appointment_id: string | null;
   client_id: string | null;
   amount: number;
   status: 'pending' | 'paid';
-  payment_method: 'cash' | 'transfer';
+  payment_method: 'cash' | 'transfer' | 'online';
   payment_date: string | null;
   notes: string;
   created_at: string;
-  appointment: {
+  appointment?: {
     title: string;
     start: string;
     type: 'private' | 'group';
@@ -102,14 +102,20 @@ function PaymentsPage() {
   };
 
   const filteredPayments = payments.filter(payment => {
-    const matchesSearch =
-      (payment.client?.full_name || payment.appointment.title).toLowerCase().includes(searchQuery.toLowerCase());
+    const searchTarget = (
+      payment.client?.full_name ||
+      payment.appointment?.title ||
+      payment.notes ||
+      'Paiement Terminal'
+    ).toLowerCase();
+
+    const matchesSearch = searchTarget.includes(searchQuery.toLowerCase());
     const matchesStatus = !statusFilter || payment.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
   const calculateGroupRevenue = (payment: Payment) => {
-    if (payment.appointment.type === 'group') {
+    if (payment.appointment?.type === 'group') {
       return payment.amount * payment.appointment.current_participants;
     }
     return payment.amount;
@@ -128,9 +134,9 @@ function PaymentsPage() {
     // Transform payments data for PDF
     const pdfPayments = filteredPayments.map(payment => ({
       id: payment.id,
-      date: payment.appointment.start,
-      client_name: payment.client?.full_name || payment.appointment.title,
-      program_name: payment.appointment.title,
+      date: payment.appointment?.start || payment.payment_date || payment.created_at,
+      client_name: payment.client?.full_name || (payment.appointment ? payment.appointment.title : 'Client Terminal'),
+      program_name: payment.appointment?.title || payment.notes || 'Paiement sans contact',
       amount: calculateGroupRevenue(payment),
       status: payment.status
     }));
@@ -259,18 +265,28 @@ function PaymentsPage() {
                   </div>
                   <div>
                     <h4 className="font-bold text-white text-lg">
-                      {payment.appointment.type === 'private'
-                        ? (payment.client?.full_name || 'Client Inconnu')
-                        : payment.appointment.title}
+                      {payment.appointment
+                        ? (payment.appointment?.type === 'private'
+                          ? (payment.client?.full_name || 'Client Inconnu')
+                          : payment.appointment?.title || 'Séance inconnue')
+                        : (payment.notes || 'Paiement Terminal')
+                      }
                     </h4>
                     <div className="flex items-center gap-3 text-sm text-gray-400 mt-1">
                       <span className="flex items-center gap-1">
-                        <Calendar className="w-3.5 h-3.5" /> {new Date(payment.appointment.start).toLocaleDateString()}
+                        <Calendar className="w-3.5 h-3.5" />
+                        {new Date(payment.appointment?.start || payment.payment_date || payment.created_at).toLocaleDateString()}
                       </span>
                       <span>•</span>
                       <span className="flex items-center gap-1">
-                        {payment.appointment.type === 'private' ? <User className="w-3.5 h-3.5" /> : <Users className="w-3.5 h-3.5" />}
-                        {payment.appointment.type === 'private' ? 'Privé' : `Groupe (${payment.appointment.current_participants}/${payment.appointment.max_participants})`}
+                        {payment.appointment
+                          ? (payment.appointment.type === 'private' ? <User className="w-3.5 h-3.5" /> : <Users className="w-3.5 h-3.5" />)
+                          : <Smartphone className="w-3.5 h-3.5" />
+                        }
+                        {payment.appointment
+                          ? (payment.appointment.type === 'private' ? 'Privé' : `Groupe (${payment.appointment.current_participants}/${payment.appointment.max_participants})`)
+                          : 'Terminal'
+                        }
                       </span>
                       {payment.payment_method === 'online' && (
                         <>

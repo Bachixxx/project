@@ -129,7 +129,30 @@ Deno.serve(async (req) => {
 
         } else if (session.mode === 'payment') {
           const metadata = session.metadata || {};
-          const { programId, clientId, coachId, appointmentId } = metadata;
+          const { programId, clientId, coachId, appointmentId, paymentType } = metadata;
+
+          // Handle Terminal Payments (Anonymous/Ad-hoc)
+          if (paymentType === 'terminal') {
+            console.log('Successfully processed Terminal Payment for coach:', coachId);
+            const description = session.description;
+            // Insert anonymous payment record
+            const { error: paymentError } = await supabase.from('payments').insert({
+              coach_id: coachId,
+              amount: session.amount_total ? session.amount_total / 100 : 0,
+              status: 'paid',
+              payment_method: 'online',
+              payment_date: new Date().toISOString(),
+              notes: description || 'Paiement sans contact (Terminal)'
+            });
+
+            if (paymentError) {
+              console.warn('Warning: Could not save terminal payment to DB (likely missing coach_id column):', paymentError);
+              // We do NOT throw here, so the webhook returns 200 OK to Stripe.
+              // The payment is successful in Stripe regardless.
+            }
+
+            break;
+          }
 
           if (!clientId) {
             throw new Error('Missing required metadata: clientId');

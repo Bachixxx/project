@@ -79,6 +79,11 @@ Deno.serve(async (req) => {
                     destination: coach.stripe_account_id,
                 },
             },
+            metadata: {
+                paymentType: 'terminal',
+                coachId: coachId,
+                description: description || 'Terminal Payment'
+            },
             // In a real terminal, we might want to redirect to a "Success" page on the Coach's site
             success_url: `${req.headers.get('origin')}/terminal?payment_status=success`,
             cancel_url: `${req.headers.get('origin')}/terminal?payment_status=cancelled`,

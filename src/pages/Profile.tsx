@@ -4,7 +4,7 @@ import { ChevronLeft, User, Mail, Phone, Award, Crown, Clock, BadgeEuro, Externa
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useSubscription } from '../hooks/useSubscription';
-import { createPortalSession, createLoginLink } from '../lib/stripe';
+import { createPortalSession, createLoginLink, getStripeAccountStatus } from '../lib/stripe';
 
 interface Coach {
   id: string;
