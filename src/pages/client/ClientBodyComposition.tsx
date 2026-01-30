@@ -15,6 +15,7 @@ interface ScanData {
     date: string;
     weight: number;
     height: number;
+    bmi?: number;
     body_fat_percent: number;
     body_fat_mass: number;
     skeletal_muscle_mass: number;
