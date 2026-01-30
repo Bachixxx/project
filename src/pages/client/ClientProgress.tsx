@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
-import { TrendingUp, TrendingDown, Scale, Target, Award, Loader, Dumbbell, Calendar, ChevronDown, Activity, ArrowUpRight } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { Award, Target, ArrowUpRight, Activity, Calendar, Plus, X, Dumbbell } from 'lucide-react';
 import { useClientAuth } from '../../contexts/ClientAuthContext';
 import { supabase } from '../../lib/supabase';
 
@@ -24,10 +24,13 @@ function ClientProgress() {
   const { client } = useClientAuth();
   const [loading, setLoading] = useState(true);
 
-  const [strengthData, setStrengthData] = useState<any[]>([]);
+  // Data State
   const [workoutLogs, setWorkoutLogs] = useState<WorkoutLog[]>([]);
   const [exercises, setExercises] = useState<Exercise[]>([]);
-  const [selectedExercise, setSelectedExercise] = useState<string>('');
+
+  // UI State
+  const [selectedExercises, setSelectedExercises] = useState<string[]>([]);
+  const [isSelectorOpen, setIsSelectorOpen] = useState(false);
 
   useEffect(() => {
     if (client) {
@@ -35,11 +38,12 @@ function ClientProgress() {
     }
   }, [client]);
 
+  // When exercises are loaded, select the first one by default if none selected
   useEffect(() => {
-    if (selectedExercise && workoutLogs.length > 0) {
-      generateStrengthData();
+    if (exercises.length > 0 && selectedExercises.length === 0) {
+      setSelectedExercises([exercises[0].id]);
     }
-  }, [selectedExercise, workoutLogs]);
+  }, [exercises]);
 
   const fetchProgressData = async () => {
     try {
@@ -90,13 +94,7 @@ function ClientProgress() {
 
         if (exercisesError) throw exercisesError;
         setExercises(exercisesData || []);
-
-        if (exercisesData && exercisesData.length > 0 && !selectedExercise) {
-          setSelectedExercise(exercisesData[0].id);
-        }
       }
-
-
 
     } catch (error) {
       console.error('Error fetching progress data:', error);
@@ -105,16 +103,14 @@ function ClientProgress() {
     }
   };
 
-
-
-  const generateStrengthData = () => {
-    if (!selectedExercise || workoutLogs.length === 0) return;
+  const getStrengthDataForExercise = (exerciseId: string) => {
+    if (!exerciseId || workoutLogs.length === 0) return [];
 
     // Group logs by date (or session)
     const sessionGroups: Record<string, WorkoutLog[]> = {};
 
     workoutLogs
-      .filter(log => log.exercise_id === selectedExercise)
+      .filter(log => log.exercise_id === exerciseId)
       .forEach(log => {
         // Use scheduled date as key if available, else completed_at
         let dateStr = log.completed_at;
@@ -131,7 +127,7 @@ function ClientProgress() {
         sessionGroups[dateKey].push(log);
       });
 
-    const strengthData = Object.entries(sessionGroups).map(([dateStr, logs]) => {
+    return Object.entries(sessionGroups).map(([dateStr, logs]) => {
       // Calculate metrics for this session
       const maxWeight = Math.max(...logs.map(l => l.weight));
       // Volume = sum(weight * reps)
@@ -147,8 +143,6 @@ function ClientProgress() {
       };
     })
       .sort((a, b) => a.rawDate.getTime() - b.rawDate.getTime());
-
-    setStrengthData(strengthData);
   };
 
   const calculateGoalProgress = () => {
@@ -178,6 +172,17 @@ function ClientProgress() {
     });
   };
 
+  const toggleExercise = (exerciseId: string) => {
+    setSelectedExercises(prev => {
+      if (prev.includes(exerciseId)) {
+        return prev.filter(id => id !== exerciseId);
+      } else {
+        return [...prev, exerciseId];
+      }
+    });
+    setIsSelectorOpen(false);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-[#0f172a]">
@@ -202,12 +207,12 @@ function ClientProgress() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 animate-slide-in">
           <div>
             <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Mes Progrès</h1>
-            <p className="text-gray-400">Visualisez votre évolution et l'atteinte de vos objectifs.</p>
+            <p className="text-gray-400">Suivez l'évolution de vos charges sur vos exercices favoris.</p>
           </div>
 
           <div className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-lg border border-white/10 text-sm text-gray-400">
             <Calendar className="w-4 h-4" />
-            <span>Derniers 30 jours</span>
+            <span>Tous les temps</span>
           </div>
         </div>
 
@@ -218,97 +223,158 @@ function ClientProgress() {
             </div>
             <h3 className="text-2xl font-bold text-white mb-2">Aucune donnée disponible</h3>
             <p className="text-gray-400 max-w-md mx-auto mb-8">
-              Commencez à enregistrer vos séances d'entraînement pour voir apparaître vos statistiques et graphiques de progression.
+              Commencez à enregistrer vos séances d'entraînement pour voir apparaître vos statistiques.
             </p>
           </div>
         ) : (
           <div className="space-y-8 animate-fade-in delay-100">
 
-            {/* Graphique de Force */}
-            <div className="glass-card p-6 rounded-3xl border border-white/10 flex flex-col h-[450px]">
-              <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 bg-purple-500/20 rounded-xl">
-                    <Dumbbell className="w-6 h-6 text-purple-400" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-bold text-white">Performance Exercice</h2>
-                    <p className="text-xs text-gray-400">Charge maximale soulevée</p>
-                  </div>
-                </div>
+            {/* Controls Bar */}
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="relative">
+                <button
+                  onClick={() => setIsSelectorOpen(!isSelectorOpen)}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-colors shadow-lg shadow-blue-500/20"
+                >
+                  <Plus className="w-4 h-4" />
+                  Ajouter un graphique
+                </button>
 
-                {exercises.length > 0 && (
-                  <div className="relative group w-full md:w-auto">
-                    <select
-                      value={selectedExercise}
-                      onChange={(e) => setSelectedExercise(e.target.value)}
-                      className="w-full md:w-auto appearance-none bg-white/5 border border-white/10 text-white text-sm rounded-xl px-4 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer hover:bg-white/10 transition-colors"
-                    >
-                      {exercises.map(exercise => (
-                        <option key={exercise.id} value={exercise.id} className="bg-slate-900 text-white">
-                          {exercise.name}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                  </div>
+                {isSelectorOpen && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setIsSelectorOpen(false)} />
+                    <div className="absolute top-full left-0 mt-2 w-64 bg-[#1e293b] border border-white/10 rounded-xl shadow-xl z-20 max-h-60 overflow-y-auto">
+                      <div className="p-2 space-y-1">
+                        {exercises.map(exercise => {
+                          const isSelected = selectedExercises.includes(exercise.id);
+                          return (
+                            <button
+                              key={exercise.id}
+                              onClick={() => toggleExercise(exercise.id)}
+                              className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${isSelected
+                                ? 'bg-blue-500/20 text-blue-400'
+                                : 'text-gray-300 hover:bg-white/5'
+                                }`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <span>{exercise.name}</span>
+                                {isSelected && <Activity className="w-3 h-3" />}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </>
                 )}
               </div>
 
-              {strengthData.length > 0 ? (
-                <div className="flex-1 w-full min-h-0">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={strengthData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                      <XAxis
-                        dataKey="date"
-                        stroke="rgba(255,255,255,0.3)"
-                        tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 12 }}
-                        tickLine={false}
-                        axisLine={false}
-                        dy={10}
-                      />
-                      <YAxis
-                        stroke="rgba(255,255,255,0.3)"
-                        tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 12 }}
-                        tickLine={false}
-                        axisLine={false}
-                        dx={-10}
-                      />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: 'rgba(15, 23, 42, 0.9)',
-                          backdropFilter: 'blur(10px)',
-                          border: '1px solid rgba(255,255,255,0.1)',
-                          borderRadius: '1rem',
-                          color: 'white',
-                          boxShadow: '0 10px 30px -10px rgba(0,0,0,0.5)'
-                        }}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="maxWeight"
-                        stroke="#a855f7"
-                        name="Charge Max (kg)"
-                        strokeWidth={3}
-                        dot={{ fill: '#a855f7', strokeWidth: 0, r: 4 }}
-                        activeDot={{ r: 6, strokeWidth: 0 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              ) : (
-                <div className="flex-1 flex flex-col items-center justify-center text-center p-8 border border-dashed border-white/10 rounded-2xl bg-white/5 mx-auto w-full">
-                  <Activity className="w-8 h-8 text-white/20 mb-3" />
-                  <p className="text-gray-400 text-sm">
-                    Pas assez de données pour cet exercice.
-                    <br />Continuez l'entraînement !
-                  </p>
-                </div>
-              )}
+              <div className="h-8 w-px bg-white/10 mx-2 hidden md:block" />
+
+              <div className="flex flex-wrap gap-2">
+                {selectedExercises.map(id => {
+                  const ex = exercises.find(e => e.id === id);
+                  if (!ex) return null;
+                  return (
+                    <div key={id} className="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-sm text-gray-300">
+                      <span>{ex.name}</span>
+                      <button onClick={() => toggleExercise(id)} className="p-0.5 hover:text-white hover:bg-white/10 rounded-full transition-colors">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
             </div>
 
-            {/* Objectifs Grid */}
+            {/* Charts Grid */}
+            {selectedExercises.length > 0 ? (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {selectedExercises.map(exerciseId => {
+                  const exercise = exercises.find(e => e.id === exerciseId);
+                  const data = getStrengthDataForExercise(exerciseId);
+
+                  if (!exercise) return null;
+
+                  return (
+                    <div key={exerciseId} className="glass-card p-6 rounded-3xl border border-white/10 flex flex-col h-[400px] animate-fade-in">
+                      <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-purple-500/20 rounded-xl">
+                            <Dumbbell className="w-5 h-5 text-purple-400" />
+                          </div>
+                          <div>
+                            <h2 className="text-lg font-bold text-white leading-tight">{exercise.name}</h2>
+                            <p className="text-xs text-gray-400">Charge Max (kg)</p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => toggleExercise(exerciseId)}
+                          className="text-gray-500 hover:text-gray-300 transition-colors"
+                        >
+                          <X className="w-5 h-5" />
+                        </button>
+                      </div>
+
+                      {data.length > 0 ? (
+                        <div className="flex-1 w-full min-h-0">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={data}>
+                              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                              <XAxis
+                                dataKey="date"
+                                stroke="rgba(255,255,255,0.3)"
+                                tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 12 }}
+                                tickLine={false}
+                                axisLine={false}
+                                dy={10}
+                              />
+                              <YAxis
+                                stroke="rgba(255,255,255,0.3)"
+                                tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 12 }}
+                                tickLine={false}
+                                axisLine={false}
+                                dx={-10}
+                                domain={['dataMin - 5', 'auto']}
+                              />
+                              <Tooltip
+                                contentStyle={{
+                                  backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                                  backdropFilter: 'blur(10px)',
+                                  border: '1px solid rgba(255,255,255,0.1)',
+                                  borderRadius: '1rem',
+                                  color: 'white',
+                                  boxShadow: '0 10px 30px -10px rgba(0,0,0,0.5)'
+                                }}
+                              />
+                              <Line
+                                type="monotone"
+                                dataKey="maxWeight"
+                                stroke="#a855f7"
+                                name="Charge Max (kg)"
+                                strokeWidth={3}
+                                dot={{ fill: '#a855f7', strokeWidth: 0, r: 4 }}
+                                activeDot={{ r: 6, strokeWidth: 0 }}
+                              />
+                            </LineChart>
+                          </ResponsiveContainer>
+                        </div>
+                      ) : (
+                        <div className="flex-1 flex flex-col items-center justify-center text-center">
+                          <p className="text-gray-500 text-sm">Pas assez de données</p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="py-20 text-center border border-dashed border-white/10 rounded-3xl bg-white/5">
+                <p className="text-gray-400">Aucun exercice sélectionné. Ajoutez-en un ci-dessus !</p>
+              </div>
+            )}
+
+            {/* Objectifs Grid (Keep it at bottom) */}
             <div className="glass-card p-6 rounded-3xl border border-white/10">
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-2.5 bg-yellow-500/20 rounded-xl">
