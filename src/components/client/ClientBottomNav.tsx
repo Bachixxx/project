@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Dumbbell, Calendar, TrendingUp, User } from 'lucide-react';
+import { LayoutDashboard, Dumbbell, Calendar, TrendingUp, User, Activity } from 'lucide-react';
 
 function ClientBottomNav() {
     const location = useLocation();
@@ -13,8 +13,8 @@ function ClientBottomNav() {
         { path: '/client/dashboard', icon: LayoutDashboard, label: 'Accueil' },
         { path: '/client/workouts', icon: Dumbbell, label: 'Programme' },
         { path: '/client/appointments', icon: Calendar, label: 'Agenda' },
-        { path: '/client/appointments', icon: Calendar, label: 'Agenda' },
-        { path: '/client/body-composition', icon: TrendingUp, label: 'Biométrie' },
+        { path: '/client/progress', icon: TrendingUp, label: 'Progrès' },
+        { path: '/client/body-composition', icon: Activity, label: 'Biométrie' },
         { path: '/client/profile', icon: User, label: 'Profil' },
     ];
 
