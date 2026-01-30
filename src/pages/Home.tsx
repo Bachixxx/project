@@ -30,7 +30,7 @@ function Home() {
     },
     {
       question: "Puis-je importer mes clients actuels ?",
-      answer: "Oui, nous proposons des outils pour inviter facilement vos clients existants. Ils recevront un lien pour créer leur compte et seront automatiquement rattachés à votre profil."
+      answer: "Vous pouvez inviter vos clients à rejoindre la plateforme en leur envoyant un lien d'invitation. Ils pourront alors créer leur compte et accéder à vos programmes."
     },
     {
       question: "Côté client, doivent-ils payer quelque chose ?",
