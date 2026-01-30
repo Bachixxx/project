@@ -198,6 +198,18 @@ function ClientBodyComposition() {
                                         <h3 className="text-xs font-bold text-orange-500 uppercase mb-1">Eau</h3>
                                         <p className="text-2xl font-bold text-white">{scanData.total_body_water_percent || '--'} %</p>
                                     </div>
+                                    <div className="bg-white/5 p-4 rounded-xl border border-white/5 backdrop-blur-sm">
+                                        <h3 className="text-xs font-bold text-purple-500 uppercase mb-1">Viscérale</h3>
+                                        <p className="text-2xl font-bold text-white">{scanData.visceral_fat_level || '--'}</p>
+                                    </div>
+                                    <div className="bg-white/5 p-4 rounded-xl border border-white/5 backdrop-blur-sm">
+                                        <h3 className="text-xs font-bold text-green-500 uppercase mb-1">BMR</h3>
+                                        <p className="text-2xl font-bold text-white">{scanData.bmr || '--'} <span className="text-xs text-gray-400 font-normal">kcal</span></p>
+                                    </div>
+                                    <div className="bg-white/5 p-4 rounded-xl border border-white/5 backdrop-blur-sm">
+                                        <h3 className="text-xs font-bold text-blue-300 uppercase mb-1">Âge Meta.</h3>
+                                        <p className="text-2xl font-bold text-white">{scanData.metabolic_age || '--'} <span className="text-xs text-gray-400 font-normal">ans</span></p>
+                                    </div>
                                 </div>
                             </div>
                         </>
@@ -248,7 +260,6 @@ function ClientBodyComposition() {
                                     lowThreshold={10}
                                     highThreshold={20}
                                 />
-                                <div className="mt-8">
                                     <BiometricBar
                                         label="Pourcentage de Graisse"
                                         value={scanData.body_fat_percent || 0}
@@ -260,51 +271,67 @@ function ClientBodyComposition() {
                                     />
                                 </div>
                             </div>
-                        </div>
-                    )}
 
-                    {activeTab === 'water' && scanData && (
-                        <div className="glass-card p-6 rounded-3xl border border-white/10">
-                            <h3 className="text-lg font-bold text-white mb-6">Eau Corporelle</h3>
-                            <BiometricBar
-                                label="Eau Corporelle Totale"
-                                value={scanData.total_body_water || 0}
-                                unit="L" // Assuming Liters, need to check DB/Model
-                                min={20}
-                                max={60}
-                                lowThreshold={35}
-                                highThreshold={50}
-                            />
-                            <div className="mt-8 text-center p-8 bg-blue-500/10 rounded-2xl border border-blue-500/20">
-                                <Droplets className="w-12 h-12 text-blue-400 mx-auto mb-4" />
-                                <h4 className="text-2xl font-bold text-white mb-2">{scanData.total_body_water_percent || '--'} %</h4>
-                                <p className="text-gray-400 text-sm">Votre taux d'hydratation.</p>
+                            <div className="glass-card p-0 rounded-3xl border border-white/10 overflow-hidden relative min-h-[500px] flex items-center justify-center bg-gradient-to-b from-[#1a2c4e] to-[#0f172a]">
+                                <div className="absolute top-6 left-6 z-10">
+                                    <span className="block text-gray-400 text-xs font-bold uppercase tracking-wider">Graisse Segmentaire</span>
+                                    <span className="text-3xl font-bold text-white">{scanData.body_fat_mass || '--'} <span className="text-sm text-gray-500">kg</span></span>
+                                </div>
+
+                                <BodyMap>
+                                    {scanData.segmental_fat_right_arm && <BodySegmentLabel x={20} y={35} label="Bras Droit" value={`${scanData.segmental_fat_right_arm} kg`} align="right" />}
+                                    {scanData.segmental_fat_left_arm && <BodySegmentLabel x={80} y={35} label="Bras Gauche" value={`${scanData.segmental_fat_left_arm} kg`} align="left" />}
+                                    {scanData.segmental_fat_trunk && <BodySegmentLabel x={85} y={20} label="Buste" value={`${scanData.segmental_fat_trunk} kg`} align="left" />}
+                                    {scanData.segmental_fat_right_leg && <BodySegmentLabel x={20} y={75} label="Jambe Droite" value={`${scanData.segmental_fat_right_leg} kg`} align="right" />}
+                                    {scanData.segmental_fat_left_leg && <BodySegmentLabel x={80} y={75} label="Jambe Gauche" value={`${scanData.segmental_fat_left_leg} kg`} align="left" />}
+                                </BodyMap>
                             </div>
-                        </div>
-                    )}
-
-                    {activeTab === 'bone' && scanData && (
-                        <div className="glass-card p-6 rounded-3xl border border-white/10">
-                            <h3 className="text-lg font-bold text-white mb-6">Masse Osseuse</h3>
-                            <BiometricBar
-                                label="Contenu Minéral Osseux"
-                                value={scanData.bone_mass || 0}
-                                unit="kg"
-                                min={1}
-                                max={6}
-                                lowThreshold={2.5}
-                                highThreshold={4.0}
-                            />
-                            <div className="mt-8 text-center p-8 bg-gray-500/10 rounded-2xl border border-gray-500/20">
-                                <Bone className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                                <p className="text-gray-400 text-sm">Une densité osseuse saine est importante pour votre santé globale.</p>
                             </div>
-                        </div>
-                    )}
-
-                </div>
             </div>
+                    )}
+
+            {activeTab === 'water' && scanData && (
+                <div className="glass-card p-6 rounded-3xl border border-white/10">
+                    <h3 className="text-lg font-bold text-white mb-6">Eau Corporelle</h3>
+                    <BiometricBar
+                        label="Eau Corporelle Totale"
+                        value={scanData.total_body_water || 0}
+                        unit="L" // Assuming Liters, need to check DB/Model
+                        min={20}
+                        max={60}
+                        lowThreshold={35}
+                        highThreshold={50}
+                    />
+                    <div className="mt-8 text-center p-8 bg-blue-500/10 rounded-2xl border border-blue-500/20">
+                        <Droplets className="w-12 h-12 text-blue-400 mx-auto mb-4" />
+                        <h4 className="text-2xl font-bold text-white mb-2">{scanData.total_body_water_percent || '--'} %</h4>
+                        <p className="text-gray-400 text-sm">Votre taux d'hydratation.</p>
+                    </div>
+                </div>
+            )}
+
+            {activeTab === 'bone' && scanData && (
+                <div className="glass-card p-6 rounded-3xl border border-white/10">
+                    <h3 className="text-lg font-bold text-white mb-6">Masse Osseuse</h3>
+                    <BiometricBar
+                        label="Contenu Minéral Osseux"
+                        value={scanData.bone_mass || 0}
+                        unit="kg"
+                        min={1}
+                        max={6}
+                        lowThreshold={2.5}
+                        highThreshold={4.0}
+                    />
+                    <div className="mt-8 text-center p-8 bg-gray-500/10 rounded-2xl border border-gray-500/20">
+                        <Bone className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                        <p className="text-gray-400 text-sm">Une densité osseuse saine est importante pour votre santé globale.</p>
+                    </div>
+                </div>
+            )}
+
         </div>
+            </div >
+        </div >
     );
 }
 
