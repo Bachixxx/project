@@ -180,24 +180,11 @@ function ClientBodyComposition() {
                             <div className="glass-card p-8 rounded-3xl flex flex-col items-center justify-center relative overflow-hidden">
                                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-emerald-500"></div>
                                 <BiometricRingChart
-                                    percentage={scanData.bmi ? (scanData.bmi / 40) * 100 : 0}
+                                    percentage={scanData.total_body_water_percent || 0}
                                     label="IMC"
-                                    subLabel={
-                                        scanData.bmi ? (
-                                            scanData.bmi < 18.5 ? "MAIGREUR" :
-                                                scanData.bmi < 25 ? "NORMAL" :
-                                                    scanData.bmi < 30 ? "SURPOIDS" : "OBÉSITÉ"
-                                        ) : "--"
-                                    }
-                                    value={scanData.bmi ? `${scanData.bmi}` : '--'}
-                                    color={
-                                        scanData.bmi ? (
-                                            scanData.bmi < 18.5 ? "#3b82f6" : // Blue for underweight
-                                                scanData.bmi < 25 ? "#22c55e" : // Green for normal
-                                                    scanData.bmi < 30 ? "#eab308" : // Yellow for overweight
-                                                        "#ef4444" // Red for obese
-                                        ) : "#3b82f6"
-                                    }
+                                    subLabel={scanData.bmi ? `${scanData.bmi}` : '--'}
+                                    value={`${scanData.weight} kg`}
+                                    color="#06b6d4"
                                     size={240}
                                 />
 
