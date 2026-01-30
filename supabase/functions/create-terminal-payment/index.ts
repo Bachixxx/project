@@ -36,6 +36,7 @@ Deno.serve(async (req) => {
         const stripe = getStripe();
 
         const { coachId, amount, description, mode, priceId } = await req.json();
+        console.log('Received:', { coachId, amount, description, mode, priceId });
 
         if (!coachId || (!amount && !priceId)) {
             throw new Error('Missing coachId or amount/priceId');

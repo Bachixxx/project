@@ -66,26 +66,44 @@ function Terminal() {
 
         try {
             setGenerating(true);
+            const payload = {
+                coachId: user?.id,
+                amount: Number(amount),
+                description: description,
+                mode: paymentMode === 'subscription' ? 'subscription' : 'payment',
+                priceId: selectedPlan?.stripe_price_id
+            };
+            console.log('Sending Payload:', payload);
+
             const { data, error } = await supabase.functions.invoke('create-terminal-payment', {
-                body: {
-                    coachId: user?.id,
-                    amount: Number(amount),
-                    description: description,
-                    mode: paymentMode === 'subscription' ? 'subscription' : 'payment',
-                    priceId: selectedPlan?.stripe_price_id
-                }
+                body: payload
             });
 
-            if (error) throw error;
+            if (error) {
+                // Determine if it's a FunctionsHttpError and try to extract body
+                let errorMessage = error.message || "Impossible de créer le paiement.";
+
+                try {
+                    if ((error as any).context && typeof (error as any).context.json === 'function') {
+                        const body = await (error as any).context.json();
+                        if (body && body.error) {
+                            errorMessage = body.error;
+                        }
+                    }
+                } catch (e) {
+                    console.error('Failed to parse error context JSON', e);
+                }
+
+                console.error('Edge Function Error:', error);
+                throw new Error(errorMessage);
+            }
+
             if (data?.url) {
                 setQrUrl(data.url);
             }
         } catch (error: any) {
             console.error('Error generating payment link:', error);
-            // Try to extract the error message from the response if possible, logic depends on Supabase client
-            // But usually error.message or error.context gives hints.
-            // Let's rely on the console for details, but show a more descriptive alert if possible.
-            alert(`Erreur: ${error.message || "Impossible de créer le paiement."}`);
+            alert(`Erreur: ${error.message}`);
         } finally {
             setGenerating(false);
         }
