@@ -2,7 +2,7 @@
 DROP POLICY IF EXISTS "Clients can view their own scans" ON public.body_scans;
 
 -- Create the corrected policy using auth_id lookup
-CREATE POLICY "Clients can view their own scans"
+CREATE POLICY "Clients can view their own scans v2"
     ON public.body_scans
     FOR SELECT
     USING (
