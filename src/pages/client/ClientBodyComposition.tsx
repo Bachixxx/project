@@ -222,34 +222,28 @@ function ClientBodyComposition() {
 
                             {/* Trend Chart Section */}
                             <div className="space-y-4">
-                                <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                                    <button
-                                        onClick={() => setSelectedMetric('weight')}
-                                        className={`px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap ${selectedMetric === 'weight'
-                                            ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30'
-                                            : 'bg-white/5 text-gray-400 hover:bg-white/10'
-                                            }`}
-                                    >
-                                        Poids
-                                    </button>
-                                    <button
-                                        onClick={() => setSelectedMetric('body_fat_percent')}
-                                        className={`px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap ${selectedMetric === 'body_fat_percent'
-                                            ? 'bg-yellow-500 text-white shadow-lg shadow-yellow-500/30'
-                                            : 'bg-white/5 text-gray-400 hover:bg-white/10'
-                                            }`}
-                                    >
-                                        Masse Grasse %
-                                    </button>
-                                    <button
-                                        onClick={() => setSelectedMetric('skeletal_muscle_mass')}
-                                        className={`px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap ${selectedMetric === 'skeletal_muscle_mass'
-                                            ? 'bg-red-500 text-white shadow-lg shadow-red-500/30'
-                                            : 'bg-white/5 text-gray-400 hover:bg-white/10'
-                                            }`}
-                                    >
-                                        Muscle (kg)
-                                    </button>
+                                <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide no-scrollbar">
+                                    {[
+                                        { id: 'weight', label: 'Poids', color: 'bg-blue-500', text: 'text-blue-500' },
+                                        { id: 'body_fat_percent', label: 'Graisse %', color: 'bg-yellow-500', text: 'text-yellow-500' },
+                                        { id: 'skeletal_muscle_mass', label: 'Muscle (kg)', color: 'bg-red-500', text: 'text-red-500' },
+                                        { id: 'total_body_water_percent', label: 'Eau %', color: 'bg-cyan-500', text: 'text-cyan-500' },
+                                        { id: 'bone_mass', label: 'Os (kg)', color: 'bg-pink-500', text: 'text-pink-500' },
+                                        { id: 'visceral_fat_level', label: 'Viscérale', color: 'bg-purple-500', text: 'text-purple-500' },
+                                        { id: 'bmr', label: 'BMR', color: 'bg-green-500', text: 'text-green-500' },
+                                        { id: 'metabolic_age', label: 'Âge Meta.', color: 'bg-orange-500', text: 'text-orange-500' },
+                                    ].map((metric) => (
+                                        <button
+                                            key={metric.id}
+                                            onClick={() => setSelectedMetric(metric.id as keyof ScanData)}
+                                            className={`px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap ${selectedMetric === metric.id
+                                                    ? `${metric.color} text-white shadow-lg`
+                                                    : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                                                }`}
+                                        >
+                                            {metric.label}
+                                        </button>
+                                    ))}
                                 </div>
 
                                 <BiometricTrendChart
@@ -258,14 +252,30 @@ function ClientBodyComposition() {
                                     color={
                                         selectedMetric === 'weight' ? '#3b82f6' :
                                             selectedMetric === 'body_fat_percent' ? '#eab308' :
-                                                '#ef4444'
+                                                selectedMetric === 'skeletal_muscle_mass' ? '#ef4444' :
+                                                    selectedMetric === 'total_body_water_percent' ? '#06b6d4' :
+                                                        selectedMetric === 'bone_mass' ? '#ec4899' :
+                                                            selectedMetric === 'visceral_fat_level' ? '#a855f7' :
+                                                                selectedMetric === 'bmr' ? '#22c55e' :
+                                                                    '#f97316' // metabolic_age
                                     }
                                     label={
                                         selectedMetric === 'weight' ? 'Poids' :
                                             selectedMetric === 'body_fat_percent' ? 'Masse Grasse' :
-                                                'Masse Musculaire'
+                                                selectedMetric === 'skeletal_muscle_mass' ? 'Masse Musculaire' :
+                                                    selectedMetric === 'total_body_water_percent' ? 'Eau Corporelle' :
+                                                        selectedMetric === 'bone_mass' ? 'Masse Osseuse' :
+                                                            selectedMetric === 'visceral_fat_level' ? 'Graisse Viscérale' :
+                                                                selectedMetric === 'bmr' ? 'Métabolisme de Base' :
+                                                                    'Âge Métabolique'
                                     }
-                                    unit={selectedMetric === 'body_fat_percent' ? '%' : 'kg'}
+                                    unit={
+                                        ['body_fat_percent', 'total_body_water_percent'].includes(selectedMetric) ? '%' :
+                                            ['bmr'].includes(selectedMetric) ? 'kcal' :
+                                                ['metabolic_age'].includes(selectedMetric) ? 'ans' :
+                                                    ['visceral_fat_level'].includes(selectedMetric) ? '' :
+                                                        'kg'
+                                    }
                                 />
                             </div>
                         </>
