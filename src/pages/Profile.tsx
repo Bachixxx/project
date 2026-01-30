@@ -22,6 +22,7 @@ function ProfilePage() {
   const [coach, setCoach] = useState<Coach | null>(null);
   const [loading, setLoading] = useState(true);
   const [stripeLoading, setStripeLoading] = useState(false);
+  const [stripeStatus, setStripeStatus] = useState<{ detailsSubmitted: boolean; payoutsEnabled: boolean } | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     full_name: '',
@@ -70,6 +71,16 @@ function ProfilePage() {
         specialization: data.specialization || '',
         bio: data.bio || '',
       });
+
+      // Fetch Stripe Status if account exists
+      if (data.stripe_account_id) {
+        try {
+          const status = await getStripeAccountStatus();
+          setStripeStatus(status);
+        } catch (err) {
+          console.error("Failed to fetch stripe status", err);
+        }
+      }
     } catch (error) {
       console.error('Error fetching coach data:', error);
     } finally {
@@ -243,7 +254,7 @@ function ProfilePage() {
                 </p>
               </div>
 
-              {coach?.stripe_account_id ? (
+              {coach?.stripe_account_id && stripeStatus?.detailsSubmitted ? (
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2 px-4 py-2 bg-green-500/20 border border-green-500/30 text-green-400 rounded-lg">
                     <CheckCircle className="w-5 h-5" />
@@ -254,8 +265,9 @@ function ProfilePage() {
                       try {
                         setStripeLoading(true);
                         await createLoginLink();
-                      } catch (error) {
-                        alert("Impossible d'accéder au tableau de bord Stripe.");
+                      } catch (error: any) {
+                        console.error("Login Link Error:", error);
+                        alert(`Impossible d'accéder au tableau de bord Stripe: ${error.message || 'Erreur inconnue'}`);
                       } finally {
                         setStripeLoading(false);
                       }
@@ -268,6 +280,27 @@ function ProfilePage() {
                     ) : (
                       <>
                         <span>Gérer mon compte</span>
+                        <ExternalLink className="w-4 h-4" />
+                      </>
+                    )}
+                  </button>
+                </div>
+              ) : coach?.stripe_account_id ? (
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2 px-4 py-2 bg-yellow-500/20 border border-yellow-500/30 text-yellow-400 rounded-lg">
+                    <Clock className="w-5 h-5" />
+                    <span className="font-medium">Configuration Incomplète</span>
+                  </div>
+                  <button
+                    onClick={handleConnectStripe}
+                    disabled={stripeLoading}
+                    className="px-4 py-2 bg-[#635BFF] hover:bg-[#5851df] text-white rounded-lg transition-colors flex items-center gap-2"
+                  >
+                    {stripeLoading ? (
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      <>
+                        <span>Terminer la configuration</span>
                         <ExternalLink className="w-4 h-4" />
                       </>
                     )}

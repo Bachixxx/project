@@ -225,3 +225,19 @@ export async function createLoginLink() {
     throw error;
   }
 }
+
+export async function getStripeAccountStatus() {
+  try {
+    const { data, error } = await supabase.functions.invoke('get-stripe-status');
+
+    if (error) {
+      console.error('Error fetching stripe status:', error);
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error in getStripeAccountStatus:', error);
+    throw error;
+  }
+}

@@ -12,23 +12,13 @@ const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY') || ''
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-// Helper for Stripe V1 API
-async function stripeRequest(method: string, path: string, body?: Record<string, any>) {
-    const formBody = new URLSearchParams();
-
-    if (body) {
-        for (const key in body) {
-            formBody.append(key, String(body[key]));
-        }
-    }
-
+async function stripeRequest(method: string, path: string) {
     const res = await fetch(`https://api.stripe.com/v1${path}`, {
         method,
         headers: {
             'Authorization': `Bearer ${stripeSecretKey}`,
-            'Content-Type': 'application/x-www-form-urlencoded',
+            'Content-Type': 'application/json',
         },
-        body: formBody.toString()
     });
 
     const data = await res.json();
@@ -51,7 +41,7 @@ Deno.serve(async (req) => {
         const { data: { user }, error: userError } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''))
         if (userError || !user) throw new Error('Invalid user token')
 
-        // 2. Fetch Coach Profile logic
+        // 2. Fetch Coach Profile
         const { data: coach, error: coachError } = await supabase
             .from('coaches')
             .select('stripe_account_id')
@@ -59,20 +49,29 @@ Deno.serve(async (req) => {
             .single()
 
         if (coachError) throw coachError
-        if (!coach.stripe_account_id) throw new Error('No Stripe account connected');
 
-        // 3. Create Login Link
-        console.log(`Creating login link for account ${coach.stripe_account_id}...`);
+        if (!coach.stripe_account_id) {
+            return new Response(
+                JSON.stringify({ isConnected: false, detailsSubmitted: false }),
+                { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+        }
 
-        const loginLink = await stripeRequest('POST', `/accounts/${coach.stripe_account_id}/login_links`);
+        // 3. Fetch Stripe Account Status
+        const account = await stripeRequest('GET', `/accounts/${coach.stripe_account_id}`);
 
         return new Response(
-            JSON.stringify({ url: loginLink.url }),
+            JSON.stringify({
+                isConnected: true,
+                detailsSubmitted: account.details_submitted,
+                payoutsEnabled: account.payouts_enabled,
+                chargesEnabled: account.charges_enabled
+            }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
 
     } catch (error: any) {
-        console.error('Error in create-login-link:', error)
+        console.error('Error in get-stripe-status:', error)
         return new Response(
             JSON.stringify({ error: error.message }),
             {
