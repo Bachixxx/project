@@ -46,7 +46,7 @@ function ClientBodyComposition() {
     const [scanHistory, setScanHistory] = useState<ScanData[]>([]);
     const [loading, setLoading] = useState(true);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-    const [selectedMetric, setSelectedMetric] = useState<'weight' | 'body_fat_percent' | 'skeletal_muscle_mass'>('weight');
+    const [selectedMetric, setSelectedMetric] = useState<keyof ScanData>('weight');
 
     const fetchLatestScan = async () => {
         if (!client?.id) return;
@@ -226,8 +226,8 @@ function ClientBodyComposition() {
                                     <button
                                         onClick={() => setSelectedMetric('weight')}
                                         className={`px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap ${selectedMetric === 'weight'
-                                                ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30'
-                                                : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                                            ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30'
+                                            : 'bg-white/5 text-gray-400 hover:bg-white/10'
                                             }`}
                                     >
                                         Poids
@@ -235,8 +235,8 @@ function ClientBodyComposition() {
                                     <button
                                         onClick={() => setSelectedMetric('body_fat_percent')}
                                         className={`px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap ${selectedMetric === 'body_fat_percent'
-                                                ? 'bg-yellow-500 text-white shadow-lg shadow-yellow-500/30'
-                                                : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                                            ? 'bg-yellow-500 text-white shadow-lg shadow-yellow-500/30'
+                                            : 'bg-white/5 text-gray-400 hover:bg-white/10'
                                             }`}
                                     >
                                         Masse Grasse %
@@ -244,8 +244,8 @@ function ClientBodyComposition() {
                                     <button
                                         onClick={() => setSelectedMetric('skeletal_muscle_mass')}
                                         className={`px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap ${selectedMetric === 'skeletal_muscle_mass'
-                                                ? 'bg-red-500 text-white shadow-lg shadow-red-500/30'
-                                                : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                                            ? 'bg-red-500 text-white shadow-lg shadow-red-500/30'
+                                            : 'bg-white/5 text-gray-400 hover:bg-white/10'
                                             }`}
                                     >
                                         Muscle (kg)
