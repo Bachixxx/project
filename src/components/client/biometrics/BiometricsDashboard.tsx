@@ -268,15 +268,18 @@ export function BiometricsDashboard({ clientId, readOnly = false }: BiometricsDa
                                 data={scanHistory}
                                 metrics={
                                     [
-                                        { id: 'weight', label: 'Poids', color: '#3b82f6', unit: 'kg' },
-                                        { id: 'bmi', label: 'IMC', color: '#10b981', unit: 'kg/m²', domain: [0, 50] },
-                                        { id: 'body_fat_percent', label: 'Masse Grasse', color: '#eab308', unit: '%', domain: [0, 100] },
-                                        { id: 'skeletal_muscle_mass', label: 'Masse Musculaire', color: '#ef4444', unit: 'kg' },
-                                        { id: 'total_body_water_percent', label: 'Eau Corporelle', color: '#06b6d4', unit: '%', domain: [0, 100] },
-                                        { id: 'bone_mass', label: 'Masse Osseuse', color: '#ec4899', unit: 'kg' },
-                                        { id: 'visceral_fat_level', label: 'Graisse Viscérale', color: '#a855f7', unit: '', domain: [0, 20] },
-                                        { id: 'bmr', label: 'Métabolisme de Base', color: '#22c55e', unit: 'kcal', domain: [0, 4000] },
-                                        { id: 'metabolic_age', label: 'Âge Métabolique', color: '#f97316', unit: 'ans', domain: [0, 100] },
+                                        // Standard metrics share the same 'common' axis to show relative magnitude
+                                        { id: 'weight', label: 'Poids', color: '#3b82f6', unit: 'kg', yAxisId: 'common' },
+                                        { id: 'bmi', label: 'IMC', color: '#10b981', unit: 'kg/m²', yAxisId: 'common' },
+                                        { id: 'body_fat_percent', label: 'Masse Grasse', color: '#eab308', unit: '%', yAxisId: 'common' },
+                                        { id: 'skeletal_muscle_mass', label: 'Masse Musculaire', color: '#ef4444', unit: 'kg', yAxisId: 'common' },
+                                        { id: 'total_body_water_percent', label: 'Eau Corporelle', color: '#06b6d4', unit: '%', yAxisId: 'common' },
+                                        { id: 'bone_mass', label: 'Masse Osseuse', color: '#ec4899', unit: 'kg', yAxisId: 'common' },
+                                        { id: 'visceral_fat_level', label: 'Graisse Viscérale', color: '#a855f7', unit: '', yAxisId: 'common' },
+                                        { id: 'metabolic_age', label: 'Âge Métabolique', color: '#f97316', unit: 'ans', yAxisId: 'common' },
+
+                                        // BMR has its own axis because the values are much larger (1000+)
+                                        { id: 'bmr', label: 'Métabolisme de Base', color: '#22c55e', unit: 'kcal', yAxisId: 'bmr', domain: [0, 'auto'] },
                                     ]
                                         // @ts-ignore
                                         .filter(m => selectedMetrics.includes(m.id as keyof ScanData))

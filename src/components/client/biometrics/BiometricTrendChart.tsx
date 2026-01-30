@@ -20,6 +20,8 @@ export interface MetricConfig {
     label: string;
     color: string;
     unit: string;
+    domain?: [number | 'auto' | 'dataMin' | 'dataMax', number | 'auto' | 'dataMin' | 'dataMax'];
+    yAxisId?: string;
 }
 
 interface BiometricTrendChartProps {
@@ -39,6 +41,20 @@ export function BiometricTrendChart({ data, metrics }: BiometricTrendChartProps)
     // Sort data by date just in case
     const sortedData = [...data].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
+    // Helper to determine axis configuration
+    // We group metrics by "unit" to share axes, unless a specific yAxisId is provided
+    const getAxisId = (metric: MetricConfig) => metric.yAxisId || `axis-${metric.unit}`;
+
+    // Get unique axes to render
+    const uniqueAxes = Array.from(new Set(metrics.map(m => getAxisId(m)))).map(axisId => {
+        const representativeMetric = metrics.find(m => getAxisId(m) === axisId)!;
+        return {
+            id: axisId,
+            unit: representativeMetric.unit,
+            // If explicit domain is provided, use it. Otherwise use [0, 'auto']
+            domain: representativeMetric.domain || [0, 'auto']
+        };
+    });
     return (
         <div className="glass-card p-6 rounded-3xl border border-white/10 w-full">
             <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-4 flex-wrap">
