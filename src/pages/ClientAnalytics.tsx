@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ChevronLeft, Scale, Calendar, Dumbbell, Activity, Target, Award, ArrowUpRight, ChevronDown, Plus, X } from 'lucide-react';
+import { ChevronLeft, Calendar, Dumbbell, Activity, Target, Award, ArrowUpRight, Plus, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -35,7 +35,7 @@ function ClientAnalytics() {
   const [client, setClient] = useState<ClientData | null>(null);
 
   // Analytics State
-  const [weightData, setWeightData] = useState<any[]>([]);
+
   const [workoutLogs, setWorkoutLogs] = useState<WorkoutLog[]>([]);
   const [exercises, setExercises] = useState<Exercise[]>([]);
 
@@ -117,24 +117,7 @@ function ClientAnalytics() {
         setExercises(exercisesData || []);
       }
 
-      // 4. Fetch Weight History
-      const { data: weightHistoryData, error: weightError } = await supabase
-        .from('client_weight_history')
-        .select('weight, date')
-        .eq('client_id', clientId)
-        .order('date', { ascending: true });
 
-      if (weightError) throw weightError;
-
-      if (weightHistoryData && weightHistoryData.length > 0) {
-        const historyData = weightHistoryData.map(entry => ({
-          date: new Date(entry.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }),
-          value: entry.weight
-        }));
-        setWeightData(historyData);
-      } else {
-        setWeightData([]);
-      }
 
     } catch (error) {
       console.error('Error fetching analytics:', error);

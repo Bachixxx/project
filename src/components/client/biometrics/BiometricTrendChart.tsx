@@ -1,4 +1,3 @@
-import React from 'react';
 import {
     XAxis,
     YAxis,
@@ -90,7 +89,7 @@ export function BiometricTrendChart({ data, metrics }: BiometricTrendChartProps)
                                 tick={{ fill: metrics.length === 1 ? '#9ca3af' : metric.color, fontSize: 12 }}
                                 tickLine={false}
                                 axisLine={false}
-                                domain={['auto', 'auto']}
+                                domain={[0, 'auto']}
                                 tickFormatter={(value) => `${Math.round(value)}`}
                                 width={30}
                                 hide={metrics.length > 1}
@@ -106,7 +105,7 @@ export function BiometricTrendChart({ data, metrics }: BiometricTrendChartProps)
                             }}
                             itemStyle={{ color: '#fff' }}
                             labelStyle={{ color: '#9ca3af', marginBottom: '0.25rem' }}
-                            formatter={(value: any, name: any, props: any) => {
+                            formatter={(value: any, name: any) => {
                                 // Find the metric config to get the unit
                                 const metric = metrics.find(m => m.label === name);
                                 return [`${value} ${metric?.unit || ''}`, name];
