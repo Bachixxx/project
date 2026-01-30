@@ -52,7 +52,7 @@ const Profile = lazy(() => import('./pages/Profile'));
 const MultiClientCoaching = lazy(() => import('./pages/MultiClientCoaching'));
 const Admin = lazy(() => import('./pages/Admin'));
 const BrandingSettings = lazy(() => import('./pages/BrandingSettings'));
-const StripeDemo = lazy(() => import('./pages/StripeDemo')); // New Demo Page
+
 
 // Client Private Pages
 const ClientDashboard = lazy(() => import('./pages/client/ClientDashboard'));
