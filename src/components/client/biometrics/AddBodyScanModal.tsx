@@ -24,6 +24,18 @@ export function AddBodyScanModal({ isOpen, onClose, onSuccess }: AddBodyScanModa
         visceral_fat_level: '',
         bmr: '',
         metabolic_age: '',
+        // Segmental Muscle
+        segmental_muscle_right_arm: '',
+        segmental_muscle_left_arm: '',
+        segmental_muscle_trunk: '',
+        segmental_muscle_right_leg: '',
+        segmental_muscle_left_leg: '',
+        // Segmental Fat
+        segmental_fat_right_arm: '',
+        segmental_fat_left_arm: '',
+        segmental_fat_trunk: '',
+        segmental_fat_right_leg: '',
+        segmental_fat_left_leg: '',
     });
 
     if (!isOpen) return null;
@@ -81,6 +93,20 @@ export function AddBodyScanModal({ isOpen, onClose, onSuccess }: AddBodyScanModa
                 visceral_fat_level: parseFloat(formData.visceral_fat_level) || null,
                 bmr: parseInt(formData.bmr) || null,
                 metabolic_age: parseInt(formData.metabolic_age) || null,
+
+                // Segmental Muscle
+                segmental_muscle_right_arm: parseFloat(formData.segmental_muscle_right_arm) || null,
+                segmental_muscle_left_arm: parseFloat(formData.segmental_muscle_left_arm) || null,
+                segmental_muscle_trunk: parseFloat(formData.segmental_muscle_trunk) || null,
+                segmental_muscle_right_leg: parseFloat(formData.segmental_muscle_right_leg) || null,
+                segmental_muscle_left_leg: parseFloat(formData.segmental_muscle_left_leg) || null,
+
+                // Segmental Fat
+                segmental_fat_right_arm: parseFloat(formData.segmental_fat_right_arm) || null,
+                segmental_fat_left_arm: parseFloat(formData.segmental_fat_left_arm) || null,
+                segmental_fat_trunk: parseFloat(formData.segmental_fat_trunk) || null,
+                segmental_fat_right_leg: parseFloat(formData.segmental_fat_right_leg) || null,
+                segmental_fat_left_leg: parseFloat(formData.segmental_fat_left_leg) || null,
             });
 
             if (insertError) throw insertError;
@@ -93,6 +119,41 @@ export function AddBodyScanModal({ isOpen, onClose, onSuccess }: AddBodyScanModa
         } finally {
             setLoading(false);
         }
+    };
+
+    const renderSegmentalInputs = (type: 'muscle' | 'fat') => {
+        const title = type === 'muscle' ? 'Muscle Segmentaire (kg)' : 'Graisse Segmentaire (kg/%)';
+        const color = type === 'muscle' ? 'text-red-500' : 'text-yellow-500';
+        const borderColor = type === 'muscle' ? 'focus:border-red-500 focus:ring-red-500' : 'focus:border-yellow-500 focus:ring-yellow-500';
+        const prefix = type === 'muscle' ? 'segmental_muscle' : 'segmental_fat';
+
+        return (
+            <div className="space-y-3 pt-2 border-t border-white/5">
+                <h3 className={`text-xs font-bold ${color} uppercase`}>{title}</h3>
+                <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                        <label className="text-[10px] text-gray-500 uppercase ml-1">Bras G.</label>
+                        <input type="number" step="0.1" name={`${prefix}_left_arm`} value={(formData as any)[`${prefix}_left_arm`]} onChange={handleChange} className={`w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-1 transition-all placeholder:text-gray-700 ${borderColor}`} placeholder="0.0" />
+                    </div>
+                    <div className="space-y-1">
+                        <label className="text-[10px] text-gray-500 uppercase ml-1">Bras D.</label>
+                        <input type="number" step="0.1" name={`${prefix}_right_arm`} value={(formData as any)[`${prefix}_right_arm`]} onChange={handleChange} className={`w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-1 transition-all placeholder:text-gray-700 ${borderColor}`} placeholder="0.0" />
+                    </div>
+                    <div className="space-y-1">
+                        <label className="text-[10px] text-gray-500 uppercase ml-1">Jambe G.</label>
+                        <input type="number" step="0.1" name={`${prefix}_left_leg`} value={(formData as any)[`${prefix}_left_leg`]} onChange={handleChange} className={`w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-1 transition-all placeholder:text-gray-700 ${borderColor}`} placeholder="0.0" />
+                    </div>
+                    <div className="space-y-1">
+                        <label className="text-[10px] text-gray-500 uppercase ml-1">Jambe D.</label>
+                        <input type="number" step="0.1" name={`${prefix}_right_leg`} value={(formData as any)[`${prefix}_right_leg`]} onChange={handleChange} className={`w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-1 transition-all placeholder:text-gray-700 ${borderColor}`} placeholder="0.0" />
+                    </div>
+                    <div className="col-span-2 space-y-1">
+                        <label className="text-[10px] text-gray-500 uppercase ml-1">Tronc</label>
+                        <input type="number" step="0.1" name={`${prefix}_trunk`} value={(formData as any)[`${prefix}_trunk`]} onChange={handleChange} className={`w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-1 transition-all placeholder:text-gray-700 ${borderColor}`} placeholder="0.0" />
+                    </div>
+                </div>
+            </div>
+        );
     };
 
     return (
