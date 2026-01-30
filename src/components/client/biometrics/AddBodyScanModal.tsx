@@ -237,6 +237,9 @@ export function AddBodyScanModal({ isOpen, onClose, onSuccess }: AddBodyScanModa
                             />
                         </div>
                     </div>
+
+                    {renderSegmentalInputs('muscle')}
+                    {renderSegmentalInputs('fat')}
                 </form>
 
                 <div className="p-6 border-t border-white/10 bg-white/5 flex gap-3">
