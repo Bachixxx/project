@@ -276,13 +276,14 @@ function ClientBodyComposition() {
                                     }
                                     label={
                                         selectedMetric === 'weight' ? 'Poids' :
-                                            selectedMetric === 'body_fat_percent' ? 'Masse Grasse' :
-                                                selectedMetric === 'skeletal_muscle_mass' ? 'Masse Musculaire' :
-                                                    selectedMetric === 'total_body_water_percent' ? 'Eau Corporelle' :
-                                                        selectedMetric === 'bone_mass' ? 'Masse Osseuse' :
-                                                            selectedMetric === 'visceral_fat_level' ? 'Graisse Viscérale' :
-                                                                selectedMetric === 'bmr' ? 'Métabolisme de Base' :
-                                                                    'Âge Métabolique'
+                                            selectedMetric === 'bmi' ? 'IMC' :
+                                                selectedMetric === 'body_fat_percent' ? 'Masse Grasse' :
+                                                    selectedMetric === 'skeletal_muscle_mass' ? 'Masse Musculaire' :
+                                                        selectedMetric === 'total_body_water_percent' ? 'Eau Corporelle' :
+                                                            selectedMetric === 'bone_mass' ? 'Masse Osseuse' :
+                                                                selectedMetric === 'visceral_fat_level' ? 'Graisse Viscérale' :
+                                                                    selectedMetric === 'bmr' ? 'Métabolisme de Base' :
+                                                                        'Âge Métabolique'
                                     }
                                     unit={
                                         ['body_fat_percent', 'total_body_water_percent'].includes(selectedMetric) ? '%' :
