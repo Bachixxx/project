@@ -23,8 +23,7 @@ interface Exercise {
 function ClientProgress() {
   const { client } = useClientAuth();
   const [loading, setLoading] = useState(true);
-  const [weightData, setWeightData] = useState<any[]>([]);
-  const [weightDifference, setWeightDifference] = useState<{ value: number, isPositive: boolean } | null>(null);
+
   const [strengthData, setStrengthData] = useState<any[]>([]);
   const [workoutLogs, setWorkoutLogs] = useState<WorkoutLog[]>([]);
   const [exercises, setExercises] = useState<Exercise[]>([]);
@@ -97,8 +96,7 @@ function ClientProgress() {
         }
       }
 
-      // Fetch real weight history
-      fetchWeightHistory();
+
 
     } catch (error) {
       console.error('Error fetching progress data:', error);
@@ -107,41 +105,7 @@ function ClientProgress() {
     }
   };
 
-  const fetchWeightHistory = async () => {
-    const clientData = client as any;
-    if (!clientData?.id) return;
 
-    try {
-      const { data, error } = await supabase
-        .from('client_weight_history')
-        .select('weight, date')
-        .eq('client_id', clientData.id)
-        .order('date', { ascending: true });
-
-      if (error) throw error;
-
-      if (data && data.length > 0) {
-        const historyData = data.map(entry => ({
-          date: new Date(entry.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }),
-          value: entry.weight
-        }));
-        setWeightData(historyData);
-
-        // Calculate difference
-        if (historyData.length >= 1) {
-          const firstWeight = historyData[0].value;
-          const lastWeight = historyData[historyData.length - 1].value;
-          const diff = lastWeight - firstWeight;
-          setWeightDifference({
-            value: Number(Math.abs(diff).toFixed(1)),
-            isPositive: diff > 0
-          });
-        }
-      }
-    } catch (err) {
-      console.error('Error fetching weight history:', err);
-    }
-  };
 
   const generateStrengthData = () => {
     if (!selectedExercise || workoutLogs.length === 0) return;
@@ -258,83 +222,7 @@ function ClientProgress() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-fade-in delay-100">
-
-            {/* Graphique de Poids */}
-            <div className="glass-card p-6 rounded-3xl border border-white/10 flex flex-col h-[450px]">
-              <div className="flex items-center justify-between mb-8">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 bg-blue-500/20 rounded-xl">
-                    <Scale className="w-6 h-6 text-blue-400" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-bold text-white">Évolution du Poids</h2>
-                    <p className="text-xs text-gray-400">Est. basé sur les données</p>
-                  </div>
-                </div>
-                {weightDifference !== null && (
-                  <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold border ${!weightDifference.isPositive
-                    ? 'text-green-400 bg-green-500/10 border-green-500/20'
-                    : 'text-red-400 bg-red-500/10 border-red-500/20'
-                    }`}>
-                    {!weightDifference.isPositive ? <TrendingDown className="w-4 h-4" /> : <TrendingUp className="w-4 h-4" />}
-                    <span>
-                      {weightDifference.isPositive ? '+' : '-'}{weightDifference.value} kg
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex-1 w-full min-h-0">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={weightData}>
-                    <defs>
-                      <linearGradient id="colorWeight" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                    <XAxis
-                      dataKey="date"
-                      stroke="rgba(255,255,255,0.3)"
-                      tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 12 }}
-                      tickLine={false}
-                      axisLine={false}
-                      dy={10}
-                    />
-                    <YAxis
-                      stroke="rgba(255,255,255,0.3)"
-                      tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 12 }}
-                      tickLine={false}
-                      axisLine={false}
-                      dx={-10}
-                      domain={['dataMin - 2', 'dataMax + 2']}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: 'rgba(15, 23, 42, 0.9)',
-                        backdropFilter: 'blur(10px)',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        borderRadius: '1rem',
-                        color: 'white',
-                        boxShadow: '0 10px 30px -10px rgba(0,0,0,0.5)'
-                      }}
-                      itemStyle={{ color: '#fff' }}
-                      labelStyle={{ color: '#9ca3af', marginBottom: '0.5rem' }}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="value"
-                      stroke="#3b82f6"
-                      strokeWidth={3}
-                      fillOpacity={1}
-                      fill="url(#colorWeight)"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
+          <div className="space-y-8 animate-fade-in delay-100">
 
             {/* Graphique de Force */}
             <div className="glass-card p-6 rounded-3xl border border-white/10 flex flex-col h-[450px]">
@@ -421,7 +309,7 @@ function ClientProgress() {
             </div>
 
             {/* Objectifs Grid */}
-            <div className="lg:col-span-2 glass-card p-6 rounded-3xl border border-white/10">
+            <div className="glass-card p-6 rounded-3xl border border-white/10">
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-2.5 bg-yellow-500/20 rounded-xl">
                   <Target className="w-6 h-6 text-yellow-400" />
