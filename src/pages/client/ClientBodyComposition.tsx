@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useClientAuth } from '../../contexts/ClientAuthContext';
 import { BiometricRingChart } from '../../components/client/biometrics/BiometricRingChart';
+import { BiometricTrendChart } from '../../components/client/biometrics/BiometricTrendChart';
 import { BodyMap, BodySegmentLabel } from '../../components/client/biometrics/BodyMap';
 import { BiometricBar } from '../../components/client/biometrics/BiometricBar';
 import { AddBodyScanModal } from '../../components/client/biometrics/AddBodyScanModal';
@@ -42,8 +43,10 @@ function ClientBodyComposition() {
     const { client } = useClientAuth();
     const [activeTab, setActiveTab] = useState<'general' | 'fat' | 'muscle' | 'water' | 'bone'>('general');
     const [scanData, setScanData] = useState<ScanData | null>(null);
+    const [scanHistory, setScanHistory] = useState<ScanData[]>([]);
     const [loading, setLoading] = useState(true);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [selectedMetric, setSelectedMetric] = useState<'weight' | 'body_fat_percent' | 'skeletal_muscle_mass'>('weight');
 
     const fetchLatestScan = async () => {
         if (!client?.id) return;
@@ -55,11 +58,13 @@ function ClientBodyComposition() {
                 .eq('client_id', client.id)
                 .order('date', { ascending: false })
                 .order('created_at', { ascending: false })
-                .limit(1)
-                .maybeSingle();
+                .limit(20); // Fetch last 20 scans for history
 
             if (error) throw error;
-            if (data) setScanData(data);
+            if (data && data.length > 0) {
+                setScanData(data[0]); // Latest scan is the first one
+                setScanHistory([...data].reverse()); // History needs to be chronological for the chart
+            }
         } catch (error) {
             console.error('Error fetching body scan:', error);
         } finally {
@@ -213,6 +218,55 @@ function ClientBodyComposition() {
                                         <p className="text-2xl font-bold text-white">{scanData.metabolic_age || '--'} <span className="text-xs text-gray-400 font-normal">ans</span></p>
                                     </div>
                                 </div>
+                            </div>
+
+                            {/* Trend Chart Section */}
+                            <div className="space-y-4">
+                                <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                                    <button
+                                        onClick={() => setSelectedMetric('weight')}
+                                        className={`px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap ${selectedMetric === 'weight'
+                                                ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30'
+                                                : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                                            }`}
+                                    >
+                                        Poids
+                                    </button>
+                                    <button
+                                        onClick={() => setSelectedMetric('body_fat_percent')}
+                                        className={`px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap ${selectedMetric === 'body_fat_percent'
+                                                ? 'bg-yellow-500 text-white shadow-lg shadow-yellow-500/30'
+                                                : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                                            }`}
+                                    >
+                                        Masse Grasse %
+                                    </button>
+                                    <button
+                                        onClick={() => setSelectedMetric('skeletal_muscle_mass')}
+                                        className={`px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap ${selectedMetric === 'skeletal_muscle_mass'
+                                                ? 'bg-red-500 text-white shadow-lg shadow-red-500/30'
+                                                : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                                            }`}
+                                    >
+                                        Muscle (kg)
+                                    </button>
+                                </div>
+
+                                <BiometricTrendChart
+                                    data={scanHistory}
+                                    dataKey={selectedMetric}
+                                    color={
+                                        selectedMetric === 'weight' ? '#3b82f6' :
+                                            selectedMetric === 'body_fat_percent' ? '#eab308' :
+                                                '#ef4444'
+                                    }
+                                    label={
+                                        selectedMetric === 'weight' ? 'Poids' :
+                                            selectedMetric === 'body_fat_percent' ? 'Masse Grasse' :
+                                                'Masse Musculaire'
+                                    }
+                                    unit={selectedMetric === 'body_fat_percent' ? '%' : 'kg'}
+                                />
                             </div>
                         </>
                     )}
