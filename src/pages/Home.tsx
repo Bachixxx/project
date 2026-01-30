@@ -121,10 +121,7 @@ function Home() {
       <header className="relative pt-40 pb-20 lg:pt-56 lg:pb-32 container mx-auto px-6 z-10">
         <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
           <div className="lg:w-1/2 text-center lg:text-left">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-sm font-medium mb-6 animate-fade-in">
-              <Star className="w-4 h-4 fill-blue-400" />
-              Rejoignez plus de 500 coachs actifs
-            </div>
+
             <h1 className="text-5xl lg:text-7xl font-bold leading-tight mb-6 animate-slide-in">
               Votre activité de Coaching,<br />
               <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">enfin professionnelle.</span>
