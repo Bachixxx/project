@@ -19,6 +19,7 @@ import {
   Shield,
   Palette,
   Smartphone,
+  Tag,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSubscription } from '../hooks/useSubscription';
@@ -34,6 +35,7 @@ function Layout() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
   const [isLanguageMenuOpen, setIsLanguageMenuOpen] = useState(false);
   const [isWorkoutMenuOpen, setIsWorkoutMenuOpen] = useState(false);
+  const [isFinancesMenuOpen, setIsFinancesMenuOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
 
   React.useEffect(() => {
@@ -231,20 +233,53 @@ function Layout() {
                 active={isActive('/multi-coaching')}
                 onClick={() => setIsMobileMenuOpen(false)}
               />
-              <NavLink
-                to="/payments"
-                icon={<DollarSign className="w-5 h-5" />}
-                text="Paiements"
-                active={isActive('/payments')}
-                onClick={() => setIsMobileMenuOpen(false)}
-              />
-              <NavLink
-                to="/terminal"
-                icon={<Smartphone className="w-5 h-5" />}
-                text="Terminal"
-                active={isActive('/terminal')}
-                onClick={() => setIsMobileMenuOpen(false)}
-              />
+
+              {/* Finances Group */}
+              <div className="relative">
+                <button
+                  onClick={() => setIsFinancesMenuOpen(!isFinancesMenuOpen)}
+                  className={`flex items-center w-full px-4 py-3 text-white rounded-lg hover:bg-white/10 transition-colors ${isActiveParent(['/payments', '/terminal', '/offers']) ? 'bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-blue-500/30' : ''
+                    }`}
+                >
+                  <DollarSign className="w-5 h-5 mr-3" />
+                  <span className="text-base xl:text-lg flex-1">Finances</span>
+                  {isFinancesMenuOpen ? (
+                    <ChevronDown className="w-4 h-4" />
+                  ) : (
+                    <ChevronRight className="w-4 h-4" />
+                  )}
+                </button>
+
+                {isFinancesMenuOpen && (
+                  <div className="pl-4 mt-1 space-y-1">
+                    <NavLink
+                      to="/payments"
+                      icon={<DollarSign className="w-4 h-4" />}
+                      text="Paiements"
+                      active={isActive('/payments')}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="py-2"
+                    />
+                    <NavLink
+                      to="/terminal"
+                      icon={<Smartphone className="w-4 h-4" />}
+                      text="Terminal"
+                      active={isActive('/terminal')}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="py-2"
+                    />
+                    <NavLink
+                      to="/offers"
+                      icon={<Tag className="w-4 h-4" />}
+                      text="Mes Offres"
+                      active={isActive('/offers')}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="py-2"
+                    />
+                  </div>
+                )}
+              </div>
+
               <NavLink
                 to="/branding"
                 icon={<Palette className="w-5 h-5" />}

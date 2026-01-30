@@ -3,7 +3,15 @@ import { useSubscription } from '../hooks/useSubscription';
 import { supabase } from '../lib/supabase';
 import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '../contexts/AuthContext';
-import { CreditCard, Smartphone, ShieldCheck, Check } from 'lucide-react';
+import { CreditCard, Smartphone, ShieldCheck, Check, Ban as Block } from 'lucide-react';
+
+interface CoachPlan {
+    id: string;
+    name: string;
+    amount: number;
+    interval: 'month' | 'year';
+    stripe_price_id: string;
+}
 
 function Terminal() {
     const { subscriptionInfo, loading: subLoading, subscribeToTerminal } = useSubscription();
@@ -16,6 +24,26 @@ function Terminal() {
     const [generating, setGenerating] = React.useState(false);
     const [hasStripeAccount, setHasStripeAccount] = React.useState<boolean | null>(null);
     const [checkingStripe, setCheckingStripe] = React.useState(true);
+
+    // Subscription Mode
+    const [paymentMode, setPaymentMode] = React.useState<'one_time' | 'subscription'>('one_time');
+    const [plans, setPlans] = React.useState<CoachPlan[]>([]);
+    const [selectedPlan, setSelectedPlan] = React.useState<CoachPlan | null>(null);
+
+    React.useEffect(() => {
+        if (user) {
+            fetchPlans();
+        }
+    }, [user]);
+
+    const fetchPlans = async () => {
+        const { data } = await supabase
+            .from('coach_plans')
+            .select('*')
+            .eq('coach_id', user?.id)
+            .eq('active', true);
+        if (data) setPlans(data);
+    };
 
     const handleSubscribe = async () => {
         try {
@@ -42,7 +70,9 @@ function Terminal() {
                 body: {
                     coachId: user?.id,
                     amount: Number(amount),
-                    description: description
+                    description: description,
+                    mode: paymentMode === 'subscription' ? 'subscription' : 'payment',
+                    priceId: selectedPlan?.stripe_price_id
                 }
             });
 
@@ -65,6 +95,7 @@ function Terminal() {
         setQrUrl(null);
         setAmount('');
         setDescription('');
+        setSelectedPlan(null);
     };
 
     // Check Stripe Connect Status
@@ -184,59 +215,119 @@ function Terminal() {
 
                 {/* Left Side: Input Form */}
                 <div className={`glass-card p-8 transition-all duration-500 ${qrUrl ? 'opacity-50 pointer-events-none blur-[2px]' : ''}`}>
-                    <div className="flex items-center gap-4 mb-8">
-                        <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-500">
-                            <CreditCard className="w-6 h-6" />
-                        </div>
-                        <div>
-                            <h3 className="text-xl font-bold text-white">Nouveau Paiement</h3>
-                            <p className="text-sm text-gray-400">Générez un lien de paiement unique</p>
+                    <div className="flex items-center justify-between mb-8">
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-500">
+                                <CreditCard className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-bold text-white">Nouveau Paiement</h3>
+                                <p className="text-sm text-gray-400">Générez un lien pour le client</p>
+                            </div>
                         </div>
                     </div>
 
-                    <div className="space-y-6">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-2">Montant (CHF)</label>
-                            <div className="relative">
-                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-lg">CHF</span>
+                    {/* Mode Toggle */}
+                    <div className="flex p-1 bg-white/5 rounded-xl mb-6">
+                        <button
+                            onClick={() => { setPaymentMode('one_time'); setAmount(''); setDescription(''); setSelectedPlan(null); }}
+                            className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${paymentMode === 'one_time' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'text-gray-400 hover:text-white'}`}
+                        >
+                            Paiement Unique
+                        </button>
+                        <button
+                            onClick={() => { setPaymentMode('subscription'); setAmount(''); setDescription(''); }}
+                            className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${paymentMode === 'subscription' ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'text-gray-400 hover:text-white'}`}
+                        >
+                            Abonnement
+                        </button>
+                    </div>
+
+                    {paymentMode === 'one_time' ? (
+                        <div className="space-y-6 animate-fade-in">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">Montant (CHF)</label>
+                                <div className="relative">
+                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-lg">CHF</span>
+                                    <input
+                                        type="number"
+                                        value={amount}
+                                        onChange={(e) => setAmount(e.target.value)}
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl py-4 pl-16 pr-4 text-2xl font-bold text-white focus:outline-none focus:border-emerald-500 transition-colors placeholder-gray-600"
+                                        placeholder="0.00"
+                                        min="1"
+                                        step="0.5"
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">Description (Optionnel)</label>
                                 <input
-                                    type="number"
-                                    value={amount}
-                                    onChange={(e) => setAmount(e.target.value)}
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl py-4 pl-16 pr-4 text-2xl font-bold text-white focus:outline-none focus:border-emerald-500 transition-colors placeholder-gray-600"
-                                    placeholder="0.00"
-                                    min="1"
-                                    step="0.5"
+                                    type="text"
+                                    value={description}
+                                    onChange={(e) => setDescription(e.target.value)}
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-emerald-500 transition-colors"
+                                    placeholder="Ex: Séance privée, Matériel..."
                                 />
                             </div>
                         </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-2">Description (Optionnel)</label>
-                            <input
-                                type="text"
-                                value={description}
-                                onChange={(e) => setDescription(e.target.value)}
-                                className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-emerald-500 transition-colors"
-                                placeholder="Ex: Séance privée, Matériel..."
-                            />
-                        </div>
-
-                        <button
-                            onClick={generatePaymentLink}
-                            disabled={generating || !amount}
-                            className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/20 transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                        >
-                            {generating ? (
-                                <span className="loading loading-spinner text-white" />
+                    ) : (
+                        <div className="space-y-4 animate-fade-in">
+                            <label className="block text-sm font-medium text-gray-300 mb-2">Choisir une offre</label>
+                            {plans.length > 0 ? (
+                                <div className="grid grid-cols-1 gap-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                                    {plans.map(plan => (
+                                        <div
+                                            key={plan.id}
+                                            onClick={() => {
+                                                setSelectedPlan(plan);
+                                                setAmount(plan.amount.toString());
+                                                setDescription(plan.name);
+                                            }}
+                                            className={`p-4 rounded-xl border cursor-pointer transition-all ${selectedPlan?.id === plan.id
+                                                ? 'bg-blue-500/20 border-blue-500 relative'
+                                                : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
+                                                }`}
+                                        >
+                                            <div className="flex justify-between items-center mb-1">
+                                                <h4 className={`font-bold ${selectedPlan?.id === plan.id ? 'text-blue-400' : 'text-white'}`}>{plan.name}</h4>
+                                                {selectedPlan?.id === plan.id && <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center"><Check className="w-3 h-3 text-white" /></div>}
+                                            </div>
+                                            <div className="flex justify-between items-end">
+                                                <span className="text-sm text-gray-400">{plan.interval === 'month' ? 'Mensuel' : 'Annuel'}</span>
+                                                <span className="font-bold text-white">{plan.amount} CHF</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
                             ) : (
-                                <>
-                                    <Smartphone className="w-5 h-5" />
-                                    Générer le QR Code
-                                </>
+                                <div className="text-center py-8 text-gray-400 bg-white/5 rounded-xl border border-white/5 border-dashed">
+                                    <Block className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                                    <p className="text-sm">Aucune offre active.</p>
+                                    <a href="/offers" className="text-blue-400 text-sm hover:underline mt-2 inline-block">Créer une offre</a>
+                                </div>
                             )}
-                        </button>
-                    </div>
+                        </div>
+                    )}
+
+                    <button
+                        onClick={generatePaymentLink}
+                        disabled={generating || !amount}
+                        className={`w-full py-4 mt-8 font-bold rounded-xl shadow-lg transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${paymentMode === 'one_time'
+                            ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/20'
+                            : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-600/20'
+                            }`}
+                    >
+                        {generating ? (
+                            <span className="loading loading-spinner text-white" />
+                        ) : (
+                            <>
+                                <Smartphone className="w-5 h-5" />
+                                {paymentMode === 'one_time' ? 'Générer le QR Code' : 'Abonner le client'}
+                            </>
+                        )}
+                    </button>
                 </div>
 
                 {/* Right Side: QR Code Display for Client */}
