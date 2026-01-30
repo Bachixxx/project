@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Dumbbell, Calendar, TrendingUp,
-  User, LogOut, Menu, X, ShoppingBag
+  User, LogOut, Menu, X, ShoppingBag, Activity
 } from 'lucide-react';
 import { useClientAuth } from '../../contexts/ClientAuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -131,6 +131,13 @@ function ClientLayout() {
                 icon={<TrendingUp className="w-5 h-5" />}
                 text="Mes progrès"
                 active={isActive('/client/progress')}
+                onClick={() => setIsMobileMenuOpen(false)}
+              />
+              <NavLink
+                to="/client/body-composition"
+                icon={<Activity className="w-5 h-5" />}
+                text="Biométrie"
+                active={isActive('/client/body-composition')}
                 onClick={() => setIsMobileMenuOpen(false)}
               />
             </div>
