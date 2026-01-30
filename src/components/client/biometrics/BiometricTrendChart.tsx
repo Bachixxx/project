@@ -81,15 +81,21 @@ export function BiometricTrendChart({ data, metrics }: BiometricTrendChartProps)
                             }}
                             minTickGap={30}
                         />
-                        <YAxis
-                            stroke="#9ca3af"
-                            tick={{ fill: '#9ca3af', fontSize: 12 }}
-                            tickLine={false}
-                            axisLine={false}
-                            domain={['auto', 'auto']}
-                            tickFormatter={(value) => `${Math.round(value)}`}
-                            width={30}
-                        />
+                        {metrics.map((metric) => (
+                            <YAxis
+                                key={metric.id}
+                                yAxisId={metric.id}
+                                orientation="left"
+                                stroke="#9ca3af"
+                                tick={{ fill: metrics.length === 1 ? '#9ca3af' : metric.color, fontSize: 12 }}
+                                tickLine={false}
+                                axisLine={false}
+                                domain={['auto', 'auto']}
+                                tickFormatter={(value) => `${Math.round(value)}`}
+                                width={30}
+                                hide={metrics.length > 1}
+                            />
+                        ))}
                         <Tooltip
                             contentStyle={{
                                 backgroundColor: 'rgba(30, 41, 59, 0.9)',
@@ -102,8 +108,7 @@ export function BiometricTrendChart({ data, metrics }: BiometricTrendChartProps)
                             labelStyle={{ color: '#9ca3af', marginBottom: '0.25rem' }}
                             formatter={(value: any, name: any, props: any) => {
                                 // Find the metric config to get the unit
-                                const metric = metrics.find(m => m.label === name); // Recharts uses label as name by default or dataKey
-                                // actually name is often the datakey or name prop. Let's use name prop in Area
+                                const metric = metrics.find(m => m.label === name);
                                 return [`${value} ${metric?.unit || ''}`, name];
                             }}
                             labelFormatter={(label) => {
@@ -119,7 +124,8 @@ export function BiometricTrendChart({ data, metrics }: BiometricTrendChartProps)
                                 key={metric.id}
                                 type="monotone"
                                 dataKey={metric.id}
-                                name={metric.label} // Used in Tooltip
+                                yAxisId={metric.id}
+                                name={metric.label}
                                 stroke={metric.color}
                                 strokeWidth={3}
                                 fillOpacity={1}
