@@ -60,6 +60,7 @@ const ClientWorkouts = lazy(() => import('./pages/client/ClientWorkouts'));
 const ClientAppointments = lazy(() => import('./pages/client/ClientAppointments'));
 const ClientProgress = lazy(() => import('./pages/client/ClientProgress'));
 const ClientProfile = lazy(() => import('./pages/client/ClientProfile'));
+const ClientBodyComposition = lazy(() => import('./pages/client/ClientBodyComposition'));
 const ClientWorkout = lazy(() => import('./pages/client/ClientWorkout'));
 const ClientLiveWorkout = lazy(() => import('./pages/client/ClientLiveWorkout'));
 
@@ -267,6 +268,14 @@ function App() {
                         element={
                           <ClientPrivateRoute>
                             <ClientProfile />
+                          </ClientPrivateRoute>
+                        }
+                      />
+                      <Route
+                        path="/client/body-composition"
+                        element={
+                          <ClientPrivateRoute>
+                            <ClientBodyComposition />
                           </ClientPrivateRoute>
                         }
                       />

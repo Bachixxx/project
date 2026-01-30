@@ -13,7 +13,8 @@ function ClientBottomNav() {
         { path: '/client/dashboard', icon: LayoutDashboard, label: 'Accueil' },
         { path: '/client/workouts', icon: Dumbbell, label: 'Programme' },
         { path: '/client/appointments', icon: Calendar, label: 'Agenda' },
-        { path: '/client/progress', icon: TrendingUp, label: 'Progrès' },
+        { path: '/client/appointments', icon: Calendar, label: 'Agenda' },
+        { path: '/client/body-composition', icon: TrendingUp, label: 'Biométrie' },
         { path: '/client/profile', icon: User, label: 'Profil' },
     ];
 
