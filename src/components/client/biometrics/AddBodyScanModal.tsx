@@ -17,6 +17,7 @@ export function AddBodyScanModal({ isOpen, onClose, onSuccess }: AddBodyScanModa
     const [formData, setFormData] = useState({
         weight: '',
         height: '',
+        bmi: '',
         body_fat_percent: '',
         skeletal_muscle_mass: '',
         total_body_water_percent: '',
@@ -41,7 +42,22 @@ export function AddBodyScanModal({ isOpen, onClose, onSuccess }: AddBodyScanModa
     if (!isOpen) return null;
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+        setFormData(prev => {
+            const newData = { ...prev, [name]: value };
+
+            // Auto-calculate BMI if weight or height changes
+            if (name === 'weight' || name === 'height') {
+                const w = parseFloat(name === 'weight' ? value : prev.weight);
+                const h = parseFloat(name === 'height' ? value : prev.height);
+                if (w && h) {
+                    const heightInMeters = h / 100;
+                    const bmi = (w / (heightInMeters * heightInMeters)).toFixed(2);
+                    newData.bmi = bmi;
+                }
+            }
+            return newData;
+        });
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -62,8 +78,9 @@ export function AddBodyScanModal({ isOpen, onClose, onSuccess }: AddBodyScanModa
             const bodyFatPercent = parseFloat(formData.body_fat_percent);
             const waterPercent = parseFloat(formData.total_body_water_percent);
 
-            let bmi = null;
-            if (weight && height) {
+            // Use manual BMI if provided, otherwise calculate
+            let bmi = parseFloat(formData.bmi);
+            if (!bmi && weight && height) {
                 const heightInMeters = height / 100;
                 bmi = parseFloat((weight / (heightInMeters * heightInMeters)).toFixed(2));
             }
@@ -83,7 +100,7 @@ export function AddBodyScanModal({ isOpen, onClose, onSuccess }: AddBodyScanModa
                 date: new Date().toISOString().split('T')[0], // Today's date YYYY-MM-DD
                 weight: weight || null,
                 height: height || null,
-                bmi: bmi,
+                bmi: bmi || null,
                 body_fat_percent: bodyFatPercent || null,
                 body_fat_mass: bodyFatMass,
                 skeletal_muscle_mass: parseFloat(formData.skeletal_muscle_mass) || null,
@@ -122,6 +139,7 @@ export function AddBodyScanModal({ isOpen, onClose, onSuccess }: AddBodyScanModa
     };
 
     const renderSegmentalInputs = (type: 'muscle' | 'fat') => {
+        // ... (keep logic) ...
         const title = type === 'muscle' ? 'Muscle Segmentaire (kg)' : 'Graisse Segmentaire (kg/%)';
         const color = type === 'muscle' ? 'text-red-500' : 'text-yellow-500';
         const borderColor = type === 'muscle' ? 'focus:border-red-500 focus:ring-red-500' : 'focus:border-yellow-500 focus:ring-yellow-500';
@@ -179,7 +197,7 @@ export function AddBodyScanModal({ isOpen, onClose, onSuccess }: AddBodyScanModa
                         </div>
                     )}
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-3 gap-4">
                         <div className="space-y-2">
                             <label className="text-xs font-bold text-gray-400 uppercase">Poids (kg)</label>
                             <input
@@ -203,6 +221,18 @@ export function AddBodyScanModal({ isOpen, onClose, onSuccess }: AddBodyScanModa
                                 onChange={handleChange}
                                 placeholder="ex: 180"
                                 className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all placeholder:text-gray-600"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold text-emerald-500 uppercase">IMC</label>
+                            <input
+                                type="number"
+                                step="0.01"
+                                name="bmi"
+                                value={formData.bmi}
+                                onChange={handleChange}
+                                placeholder="ex: 24.5"
+                                className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all placeholder:text-gray-600"
                             />
                         </div>
                     </div>
