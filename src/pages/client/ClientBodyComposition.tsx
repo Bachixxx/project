@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useClientAuth } from '../../contexts/ClientAuthContext';
 import { BiometricsDashboard } from '../../components/client/biometrics/BiometricsDashboard';
 import { AddBodyScanModal } from '../../components/client/biometrics/AddBodyScanModal';
+import { TutorialCard } from '../../components/client/TutorialCard';
 
 function ClientBodyComposition() {
     const navigate = useNavigate();
@@ -22,6 +23,13 @@ function ClientBodyComposition() {
                     <ChevronLeft className="w-6 h-6" />
                     Retour
                 </button>
+
+                <TutorialCard
+                    tutorialId="biometrics_intro"
+                    title="Votre évolution corporelle 📉"
+                    message="Suivez votre poids, vos mensurations et vos photos de progression. Ajoutez régulièrement de nouvelles mesures pour visualiser votre transformation."
+                    className="mb-6"
+                />
 
                 {client?.id && <BiometricsDashboard clientId={client.id} readOnly={false} />}
             </div>

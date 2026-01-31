@@ -218,9 +218,9 @@ function ClientProgress() {
         </div>
 
         <TutorialCard
-          tutorialId="progress_tracking"
-          title="Suivez votre transformation 📈"
-          message="Ajoutez régulièrement vos pesées et mensurations via le bouton 'Ajouter un graphique'. Vos graphiques se mettront à jour automatiquement pour visualiser vos efforts."
+          tutorialId="progress_tracking_v2"
+          title="Analysez vos performances 🏋️‍♂️"
+          message="Visualisez votre progression sur chaque exercice : charge maximale, volume total et évolution. Ajoutez un graphique pour commencer."
           className="mb-8"
         />
 
