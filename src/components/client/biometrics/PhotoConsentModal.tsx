@@ -31,7 +31,7 @@ export function PhotoConsentModal({ isOpen, onClose, onConfirm, clientName }: Ph
     };
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-end md:items-start justify-center p-0 md:p-4 bg-black/90 backdrop-blur-sm md:pt-24">
+        <div className="fixed inset-0 z-[100] flex items-start justify-center p-0 md:p-4 bg-black/90 backdrop-blur-sm pt-20 md:pt-24">
             <div className="bg-[#1e293b] w-full md:max-w-lg rounded-t-3xl md:rounded-2xl border-t md:border border-white/10 shadow-2xl overflow-hidden animate-in slide-in-from-bottom-10 md:fade-in md:zoom-in duration-200 flex flex-col max-h-[85vh] md:max-h-[80vh] mb-0 md:mb-auto">
                 <div className="p-4 md:p-6 border-b border-white/10 flex justify-between items-center bg-white/5 shrink-0">
                     <h2 className="text-lg font-bold text-white flex items-center gap-2">
@@ -84,7 +84,7 @@ export function PhotoConsentModal({ isOpen, onClose, onConfirm, clientName }: Ph
                     </div>
                 </div>
 
-                <div className="p-4 md:p-6 border-t border-white/10 bg-white/5 shrink-0 z-10 pb-12 md:pb-6">
+                <div className="p-4 md:p-6 border-t border-white/10 bg-white/5 shrink-0 z-10 pb-24 md:pb-6">
                     <button
                         onClick={handleConfirm}
                         disabled={loading || signature.trim().toUpperCase() !== "J'ACCEPTE"}
