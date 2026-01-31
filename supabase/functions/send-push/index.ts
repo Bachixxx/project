@@ -40,8 +40,14 @@ serve(async (req) => {
         let notification = null
 
         // 1. New Class (Appointment)
+        // 1. New Class (Appointment)
         if (table === 'appointments' && type === 'INSERT') {
-            if (record.client_id) {
+            // Avoid double notification: 
+            // - If it's a private session WITH a session_id, it will trigger the 'scheduled_sessions' notification below.
+            // - So checking: Is it a group class? OR Is it a private appointment WITHOUT a linked session (ad-hoc)?
+            const shouldSendNotification = record.type === 'group' || !record.session_id;
+
+            if (shouldSendNotification && record.client_id) {
                 console.log(`Targeting Client ID: ${record.client_id}`);
 
                 // Fetch the Auth ID (Supabase User ID) which is what OneSignal uses
