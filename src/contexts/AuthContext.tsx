@@ -154,7 +154,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (error) throw error;
-    } catch (error) {
+    } catch (error: any) {
+      // Ignore if session is already missing (user is effectively logged out)
+      if (error?.message?.includes('Auth session missing') || error?.name === 'AuthSessionMissingError') {
+        return;
+      }
       console.error('SignOut error:', error);
       throw error;
     }

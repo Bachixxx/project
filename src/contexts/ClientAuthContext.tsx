@@ -192,7 +192,11 @@ export function ClientAuthProvider({ children }) {
       }
 
       setClient(null);
-    } catch (error) {
+    } catch (error: any) {
+      // Ignore if session is already missing
+      if (error?.message?.includes('Auth session missing') || error?.name === 'AuthSessionMissingError') {
+        return;
+      }
       console.error('Error signing out:', error);
     }
   };
