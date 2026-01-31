@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useClientAuth } from '../../contexts/ClientAuthContext';
 import { supabase } from '../../lib/supabase';
 import SplashScreen from '../SplashScreen';
 
-function ClientPrivateRoute({ children }) {
+function ClientPrivateRoute({ children }: { children: React.ReactNode }) {
   const { client, loading } = useClientAuth();
   const [isClient, setIsClient] = useState<boolean | null>(null);
   const [checking, setChecking] = useState(true);
@@ -42,6 +42,8 @@ function ClientPrivateRoute({ children }) {
     verifyClient();
   }, [client]);
 
+  const location = useLocation();
+
   if (loading || checking) {
     return <SplashScreen />;
   }
@@ -52,6 +54,15 @@ function ClientPrivateRoute({ children }) {
 
   if (isClient === false) {
     return <Navigate to="/login" replace />;
+  }
+
+  // Check onboarding status
+  if (!client.onboarding_completed && location.pathname !== '/client/onboarding') {
+    return <Navigate to="/client/onboarding" replace />;
+  }
+
+  if (client.onboarding_completed && location.pathname === '/client/onboarding') {
+    return <Navigate to="/client/dashboard" replace />;
   }
 
   return children;

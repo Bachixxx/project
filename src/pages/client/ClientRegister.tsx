@@ -78,10 +78,9 @@ function ClientRegister() {
 
       console.log('User created:', authData.user.id);
 
-      // Navigate to dashboard. 
       // Note: If email confirmation is ON, user might not have an active session yet, 
       // but the 'clients' record is created by trigger (status=active).
-      navigate('/client/dashboard');
+      navigate('/client/onboarding');
     } catch (error: any) {
       console.error('Registration error:', error);
       setError(error.message || 'Erreur lors de l\'inscription. Veuillez réessayer.');

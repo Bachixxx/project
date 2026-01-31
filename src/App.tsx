@@ -34,6 +34,7 @@ const Legal = lazy(() => import('./pages/Legal'));
 const ClientLogin = lazy(() => import('./pages/client/ClientLogin'));
 const CheckEmail = lazy(() => import('./pages/client/CheckEmail'));
 const ClientRegister = lazy(() => import('./pages/client/ClientRegister'));
+const ClientOnboarding = lazy(() => import('./pages/client/ClientOnboarding'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const UpdatePassword = lazy(() => import('./pages/UpdatePassword'));
 
@@ -300,6 +301,14 @@ function App() {
                           element={
                             <ClientPrivateRoute>
                               <ClientBodyComposition />
+                            </ClientPrivateRoute>
+                          }
+                        />
+                        <Route
+                          path="/client/onboarding"
+                          element={
+                            <ClientPrivateRoute>
+                              <ClientOnboarding />
                             </ClientPrivateRoute>
                           }
                         />
