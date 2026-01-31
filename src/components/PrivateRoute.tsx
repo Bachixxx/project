@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import SplashScreen from './SplashScreen';
+import Loading from './Loading';
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
@@ -36,7 +36,7 @@ function PrivateRoute({ children }) {
   }, [user]);
 
   if (loading || checking) {
-    return <SplashScreen />;
+    return <Loading />;
   }
 
   if (!user) {

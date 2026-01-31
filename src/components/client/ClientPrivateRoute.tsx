@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useClientAuth } from '../../contexts/ClientAuthContext';
 import { supabase } from '../../lib/supabase';
-import SplashScreen from '../SplashScreen';
+import Loading from '../Loading';
 
 function ClientPrivateRoute({ children }: { children: React.ReactNode }) {
   const { client, loading } = useClientAuth();
@@ -45,7 +45,7 @@ function ClientPrivateRoute({ children }: { children: React.ReactNode }) {
   const location = useLocation();
 
   if (loading || checking) {
-    return <SplashScreen />;
+    return <Loading />;
   }
 
   if (!client) {
