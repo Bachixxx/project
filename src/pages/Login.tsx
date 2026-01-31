@@ -172,9 +172,9 @@ function Login() {
                 </div>
 
                 <div className="flex items-center justify-end">
-                  <a href="#" className="text-sm font-medium text-blue-400 hover:text-blue-300 transition-colors">
+                  <Link to="/forgot-password" className="text-sm font-medium text-blue-400 hover:text-blue-300 transition-colors">
                     Mot de passe oublié ?
-                  </a>
+                  </Link>
                 </div>
 
                 <button

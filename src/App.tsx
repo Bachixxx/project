@@ -33,6 +33,8 @@ const Legal = lazy(() => import('./pages/Legal'));
 const ClientLogin = lazy(() => import('./pages/client/ClientLogin'));
 const CheckEmail = lazy(() => import('./pages/client/CheckEmail'));
 const ClientRegister = lazy(() => import('./pages/client/ClientRegister'));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
+const UpdatePassword = lazy(() => import('./pages/UpdatePassword'));
 
 // Coach Private Pages
 const Dashboard = lazy(() => import('./pages/Dashboard'));
@@ -97,6 +99,8 @@ function App() {
                     <Route path="/client/login" element={<ClientLogin />} />
                     <Route path="/client/check-email" element={<CheckEmail />} />
                     <Route path="/client/register" element={<ClientRegister />} />
+                    <Route path="/forgot-password" element={<ForgotPassword />} />
+                    <Route path="/update-password" element={<UpdatePassword />} />
 
                     {/* Routes coach */}
                     <Route element={<Layout />}>

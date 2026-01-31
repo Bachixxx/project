@@ -1,9 +1,18 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
-const ClientAuthContext = createContext(null);
+// Define the shape of the context
+interface ClientAuthContextType {
+  signIn: (data: any) => Promise<{ data: any; error: any }>;
+  signOut: () => Promise<void>;
+  client: any | null;
+  loading: boolean;
+  refreshClient: () => Promise<void>;
+}
 
-export function ClientAuthProvider({ children }) {
+const ClientAuthContext = createContext<ClientAuthContextType | null>(null);
+
+export function ClientAuthProvider({ children }: { children: React.ReactNode }) {
   const [client, setClient] = useState(null);
   const [loading, setLoading] = useState(true);
 
