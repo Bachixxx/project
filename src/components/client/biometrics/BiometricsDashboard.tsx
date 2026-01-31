@@ -412,6 +412,26 @@ export function BiometricsDashboard({ clientId, readOnly = false }: BiometricsDa
             {activeTab === 'photos' && (
                 <div className="animate-fade-in">
                     <div className="animate-fade-in">
+                        {readOnly && (
+                            <div className="mb-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl flex items-start gap-3">
+                                <div className="p-2 bg-blue-500/20 rounded-lg shrink-0">
+                                    <Activity className="w-5 h-5 text-blue-400" />
+                                </div>
+                                <div className="text-sm text-gray-300 space-y-2">
+                                    <p className="font-bold text-blue-300">
+                                        🔒 Accès protégé par consentement
+                                    </p>
+                                    <p>
+                                        L'accès à ces photos est conditionné par l'accord explicite du client.
+                                        En tant que coach, vous vous engagez à respecter la confidentialité de ces données sensibles.
+                                    </p>
+                                    <p className="text-xs text-gray-500 pt-2 border-t border-white/5">
+                                        La plateforme Coachency agit en tant qu'hébergeur technique et décline toute responsabilité quant à l'usage fait de ces images.
+                                        Le respect des lois sur la protection des données (RGPD) relève de votre responsabilité professionnelle.
+                                    </p>
+                                </div>
+                            </div>
+                        )}
                         <PhotoEvolution clientId={clientId} />
                     </div>
                 </div>
