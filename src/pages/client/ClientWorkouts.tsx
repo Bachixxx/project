@@ -20,8 +20,24 @@ function ClientWorkouts() {
 
   const fetchClientPrograms = async () => {
     try {
-      setLoading(true);
+      // 1. Try cache first
+      const cacheKey = `workouts_data_${client?.id}`;
+      const cachedData = localStorage.getItem(cacheKey);
 
+      if (cachedData) {
+        try {
+          const { programs } = JSON.parse(cachedData);
+          setClientPrograms(programs || []);
+          // Don't set loading to true if we have cache
+        } catch (e) {
+          console.error("Error parsing workouts cache", e);
+          setLoading(true);
+        }
+      } else {
+        setLoading(true);
+      }
+
+      // 2. Network Fetch
       // Fetch client programs with all related data
       const { data: clientProgramsData, error: programsError } = await supabase
         .from('client_programs')
@@ -94,6 +110,13 @@ function ClientWorkouts() {
       }).filter(Boolean);
 
       setClientPrograms(formattedWorkouts);
+
+      // 3. Update Cache
+      localStorage.setItem(cacheKey, JSON.stringify({
+        programs: formattedWorkouts,
+        timestamp: new Date().getTime()
+      }));
+
     } catch (error) {
       console.error('Error fetching client programs:', error);
     } finally {
@@ -124,7 +147,8 @@ function ClientWorkouts() {
     }
   };
 
-  if (loading && !clientPrograms.length) {
+  // Check if we have data (either from cache or fetch) to decide on spinner
+  if (loading && clientPrograms.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-[#0f172a]">
         <div className="w-16 h-16 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin"></div>

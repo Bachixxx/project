@@ -35,9 +35,14 @@ export function useSubscription() {
         .from('coaches')
         .select('*')
         .eq('id', user?.id)
-        .single();
+        .maybeSingle();
 
       if (coachError) throw coachError;
+
+      if (!coachData) {
+        setLoading(false);
+        return;
+      }
 
       // Get current client count
       const { count: currentClients } = await supabase

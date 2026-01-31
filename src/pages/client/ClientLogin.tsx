@@ -6,6 +6,8 @@ import { eye } from 'react-icons-kit/feather/eye';
 import { LogIn, ChevronLeft, User, Mail, Lock, Activity, Users } from 'lucide-react';
 import { useClientAuth } from '../../contexts/ClientAuthContext';
 
+import { Capacitor } from '@capacitor/core';
+
 function ClientLogin() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -53,6 +55,8 @@ function ClientLogin() {
     }
   };
 
+  const isNative = Capacitor.isNativePlatform();
+
   return (
     <div className="min-h-screen bg-[#0f172a] p-4 flex flex-col font-sans selection:bg-green-500/30 relative overflow-hidden">
 
@@ -61,25 +65,27 @@ function ClientLogin() {
       <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-teal-500/10 rounded-full blur-[128px] pointer-events-none" />
 
       {/* Header */}
-      <div className="relative z-10 flex items-center justify-between mb-8 max-w-7xl mx-auto w-full pt-4">
-        <Link
-          to="/"
-          className="group flex items-center text-gray-400 hover:text-white transition-colors"
-        >
-          <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center mr-3 group-hover:bg-white/10 transition-colors border border-white/5">
-            <ChevronLeft className="w-5 h-5" />
-          </div>
-          <span className="font-medium">Retour à l'accueil</span>
-        </Link>
+      {!isNative && (
+        <div className="relative z-10 flex items-center justify-between mb-8 max-w-7xl mx-auto w-full pt-4">
+          <Link
+            to="/"
+            className="group flex items-center text-gray-400 hover:text-white transition-colors"
+          >
+            <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center mr-3 group-hover:bg-white/10 transition-colors border border-white/5">
+              <ChevronLeft className="w-5 h-5" />
+            </div>
+            <span className="font-medium">Retour à l'accueil</span>
+          </Link>
 
-        <div className="text-2xl font-bold bg-gradient-to-r from-green-400 to-teal-400 bg-clip-text text-transparent flex items-center gap-2 opacity-80 grayscale sm:grayscale-0 transition-all">
-          {/* Client Brand Logo (Optional, using text for now) */}
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-500 to-teal-500 flex items-center justify-center text-white shadow-lg shadow-green-500/25">
-            <Users className="w-5 h-5" />
+          <div className="text-2xl font-bold bg-gradient-to-r from-green-400 to-teal-400 bg-clip-text text-transparent flex items-center gap-2 opacity-80 grayscale sm:grayscale-0 transition-all">
+            {/* Client Brand Logo (Optional, using text for now) */}
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-500 to-teal-500 flex items-center justify-center text-white shadow-lg shadow-green-500/25">
+              <Users className="w-5 h-5" />
+            </div>
+            Espace Client
           </div>
-          Espace Client
         </div>
-      </div>
+      )}
 
       <div className="flex-1 flex items-center justify-center relative z-10 pb-20">
         <div className="max-w-md w-full animate-fade-in relative">

@@ -30,7 +30,7 @@ function ClientLayout() {
   return (
     <div className="min-h-screen bg-[#0f172a] text-gray-100">
       {/* Top Navigation Bar */}
-      <nav className="bg-white/10 backdrop-blur-lg shadow-xl fixed w-full z-50">
+      <nav className="bg-white/10 backdrop-blur-lg shadow-xl fixed w-full z-50 pt-[env(safe-area-inset-top)]">
         <div className="max-w-9xl mx-auto px-4">
           <div className="flex justify-between h-16">
             <div className="flex items-center gap-2">
@@ -91,7 +91,7 @@ function ClientLayout() {
         </div>
       </nav>
 
-      <div className="flex pt-16 w-full pb-20 lg:pb-0">
+      <div className="flex pt-[calc(4rem+env(safe-area-inset-top))] w-full pb-20 lg:pb-0">
         {/* Mobile Sidebar */}
         <div
           className={`fixed inset-0 bg-black/70 backdrop-blur-sm z-40 lg:hidden transition-opacity duration-300 ${isMobileMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'

@@ -33,8 +33,35 @@ function ClientDashboard() {
 
   const fetchClientData = async () => {
     try {
-      setLoading(true);
+      // 1. Try to load from cache immediately
+      const cacheKey = `dashboard_data_${client?.id}`;
+      const cachedData = localStorage.getItem(cacheKey);
 
+      if (cachedData) {
+        try {
+          const {
+            clientPrograms: cachedPrograms,
+            workoutSessions: cachedWorkouts,
+            weeklyActivity: cachedActivity,
+            stats: cachedStats,
+            upcomingSessions: cachedUpcoming
+          } = JSON.parse(cachedData);
+
+          // Update state with cached data without setting loading=true
+          setClientPrograms(cachedPrograms || []);
+          setWorkoutSessions(cachedWorkouts || []);
+          setWeeklyActivity(cachedActivity || []);
+          setStats(cachedStats || { workoutsCount: 0, totalDuration: 0, streak: 0 });
+          setUpcomingSessions(cachedUpcoming || []);
+        } catch (e) {
+          console.error("Error parsing cache", e);
+        }
+      } else {
+        // Only show spinner if no cache
+        setLoading(true);
+      }
+
+      // 2. Network Fetch (Background or Initial)
       // Fetch client programs
       const { data: programsData, error: programsError } = await supabase
         .from('client_programs')
@@ -61,7 +88,8 @@ function ClientDashboard() {
         .eq('status', 'active');
 
       if (programsError) throw programsError;
-      setClientPrograms(programsData || []);
+      const fetchedPrograms = programsData || [];
+      setClientPrograms(fetchedPrograms);
 
       // Fetch recent scheduled sessions (completed) for history and stats
       const { data: sessionsData, error: sessionsError } = await supabase
@@ -89,7 +117,8 @@ function ClientDashboard() {
         session: s.session
       }));
 
-      setWorkoutSessions(sessions.slice(0, 5)); // Keep only last 5 for display
+      const fetchedWorkouts = sessions.slice(0, 5);
+      setWorkoutSessions(fetchedWorkouts); // Keep only last 5 for display
 
       // Calculate simple stats
       const totalDuration = sessions.reduce((acc, curr) => acc + (curr.duration_minutes || 0), 0);
@@ -154,11 +183,12 @@ function ClientDashboard() {
         }
       }
 
-      setStats({
+      const fetchedStats = {
         workoutsCount: sessions.length,
         totalDuration: Math.round(totalDuration / 60), // in hours
         streak: currentStreak
-      });
+      };
+      setStats(fetchedStats);
 
       // Fetch upcoming scheduled sessions (1-on-1 from Programs/Personal)
       const { data: scheduledSessionsData, error: scheduledSessionsError } = await supabase
@@ -225,6 +255,18 @@ function ClientDashboard() {
         .slice(0, 3); // Take top 3
 
       setUpcomingSessions(combinedUpcoming);
+
+      // 3. Save to localStorage for next time
+      const dataToCache = {
+        clientPrograms: fetchedPrograms,
+        workoutSessions: fetchedWorkouts,
+        weeklyActivity: activityData,
+        stats: fetchedStats,
+        upcomingSessions: combinedUpcoming,
+        timestamp: new Date().getTime()
+      };
+
+      localStorage.setItem(cacheKey, JSON.stringify(dataToCache));
 
     } catch (error) {
       console.error('Error fetching client data:', error);
@@ -334,7 +376,7 @@ function ClientDashboard() {
     }
   }, [nextActions.length]);
 
-  if (authLoading || loading && !clientPrograms.length) {
+  if (authLoading || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-[#0f172a]">
         <div className="w-16 h-16 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin"></div>
@@ -353,7 +395,7 @@ function ClientDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-[#09090b] text-white font-sans p-4 pb-24 md:p-8">
+    <div className="text-white font-sans p-4 pb-24 md:p-8">
       {/* ... (Background Gradients and Header) */}
 
       <div className="relative z-10 max-w-7xl mx-auto space-y-8">

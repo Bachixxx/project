@@ -84,8 +84,42 @@ function ClientAppointments() {
 
   const fetchSessions = async () => {
     try {
-      setLoading(true);
+      // 1. Try cache first
+      const cacheKey = `appointments_data_${client.id}`;
+      const cachedData = localStorage.getItem(cacheKey);
 
+      if (cachedData) {
+        try {
+          const { personal, group } = JSON.parse(cachedData);
+
+          const reviveDates = (sessions: any[]) => {
+            if (!Array.isArray(sessions)) return [];
+            return sessions.map(session => ({
+              ...session,
+              start: new Date(session.start),
+              end: new Date(session.end)
+            }));
+          };
+
+          const revivedPersonal = reviveDates(personal);
+          const revivedGroup = reviveDates(group);
+
+          setPersonalSessions(revivedPersonal);
+          setGroupSessions(revivedGroup);
+
+          // Check if we have data to show, if so, stop loading
+          if (revivedPersonal.length > 0 || revivedGroup.length > 0) {
+            setLoading(false);
+          }
+        } catch (e) {
+          console.error("Error parsing appointments cache", e);
+        }
+      }
+
+      // If no cache or cache empty, ensure loading is true
+      if (!cachedData) setLoading(true);
+
+      // 2. Network Fetch
       const { data: scheduledData, error: scheduledError } = await supabase
         .from('scheduled_sessions')
         .select(`
@@ -344,15 +378,23 @@ function ClientAppointments() {
         session: a.session
       }));
 
-      console.log('Formatted group sessions:', formattedGroupSessions);
-      console.log('Formatted appointments:', formattedAppointments);
+      // console.log('Formatted group sessions:', formattedGroupSessions);
+      // console.log('Formatted appointments:', formattedAppointments);
 
       const allGroupSessions = [...formattedGroupSessions, ...formattedAppointments]
         .sort((a, b) => a.start.getTime() - b.start.getTime());
 
-      console.log('All group sessions combined:', allGroupSessions);
+      // console.log('All group sessions combined:', allGroupSessions);
 
       setGroupSessions(allGroupSessions);
+
+      // 3. Update Cache
+      localStorage.setItem(cacheKey, JSON.stringify({
+        personal: uniqueSessions,
+        group: allGroupSessions,
+        timestamp: new Date().getTime()
+      }));
+
     } catch (error) {
       console.error('Error fetching sessions:', error);
     } finally {
@@ -585,7 +627,7 @@ function ClientAppointments() {
       />
 
       {
-        loading ? (
+        loading && !personalSessions.length && !groupSessions.length ? (
           <div className="flex items-center justify-center p-12" >
             <Loader className="w-8 h-8 text-white animate-spin" />
           </div>
@@ -969,243 +1011,218 @@ function ClientAppointments() {
   );
 }
 
-function SessionModal({ session, exercises, loadingExercises, onClose, onRegister, onUnregister, onStartTraining, registering }) {
-  const getStatusColor = (status) => {
+const SessionModal = ({ session, exercises, loadingExercises, onClose, onRegister, onUnregister, onStartTraining, registering }: any) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
-      case 'scheduled':
-        return 'bg-blue-500/20 text-blue-100';
-      case 'completed':
-        return 'bg-green-500/20 text-green-100';
-      case 'cancelled':
-        return 'bg-red-500/20 text-red-100';
-      case 'registered':
-        return 'bg-green-500/20 text-green-100';
-      default:
-        return 'bg-gray-500/20 text-gray-100';
+      case 'scheduled': return 'bg-blue-500/20 text-blue-100 border border-blue-500/30';
+      case 'completed': return 'bg-emerald-500/20 text-emerald-100 border border-emerald-500/30';
+      case 'cancelled': return 'bg-red-500/20 text-red-100 border border-red-500/30';
+      case 'registered': return 'bg-emerald-500/20 text-emerald-100 border border-emerald-500/30';
+      default: return 'bg-gray-500/20 text-gray-100 border border-gray-500/30';
     }
   };
 
-  const getStatusText = (status) => {
+  const getStatusText = (status: string) => {
     switch (status) {
-      case 'scheduled':
-        return 'Planifié';
-      case 'completed':
-        return 'Terminé';
-      case 'cancelled':
-        return 'Annulé';
-      case 'registered':
-        return 'Inscrit';
-      default:
-        return status;
+      case 'scheduled': return 'Planifié';
+      case 'completed': return 'Terminé';
+      case 'cancelled': return 'Annulé';
+      case 'registered': return 'Inscrit';
+      default: return status;
     }
   };
+
+  const isPersonal = session.type === 'personal';
+  const accentColor = isPersonal ? 'blue' : 'emerald';
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white/10 backdrop-blur-lg rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-white/20">
-        <div className="p-6">
-          <div className="flex justify-between items-start mb-6">
-            <div className="flex items-center gap-3">
-              {session.type === 'personal' ? (
-                <div className="p-2 bg-blue-500/20 rounded-lg">
-                  <User className="w-6 h-6 text-blue-300" />
-                </div>
-              ) : (
-                <div className="p-2 bg-green-500/20 rounded-lg">
-                  <Users className="w-6 h-6 text-green-300" />
-                </div>
-              )}
-              <div>
-                <h2 className="text-2xl font-bold text-white">{session.title}</h2>
-                <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium mt-2 ${getStatusColor(session.registered ? 'registered' : session.status)}`}>
-                  {session.registered ? 'Inscrit' : getStatusText(session.status)}
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+        onClick={onClose}
+      />
+
+      {/* Modal Content */}
+      <div className="relative bg-[#0f172a]/90 backdrop-blur-xl rounded-2xl max-w-lg w-full max-h-[85vh] overflow-y-auto border border-white/10 shadow-2xl animate-scale-in">
+
+        {/* Header Hero */}
+        <div className={`relative p-6 pb-8 overflow-hidden`}>
+          {/* Decorative background gradient */}
+          <div className={`absolute top-0 right-0 w-64 h-64 bg-${accentColor}-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none`} />
+
+          <div className="flex justify-between items-start z-10 relative">
+            <div>
+              <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium mb-3 ${getStatusColor(session.registered ? 'registered' : session.status)}`}>
+                {session.registered ? 'Inscrit' : getStatusText(session.status)}
+              </div>
+              <h2 className="text-3xl font-bold text-white mb-1">{session.title}</h2>
+              <div className="flex items-center gap-2 text-white/70">
+                <Clock className="w-4 h-4" />
+                <span className="text-lg">
+                  {format(session.start, 'EEEE d MMMM', { locale: fr })}
+                </span>
+                <span className="text-white/40">•</span>
+                <span className="text-lg font-medium text-white">
+                  {format(session.start, 'HH:mm')} - {format(session.end, 'HH:mm')}
                 </span>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-white/10 rounded-lg text-white/80 hover:text-white transition-colors"
+              className="p-2 bg-white/5 hover:bg-white/10 rounded-full text-white/70 hover:text-white transition-colors"
             >
-              <X className="w-6 h-6" />
+              <X className="w-5 h-5" />
             </button>
           </div>
+        </div>
 
-          <div className="space-y-6">
-            <div className="flex items-center gap-3">
-              <Clock className="w-5 h-5 text-white/60" />
-              <div className="text-white">
-                <div className="font-medium">
-                  {format(session.start, 'EEEE dd MMMM yyyy', { locale: fr })}
+        <div className="px-6 pb-6 space-y-8">
+
+          {/* Compact Coach Section */}
+          {session.coach && (
+            <div className="flex items-center justify-between py-4 border-t border-b border-white/5">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-full bg-${accentColor}-500/20 flex items-center justify-center border border-${accentColor}-500/30`}>
+                  <User className={`w-5 h-5 text-${accentColor}-300`} />
                 </div>
-                <div className="text-white/80">
-                  {format(session.start, 'HH:mm')} - {format(session.end, 'HH:mm')}
+                <div>
+                  <p className="text-sm text-white/50 font-medium">Votre coach</p>
+                  <p className="text-white font-medium">{session.coach.full_name}</p>
                 </div>
+              </div>
+              {/* Optional: Add quick action buttons here if needed later (call, mail) */}
+            </div>
+          )}
+
+          {/* Session Details */}
+          {session.session && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-white">Programme</h3>
+                <div className="flex gap-2">
+                  <span className="px-2.5 py-1 bg-white/5 border border-white/10 rounded-md text-xs text-white/70">
+                    {session.session.duration_minutes} min
+                  </span>
+                  <span className="px-2.5 py-1 bg-white/5 border border-white/10 rounded-md text-xs text-white/70">
+                    {session.session.difficulty_level}
+                  </span>
+                </div>
+              </div>
+
+              {session.session.description && (
+                <p className="text-white/60 text-sm leading-relaxed">{session.session.description}</p>
+              )}
+
+              {/* Exercises List */}
+              <div className="mt-4">
+                {loadingExercises ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader className="w-5 h-5 text-white/40 animate-spin" />
+                  </div>
+                ) : exercises && exercises.length > 0 ? (
+                  <div className="space-y-1">
+                    {exercises.map((se: any, idx: number) => (
+                      <div key={se.id} className="group flex items-start gap-4 p-3 rounded-xl hover:bg-white/5 transition-colors border border-transparent hover:border-white/5">
+                        <span className="flex-shrink-0 w-6 text-sm font-medium text-white/30 pt-0.5">{idx + 1}</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white font-medium truncate">{se.exercise?.name || 'Exercice'}</p>
+                          <div className="flex items-center gap-3 mt-1 text-xs text-white/50">
+                            {se.exercise?.tracking_type === 'duration' ? (
+                              <span className="text-white/70">{se.duration_seconds}s</span>
+                            ) : se.exercise?.tracking_type === 'distance' ? (
+                              <span className="text-white/70">{se.distance_meters}m</span>
+                            ) : (
+                              <span className="text-white/70">{se.sets} séries × {se.reps} reps</span>
+                            )}
+                            {se.rest_time > 0 && (
+                              <>
+                                <span className="w-1 h-1 rounded-full bg-white/20"></span>
+                                <span>{se.rest_time}s repos</span>
+                              </>
+                            )}
+                          </div>
+                          {se.instructions && (
+                            <p className="text-white/40 text-xs mt-1.5 line-clamp-2">{se.instructions}</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-6 border border-dashed border-white/10 rounded-xl">
+                    <p className="text-white/40 text-sm">Aucun exercice détaillé</p>
+                  </div>
+                )}
               </div>
             </div>
+          )}
 
-            {session.coach && (
-              <div className="bg-white/5 rounded-lg p-4">
-                <h3 className="text-lg font-medium text-white mb-3">Votre coach</h3>
-                <div className="space-y-2">
-                  <div className="text-white">
-                    <span className="font-medium">{session.coach.full_name}</span>
-                  </div>
-                  {session.coach.email && (
-                    <div className="text-white/80 text-sm">
-                      Email: {session.coach.email}
-                    </div>
-                  )}
-                  {session.coach.phone && (
-                    <div className="text-white/80 text-sm">
-                      Téléphone: {session.coach.phone}
-                    </div>
-                  )}
-                </div>
+          {/* Notes Section */}
+          {session.notes && (
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium text-white/70 flex items-center gap-2">
+                <FileText className="w-4 h-4" /> Notes
+              </h3>
+              <div className="p-4 bg-white/5 rounded-xl border border-white/5 text-sm text-white/80 leading-relaxed">
+                {session.notes}
               </div>
-            )}
+            </div>
+          )}
+        </div>
 
-            {session.session && (
-              <div className="bg-white/5 rounded-lg p-4">
-                <h3 className="text-lg font-medium text-white mb-3 flex items-center gap-2">
-                  <Dumbbell className="w-5 h-5" />
-                  Détails de la séance
-                </h3>
-                <div className="space-y-3">
-                  {session.session.name && (
-                    <h4 className="text-white font-semibold">{session.session.name}</h4>
-                  )}
-                  {session.session.description && (
-                    <p className="text-white/90 text-sm">{session.session.description}</p>
-                  )}
-                  <div className="flex gap-4 flex-wrap">
-                    <span className="px-3 py-1 bg-white/10 text-white rounded text-sm">
-                      {session.session.duration_minutes} min
-                    </span>
-                    <span className="px-3 py-1 bg-white/10 text-white rounded text-sm">
-                      {session.session.difficulty_level}
-                    </span>
-                  </div>
+        {/* Footer Actions */}
+        <div className="sticky bottom-0 p-4 border-t border-white/10 bg-[#0f172a]/95 backdrop-blur-xl flex justify-end gap-3 rounded-b-2xl">
+          <button
+            onClick={onClose}
+            className="px-5 py-2.5 rounded-xl text-sm font-medium text-white/70 hover:text-white hover:bg-white/5 transition-colors"
+          >
+            Fermer
+          </button>
 
-                  <div className="mt-4">
-                    {loadingExercises ? (
-                      <div className="flex items-center justify-center py-4">
-                        <Loader className="w-5 h-5 text-white/60 animate-spin" />
-                        <span className="ml-2 text-white/60 text-sm">Chargement des exercices...</span>
-                      </div>
-                    ) : exercises && exercises.length > 0 ? (
-                      <>
-                        <h4 className="text-sm font-medium text-white/80 mb-2">
-                          Exercices ({exercises.length})
-                        </h4>
-                        <div className="space-y-2">
-                          {exercises.map((se, idx) => (
-                            <div key={se.id} className="bg-white/5 rounded p-3 text-sm">
-                              <div className="flex items-start gap-2">
-                                <span className="text-white/60 font-medium">{idx + 1}.</span>
-                                <div className="flex-1">
-                                  <p className="text-white font-medium">{se.exercise?.name || 'Exercise'}</p>
-                                  {se.exercise?.description && (
-                                    <p className="text-white/60 text-xs mt-1">{se.exercise.description}</p>
-                                  )}
-                                  <div className="flex gap-3 mt-2 text-xs text-white/70">
-                                    {se.exercise?.tracking_type === 'duration' ? (
-                                      <span>{se.duration_seconds} secondes</span>
-                                    ) : se.exercise?.tracking_type === 'distance' ? (
-                                      <span>{se.distance_meters} mètres</span>
-                                    ) : (
-                                      <>
-                                        <span>{se.sets} séries</span>
-                                        <span>•</span>
-                                        <span>{se.reps} reps</span>
-                                      </>
-                                    )}
-                                    {se.rest_time > 0 && (
-                                      <>
-                                        <span>•</span>
-                                        <span>{se.rest_time}s repos</span>
-                                      </>
-                                    )}
-                                  </div>
-                                  {se.instructions && (
-                                    <p className="text-white/60 text-xs mt-2 italic">{se.instructions}</p>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </>
-                    ) : (
-                      <p className="text-white/60 text-sm py-2">Aucun exercice dans cette séance</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
+          {session.type === 'personal' && session.status !== 'completed' && session.status !== 'cancelled' && (
+            <button
+              onClick={onStartTraining}
+              className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-xl shadow-lg shadow-blue-500/20 transition-all flex items-center gap-2"
+            >
+              <Play className="w-4 h-4" />
+              Commencer
+            </button>
+          )}
 
-            {session.notes && (
-              <div className="bg-white/5 rounded-lg p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <FileText className="w-5 h-5 text-white/60" />
-                  <h3 className="text-lg font-medium text-white">Notes</h3>
-                </div>
-                <p className="text-white/90 whitespace-pre-wrap">{session.notes}</p>
-              </div>
-            )}
-          </div>
-
-          <div className="flex justify-between items-center gap-3 mt-8">
-            <div className="flex gap-3">
-              {session.type === 'personal' && session.status !== 'completed' && session.status !== 'cancelled' && (
+          {session.type === 'group' && (
+            <>
+              {session.registered && session.session_id && (
                 <button
                   onClick={onStartTraining}
-                  className="px-6 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 rounded-lg text-white font-medium transition-all flex items-center gap-2 shadow-lg hover:shadow-xl"
+                  className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium rounded-xl shadow-lg shadow-emerald-500/20 transition-all flex items-center gap-2"
                 >
-                  <Play className="w-5 h-5" />
-                  Commencer l'entraînement
+                  <Play className="w-4 h-4" />
+                  Lancer
                 </button>
               )}
-              {session.type === 'group' && (
-                <>
-                  {session.registered && session.session_id && (
-                    <button
-                      onClick={onStartTraining}
-                      className="px-6 py-2 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 rounded-lg text-white font-medium transition-all flex items-center gap-2 shadow-lg hover:shadow-xl"
-                    >
-                      <Play className="w-5 h-5" />
-                      Lancer la séance
-                    </button>
-                  )}
 
-                  {session.registered ? (
-                    <button
-                      onClick={() => onUnregister(session.id)}
-                      disabled={registering}
-                      className="px-6 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-800 disabled:opacity-50 rounded-lg text-white transition-colors"
-                    >
-                      {registering ? 'Désinscription...' : 'Se désinscrire'}
-                    </button>
-                  ) : (
-                    session.start > new Date() && (
-                      <button
-                        onClick={() => onRegister(session.id)}
-                        disabled={registering}
-                        className="px-6 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-800 disabled:opacity-50 rounded-lg text-white transition-colors"
-                      >
-                        {registering ? 'Inscription...' : 'S\'inscrire'}
-                      </button>
-                    )
-                  )}
-                </>
+              {session.registered ? (
+                <button
+                  onClick={() => onUnregister(session.id)}
+                  disabled={registering}
+                  className="px-6 py-2.5 bg-white/5 hover:bg-red-500/20 text-red-400 hover:text-red-300 border border-white/10 hover:border-red-500/30 text-sm font-medium rounded-xl transition-all"
+                >
+                  {registering ? '...' : 'Se désinscrire'}
+                </button>
+              ) : (
+                session.start > new Date() && (
+                  <button
+                    onClick={() => onRegister(session.id)}
+                    disabled={registering}
+                    className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium rounded-xl shadow-lg shadow-emerald-500/20 transition-all"
+                  >
+                    {registering ? '...' : "S'inscrire"}
+                  </button>
+                )
               )}
-            </div>
-            <button
-              onClick={onClose}
-              className="px-6 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white transition-colors"
-            >
-              Fermer
-            </button>
-          </div>
+            </>
+          )}
         </div>
       </div>
     </div>

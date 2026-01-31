@@ -33,7 +33,25 @@ export function PhotoEvolution({ clientId, readOnly = false }: PhotoEvolutionPro
 
     const fetchPhotos = async () => {
         if (!clientId) return;
-        setLoading(true);
+
+        // 1. Try cache first
+        const cacheKey = `client_photos_${clientId}`;
+        const cachedData = localStorage.getItem(cacheKey);
+
+        if (cachedData) {
+            try {
+                const { photos: cachedPhotos, consent } = JSON.parse(cachedData);
+                if (cachedPhotos) setPhotos(cachedPhotos);
+                if (consent !== undefined) setHasConsent(consent);
+                // Don't set loading to true if we have cached data
+            } catch (e) {
+                console.error("Error parsing photos cache", e);
+                setLoading(true);
+            }
+        } else {
+            setLoading(true);
+        }
+
         try {
             const { data, error } = await supabase
                 .from('client_photos')
@@ -42,7 +60,6 @@ export function PhotoEvolution({ clientId, readOnly = false }: PhotoEvolutionPro
                 .order('date', { ascending: false });
 
             if (error) throw error;
-            setPhotos(data || []);
 
             // Check consent status
             const { data: clientData } = await supabase
@@ -51,10 +68,17 @@ export function PhotoEvolution({ clientId, readOnly = false }: PhotoEvolutionPro
                 .eq('id', clientId)
                 .single();
 
-            setHasConsent(clientData?.photo_share_enabled || false);
-
-            if (error) throw error;
+            const consent = clientData?.photo_share_enabled || false;
+            setHasConsent(consent);
             setPhotos(data || []);
+
+            // Update cache
+            localStorage.setItem(cacheKey, JSON.stringify({
+                photos: data || [],
+                consent: consent,
+                timestamp: new Date().getTime()
+            }));
+
         } catch (err) {
             console.error('Error fetching photos:', err);
         } finally {
@@ -102,7 +126,7 @@ export function PhotoEvolution({ clientId, readOnly = false }: PhotoEvolutionPro
         }
     };
 
-    if (loading) return <div className="p-8 text-center text-gray-400 animate-pulse">Chargement des photos...</div>;
+    if (loading && photos.length === 0) return <div className="p-8 text-center text-gray-400 animate-pulse">Chargement des photos...</div>;
 
     const posePhotos = photos.filter(p => p.pose === selectedPose).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     const beforePhoto = photos.find(p => p.id === beforePhotoId);

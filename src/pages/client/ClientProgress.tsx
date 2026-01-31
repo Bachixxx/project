@@ -48,10 +48,28 @@ function ClientProgress() {
 
   const fetchProgressData = async () => {
     try {
-      setLoading(true);
+      // 1. Try cache first
       const clientData = client as any;
       if (!clientData?.id) return;
 
+      const cacheKey = `progress_data_${clientData.id}`;
+      const cachedData = localStorage.getItem(cacheKey);
+
+      if (cachedData) {
+        try {
+          const { logs, exercises: cachedExercises } = JSON.parse(cachedData);
+          setWorkoutLogs(logs || []);
+          setExercises(cachedExercises || []);
+          // Note: selectedExercises effect will run when exercises updates
+        } catch (e) {
+          console.error("Error parsing progress cache", e);
+          setLoading(true);
+        }
+      } else {
+        setLoading(true);
+      }
+
+      // 2. Network Fetch
       // Fetch workout logs joined with scheduled_sessions to get the date
       const { data: logs, error: logsError } = await supabase
         .from('workout_logs')
@@ -84,8 +102,11 @@ function ClientProgress() {
 
       setWorkoutLogs(formattedLogs);
 
-      // Get unique exercises
+      // Get unique exercises (derived from current fetch + maybe historical?
+      // actually, let's just use what we found in logs + maybe all exercises if we want?
+      // The original code only fetching exercises present in logs.
       const exerciseIds = Array.from(new Set(formattedLogs.map(log => log.exercise_id)));
+      let currentExercises: Exercise[] = [];
 
       if (exerciseIds.length > 0) {
         const { data: exercisesData, error: exercisesError } = await supabase
@@ -94,8 +115,18 @@ function ClientProgress() {
           .in('id', exerciseIds);
 
         if (exercisesError) throw exercisesError;
-        setExercises(exercisesData || []);
+        currentExercises = exercisesData || [];
+        setExercises(currentExercises);
+      } else {
+        setExercises([]);
       }
+
+      // 3. Update Cache
+      localStorage.setItem(cacheKey, JSON.stringify({
+        logs: formattedLogs,
+        exercises: currentExercises,
+        timestamp: new Date().getTime()
+      }));
 
     } catch (error) {
       console.error('Error fetching progress data:', error);
@@ -184,7 +215,7 @@ function ClientProgress() {
     setIsSelectorOpen(false);
   };
 
-  if (loading) {
+  if (loading && !workoutLogs.length && !exercises.length) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-[#0f172a]">
         <div className="w-16 h-16 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin"></div>

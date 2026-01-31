@@ -45,7 +45,32 @@ function ClientProfile() {
 
   const fetchClientDetails = async () => {
     try {
-      setLoading(true);
+      // 1. Try cache first
+      const cacheKey = `client_details_${client?.id}`;
+      const cachedData = localStorage.getItem(cacheKey);
+
+      if (cachedData) {
+        try {
+          const parsed = JSON.parse(cachedData);
+          setClientDetails(parsed);
+          setFormData({
+            phone: parsed.phone || '',
+            height: parsed.height || '',
+            weight: parsed.weight || '',
+            gender: parsed.gender || '',
+            date_of_birth: parsed.date_of_birth ? new Date(parsed.date_of_birth).toISOString().split('T')[0] : '',
+            fitness_goals: parsed.fitness_goals || [],
+            medical_conditions: parsed.medical_conditions || []
+          });
+          // Don't set loading true if cache exists
+        } catch (e) {
+          console.error("Error parsing client details cache", e);
+          setLoading(true);
+        }
+      } else {
+        setLoading(true);
+      }
+
       const { data, error } = await supabase
         .from('clients')
         .select('*')
@@ -54,16 +79,24 @@ function ClientProfile() {
 
       if (error) throw error;
 
+      // Update state
       setClientDetails(data);
-      setFormData({
-        phone: data.phone || '',
-        height: data.height || '',
-        weight: data.weight || '',
-        gender: data.gender || '',
-        date_of_birth: data.date_of_birth ? new Date(data.date_of_birth).toISOString().split('T')[0] : '',
-        fitness_goals: data.fitness_goals || [],
-        medical_conditions: data.medical_conditions || []
-      });
+      // Only update form data if we are NOT editing (to avoid overwriting user input)
+      if (!isEditing) {
+        setFormData({
+          phone: data.phone || '',
+          height: data.height || '',
+          weight: data.weight || '',
+          gender: data.gender || '',
+          date_of_birth: data.date_of_birth ? new Date(data.date_of_birth).toISOString().split('T')[0] : '',
+          fitness_goals: data.fitness_goals || [],
+          medical_conditions: data.medical_conditions || []
+        });
+      }
+
+      // Update Cache
+      localStorage.setItem(cacheKey, JSON.stringify(data));
+
     } catch (error) {
       console.error('Error fetching client details:', error);
     } finally {
@@ -74,13 +107,28 @@ function ClientProfile() {
   const fetchCoachDetails = async () => {
     if (!clientDetails?.coach_id) return;
 
+    // 1. Try cache first
+    const cacheKey = `coach_details_${clientDetails.coach_id}`;
+    const cachedData = localStorage.getItem(cacheKey);
+
+    if (cachedData) {
+      try {
+        setCoachDetails(JSON.parse(cachedData));
+      } catch (e) {
+        console.error("Error parsing coach details cache", e);
+      }
+    }
+
     const { data } = await supabase
       .from('coaches')
       .select('*')
       .eq('id', clientDetails.coach_id)
       .single();
 
-    if (data) setCoachDetails(data);
+    if (data) {
+      setCoachDetails(data);
+      localStorage.setItem(cacheKey, JSON.stringify(data));
+    }
   };
 
   useEffect(() => {

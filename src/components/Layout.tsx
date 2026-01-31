@@ -83,7 +83,7 @@ function Layout() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
       {/* Top Navigation Bar */}
-      <nav className="bg-black/40 backdrop-blur-xl border-b border-white/5 shadow-xl fixed w-full z-50">
+      <nav className="bg-black/40 backdrop-blur-xl border-b border-white/5 shadow-xl fixed w-full z-50 pt-[env(safe-area-inset-top)]">
         <div className="max-w-[2560px] mx-auto px-4">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
@@ -147,7 +147,7 @@ function Layout() {
         </div>
       </nav>
 
-      <div className="flex h-full pt-16">
+      <div className="flex h-full pt-[calc(4rem+env(safe-area-inset-top))]">
         {/* Mobile Sidebar Overlay */}
         <div
           className={`fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden transition-opacity duration-300 ${isMobileMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'

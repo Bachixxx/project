@@ -66,7 +66,25 @@ export function BiometricsDashboard({ clientId, readOnly = false }: BiometricsDa
 
     const fetchLatestScan = async () => {
         if (!clientId) return;
-        setLoading(true);
+
+        // 1. Try cache first
+        const cacheKey = `biometrics_data_${clientId}`;
+        const cachedData = localStorage.getItem(cacheKey);
+
+        if (cachedData) {
+            try {
+                const { latest, history } = JSON.parse(cachedData);
+                if (latest) setScanData(latest);
+                if (history) setScanHistory(history);
+                // Don't set loading to true if we have cached data
+            } catch (e) {
+                console.error("Error parsing biometrics cache", e);
+                setLoading(true);
+            }
+        } else {
+            setLoading(true);
+        }
+
         try {
             const { data, error } = await supabase
                 .from('body_scans')
@@ -78,8 +96,18 @@ export function BiometricsDashboard({ clientId, readOnly = false }: BiometricsDa
 
             if (error) throw error;
             if (data && data.length > 0) {
-                setScanData(data[0]); // Latest scan is the first one
-                setScanHistory([...data].reverse()); // History needs to be chronological for the chart
+                const latest = data[0];
+                const history = [...data].reverse();
+
+                setScanData(latest); // Latest scan is the first one
+                setScanHistory(history); // History needs to be chronological for the chart
+
+                // 3. Update Cache
+                localStorage.setItem(cacheKey, JSON.stringify({
+                    latest,
+                    history,
+                    timestamp: new Date().getTime()
+                }));
             }
         } catch (error) {
             console.error('Error fetching body scan:', error);
@@ -103,7 +131,7 @@ export function BiometricsDashboard({ clientId, readOnly = false }: BiometricsDa
         { id: 'photos', label: 'Photos' }
     ];
 
-    if (loading) return <div className="p-8 text-center text-gray-400 animate-pulse">Chargement des données...</div>;
+    if (loading && !scanData) return <div className="p-8 text-center text-gray-400 animate-pulse">Chargement des données...</div>;
 
     if (!scanData && !loading) {
         return (
