@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Plus, X, Trash2, Edit2 } from 'lucide-react';
+import { ResponsiveModal } from './ResponsiveModal';
 
 interface SessionExercise {
   id: string;
@@ -290,66 +291,66 @@ export function GroupModal({ onClose, onCreate }: GroupModalProps) {
     onClose();
   };
 
-  return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[60] animate-fade-in">
-      <div className="glass-card max-w-md w-full p-6 animate-slide-in">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold text-white">Créer un groupe</h2>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white"
-          >
-            <X className="w-6 h-6" />
-          </button>
-        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Nom du groupe
-            </label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="input-field"
-              placeholder="Ex: Circuit A"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Répétitions du circuit
-            </label>
-            <input
-              type="number"
-              value={repetitions}
-              onChange={(e) => setRepetitions(parseInt(e.target.value))}
-              className="input-field"
-              min="1"
-              max="20"
-              required
-            />
-          </div>
-
-          <div className="flex justify-end gap-3 mt-6">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 border border-white/10 rounded-xl hover:bg-white/5 text-gray-300 transition-colors"
-            >
-              Annuler
-            </button>
-            <button
-              type="submit"
-              className="primary-button"
-            >
-              Créer
-            </button>
-          </div>
-        </form>
-      </div>
+  const footer = (
+    <div className="flex justify-end gap-3 w-full">
+      <button
+        type="button"
+        onClick={onClose}
+        className="px-4 py-2 border border-white/10 rounded-xl hover:bg-white/5 text-gray-300 transition-colors"
+      >
+        Annuler
+      </button>
+      <button
+        type="submit"
+        onClick={handleSubmit}
+        className="primary-button px-6"
+      >
+        Créer
+      </button>
     </div>
   );
+
+  return (
+    <ResponsiveModal
+      isOpen={true}
+      onClose={onClose}
+      title="Créer un groupe"
+      maxWidth="max-w-md"
+      footer={footer}
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            Nom du groupe
+          </label>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="input-field w-full"
+            placeholder="Ex: Circuit A"
+            required
+            autoFocus
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            Répétitions du circuit
+          </label>
+          <input
+            type="number"
+            value={repetitions}
+            onChange={(e) => setRepetitions(parseInt(e.target.value))}
+            className="input-field w-full"
+            min="1"
+            max="20"
+            required
+          />
+        </div>
+      </form>
+    </ResponsiveModal>
+  );
 }
+
