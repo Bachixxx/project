@@ -130,18 +130,21 @@ export default function ClientOnboarding() {
                             <div>
                                 <label className="block text-sm font-medium text-gray-300 mb-2">Genre</label>
                                 <div className="grid grid-cols-2 gap-4">
-                                    {['Homme', 'Femme', 'Autre'].map(g => (
-                                        <button
-                                            key={g}
-                                            onClick={() => updateFormData('gender', g)}
-                                            className={`p-3 rounded-xl border transition-all ${formData.gender === g
+                                    {['Homme', 'Femme', 'Autre'].map(g => {
+                                        const value = g === 'Homme' ? 'male' : g === 'Femme' ? 'female' : 'other';
+                                        return (
+                                            <button
+                                                key={g}
+                                                onClick={() => updateFormData('gender', value)}
+                                                className={`p-3 rounded-xl border transition-all ${formData.gender === value
                                                     ? 'bg-blue-600/20 border-blue-500 text-blue-400'
                                                     : 'bg-white/5 border-white/10 hover:bg-white/10 text-gray-400'
-                                                }`}
-                                        >
-                                            {g}
-                                        </button>
-                                    ))}
+                                                    }`}
+                                            >
+                                                {g}
+                                            </button>
+                                        );
+                                    })}
                                 </div>
                             </div>
                         </div>
@@ -225,8 +228,8 @@ export default function ClientOnboarding() {
                                     key={goal}
                                     onClick={() => toggleSelection('fitness_goals', goal)}
                                     className={`p-4 rounded-xl border cursor-pointer transition-all flex items-center justify-between ${formData.fitness_goals.includes(goal)
-                                            ? 'bg-purple-600/20 border-purple-500 text-white'
-                                            : 'bg-white/5 border-white/10 hover:bg-white/10 text-gray-400'
+                                        ? 'bg-purple-600/20 border-purple-500 text-white'
+                                        : 'bg-white/5 border-white/10 hover:bg-white/10 text-gray-400'
                                         }`}
                                 >
                                     <span className="font-medium">{goal}</span>
@@ -283,8 +286,8 @@ export default function ClientOnboarding() {
                                         key={cond}
                                         onClick={() => toggleSelection('medical_conditions', cond)}
                                         className={`px-4 py-2 rounded-full border text-sm transition-all ${formData.medical_conditions.includes(cond)
-                                                ? 'bg-red-600/20 border-red-500 text-red-300'
-                                                : 'bg-white/5 border-white/10 hover:bg-white/10 text-gray-400'
+                                            ? 'bg-red-600/20 border-red-500 text-red-300'
+                                            : 'bg-white/5 border-white/10 hover:bg-white/10 text-gray-400'
                                             }`}
                                     >
                                         {cond}
@@ -321,27 +324,66 @@ export default function ClientOnboarding() {
                     </div>
                 )}
 
-                {/* Step 5: Completion */}
+                {/* Step 5: Completion & Welcome */}
                 {step === 5 && (
-                    <div className="text-center space-y-8 animate-fade-in py-10">
-                        <div className="w-24 h-24 bg-green-500/20 rounded-full flex items-center justify-center mx-auto relative">
-                            <Check className="w-12 h-12 text-green-400 absolute" />
-                            <div className="absolute inset-0 bg-green-500/10 rounded-full animate-ping" />
+                    <div className="space-y-8 animate-fade-in py-6">
+                        <div className="text-center">
+                            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent mb-4">
+                                Bienvenue sur Coachency ! 🚀
+                            </h1>
+                            <p className="text-gray-300 text-lg">
+                                Félicitations, votre profil est configuré ! Voici comment votre nouvel espace va vous aider à atteindre vos objectifs :
+                            </p>
                         </div>
 
-                        <div>
-                            <h2 className="text-3xl font-bold text-white mb-2">Tout est prêt !</h2>
-                            <p className="text-gray-400 max-w-md mx-auto">
-                                Votre profil a été configuré avec succès. Vous pouvez maintenant accéder à votre tableau de bord et commencer votre transformation.
-                            </p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="bg-white/5 border border-white/10 p-4 rounded-xl flex items-start gap-4">
+                                <div className="p-2 bg-blue-500/20 rounded-lg text-blue-400">
+                                    <Activity className="w-6 h-6" /> {/* Placeholder for Calendar if not imported */}
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-white">Agenda Dynamique</h3>
+                                    <p className="text-sm text-gray-400">Visualisez vos prochaines séances et rendez-vous d'un coup d'œil.</p>
+                                </div>
+                            </div>
+
+                            <div className="bg-white/5 border border-white/10 p-4 rounded-xl flex items-start gap-4">
+                                <div className="p-2 bg-purple-500/20 rounded-lg text-purple-400">
+                                    <Target className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-white">Vos Programmes</h3>
+                                    <p className="text-sm text-gray-400">Accédez à vos entraînements personnalisés et suivez vos performances.</p>
+                                </div>
+                            </div>
+
+                            <div className="bg-white/5 border border-white/10 p-4 rounded-xl flex items-start gap-4">
+                                <div className="p-2 bg-green-500/20 rounded-lg text-green-400">
+                                    <Activity className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-white">Suivi de Progression</h3>
+                                    <p className="text-sm text-gray-400">Gardez un œil sur votre évolution grâce à des graphiques clairs.</p>
+                                </div>
+                            </div>
+
+                            <div className="bg-white/5 border border-white/10 p-4 rounded-xl flex items-start gap-4">
+                                <div className="p-2 bg-yellow-500/20 rounded-lg text-yellow-400">
+                                    <User className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-white">Lien Direct</h3>
+                                    <p className="text-sm text-gray-400">Restez connecté avec votre coach pour ajuster votre parcours.</p>
+                                </div>
+                            </div>
                         </div>
 
                         <button
                             onClick={handleSubmit}
                             disabled={loading}
-                            className="w-full max-w-sm mx-auto btn-primary py-4 text-lg shadow-lg shadow-blue-500/25"
+                            className="w-full btn-primary py-4 text-lg shadow-lg shadow-blue-500/25 mt-8 hover:scale-[1.02] transition-transform"
                         >
-                            {loading ? 'Finalisation...' : 'Accéder à mon espace'}
+                            {loading ? 'Finalisation...' : 'Commencer mon entraînement'}
                         </button>
                     </div>
                 )}
