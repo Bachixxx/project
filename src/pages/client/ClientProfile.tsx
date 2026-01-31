@@ -29,6 +29,13 @@ function ClientProfile() {
     medical_conditions: [] as string[]
   });
 
+  // Coach Handover State
+  const [showCoachModal, setShowCoachModal] = useState(false);
+  const [coachCode, setCoachCode] = useState('');
+  const [changingCoach, setChangingCoach] = useState(false);
+  const [coachDetails, setCoachDetails] = useState<any>(null); // To store current coach info
+
+
   useEffect(() => {
     if (client) {
       fetchClientDetails();
@@ -62,6 +69,54 @@ function ClientProfile() {
       setLoading(false);
     }
   };
+
+  const fetchCoachDetails = async () => {
+    if (!clientDetails?.coach_id) return;
+
+    const { data } = await supabase
+      .from('coaches')
+      .select('*')
+      .eq('id', clientDetails.coach_id)
+      .single();
+
+    if (data) setCoachDetails(data);
+  };
+
+  useEffect(() => {
+    if (clientDetails?.coach_id) {
+      fetchCoachDetails();
+    }
+  }, [clientDetails]);
+
+  const handleChangeCoach = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!coachCode.trim()) return;
+
+    if (!confirm("Attention : Changer de coach donnera accès à vos données (programmes, historique, biométrie) à ce nouveau coach. L'ancien coach perdra ses accès. Continuer ?")) {
+      return;
+    }
+
+    try {
+      setChangingCoach(true);
+      const { error } = await supabase.rpc('link_client_to_coach', {
+        coach_code_input: coachCode
+      });
+
+      if (error) throw error;
+
+      alert("Coach modifié avec succès !");
+      setShowCoachModal(false);
+      setCoachCode('');
+      // Refresh data
+      await fetchClientDetails();
+    } catch (err: any) {
+      console.error("Error changing coach:", err);
+      alert(err.message || "Erreur lors du changement de coach. Vérifiez le code.");
+    } finally {
+      setChangingCoach(false);
+    }
+  };
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -425,6 +480,45 @@ function ClientProfile() {
                   </div>
                 </div>
 
+                {/* My Coach Card */}
+                <div className="glass-card p-6 rounded-3xl border border-white/10 hover:border-white/20 transition-all group">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-3 bg-indigo-500/10 rounded-xl group-hover:bg-indigo-500/20 transition-colors">
+                      <Shield className="w-6 h-6 text-indigo-400" />
+                    </div>
+                    <h3 className="text-lg font-bold text-white">Mon Coach</h3>
+                  </div>
+
+                  <div className="space-y-4">
+                    {coachDetails ? (
+                      <div className="flex items-center gap-4 bg-white/5 p-3 rounded-xl">
+                        {coachDetails.profile_image_url ? (
+                          <img src={coachDetails.profile_image_url} className="w-12 h-12 rounded-full object-cover" alt="Coach" />
+                        ) : (
+                          <div className="w-12 h-12 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400 font-bold">
+                            {coachDetails.full_name?.charAt(0)}
+                          </div>
+                        )}
+                        <div>
+                          <h4 className="font-bold text-white">{coachDetails.full_name}</h4>
+                          <p className="text-xs text-gray-400">{coachDetails.email}</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-4 text-gray-500 text-sm italic">
+                        Aucun coach assigné.
+                      </div>
+                    )}
+
+                    <button
+                      onClick={() => setShowCoachModal(true)}
+                      className="w-full py-2 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 rounded-lg text-sm font-medium transition-colors border border-indigo-500/20"
+                    >
+                      {coachDetails ? "Changer de coach" : "Ajouter un coach"}
+                    </button>
+                  </div>
+                </div>
+
                 {/* Info Card 2 */}
                 <div className="glass-card p-6 rounded-3xl border border-white/10 hover:border-white/20 transition-all group">
                   <div className="flex items-center gap-3 mb-4">
@@ -575,6 +669,61 @@ function ClientProfile() {
         )}
 
       </div>
+
+      {/* Change Coach Modal */}
+      {showCoachModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-slate-900 border border-white/10 rounded-3xl p-6 md:p-8 max-w-md w-full relative shadow-2xl">
+            <button
+              onClick={() => setShowCoachModal(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-indigo-500/20 rounded-full flex items-center justify-center mx-auto mb-4 text-indigo-400">
+                <Shield className="w-8 h-8" />
+              </div>
+              <h3 className="text-2xl font-bold text-white mb-2">Changer de Coach</h3>
+              <p className="text-gray-400 text-sm">
+                Entrez le code unique fourni par votre nouveau coach pour rejoindre son équipe.
+              </p>
+            </div>
+
+            <form onSubmit={handleChangeCoach} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Code Coach</label>
+                <input
+                  type="text"
+                  value={coachCode}
+                  onChange={(e) => setCoachCode(e.target.value.toUpperCase())}
+                  className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white font-mono text-center tracking-widest text-lg uppercase focus:ring-2 focus:ring-indigo-500 outline-none"
+                  placeholder="CODE-1234"
+                  required
+                />
+              </div>
+
+              <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4 text-sm text-yellow-200/80">
+                <p className="flex gap-2">
+                  <span className="shrink-0">⚠️</span>
+                  <span>
+                    En changeant de coach, vous donnez accès à votre historique et vos programmes en cours à votre nouveau coach.
+                  </span>
+                </p>
+              </div>
+
+              <button
+                type="submit"
+                disabled={changingCoach || !coachCode}
+                className="w-full py-4 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {changingCoach ? "Vérification..." : "Confirmer le changement"}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
