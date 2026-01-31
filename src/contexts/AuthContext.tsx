@@ -11,6 +11,7 @@ interface AuthContextType {
   updatePassword: (password: string) => Promise<{ data: any; error: any }>;
   user: User | null;
   loading: boolean;
+  isPasswordRecovery: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -18,6 +19,7 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
 
   useEffect(() => {
     // Récupérer la session initiale avec gestion d'erreur
@@ -62,6 +64,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log('Token refreshed successfully');
       } else if (event === 'SIGNED_OUT') {
         console.log('User signed out');
+        setIsPasswordRecovery(false);
+      } else if (event === 'PASSWORD_RECOVERY') {
+        console.log('Password recovery mode detected');
+        setIsPasswordRecovery(true);
       }
 
       setUser(session?.user ?? null);
@@ -205,7 +211,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     resetPassword,
     updatePassword,
     user,
-    loading
+    loading,
+    isPasswordRecovery
   };
 
   return (

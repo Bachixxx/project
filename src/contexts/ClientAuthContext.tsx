@@ -8,6 +8,7 @@ interface ClientAuthContextType {
   client: any | null;
   loading: boolean;
   refreshClient: () => Promise<void>;
+  isPasswordRecovery: boolean;
 }
 
 const ClientAuthContext = createContext<ClientAuthContextType | null>(null);
@@ -15,6 +16,7 @@ const ClientAuthContext = createContext<ClientAuthContextType | null>(null);
 export function ClientAuthProvider({ children }: { children: React.ReactNode }) {
   const [client, setClient] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session }, error }) => {
@@ -48,6 +50,10 @@ export function ClientAuthProvider({ children }: { children: React.ReactNode }) 
         console.log('Client token refreshed successfully');
       } else if (event === 'SIGNED_OUT') {
         console.log('Client signed out');
+        setIsPasswordRecovery(false);
+      } else if (event === 'PASSWORD_RECOVERY') {
+        console.log('Client password recovery mode detected');
+        setIsPasswordRecovery(true);
       }
 
       if (session?.user) {
@@ -226,7 +232,8 @@ export function ClientAuthProvider({ children }: { children: React.ReactNode }) 
       if (data?.user) {
         await fetchClientData(data.user);
       }
-    }
+    },
+    isPasswordRecovery
   };
 
   return (

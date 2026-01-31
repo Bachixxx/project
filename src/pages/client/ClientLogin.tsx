@@ -14,13 +14,17 @@ function ClientLogin() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { signIn, client } = useClientAuth();
+  const { signIn, client, isPasswordRecovery } = useClientAuth();
 
   useEffect(() => {
     if (client) {
-      navigate('/client/dashboard');
+      if (isPasswordRecovery || window.location.hash.includes('type=recovery')) {
+        navigate('/update-password');
+      } else {
+        navigate('/client/dashboard');
+      }
     }
-  }, [client, navigate]);
+  }, [client, navigate, isPasswordRecovery]);
 
   const handlePasswordToggle = () => {
     if (passwordType === 'password') {

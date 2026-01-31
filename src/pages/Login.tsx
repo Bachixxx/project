@@ -15,13 +15,17 @@ function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { signIn, user } = useAuth();
+  const { signIn, user, isPasswordRecovery } = useAuth();
 
   useEffect(() => {
     if (user) {
-      navigate('/dashboard');
+      if (isPasswordRecovery || window.location.hash.includes('type=recovery')) {
+        navigate('/update-password');
+      } else {
+        navigate('/dashboard');
+      }
     }
-  }, [user, navigate]);
+  }, [user, navigate, isPasswordRecovery]);
 
   const handlePasswordToggle = () => {
     if (type === 'password') {
