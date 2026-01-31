@@ -3,17 +3,13 @@ import {
   Plus,
   Search,
   Filter,
-  MoreVertical,
-  User,
   Mail,
   Phone,
   Target,
   Calendar,
-  Users,
   X,
-  Activity,
-  ArrowUpRight,
-  ChevronRight
+  ChevronRight,
+  Share2
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
@@ -22,7 +18,6 @@ import { t } from '../i18n';
 import { useSubscription } from '../hooks/useSubscription';
 import { SubscriptionAlert } from '../components/SubscriptionAlert';
 import { UpgradeModal } from '../components/UpgradeModal';
-import { useLanguage } from '../contexts/LanguageContext';
 
 interface Client {
   id: string;
@@ -50,13 +45,51 @@ function ClientsPage() {
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const { user } = useAuth();
   const { subscriptionInfo, upgradeSubscription } = useSubscription();
-  const { language } = useLanguage();
+
+  const [coachCode, setCoachCode] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
       fetchClients();
+      fetchCoachCode();
     }
   }, [user]);
+
+  const fetchCoachCode = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('coaches')
+        .select('coach_code')
+        .eq('id', user?.id)
+        .single();
+
+      if (data) setCoachCode(data.coach_code);
+    } catch (error) {
+      console.error('Error fetching coach code:', error);
+    }
+  };
+
+  const handleShareInvite = async () => {
+    if (!coachCode) return;
+
+    const inviteUrl = `${window.location.origin}/client/register?code=${coachCode}`;
+    const shareData = {
+      title: 'Rejoins-moi sur Coachency',
+      text: `Salut ! Crée ton compte client sur Coachency avec mon code ${coachCode} pour que je puisse te suivre :`,
+      url: inviteUrl
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(inviteUrl);
+        alert('Lien d\'invitation copié dans le presse-papier !');
+      }
+    } catch (error) {
+      console.error('Error sharing:', error);
+    }
+  };
 
   const fetchClients = async () => {
     try {
@@ -95,20 +128,30 @@ function ClientsPage() {
             {totalClients} Total Clients • {activeClients} Active
           </p>
         </div>
-        <button
-          onClick={() => {
-            if (!subscriptionInfo?.canAddClient) {
-              setIsUpgradeModalOpen(true);
-              return;
-            }
-            setSelectedClient(null);
-            setIsModalOpen(true);
-          }}
-          className="primary-button flex items-center justify-center gap-2"
-        >
-          <Plus className="w-5 h-5" />
-          <span>{t('clients.addClient')}</span>
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={handleShareInvite}
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-all border border-white/10"
+            title="Inviter un client"
+          >
+            <Share2 className="w-5 h-5" />
+            <span className="hidden sm:inline">Inviter</span>
+          </button>
+          <button
+            onClick={() => {
+              if (!subscriptionInfo?.canAddClient) {
+                setIsUpgradeModalOpen(true);
+                return;
+              }
+              setSelectedClient(null);
+              setIsModalOpen(true);
+            }}
+            className="primary-button flex items-center justify-center gap-2"
+          >
+            <Plus className="w-5 h-5" />
+            <span>{t('clients.addClient')}</span>
+          </button>
+        </div>
       </div>
 
       <SubscriptionAlert />
@@ -277,7 +320,6 @@ function ClientsPage() {
 }
 
 function ClientModal({ client, onClose, onSave }: { client: any, onClose: () => void, onSave: (data: any) => void }) {
-  const accountStatus = null; // Simplified for now
   const [formData, setFormData] = useState({
     full_name: client?.full_name || '',
     email: client?.email || '',

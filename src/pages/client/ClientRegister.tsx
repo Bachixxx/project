@@ -27,6 +27,13 @@ function ClientRegister() {
       setEmail(state.email);
       setIsInviteFlow(true);
     }
+
+    // Check for coach code in URL query params (Share Link Flow)
+    const searchParams = new URLSearchParams(location.search);
+    const codeParam = searchParams.get('code');
+    if (codeParam) {
+      setCoachCode(codeParam.toUpperCase());
+    }
   }, [location]);
 
   const handleSubmit = async (e: React.FormEvent) => {
