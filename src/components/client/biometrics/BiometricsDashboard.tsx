@@ -6,6 +6,7 @@ import { BiometricTrendChart } from './BiometricTrendChart';
 import { BodyMap, BodySegmentLabel } from './BodyMap';
 import { BiometricBar } from './BiometricBar';
 import { AddBodyScanModal } from './AddBodyScanModal';
+import { PhotoEvolution } from './PhotoEvolution';
 
 // Data Types matching DB
 export interface ScanData {
@@ -43,7 +44,7 @@ interface BiometricsDashboardProps {
 }
 
 export function BiometricsDashboard({ clientId, readOnly = false }: BiometricsDashboardProps) {
-    const [activeTab, setActiveTab] = useState<'general' | 'fat' | 'muscle' | 'water' | 'bone'>('general');
+    const [activeTab, setActiveTab] = useState<'general' | 'fat' | 'muscle' | 'water' | 'bone' | 'photos'>('general');
     const [scanData, setScanData] = useState<ScanData | null>(null);
     const [scanHistory, setScanHistory] = useState<ScanData[]>([]);
     const [loading, setLoading] = useState(true);
@@ -96,7 +97,10 @@ export function BiometricsDashboard({ clientId, readOnly = false }: BiometricsDa
         { id: 'fat', label: 'Graisse' },
         { id: 'muscle', label: 'Muscle' },
         { id: 'water', label: 'Eau' },
-        { id: 'bone', label: 'Os' }
+        { id: 'muscle', label: 'Muscle' },
+        { id: 'water', label: 'Eau' },
+        { id: 'bone', label: 'Os' },
+        { id: 'photos', label: 'Photos' }
     ];
 
     if (loading) return <div className="p-8 text-center text-gray-400 animate-pulse">Chargement des données...</div>;
@@ -404,6 +408,12 @@ export function BiometricsDashboard({ clientId, readOnly = false }: BiometricsDa
                 )}
 
             </div>
+
+            {activeTab === 'photos' && (
+                <div className="animate-fade-in">
+                    <PhotoEvolution />
+                </div>
+            )}
         </div>
     );
 }
