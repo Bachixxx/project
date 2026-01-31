@@ -177,7 +177,7 @@ export function LiveSessionLauncher({ isOpen, onClose, initialClientId }: LiveSe
                 if (programSessions.length > 0) {
                     setNextProgramSession({
                         id: programsData.id,
-                        name: programsData.program.name,
+                        name: (programsData.program as any).name,
                         next_session: {
                             id: programSessions[0].session.id,
                             name: programSessions[0].session.name,
@@ -203,16 +203,47 @@ export function LiveSessionLauncher({ isOpen, onClose, initialClientId }: LiveSe
         fetchSmartOptions(client.id);
     };
 
-    const handleLaunch = (sessionId: string, source: 'schedule' | 'program' | 'library', contextId?: string) => {
+    const handleLaunch = async (sessionId: string, source: 'schedule' | 'program' | 'library', contextId?: string) => {
+        let finalSessionId = sessionId;
+
+        if (sessionId === 'ad-hoc-free') {
+            try {
+                setLoading(true);
+                // Create a new "Free Session" in the database
+                const { data, error } = await supabase
+                    .from('sessions')
+                    .insert([
+                        {
+                            coach_id: user?.id,
+                            name: `Séance Libre - ${new Date().toLocaleDateString()}`,
+                            description: 'Séance créée en direct',
+                            duration_minutes: 60,
+                            difficulty_level: 'Intermédiaire',
+                            session_type: 'private'
+                        }
+                    ])
+                    .select()
+                    .single();
+
+                if (error) throw error;
+                finalSessionId = data.id;
+            } catch (error) {
+                console.error("Error creating free session:", error);
+                alert("Erreur lors de la création de la séance libre.");
+                setLoading(false);
+                return;
+            }
+        }
+
         startSession({
             clientId: selectedClientId,
-            sessionId: sessionId,
+            sessionId: finalSessionId,
             scheduledSessionId: source === 'schedule' ? contextId : undefined,
-            programSessionId: source === 'program' ? contextId : undefined, // contextId here would be client_program_id actually? No, we need more data.
-            // For MVP, simple ID passing.
+            programSessionId: source === 'program' ? contextId : undefined,
         });
         onClose();
-        navigate(`/live-session/${sessionId}`);
+        navigate(`/live-session/${finalSessionId}`);
+        setLoading(false);
     };
 
     if (!isOpen) return null;
