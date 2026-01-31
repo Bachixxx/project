@@ -61,6 +61,8 @@ export function PhotoConsentModal({ isOpen, onClose, onConfirm, clientName }: Ph
                             <li>Ces photos ont pour unique but le suivi de mon évolution physique et l'ajustement de mon programme.</li>
                             <li>Mon coach est tenu au secret professionnel et s'engage à ne jamais diffuser ces images sans mon accord écrit séparé.</li>
                             <li>Je peux révoquer cet accès à tout moment via mes paramètres, ce qui masquera immédiatement les photos pour le coach.</li>
+                            <li className="text-blue-300 font-semibold mt-2">Je reconnais que la plateforme Coachency agit uniquement comme hébergeur tiers et décline toute responsabilité en cas de litige entre moi et mon coach concernant l'usage de ces photos.</li>
+                            <li className="text-blue-300 font-semibold">En tapant "J'ACCEPTE" ci-dessous, j'appose ma signature numérique qui vaut acceptation pleine et entière de ces conditions et décharge la plateforme de toute responsabilité.</li>
                         </ul>
                     </div>
 
