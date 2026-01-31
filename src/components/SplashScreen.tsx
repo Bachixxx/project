@@ -2,7 +2,7 @@ import React from 'react';
 
 const SplashScreen = () => {
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 animate-fade-in">
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[#0f172a] animate-fade-in">
             <div className="relative flex flex-col items-center">
                 <img
                     src="/app-logo.jpg"
