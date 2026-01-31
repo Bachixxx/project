@@ -119,8 +119,8 @@ export function PhotoEvolution({ clientId, readOnly = false }: PhotoEvolutionPro
 
             {/* Header Controls */}
             <div className="flex flex-col gap-4">
-                {/* Privacy Badge/Settings */}
-                <PhotoPrivacySettings clientId={clientId} />
+                {/* Privacy Badge/Settings - Only for Client */}
+                {!readOnly && <PhotoPrivacySettings clientId={clientId} />}
 
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="flex bg-white/5 p-1 rounded-xl border border-white/10 w-fit">
