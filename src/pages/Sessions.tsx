@@ -428,6 +428,8 @@ function SessionModal({ session, onClose, onSave }: any) {
     difficulty_level: session?.difficulty_level || 'Débutant',
     session_type: session?.session_type || 'private',
   });
+  // Tab state for mobile: 'details' | 'exercises' (defaults to 'details')
+  const [activeTab, setActiveTab] = useState<'details' | 'exercises'>('details');
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [selectedExercises, setSelectedExercises] = useState<SessionExercise[]>(
     session?.session_exercises || []
@@ -486,16 +488,51 @@ function SessionModal({ session, onClose, onSave }: any) {
         title={session ? 'Modifier la séance' : 'Créer une séance'}
         maxWidth="max-w-7xl"
         noPadding={true}
+        footer={
+          <div className="flex w-full gap-3 bg-gray-900 border-t border-white/10 p-4 lg:hidden">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 py-3 rounded-xl border border-white/10 hover:bg-white/5 text-gray-300 transition-colors"
+            >
+              Annuler
+            </button>
+            <button
+              type="submit"
+              onClick={handleSubmit} // Trigger form submission logic if needed, or bind specific save function
+              className="flex-1 primary-button"
+            >
+              Sauvegarder
+            </button>
+          </div>
+        }
       >
-        <form onSubmit={handleSubmit} className="flex-1 flex flex-col lg:flex-row overflow-hidden h-full">
+        <div className="lg:hidden flex border-b border-white/10">
+          <button
+            type="button"
+            onClick={() => setActiveTab('details')}
+            className={`flex-1 py-3 text-sm font-medium transition-colors border-b-2 ${activeTab === 'details' ? 'border-blue-500 text-blue-400' : 'border-transparent text-gray-400 hover:text-gray-200'}`}
+          >
+            Détails
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('exercises')}
+            className={`flex-1 py-3 text-sm font-medium transition-colors border-b-2 ${activeTab === 'exercises' ? 'border-blue-500 text-blue-400' : 'border-transparent text-gray-400 hover:text-gray-200'}`}
+          >
+            Exercices
+          </button>
+        </div>
+
+        <form onSubmit={(e) => { e.preventDefault(); onSave({ ...formData }, selectedExercises, exerciseGroups); }} className="flex-1 flex flex-col lg:flex-row overflow-hidden h-full">
           {error && (
-            <div className="bg-red-500/10 border border-red-500/20 text-red-200 p-4 rounded-xl">
+            <div className="bg-red-500/10 border border-red-500/20 text-red-200 p-4 rounded-xl m-4 lg:m-0">
               {error}
             </div>
           )}
 
-          {/* Left Column (Settings) */}
-          <div className="w-full lg:w-[350px] shrink-0 p-6 space-y-6 border-b lg:border-b-0 lg:border-r border-white/10 overflow-y-auto custom-scrollbar">
+          {/* Left Column (Settings) - Conditional visibility on mobile */}
+          <div className={`w-full lg:w-[350px] shrink-0 p-6 space-y-6 border-b lg:border-b-0 lg:border-r border-white/10 overflow-y-auto custom-scrollbar ${activeTab === 'details' ? 'block' : 'hidden lg:block'}`}>
             <div className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">Nom de la séance</label>
@@ -566,13 +603,10 @@ function SessionModal({ session, onClose, onSave }: any) {
             </div>
 
             {/* Action Buttons (Mobile only, hidden on LG) */}
-            <div className="lg:hidden flex gap-3 pt-4">
-              <button type="button" onClick={onClose} className="flex-1 py-3 rounded-xl border border-white/10 hover:bg-white/5 text-gray-300">Annuler</button>
-              <button type="submit" className="flex-1 primary-button">Sauvegarder</button>
-            </div>
+            {/* Action Buttons (Mobile only actions removed from here, now in Footer) */}
           </div>
 
-          <div className="flex-1 bg-black/20 p-6 flex flex-col h-full overflow-hidden relative">
+          <div className={`flex-1 bg-black/20 p-6 flex flex-col h-full overflow-hidden relative ${activeTab === 'exercises' ? 'block' : 'hidden lg:flex'}`}>
             <div className="flex justify-between items-center mb-6">
               <label className="text-lg font-semibold text-white">
                 Exercices
