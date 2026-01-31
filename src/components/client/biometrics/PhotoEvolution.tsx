@@ -297,6 +297,5 @@ export function PhotoEvolution({ clientId, readOnly = false }: PhotoEvolutionPro
                 </div>
             )}
         </div>
-        </div >
     );
 }
