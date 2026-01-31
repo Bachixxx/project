@@ -8,6 +8,7 @@ interface ResponsiveModalProps {
     children: React.ReactNode;
     footer?: React.ReactNode;
     maxWidth?: string;
+    noPadding?: boolean;
 }
 
 export function ResponsiveModal({
@@ -16,7 +17,8 @@ export function ResponsiveModal({
     title,
     children,
     footer,
-    maxWidth = 'max-w-2xl'
+    maxWidth = 'max-w-2xl',
+    noPadding = false
 }: ResponsiveModalProps) {
     if (!isOpen) return null;
 
@@ -56,7 +58,7 @@ export function ResponsiveModal({
                 </div>
 
                 {/* Scrollable Content */}
-                <div className="flex-1 overflow-y-auto p-4 sm:p-6 custom-scrollbar overscroll-contain">
+                <div className={`flex-1 overflow-y-auto custom-scrollbar overscroll-contain ${noPadding ? '' : 'p-4 sm:p-6'}`}>
                     {children}
                 </div>
 

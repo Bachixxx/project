@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { ExerciseGroupManager, GroupModal } from '../components/ExerciseGroupManager';
 import { ExerciseSelector } from '../components/library/ExerciseSelector';
+import { ResponsiveModal } from '../components/ResponsiveModal';
 
 interface Session {
   id: string;
@@ -475,25 +476,18 @@ function SessionModal({ session, onClose, onSave }: any) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData, selectedExercises, exerciseGroups);
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
-      <div className="glass-card w-full max-w-7xl max-h-[90vh] overflow-y-auto animate-slide-in flex flex-col">
-        <div className="p-6 border-b border-white/10 flex justify-between items-center sticky top-0 bg-[#0f172a]/95 backdrop-blur-xl z-20">
-          <h2 className="text-2xl font-bold text-white">
-            {session ? 'Modifier la séance' : 'Créer une séance'}
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors"
-          >
-            <X className="w-6 h-6" />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+    <>
+      <ResponsiveModal
+        isOpen={true}
+        onClose={onClose}
+        title={session ? 'Modifier la séance' : 'Créer une séance'}
+        maxWidth="max-w-7xl"
+        noPadding={true}
+      >
+        <form onSubmit={handleSubmit} className="flex-1 flex flex-col lg:flex-row overflow-hidden h-full">
           {error && (
             <div className="bg-red-500/10 border border-red-500/20 text-red-200 p-4 rounded-xl">
               {error}
@@ -768,42 +762,45 @@ function SessionModal({ session, onClose, onSave }: any) {
               </button>
             </div>
           </div>
+
         </form>
-      </div >
+      </ResponsiveModal >
 
-      {showExerciseModal && (
-        <ExerciseSelector
-          exercises={exercises}
-          // The new component expects onSelect to return an array of objects.
-          onSelect={(selectedItems: any[]) => {
-            const newExercisesToBeAdded = selectedItems.map((exercise, idx) => ({
-              id: `temp-${Date.now()}-${idx}`,
-              exercise,
-              sets: 3,
-              reps: 12,
-              rest_time: 60,
-              instructions: '',
-              order_index: selectedExercises.length + idx,
-              group_id: null,
-            }));
+      {
+        showExerciseModal && (
+          <ExerciseSelector
+            exercises={exercises}
+            // The new component expects onSelect to return an array of objects.
+            onSelect={(selectedItems: any[]) => {
+              const newExercisesToBeAdded = selectedItems.map((exercise, idx) => ({
+                id: `temp-${Date.now()}-${idx}`,
+                exercise,
+                sets: 3,
+                reps: 12,
+                rest_time: 60,
+                instructions: '',
+                order_index: selectedExercises.length + idx,
+                group_id: null,
+              }));
 
-            if (activeGroupId) {
-              setExerciseGroups(exerciseGroups.map(g =>
-                g.id === activeGroupId ? { ...g, exercises: [...g.exercises, ...newExercisesToBeAdded] } : g
-              ));
+              if (activeGroupId) {
+                setExerciseGroups(exerciseGroups.map(g =>
+                  g.id === activeGroupId ? { ...g, exercises: [...g.exercises, ...newExercisesToBeAdded] } : g
+                ));
+                setActiveGroupId(null);
+              } else {
+                setSelectedExercises([...selectedExercises, ...newExercisesToBeAdded]);
+              }
+              setShowExerciseModal(false);
+            }}
+            onClose={() => {
+              setShowExerciseModal(false);
               setActiveGroupId(null);
-            } else {
-              setSelectedExercises([...selectedExercises, ...newExercisesToBeAdded]);
-            }
-            setShowExerciseModal(false);
-          }}
-          onClose={() => {
-            setShowExerciseModal(false);
-            setActiveGroupId(null);
-          }}
-          loading={loading}
-        />
-      )}
+            }}
+            loading={loading}
+          />
+        )
+      }
 
       {
         showGroupModal && (
@@ -822,7 +819,8 @@ function SessionModal({ session, onClose, onSave }: any) {
           />
         )
       }
-    </div >
+
+    </>
   );
 }
 
