@@ -319,6 +319,10 @@ function ClientsPage() {
   );
 }
 
+import { ResponsiveModal } from '../components/ResponsiveModal';
+
+// ... (existing helper function code if any, though ClientModal is standalone here)
+
 function ClientModal({ client, onClose, onSave }: { client: any, onClose: () => void, onSave: (data: any) => void }) {
   const [formData, setFormData] = useState({
     full_name: client?.full_name || '',
@@ -339,199 +343,191 @@ function ClientModal({ client, onClose, onSave }: { client: any, onClose: () => 
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const footer = (
+    <div className="flex justify-end gap-4 w-full">
+      <button
+        type="button"
+        onClick={onClose}
+        className="px-6 py-3 rounded-xl font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors touch-target"
+      >
+        {t('common.cancel')}
+      </button>
+      <button
+        type="submit"
+        form="client-form"
+        className="primary-button touch-target"
+      >
+        {t('common.create')}
+      </button>
+    </div>
+  );
+
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
-      <div className="glass-card w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-slide-in">
-        <div className="p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-white">
-              {client ? t('common.edit') : t('clients.addClient')}
-            </h2>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-lg"
-            >
-              <X className="w-6 h-6" />
-            </button>
+    <ResponsiveModal
+      isOpen={true}
+      onClose={onClose}
+      title={client ? t('common.edit') : t('clients.addClient')}
+      footer={footer}
+    >
+      <form id="client-form" onSubmit={(e) => {
+        e.preventDefault();
+        onSave(formData);
+      }} className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">{t('clients.form.fullName')}</label>
+            <input
+              type="text"
+              name="full_name"
+              value={formData.full_name}
+              onChange={handleChange}
+              required
+              className="input-field"
+            />
           </div>
 
-          <form onSubmit={(e) => {
-            e.preventDefault();
-            onSave(formData);
-          }} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">{t('clients.form.fullName')}</label>
-                <input
-                  type="text"
-                  name="full_name"
-                  value={formData.full_name}
-                  onChange={handleChange}
-                  required
-                  className="input-field"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">{t('clients.form.email')}</label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                  disabled={!!client}
-                  className="input-field disabled:opacity-50"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">{t('clients.form.phone')}</label>
-                <input
-                  type="tel"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  className="input-field"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">{t('clients.form.dateOfBirth')}</label>
-                <input
-                  type="date"
-                  name="date_of_birth"
-                  value={formData.date_of_birth}
-                  onChange={handleChange}
-                  className="input-field"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">{t('clients.form.gender.label')}</label>
-                <select
-                  name="gender"
-                  value={formData.gender}
-                  onChange={handleChange}
-                  className="input-field appearance-none cursor-pointer"
-                >
-                  <option value="male" className="bg-gray-800">{t('clients.form.gender.male')}</option>
-                  <option value="female" className="bg-gray-800">{t('clients.form.gender.female')}</option>
-                  <option value="other" className="bg-gray-800">{t('clients.form.gender.other')}</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">{t('clients.form.height')}</label>
-                <input
-                  type="number"
-                  name="height"
-                  value={formData.height}
-                  onChange={handleChange}
-                  step="0.1"
-                  className="input-field"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">{t('clients.form.weight')}</label>
-                <input
-                  type="number"
-                  name="weight"
-                  value={formData.weight}
-                  onChange={handleChange}
-                  step="0.1"
-                  className="input-field"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                {t('clients.form.fitnessGoals')}
-              </label>
-              <input
-                type="text"
-                value={formData.fitness_goals ? formData.fitness_goals.join(', ') : ''}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setFormData(prev => ({
-                    ...prev,
-                    fitness_goals: value.split(',').filter((i: string) => i.trim())
-                  }));
-                }}
-                placeholder="e.g., Weight Loss, Muscle Gain, Flexibility"
-                className="input-field"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                {t('clients.form.medicalConditions')}
-              </label>
-              <input
-                type="text"
-                value={formData.medical_conditions ? formData.medical_conditions.join(', ') : ''}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setFormData(prev => ({
-                    ...prev,
-                    medical_conditions: value.split(',').filter((i: string) => i.trim())
-                  }));
-                }}
-                placeholder="e.g., Asthma, Back Pain, None"
-                className="input-field"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">{t('common.notes')}</label>
-              <textarea
-                name="notes"
-                value={formData.notes}
-                onChange={handleChange}
-                rows={3}
-                className="input-field"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">{t('common.status')}</label>
-              <select
-                name="status"
-                value={formData.status}
-                onChange={handleChange}
-                className="input-field appearance-none cursor-pointer"
-              >
-                <option value="active" className="bg-gray-800">{t('common.active')}</option>
-                <option value="inactive" className="bg-gray-800">{t('common.inactive')}</option>
-                <option value="pending" className="bg-gray-800">{t('common.pending')}</option>
-              </select>
-            </div>
-
-            <div className="flex justify-end gap-4 pt-4 border-t border-white/5">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-6 py-3 rounded-xl font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors"
-              >
-                {t('common.cancel')}
-              </button>
-              <button
-                type="submit"
-                className="primary-button"
-              >
-                {t('common.create')}
-              </button>
-            </div>
-          </form>
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">{t('clients.form.email')}</label>
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              disabled={!!client}
+              className="input-field disabled:opacity-50"
+            />
+          </div>
         </div>
-      </div>
-    </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">{t('clients.form.phone')}</label>
+            <input
+              type="tel"
+              name="phone"
+              value={formData.phone}
+              onChange={handleChange}
+              className="input-field"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">{t('clients.form.dateOfBirth')}</label>
+            <input
+              type="date"
+              name="date_of_birth"
+              value={formData.date_of_birth}
+              onChange={handleChange}
+              className="input-field"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">{t('clients.form.gender.label')}</label>
+            <select
+              name="gender"
+              value={formData.gender}
+              onChange={handleChange}
+              className="input-field appearance-none cursor-pointer"
+            >
+              <option value="male" className="bg-gray-800">{t('clients.form.gender.male')}</option>
+              <option value="female" className="bg-gray-800">{t('clients.form.gender.female')}</option>
+              <option value="other" className="bg-gray-800">{t('clients.form.gender.other')}</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">{t('clients.form.height')}</label>
+            <input
+              type="number"
+              name="height"
+              value={formData.height}
+              onChange={handleChange}
+              step="0.1"
+              className="input-field"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">{t('clients.form.weight')}</label>
+            <input
+              type="number"
+              name="weight"
+              value={formData.weight}
+              onChange={handleChange}
+              step="0.1"
+              className="input-field"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            {t('clients.form.fitnessGoals')}
+          </label>
+          <input
+            type="text"
+            value={formData.fitness_goals ? formData.fitness_goals.join(', ') : ''}
+            onChange={(e) => {
+              const value = e.target.value;
+              setFormData(prev => ({
+                ...prev,
+                fitness_goals: value.split(',').filter((i: string) => i.trim())
+              }));
+            }}
+            placeholder="e.g., Weight Loss, Muscle Gain, Flexibility"
+            className="input-field"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            {t('clients.form.medicalConditions')}
+          </label>
+          <input
+            type="text"
+            value={formData.medical_conditions ? formData.medical_conditions.join(', ') : ''}
+            onChange={(e) => {
+              const value = e.target.value;
+              setFormData(prev => ({
+                ...prev,
+                medical_conditions: value.split(',').filter((i: string) => i.trim())
+              }));
+            }}
+            placeholder="e.g., Asthma, Back Pain, None"
+            className="input-field"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">{t('common.notes')}</label>
+          <textarea
+            name="notes"
+            value={formData.notes}
+            onChange={handleChange}
+            rows={3}
+            className="input-field"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">{t('common.status')}</label>
+          <select
+            name="status"
+            value={formData.status}
+            onChange={handleChange}
+            className="input-field appearance-none cursor-pointer"
+          >
+            <option value="active" className="bg-gray-800">{t('common.active')}</option>
+            <option value="inactive" className="bg-gray-800">{t('common.inactive')}</option>
+            <option value="pending" className="bg-gray-800">{t('common.pending')}</option>
+          </select>
+        </div>
+      </form>
+    </ResponsiveModal>
   );
 }
 

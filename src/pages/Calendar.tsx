@@ -1,18 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar as BigCalendar, dateFnsLocalizer } from 'react-big-calendar';
-import format from 'date-fns/format';
-import parse from 'date-fns/parse';
-import startOfWeek from 'date-fns/startOfWeek';
-import getDay from 'date-fns/getDay';
-import addMinutes from 'date-fns/addMinutes';
-import fr from 'date-fns/locale/fr';
+import { format, parse, startOfWeek, getDay } from 'date-fns';
+import { fr } from 'date-fns/locale';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import {
   Plus,
-  X,
   User,
   Users,
-  Clock,
   CreditCard,
   Banknote,
   Copy,
@@ -22,8 +16,7 @@ import {
   Check,
   List as ListView,
   ChevronLeft,
-  ChevronRight,
-  MapPin
+  ChevronRight
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { supabase } from '../lib/supabase';
@@ -658,7 +651,12 @@ function CalendarPage() {
   );
 }
 
+import { ResponsiveModal } from '../components/ResponsiveModal';
+
+// ... existing imports and code
+
 function AppointmentModal({ appointment, selectedSlot, clients, onClose, onSave }: any) {
+  // ... existing state and logic ...
   const getValidDate = (dateValue: any) => {
     if (!dateValue) {
       return selectedSlot?.start || new Date();
@@ -789,447 +787,439 @@ function AppointmentModal({ appointment, selectedSlot, clients, onClose, onSave 
     }
   };
 
+  const footer = (
+    <div className="flex justify-end gap-4 w-full">
+      <button
+        type="button"
+        onClick={onClose}
+        className="px-6 py-3 rounded-xl font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors touch-target"
+      >
+        Annuler
+      </button>
+      <button
+        type="submit"
+        form="appointment-form"
+        className="primary-button touch-target"
+      >
+        {appointment ? 'Mettre à jour' : 'Créer'}
+      </button>
+    </div>
+  );
+
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
-      <div className="glass-card w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-slide-in">
-        <div className="p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-white">
-              {appointment ? 'Modifier la séance' : 'Nouvelle séance'}
-            </h2>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-lg"
-            >
-              <X className="w-6 h-6" />
-            </button>
+    <ResponsiveModal
+      isOpen={true}
+      onClose={onClose}
+      title={appointment ? 'Modifier la séance' : 'Nouvelle séance'}
+      footer={footer}
+    >
+      <form id="appointment-form" onSubmit={handleSubmit} className="space-y-6">
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">Titre</label>
+          <input
+            type="text"
+            name="title"
+            value={formData.title}
+            onChange={handleChange}
+            required
+            className="input-field"
+            placeholder="Ex: Séance Jambes, Yoga..."
+          />
+        </div>
+
+        {/* Session Linking */}
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            Contenu de la séance (optionnel)
+          </label>
+          <select
+            name="session_id"
+            value={formData.session_id || ''}
+            onChange={handleChange}
+            className="input-field"
+          >
+            <option value="">-- Sélectionner une séance type --</option>
+            {sessions.map(s => (
+              <option key={s.id} value={s.id}>
+                {s.name} ({s.duration_minutes} min)
+              </option>
+            ))}
+          </select>
+          <p className="text-xs text-gray-500 mt-1">
+            Permet aux clients de lancer la séance et d'enregistrer leurs performances.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Début</label>
+            <input
+              type="datetime-local"
+              name="start"
+              value={formData.start ? format(new Date(formData.start), "yyyy-MM-dd'T'HH:mm") : ''}
+              onChange={(e) => setFormData(prev => ({
+                ...prev,
+                start: new Date(e.target.value)
+              }))}
+              required
+              className="input-field"
+            />
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Titre</label>
-              <input
-                type="text"
-                name="title"
-                value={formData.title}
-                onChange={handleChange}
-                required
-                className="input-field"
-                placeholder="Ex: Séance Jambes, Yoga..."
-              />
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Durée</label>
+            <select
+              name="duration"
+              value={formData.duration}
+              onChange={handleChange}
+              required
+              className="input-field appearance-none cursor-pointer"
+            >
+              <option value="30" className="bg-gray-800">30 minutes</option>
+              <option value="45" className="bg-gray-800">45 minutes</option>
+              <option value="60" className="bg-gray-800">1 heure</option>
+              <option value="90" className="bg-gray-800">1 heure 30</option>
+              <option value="120" className="bg-gray-800">2 heures</option>
+            </select>
+          </div>
+        </div>
 
-            {/* Session Linking */}
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Contenu de la séance (optionnel)
-              </label>
-              <select
-                name="session_id"
-                value={formData.session_id || ''}
-                onChange={handleChange}
-                className="input-field"
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Type de séance</label>
+            <div className="grid grid-cols-2 gap-3 p-1 bg-black/20 rounded-xl">
+              <button
+                type="button"
+                onClick={() => {
+                  setFormData(prev => ({ ...prev, type: 'private' }));
+                }}
+                className={`flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${formData.type === 'private' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-400 hover:text-gray-200'
+                  }`}
               >
-                <option value="">-- Sélectionner une séance type --</option>
-                {sessions.map(s => (
-                  <option key={s.id} value={s.id}>
-                    {s.name} ({s.duration_minutes} min)
+                <User className="w-4 h-4" />
+                Privée
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setFormData(prev => ({ ...prev, type: 'group', client_id: '' }));
+                }}
+                className={`flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${formData.type === 'group' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-400 hover:text-gray-200'
+                  }`}
+              >
+                <Users className="w-4 h-4" />
+                Groupe
+              </button>
+            </div>
+          </div>
+
+          {formData.type === 'private' ? (
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Client</label>
+              <select
+                name="client_id"
+                value={formData.client_id}
+                onChange={handleChange}
+                required={formData.type === 'private'}
+                className="input-field appearance-none cursor-pointer"
+              >
+                <option value="" className="bg-gray-800">Sélectionner un client</option>
+                {clients.map(client => (
+                  <option key={client.id} value={client.id} className="bg-gray-800">
+                    {client.full_name}
                   </option>
                 ))}
               </select>
-              <p className="text-xs text-gray-500 mt-1">
-                Permet aux clients de lancer la séance et d'enregistrer leurs performances.
-              </p>
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Début</label>
-                <input
-                  type="datetime-local"
-                  name="start"
-                  value={formData.start ? format(new Date(formData.start), "yyyy-MM-dd'T'HH:mm") : ''}
-                  onChange={(e) => setFormData(prev => ({
-                    ...prev,
-                    start: new Date(e.target.value)
-                  }))}
-                  required
-                  className="input-field"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Durée</label>
-                <select
-                  name="duration"
-                  value={formData.duration}
-                  onChange={handleChange}
-                  required
-                  className="input-field appearance-none cursor-pointer"
-                >
-                  <option value="30" className="bg-gray-800">30 minutes</option>
-                  <option value="45" className="bg-gray-800">45 minutes</option>
-                  <option value="60" className="bg-gray-800">1 heure</option>
-                  <option value="90" className="bg-gray-800">1 heure 30</option>
-                  <option value="120" className="bg-gray-800">2 heures</option>
-                </select>
-              </div>
+          ) : (
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Visibilité</label>
+              <select
+                name="group_visibility"
+                value={formData.group_visibility}
+                onChange={(e) => {
+                  handleChange(e);
+                  if (e.target.value === 'public') {
+                    setSelectedClients([]);
+                  }
+                }}
+                className="input-field appearance-none cursor-pointer"
+              >
+                <option value="public" className="bg-gray-800">Public (ouvert à tous)</option>
+                <option value="private" className="bg-gray-800">Privé (sur invitation)</option>
+              </select>
             </div>
+          )}
+        </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Type de séance</label>
-                <div className="grid grid-cols-2 gap-3 p-1 bg-black/20 rounded-xl">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setFormData(prev => ({ ...prev, type: 'private' }));
-                    }}
-                    className={`flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${formData.type === 'private' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-400 hover:text-gray-200'
-                      }`}
-                  >
-                    <User className="w-4 h-4" />
-                    Privée
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setFormData(prev => ({ ...prev, type: 'group', client_id: '' }));
-                    }}
-                    className={`flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${formData.type === 'group' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-400 hover:text-gray-200'
-                      }`}
-                  >
-                    <Users className="w-4 h-4" />
-                    Groupe
-                  </button>
-                </div>
-              </div>
+        {formData.type === 'group' && formData.group_visibility === 'public' && (
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Participants max</label>
+            <input
+              type="number"
+              name="max_participants"
+              value={formData.max_participants}
+              onChange={handleChange}
+              min="2"
+              required
+              className="input-field"
+            />
+          </div>
+        )}
 
-              {formData.type === 'private' ? (
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Client</label>
-                  <select
-                    name="client_id"
-                    value={formData.client_id}
-                    onChange={handleChange}
-                    required={formData.type === 'private'}
-                    className="input-field appearance-none cursor-pointer"
-                  >
-                    <option value="" className="bg-gray-800">Sélectionner un client</option>
-                    {clients.map(client => (
-                      <option key={client.id} value={client.id} className="bg-gray-800">
-                        {client.full_name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+        {formData.type === 'group' && formData.group_visibility === 'private' && (
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Clients invités</label>
+            <div className="border border-white/10 rounded-xl p-3 max-h-48 overflow-y-auto bg-black/20 custom-scrollbar">
+              {clients.length === 0 ? (
+                <p className="text-sm text-gray-500 text-center py-2">Aucun client disponible</p>
               ) : (
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Visibilité</label>
-                  <select
-                    name="group_visibility"
-                    value={formData.group_visibility}
-                    onChange={(e) => {
-                      handleChange(e);
-                      if (e.target.value === 'public') {
-                        setSelectedClients([]);
-                      }
-                    }}
-                    className="input-field appearance-none cursor-pointer"
-                  >
-                    <option value="public" className="bg-gray-800">Public (ouvert à tous)</option>
-                    <option value="private" className="bg-gray-800">Privé (sur invitation)</option>
-                  </select>
+                <div className="space-y-1">
+                  {clients.map((client: Client) => (
+                    <label
+                      key={client.id}
+                      className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors ${selectedClients.includes(client.id) ? 'bg-primary-500/10 border border-primary-500/30' : 'hover:bg-white/5 border border-transparent'
+                        }`}
+                    >
+                      <div className={`w-5 h-5 rounded flex items-center justify-center border transition-colors ${selectedClients.includes(client.id) ? 'bg-primary-500 border-primary-500' : 'border-gray-500'
+                        }`}>
+                        {selectedClients.includes(client.id) && <Check className="w-3.5 h-3.5 text-white" />}
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={selectedClients.includes(client.id)}
+                        onChange={() => toggleClientSelection(client.id)}
+                        className="hidden"
+                      />
+                      <span className={`text-sm ${selectedClients.includes(client.id) ? 'text-white' : 'text-gray-300'}`}>
+                        {client.full_name}
+                      </span>
+                    </label>
+                  ))}
                 </div>
               )}
             </div>
+            <p className="text-xs text-gray-500 mt-2">
+              {selectedClients.length} client{selectedClients.length > 1 ? 's' : ''} sélectionné{selectedClients.length > 1 ? 's' : ''}
+            </p>
+          </div>
+        )}
 
-            {formData.type === 'group' && formData.group_visibility === 'public' && (
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Participants max</label>
-                <input
-                  type="number"
-                  name="max_participants"
-                  value={formData.max_participants}
-                  onChange={handleChange}
-                  min="2"
-                  required
-                  className="input-field"
-                />
-              </div>
-            )}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Prix (CHF)</label>
+            <input
+              type="number"
+              name="price"
+              value={formData.price}
+              onChange={handleChange}
+              min="0"
+              step="0.01"
+              required
+              className="input-field"
+            />
+          </div>
 
-            {formData.type === 'group' && formData.group_visibility === 'private' && (
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Clients invités</label>
-                <div className="border border-white/10 rounded-xl p-3 max-h-48 overflow-y-auto bg-black/20 custom-scrollbar">
-                  {clients.length === 0 ? (
-                    <p className="text-sm text-gray-500 text-center py-2">Aucun client disponible</p>
-                  ) : (
-                    <div className="space-y-1">
-                      {clients.map(client => (
-                        <label
-                          key={client.id}
-                          className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors ${selectedClients.includes(client.id) ? 'bg-primary-500/10 border border-primary-500/30' : 'hover:bg-white/5 border border-transparent'
-                            }`}
-                        >
-                          <div className={`w-5 h-5 rounded flex items-center justify-center border transition-colors ${selectedClients.includes(client.id) ? 'bg-primary-500 border-primary-500' : 'border-gray-500'
-                            }`}>
-                            {selectedClients.includes(client.id) && <Check className="w-3.5 h-3.5 text-white" />}
-                          </div>
-                          <input
-                            type="checkbox"
-                            checked={selectedClients.includes(client.id)}
-                            onChange={() => toggleClientSelection(client.id)}
-                            className="hidden"
-                          />
-                          <span className={`text-sm ${selectedClients.includes(client.id) ? 'text-white' : 'text-gray-300'}`}>
-                            {client.full_name}
-                          </span>
-                        </label>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <p className="text-xs text-gray-500 mt-2">
-                  {selectedClients.length} client{selectedClients.length > 1 ? 's' : ''} sélectionné{selectedClients.length > 1 ? 's' : ''}
-                </p>
-              </div>
-            )}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Statut</label>
+            <select
+              name="status"
+              value={formData.status}
+              onChange={handleChange}
+              className="input-field appearance-none cursor-pointer"
+            >
+              <option value="scheduled" className="bg-gray-800">Planifié</option>
+              <option value="completed" className="bg-gray-800">Terminé</option>
+              <option value="cancelled" className="bg-gray-800">Annulé</option>
+            </select>
+          </div>
+        </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Prix (CHF)</label>
-                <input
-                  type="number"
-                  name="price"
-                  value={formData.price}
-                  onChange={handleChange}
-                  min="0"
-                  step="0.01"
-                  required
-                  className="input-field"
-                />
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-3">Mode de paiement</label>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => setFormData(prev => ({ ...prev, payment_method: 'online' }))}
+              className={`p-4 rounded-xl border transition-all ${formData.payment_method === 'online'
+                ? 'border-primary-500 bg-primary-500/10 ring-1 ring-primary-500/50'
+                : 'border-white/10 bg-white/5 hover:bg-white/10 text-gray-400'
+                }`}
+            >
+              <div className="flex flex-col items-center gap-2">
+                <CreditCard className={`w-6 h-6 ${formData.payment_method === 'online' ? 'text-cyan-400' : 'text-gray-500'
+                  }`} />
+                <span className={`text-sm font-medium ${formData.payment_method === 'online' ? 'text-white' : 'text-gray-400'
+                  }`}>
+                  En ligne
+                </span>
+                <span className="text-xs text-gray-500 text-center">
+                  Stripe / Carte
+                </span>
               </div>
+            </button>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Statut</label>
-                <select
-                  name="status"
-                  value={formData.status}
-                  onChange={handleChange}
-                  className="input-field appearance-none cursor-pointer"
-                >
-                  <option value="scheduled" className="bg-gray-800">Planifié</option>
-                  <option value="completed" className="bg-gray-800">Terminé</option>
-                  <option value="cancelled" className="bg-gray-800">Annulé</option>
-                </select>
+            <button
+              type="button"
+              onClick={() => setFormData(prev => ({ ...prev, payment_method: 'in_person' }))}
+              className={`p-4 rounded-xl border transition-all ${formData.payment_method === 'in_person'
+                ? 'border-primary-500 bg-primary-500/10 ring-1 ring-primary-500/50'
+                : 'border-white/10 bg-white/5 hover:bg-white/10 text-gray-400'
+                }`}
+            >
+              <div className="flex flex-col items-center gap-2">
+                <Banknote className={`w-6 h-6 ${formData.payment_method === 'in_person' ? 'text-cyan-400' : 'text-gray-500'
+                  }`} />
+                <span className={`text-sm font-medium ${formData.payment_method === 'in_person' ? 'text-white' : 'text-gray-400'
+                  }`}>
+                  Sur place
+                </span>
+                <span className="text-xs text-gray-500 text-center">
+                  Cash / TWINT
+                </span>
               </div>
+            </button>
+          </div>
+        </div>
+
+        {appointment?.id && formData.type === 'group' && (
+          <div className="pt-6 border-t border-white/10">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                <Users className="w-5 h-5" />
+                Participants inscrits
+              </h3>
+              <span className="text-sm text-gray-400">
+                {registeredParticipants.length} / {formData.max_participants}
+              </span>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-3">Mode de paiement</label>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setFormData(prev => ({ ...prev, payment_method: 'online' }))}
-                  className={`p-4 rounded-xl border transition-all ${formData.payment_method === 'online'
-                    ? 'border-primary-500 bg-primary-500/10 ring-1 ring-primary-500/50'
-                    : 'border-white/10 bg-white/5 hover:bg-white/10 text-gray-400'
-                    }`}
-                >
-                  <div className="flex flex-col items-center gap-2">
-                    <CreditCard className={`w-6 h-6 ${formData.payment_method === 'online' ? 'text-cyan-400' : 'text-gray-500'
-                      }`} />
-                    <span className={`text-sm font-medium ${formData.payment_method === 'online' ? 'text-white' : 'text-gray-400'
-                      }`}>
-                      En ligne
-                    </span>
-                    <span className="text-xs text-gray-500 text-center">
-                      Stripe / Carte
-                    </span>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setFormData(prev => ({ ...prev, payment_method: 'in_person' }))}
-                  className={`p-4 rounded-xl border transition-all ${formData.payment_method === 'in_person'
-                    ? 'border-primary-500 bg-primary-500/10 ring-1 ring-primary-500/50'
-                    : 'border-white/10 bg-white/5 hover:bg-white/10 text-gray-400'
-                    }`}
-                >
-                  <div className="flex flex-col items-center gap-2">
-                    <Banknote className={`w-6 h-6 ${formData.payment_method === 'in_person' ? 'text-cyan-400' : 'text-gray-500'
-                      }`} />
-                    <span className={`text-sm font-medium ${formData.payment_method === 'in_person' ? 'text-white' : 'text-gray-400'
-                      }`}>
-                      Sur place
-                    </span>
-                    <span className="text-xs text-gray-500 text-center">
-                      Cash / TWINT
-                    </span>
-                  </div>
-                </button>
+            {loadingParticipants ? (
+              <div className="text-center py-4 text-gray-500">
+                Chargement des participants...
               </div>
-            </div>
-
-            {appointment?.id && formData.type === 'group' && (
-              <div className="pt-6 border-t border-white/10">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                    <Users className="w-5 h-5" />
-                    Participants inscrits
-                  </h3>
-                  <span className="text-sm text-gray-400">
-                    {registeredParticipants.length} / {formData.max_participants}
-                  </span>
-                </div>
-
-                {loadingParticipants ? (
-                  <div className="text-center py-4 text-gray-500">
-                    Chargement des participants...
-                  </div>
-                ) : registeredParticipants.length > 0 ? (
-                  <div className="space-y-2">
-                    {registeredParticipants.map((reg) => (
-                      <div
-                        key={reg.id}
-                        className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-xs font-bold text-white uppercase">
-                            {reg.client?.full_name?.substring(0, 2)}
-                          </div>
-                          <div>
-                            <p className="font-medium text-white text-sm">{reg.client?.full_name}</p>
-                            <div className="flex gap-3 text-xs text-gray-500">
-                              {/* {reg.client?.email && <span>{reg.client.email}</span>} */}
-                            </div>
-                          </div>
-                        </div>
-                        <span className="text-xs px-2 py-1 rounded bg-green-500/10 text-green-400 border border-green-500/20">
-                          Inscrit
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-6 text-gray-500 bg-white/5 rounded-xl border border-dashed border-white/10">
-                    Aucun participant inscrit pour le moment
-                  </div>
-                )}
-              </div>
-            )}
-
-            {appointment?.id && formData.payment_method === 'online' && (
-              <div className="pt-6 border-t border-white/10">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                    <CreditCard className="w-5 h-5" />
-                    Lien de paiement
-                  </h3>
-                </div>
-
-                {paymentLink ? (
-                  <div className="space-y-4">
-                    <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-xl">
-                      <div className="flex items-center gap-2 mb-3">
-                        <LinkIcon className="w-4 h-4 text-green-400" />
-                        <span className="text-sm font-medium text-green-400">
-                          Lien actif
-                        </span>
-                      </div>
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={paymentLink}
-                          readOnly
-                          className="flex-1 px-3 py-2 text-sm bg-black/20 border border-white/10 rounded-lg text-gray-300"
-                        />
-                        <button
-                          type="button"
-                          onClick={handleCopyLink}
-                          className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg flex items-center gap-2 transition-colors border border-white/10"
-                        >
-                          <Copy className="w-4 h-4" />
-                          {copied ? 'Copié!' : 'Copier'}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setShowQR(!showQR)}
-                          className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg flex items-center gap-2 transition-colors border border-white/10"
-                        >
-                          <QrCode className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-
-                    {showQR && (
-                      <div className="flex justify-center p-6 bg-white rounded-xl border border-white/10">
-                        <div className="text-center">
-                          <QRCodeSVG value={paymentLink} size={180} level="H" />
-                          <p className="mt-3 text-sm text-gray-800 font-medium">
-                            Scannez pour payer
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={handleGeneratePaymentLink}
-                    disabled={generatingLink}
-                    className="w-full px-4 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 shadow-lg shadow-blue-500/25 disabled:opacity-50 text-white rounded-xl transition-colors flex items-center justify-center gap-2"
+            ) : registeredParticipants.length > 0 ? (
+              <div className="space-y-2">
+                {registeredParticipants.map((reg) => (
+                  <div
+                    key={reg.id}
+                    className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5"
                   >
-                    {generatingLink ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        Génération...
-                      </>
-                    ) : (
-                      <>
-                        <LinkIcon className="w-5 h-5" />
-                        Générer le lien de paiement
-                      </>
-                    )}
-                  </button>
-                )}
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-xs font-bold text-white uppercase">
+                        {reg.client?.full_name?.substring(0, 2)}
+                      </div>
+                      <div>
+                        <p className="font-medium text-white text-sm">{reg.client?.full_name}</p>
+                        <div className="flex gap-3 text-xs text-gray-500">
+                          {/* {reg.client?.email && <span>{reg.client.email}</span>} */}
+                        </div>
+                      </div>
+                    </div>
+                    <span className="text-xs px-2 py-1 rounded bg-green-500/10 text-green-400 border border-green-500/20">
+                      Inscrit
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-6 text-gray-500 bg-white/5 rounded-xl border border-dashed border-white/10">
+                Aucun participant inscrit pour le moment
               </div>
             )}
+          </div>
+        )}
 
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Notes</label>
-              <textarea
-                name="notes"
-                value={formData.notes}
-                onChange={handleChange}
-                rows={3}
-                placeholder="Notes pour la séance..."
-                className="input-field"
-              />
+        {appointment?.id && formData.payment_method === 'online' && (
+          <div className="pt-6 border-t border-white/10">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                <CreditCard className="w-5 h-5" />
+                Lien de paiement
+              </h3>
             </div>
 
-            <div className="flex justify-end gap-4 pt-4 border-t border-white/10">
+            {paymentLink ? (
+              <div className="space-y-4">
+                <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-xl">
+                  <div className="flex items-center gap-2 mb-3">
+                    <LinkIcon className="w-4 h-4 text-green-400" />
+                    <span className="text-sm font-medium text-green-400">
+                      Lien actif
+                    </span>
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={paymentLink}
+                      readOnly
+                      className="flex-1 px-3 py-2 text-sm bg-black/20 border border-white/10 rounded-lg text-gray-300"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleCopyLink}
+                      className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg flex items-center gap-2 transition-colors border border-white/10 touch-target"
+                    >
+                      <Copy className="w-4 h-4" />
+                      {copied ? 'Copié!' : 'Copier'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowQR(!showQR)}
+                      className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg flex items-center gap-2 transition-colors border border-white/10 touch-target"
+                    >
+                      <QrCode className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
+                {showQR && (
+                  <div className="flex justify-center p-6 bg-white rounded-xl border border-white/10">
+                    <div className="text-center">
+                      <QRCodeSVG value={paymentLink} size={180} level="H" />
+                      <p className="mt-3 text-sm text-gray-800 font-medium">
+                        Scannez pour payer
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
               <button
                 type="button"
-                onClick={onClose}
-                className="px-6 py-2 rounded-xl border border-white/10 hover:bg-white/5 text-gray-300 transition-colors"
+                onClick={handleGeneratePaymentLink}
+                disabled={generatingLink}
+                className="w-full px-4 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 shadow-lg shadow-blue-500/25 disabled:opacity-50 text-white rounded-xl transition-colors flex items-center justify-center gap-2 touch-target"
               >
-                Annuler
+                {generatingLink ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Génération...
+                  </>
+                ) : (
+                  <>
+                    <LinkIcon className="w-5 h-5" />
+                    Générer le lien de paiement
+                  </>
+                )}
               </button>
-              <button
-                type="submit"
-                className="primary-button"
-              >
-                {appointment ? 'Mettre à jour' : 'Créer'}
-              </button>
-            </div>
-          </form>
+            )}
+          </div>
+        )}
+
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">Notes</label>
+          <textarea
+            name="notes"
+            value={formData.notes}
+            onChange={handleChange}
+            rows={3}
+            placeholder="Notes pour la séance..."
+            className="input-field"
+          />
         </div>
-      </div>
-    </div>
+      </form>
+    </ResponsiveModal>
   );
 }
 

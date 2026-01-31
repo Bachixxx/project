@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { ResponsiveModal } from '../components/ResponsiveModal';
 import {
   Plus,
   Search,
@@ -11,9 +12,7 @@ import {
   Layers,
   Clock,
   Target,
-  Globe,
-  ChevronRight,
-  Filter
+  Globe
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -423,204 +422,196 @@ function ProgramModal({ program, onClose, onSave }: any) {
     onSave(formData, selectedSessions);
   };
 
+  const footer = (
+    <div className="flex justify-end gap-4 w-full">
+      <button
+        type="button"
+        onClick={onClose}
+        className="px-6 py-3 rounded-xl font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors touch-target"
+      >
+        Annuler
+      </button>
+      <button
+        type="submit"
+        form="program-form"
+        disabled={selectedSessions.length === 0}
+        className="primary-button disabled:opacity-50 touch-target"
+      >
+        {program ? 'Mettre à jour' : 'Créer'}
+      </button>
+    </div>
+  );
+
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
-      <div className="glass-card w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-slide-in">
-        <div className="p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-white">
-              {program ? 'Modifier le programme' : 'Créer un programme'}
-            </h2>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-lg"
+    <ResponsiveModal
+      isOpen={true}
+      onClose={onClose}
+      title={program ? 'Modifier le programme' : 'Créer un programme'}
+      footer={footer}
+    >
+      {error && (
+        <div className="p-4 rounded-lg mb-6 bg-red-500/10 border border-red-500/20 text-red-400">
+          {error}
+        </div>
+      )}
+
+      <form id="program-form" onSubmit={handleSubmit} className="space-y-6">
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">Nom</label>
+          <input
+            type="text"
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+            required
+            className="input-field"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">Description</label>
+          <textarea
+            name="description"
+            value={formData.description}
+            onChange={handleChange}
+            rows={3}
+            className="input-field"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Durée (semaines)</label>
+            <input
+              type="number"
+              name="duration_weeks"
+              value={formData.duration_weeks}
+              onChange={handleChange}
+              min="1"
+              required
+              className="input-field"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Niveau de difficulté</label>
+            <select
+              name="difficulty_level"
+              value={formData.difficulty_level}
+              onChange={handleChange}
+              className="input-field appearance-none cursor-pointer"
             >
-              <X className="w-6 h-6" />
+              <option value="Débutant" className="bg-gray-800">Débutant</option>
+              <option value="Intermédiaire" className="bg-gray-800">Intermédiaire</option>
+              <option value="Avancé" className="bg-gray-800">Avancé</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Prix (CHF)</label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <DollarSign className="h-5 w-5 text-gray-500" />
+              </div>
+              <input
+                type="number"
+                name="price"
+                value={formData.price ?? ''}
+                onChange={handleChange}
+                min="0"
+                step="0.01"
+                placeholder="0.00"
+                className="input-field pl-10"
+              />
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              Laissez vide pour un programme gratuit
+            </p>
+          </div>
+        </div>
+
+        <div>
+          <label className="flex items-center gap-2 cursor-pointer group">
+            <input
+              type="checkbox"
+              name="is_public"
+              checked={formData.is_public}
+              onChange={handleChange}
+              className="rounded border-gray-600 bg-gray-700 text-primary-500 focus:ring-primary-500"
+            />
+            <span className="text-sm font-medium text-gray-300 group-hover:text-white transition-colors">
+              Rendre ce programme public dans le marketplace
+            </span>
+          </label>
+        </div>
+
+        <div>
+          <div className="flex justify-between items-center mb-4">
+            <label className="block text-sm font-medium text-gray-300">
+              Séances <span className="text-primary-500">*</span>
+            </label>
+            <button
+              type="button"
+              onClick={() => setShowSessionModal(true)}
+              className="flex items-center gap-2 text-sm text-primary-400 hover:text-primary-300 transition-colors touch-target"
+            >
+              <Plus className="w-4 h-4" />
+              Ajouter une séance
             </button>
           </div>
 
-          {error && (
-            <div className="p-4 rounded-lg mb-6 bg-red-500/10 border border-red-500/20 text-red-400">
-              {error}
+          {selectedSessions.length === 0 && (
+            <div className="mb-4 p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+              <p className="text-sm text-yellow-400 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4" />
+                Vous devez ajouter au moins une séance.
+              </p>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Nom</label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                required
-                className="input-field"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Description</label>
-              <textarea
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                rows={3}
-                className="input-field"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Durée (semaines)</label>
-                <input
-                  type="number"
-                  name="duration_weeks"
-                  value={formData.duration_weeks}
-                  onChange={handleChange}
-                  min="1"
-                  required
-                  className="input-field"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Niveau de difficulté</label>
-                <select
-                  name="difficulty_level"
-                  value={formData.difficulty_level}
-                  onChange={handleChange}
-                  className="input-field appearance-none cursor-pointer"
-                >
-                  <option value="Débutant" className="bg-gray-800">Débutant</option>
-                  <option value="Intermédiaire" className="bg-gray-800">Intermédiaire</option>
-                  <option value="Avancé" className="bg-gray-800">Avancé</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Prix (CHF)</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <DollarSign className="h-5 w-5 text-gray-500" />
-                  </div>
-                  <input
-                    type="number"
-                    name="price"
-                    value={formData.price ?? ''}
-                    onChange={handleChange}
-                    min="0"
-                    step="0.01"
-                    placeholder="0.00"
-                    className="input-field pl-10"
-                  />
+          <div className="space-y-3">
+            {selectedSessions.map((ps: any, index: number) => (
+              <div key={index} className="flex items-center gap-4 p-4 bg-white/5 border border-white/5 rounded-lg">
+                <div className="w-8 h-8 rounded-full bg-primary-500/10 flex items-center justify-center text-primary-400 font-bold text-sm">
+                  {index + 1}
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  Laissez vide pour un programme gratuit
-                </p>
-              </div>
-            </div>
-
-            <div>
-              <label className="flex items-center gap-2 cursor-pointer group">
-                <input
-                  type="checkbox"
-                  name="is_public"
-                  checked={formData.is_public}
-                  onChange={handleChange}
-                  className="rounded border-gray-600 bg-gray-700 text-primary-500 focus:ring-primary-500"
-                />
-                <span className="text-sm font-medium text-gray-300 group-hover:text-white transition-colors">
-                  Rendre ce programme public dans le marketplace
-                </span>
-              </label>
-            </div>
-
-            <div>
-              <div className="flex justify-between items-center mb-4">
-                <label className="block text-sm font-medium text-gray-300">
-                  Séances <span className="text-primary-500">*</span>
-                </label>
-                <button
-                  type="button"
-                  onClick={() => setShowSessionModal(true)}
-                  className="flex items-center gap-2 text-sm text-primary-400 hover:text-primary-300 transition-colors"
-                >
-                  <Plus className="w-4 h-4" />
-                  Ajouter une séance
-                </button>
-              </div>
-
-              {selectedSessions.length === 0 && (
-                <div className="mb-4 p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
-                  <p className="text-sm text-yellow-400 flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4" />
-                    Vous devez ajouter au moins une séance.
+                <div className="flex-1">
+                  <h4 className="font-medium text-white">{ps.session.name}</h4>
+                  <p className="text-sm text-gray-400">
+                    {ps.session.difficulty_level} • {ps.session.duration_minutes} min
                   </p>
                 </div>
-              )}
-
-              <div className="space-y-3">
-                {selectedSessions.map((ps: any, index: number) => (
-                  <div key={index} className="flex items-center gap-4 p-4 bg-white/5 border border-white/5 rounded-lg">
-                    <div className="w-8 h-8 rounded-full bg-primary-500/10 flex items-center justify-center text-primary-400 font-bold text-sm">
-                      {index + 1}
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="font-medium text-white">{ps.session.name}</h4>
-                      <p className="text-sm text-gray-400">
-                        {ps.session.difficulty_level} • {ps.session.duration_minutes} min
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const newSessions = [...selectedSessions];
-                          if (index > 0) {
-                            [newSessions[index], newSessions[index - 1]] = [newSessions[index - 1], newSessions[index]];
-                            setSelectedSessions(newSessions);
-                          }
-                        }}
-                        className={`p-1 rounded transition-colors ${index > 0 ? 'text-gray-400 hover:text-white' : 'text-gray-600'}`}
-                        disabled={index === 0}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m18 15-6-6-6 6" /></svg>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const newSessions = selectedSessions.filter((_, i) => i !== index);
-                          setSelectedSessions(newSessions);
-                        }}
-                        className="p-2 text-gray-400 hover:text-red-400 rounded-lg transition-colors"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newSessions = [...selectedSessions];
+                      if (index > 0) {
+                        [newSessions[index], newSessions[index - 1]] = [newSessions[index - 1], newSessions[index]];
+                        setSelectedSessions(newSessions);
+                      }
+                    }}
+                    className={`p-1 rounded transition-colors ${index > 0 ? 'text-gray-400 hover:text-white' : 'text-gray-600'}`}
+                    disabled={index === 0}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m18 15-6-6-6 6" /></svg>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newSessions = selectedSessions.filter((_, i) => i !== index);
+                      setSelectedSessions(newSessions);
+                    }}
+                    className="p-2 text-gray-400 hover:text-red-400 rounded-lg transition-colors touch-target"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
-            </div>
-
-            <div className="flex justify-end gap-4 pt-4 border-t border-white/5">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-6 py-3 rounded-xl font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors"
-              >
-                Annuler
-              </button>
-              <button
-                type="submit"
-                disabled={selectedSessions.length === 0}
-                className="primary-button disabled:opacity-50"
-              >
-                {program ? 'Mettre à jour' : 'Créer'}
-              </button>
-            </div>
-          </form>
+            ))}
+          </div>
         </div>
-      </div>
+      </form>
 
       {showSessionModal && (
         <SessionSelector
@@ -642,7 +633,7 @@ function ProgramModal({ program, onClose, onSave }: any) {
           error={error}
         />
       )}
-    </div>
+    </ResponsiveModal>
   );
 }
 
@@ -664,78 +655,71 @@ function SessionSelector({ sessions, selectedSessions, onSelect, onClose, loadin
   });
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[60] animate-fade-in">
-      <div className="glass-card w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-slide-in">
-        <div className="p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-white">Sélectionner une séance</h2>
-            <button onClick={onClose} className="p-2 text-gray-400 hover:text-white rounded-lg hover:bg-white/10">
-              <X className="w-6 h-6" />
-            </button>
-          </div>
+    <ResponsiveModal
+      isOpen={true}
+      onClose={onClose}
+      title="Sélectionner une séance"
+    >
+      <div className="mb-6">
+        <button
+          type="button"
+          onClick={() => setShowCreateSession(true)}
+          className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 text-white font-medium transition-colors touch-target"
+        >
+          <Plus className="w-5 h-5" />
+          Créer une nouvelle séance
+        </button>
+      </div>
 
-          <div className="mb-6">
-            <button
-              type="button"
-              onClick={() => setShowCreateSession(true)}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 text-white font-medium transition-colors"
-            >
-              <Plus className="w-5 h-5" />
-              Créer une nouvelle séance
-            </button>
-          </div>
-
-          <div className="flex gap-4 mb-6">
-            <div className="flex-1 relative">
-              <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Rechercher des séances..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="input-field pl-10"
-              />
-            </div>
-            <select
-              value={selectedDifficulty}
-              onChange={(e) => setSelectedDifficulty(e.target.value)}
-              className="input-field sm:w-48 appearance-none cursor-pointer"
-            >
-              <option value="" className="bg-gray-800">Tous les niveaux</option>
-              {difficulties.map(difficulty => (
-                <option key={difficulty as string} value={difficulty as string} className="bg-gray-800">{difficulty as string}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="space-y-4">
-            {filteredSessions.map((session: any) => (
-              <div key={session.id} className="flex items-center gap-4 p-4 bg-white/5 border border-white/5 rounded-lg group hover:bg-white/10 transition-colors">
-                <div className="p-2 bg-primary-500/10 rounded-lg text-primary-400">
-                  <Layers className="w-6 h-6" />
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-medium text-white">{session.name}</h4>
-                  <p className="text-sm text-gray-400">{session.difficulty_level} • {session.duration_minutes} min</p>
-                </div>
-                <div className="flex gap-2">
-                  <button onClick={() => setEditingSession(session)} className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg">
-                    <Edit className="w-4 h-4" />
-                  </button>
-                  <button onClick={() => onSelect(session)} className="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg transition-colors font-medium">
-                    Sélectionner
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        <div className="flex-1 relative">
+          <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Rechercher des séances..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="input-field pl-10"
+          />
         </div>
+        <select
+          value={selectedDifficulty}
+          onChange={(e) => setSelectedDifficulty(e.target.value)}
+          className="input-field sm:w-48 appearance-none cursor-pointer"
+        >
+          <option value="" className="bg-gray-800">Tous les niveaux</option>
+          {difficulties.map(difficulty => (
+            <option key={difficulty as string} value={difficulty as string} className="bg-gray-800">{difficulty as string}</option>
+          ))}
+        </select>
+      </div>
+
+      <div className="space-y-4">
+        {filteredSessions.map((session: any) => (
+          <div key={session.id} className="flex items-center gap-4 p-4 bg-white/5 border border-white/5 rounded-lg group hover:bg-white/10 transition-colors">
+            <div className="p-2 bg-primary-500/10 rounded-lg text-primary-400">
+              <Layers className="w-6 h-6" />
+            </div>
+            <div className="flex-1">
+              <h4 className="font-medium text-white">{session.name}</h4>
+              <p className="text-sm text-gray-400">{session.difficulty_level} • {session.duration_minutes} min</p>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => setEditingSession(session)} className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg touch-target">
+                <Edit className="w-4 h-4" />
+              </button>
+              <button onClick={() => onSelect(session)} className="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg transition-colors font-medium touch-target">
+                Sélectionner
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
 
       {showCreateSession && (
         <CreateSessionModal
           onClose={() => setShowCreateSession(false)}
-          onSave={(newSession) => {
+          onSave={(newSession: Session) => {
             onSelect(newSession);
             setShowCreateSession(false);
           }}
@@ -752,7 +736,7 @@ function SessionSelector({ sessions, selectedSessions, onSelect, onClose, loadin
           }}
         />
       )}
-    </div>
+    </ResponsiveModal>
   );
 }
 
@@ -936,138 +920,134 @@ function CreateSessionModal({ onClose, onSave }: any) {
     }
   };
 
+  const footer = (
+    <div className="flex justify-end gap-4 w-full">
+      <button
+        type="button"
+        onClick={onClose}
+        className="px-6 py-3 rounded-xl font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors touch-target"
+      >
+        Annuler
+      </button>
+      <button
+        type="button"
+        onClick={step === 'info' ? handleInfoSubmit : handleFinish}
+        disabled={loading}
+        className="primary-button touch-target"
+      >
+        {loading ? (step === 'info' ? 'Création...' : 'Sauvegarde...') : (step === 'info' ? 'Suivant' : 'Terminer')}
+      </button>
+    </div>
+  );
+
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[70] animate-fade-in">
-      <div className="glass-card w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-slide-in">
-        <div className="p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-xl font-bold text-white">
-              {step === 'info' ? 'Créer une nouvelle séance' : 'Ajouter des exercices'}
-            </h3>
-            <button onClick={onClose} className="p-2 text-gray-400 hover:text-white rounded-lg hover:bg-white/10">
-              <X className="w-5 h-5" />
+    <ResponsiveModal
+      isOpen={true}
+      onClose={onClose}
+      title={step === 'info' ? 'Créer une nouvelle séance' : 'Ajouter des exercices'}
+      footer={footer}
+    >
+      {error && <div className="p-4 mb-4 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20">{error}</div>}
+
+      {step === 'info' ? (
+        <form onSubmit={handleInfoSubmit} className="space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Nom</label>
+            <input type="text" name="name" value={formData.name} onChange={handleChange} required className="input-field" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Description</label>
+            <textarea name="description" value={formData.description} onChange={handleChange} rows={3} className="input-field" />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Durée (min)</label>
+              <input type="number" name="duration_minutes" value={formData.duration_minutes} onChange={handleChange} min="1" required className="input-field" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Difficulté</label>
+              <select name="difficulty_level" value={formData.difficulty_level} onChange={handleChange} className="input-field appearance-none cursor-pointer">
+                <option value="Débutant" className="bg-gray-800">Débutant</option>
+                <option value="Intermédiaire" className="bg-gray-800">Intermédiaire</option>
+                <option value="Avancé" className="bg-gray-800">Avancé</option>
+              </select>
+            </div>
+          </div>
+        </form>
+      ) : (
+        <div className="space-y-6">
+          <div className="flex gap-4">
+            <button
+              type="button"
+              onClick={() => setShowGroupModal(true)}
+              className="flex-1 px-4 py-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 text-white font-medium flex items-center justify-center gap-2 touch-target"
+            >
+              <Plus className="w-5 h-5" /> Créer un groupe
+            </button>
+            <button
+              type="button"
+              onClick={() => { setActiveGroupId(null); setShowExerciseSelector(true); }}
+              className="flex-1 px-4 py-3 bg-primary-500 rounded-xl hover:bg-primary-600 text-white font-medium flex items-center justify-center gap-2 touch-target"
+            >
+              <Plus className="w-5 h-5" /> Ajouter un exercice
             </button>
           </div>
 
-          {error && <div className="p-4 mb-4 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20">{error}</div>}
-
-          {step === 'info' ? (
-            <form onSubmit={handleInfoSubmit} className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Nom</label>
-                <input type="text" name="name" value={formData.name} onChange={handleChange} required className="input-field" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Description</label>
-                <textarea name="description" value={formData.description} onChange={handleChange} rows={3} className="input-field" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Durée (min)</label>
-                  <input type="number" name="duration_minutes" value={formData.duration_minutes} onChange={handleChange} min="1" required className="input-field" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Difficulté</label>
-                  <select name="difficulty_level" value={formData.difficulty_level} onChange={handleChange} className="input-field appearance-none cursor-pointer">
-                    <option value="Débutant" className="bg-gray-800">Débutant</option>
-                    <option value="Intermédiaire" className="bg-gray-800">Intermédiaire</option>
-                    <option value="Avancé" className="bg-gray-800">Avancé</option>
-                  </select>
-                </div>
-              </div>
-              <div className="flex justify-end gap-4 pt-4 border-t border-white/5">
-                <button type="button" onClick={onClose} className="px-6 py-3 rounded-xl font-medium text-gray-300 hover:text-white hover:bg-white/10">Annuler</button>
-                <button type="submit" disabled={loading} className="primary-button">
-                  {loading ? 'Création...' : 'Suivant'}
-                </button>
-              </div>
-            </form>
-          ) : (
-            <div className="space-y-6">
-              <div className="flex gap-4">
-                <button
-                  type="button"
-                  onClick={() => setShowGroupModal(true)}
-                  className="flex-1 px-4 py-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 text-white font-medium flex items-center justify-center gap-2"
-                >
-                  <Plus className="w-5 h-5" /> Créer un groupe
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setActiveGroupId(null); setShowExerciseSelector(true); }}
-                  className="flex-1 px-4 py-3 bg-primary-500 rounded-xl hover:bg-primary-600 text-white font-medium flex items-center justify-center gap-2"
-                >
-                  <Plus className="w-5 h-5" /> Ajouter un exercice
-                </button>
-              </div>
-
-              {selectedExercises.length > 0 || exerciseGroups.length > 0 ? (
-                <div className="space-y-4">
-                  {/* Note: ExerciseGroupManager might need styling too. We'll leave it as is for now but contained in glass-card. */}
-                  <ExerciseGroupManager
-                    groups={exerciseGroups}
-                    standaloneExercises={selectedExercises.filter(ex => !ex.group_id)}
-                    onCreateGroup={(name, repetitions) => {
-                      const newGroup: ExerciseGroup = { id: `temp-group-${Date.now()}`, name, repetitions, order_index: exerciseGroups.length, exercises: [] };
-                      setExerciseGroups([...exerciseGroups, newGroup]);
-                    }}
-                    onUpdateGroup={(groupId, name, repetitions) => {
-                      setExerciseGroups(exerciseGroups.map(g => g.id === groupId ? { ...g, name, repetitions } : g));
-                    }}
-                    onDeleteGroup={(groupId) => {
-                      const group = exerciseGroups.find(g => g.id === groupId);
-                      if (group) {
-                        const exercisesFromGroup = group.exercises.map(ex => ({ ...ex, group_id: null }));
-                        setSelectedExercises([...selectedExercises, ...exercisesFromGroup]);
-                      }
-                      setExerciseGroups(exerciseGroups.filter(g => g.id !== groupId));
-                    }}
-                    onAddExercisesToGroup={(groupId, exercises) => {
-                      setExerciseGroups(exerciseGroups.map(g => g.id === groupId ? { ...g, exercises: [...g.exercises, ...exercises] } : g));
-                    }}
-                    onRemoveExerciseFromGroup={(groupId, exerciseIndex) => {
-                      setExerciseGroups(exerciseGroups.map(g => {
-                        if (g.id === groupId) {
-                          const removed = { ...g.exercises[exerciseIndex], group_id: null };
-                          setSelectedExercises([...selectedExercises, removed]);
-                          return { ...g, exercises: g.exercises.filter((_, i) => i !== exerciseIndex) };
-                        }
-                        return g;
-                      }));
-                    }}
-                    onUpdateExercise={(exerciseIndex, updates) => {
-                      // Simplified update logic for brevity
-                      const standaloneCount = selectedExercises.filter(ex => !ex.group_id).length;
-                      if (exerciseIndex < standaloneCount) {
-                        const newExercises = [...selectedExercises];
-                        newExercises[exerciseIndex] = { ...newExercises[exerciseIndex], ...updates };
-                        setSelectedExercises(newExercises);
-                      } else {
-                        // Handle group exercise update if needed
-                      }
-                    }}
-                    onRemoveExercise={(exerciseIndex) => {
-                      setSelectedExercises(selectedExercises.filter((_, i) => i !== exerciseIndex));
-                    }}
-                    onShowExercisePicker={(groupId) => {
-                      setActiveGroupId(groupId);
-                      setShowExerciseSelector(true);
-                    }}
-                  />
-                </div>
-              ) : (
-                <div className="text-center py-12 text-gray-400">Aucun exercice ajouté.</div>
-              )}
-
-              <div className="flex justify-end gap-4 pt-4 border-t border-white/5">
-                <button type="button" onClick={handleFinish} disabled={loading} className="primary-button">
-                  {loading ? 'Sauvegarde...' : 'Terminer'}
-                </button>
-              </div>
+          {selectedExercises.length > 0 || exerciseGroups.length > 0 ? (
+            <div className="space-y-4">
+              <ExerciseGroupManager
+                groups={exerciseGroups}
+                standaloneExercises={selectedExercises.filter(ex => !ex.group_id)}
+                onCreateGroup={(name, repetitions) => {
+                  const newGroup: ExerciseGroup = { id: `temp-group-${Date.now()}`, name, repetitions, order_index: exerciseGroups.length, exercises: [] };
+                  setExerciseGroups([...exerciseGroups, newGroup]);
+                }}
+                onUpdateGroup={(groupId, name, repetitions) => {
+                  setExerciseGroups(exerciseGroups.map(g => g.id === groupId ? { ...g, name, repetitions } : g));
+                }}
+                onDeleteGroup={(groupId) => {
+                  const group = exerciseGroups.find(g => g.id === groupId);
+                  if (group) {
+                    const exercisesFromGroup = group.exercises.map(ex => ({ ...ex, group_id: null }));
+                    setSelectedExercises([...selectedExercises, ...exercisesFromGroup]);
+                  }
+                  setExerciseGroups(exerciseGroups.filter(g => g.id !== groupId));
+                }}
+                onAddExercisesToGroup={(groupId, exercises) => {
+                  setExerciseGroups(exerciseGroups.map(g => g.id === groupId ? { ...g, exercises: [...g.exercises, ...exercises] } : g));
+                }}
+                onRemoveExerciseFromGroup={(groupId, exerciseIndex) => {
+                  setExerciseGroups(exerciseGroups.map(g => {
+                    if (g.id === groupId) {
+                      const removed = { ...g.exercises[exerciseIndex], group_id: null };
+                      setSelectedExercises([...selectedExercises, removed]);
+                      return { ...g, exercises: g.exercises.filter((_, i) => i !== exerciseIndex) };
+                    }
+                    return g;
+                  }));
+                }}
+                onUpdateExercise={(exerciseIndex, updates) => {
+                  const standaloneCount = selectedExercises.filter(ex => !ex.group_id).length;
+                  if (exerciseIndex < standaloneCount) {
+                    const newExercises = [...selectedExercises];
+                    newExercises[exerciseIndex] = { ...newExercises[exerciseIndex], ...updates };
+                    setSelectedExercises(newExercises);
+                  }
+                }}
+                onRemoveExercise={(exerciseIndex) => {
+                  setSelectedExercises(selectedExercises.filter((_, i) => i !== exerciseIndex));
+                }}
+                onShowExercisePicker={(groupId) => {
+                  setActiveGroupId(groupId);
+                  setShowExerciseSelector(true);
+                }}
+              />
             </div>
+          ) : (
+            <div className="text-center py-12 text-gray-400">Aucun exercice ajouté.</div>
           )}
         </div>
-      </div>
+      )}
 
       {showExerciseSelector && (
         <ExerciseSelectorModal
@@ -1087,7 +1067,7 @@ function CreateSessionModal({ onClose, onSave }: any) {
           }}
         />
       )}
-    </div>
+    </ResponsiveModal>
   );
 }
 
@@ -1208,7 +1188,7 @@ function EditSessionModal({ session, onClose, onSave }: any) {
         <ExerciseSelectorModal
           exercises={exercises}
           selectedExercises={selectedExercises}
-          onSelect={(ex) => {
+          onSelect={(ex: any) => {
             setSelectedExercises([...selectedExercises, { id: `temp-${Date.now()}`, exercise: ex, sets: 3, reps: 10, rest_time: 60, order_index: selectedExercises.length }]);
             setShowExerciseSelector(false);
           }}
@@ -1224,13 +1204,14 @@ function ExerciseSelectorModal({ exercises, selectedExercises, onSelect, onClose
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [sourceFilter, setSourceFilter] = useState<'all' | 'mine' | 'system'>('all');
+  const [showCreateExercise, setShowCreateExercise] = useState(false);
 
   const categories = [...new Set(exercises.map((e: any) => e.category))];
   const filteredExercises = exercises.filter((exercise: any) => {
     const matchesSearch = exercise.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = !selectedCategory || exercise.category === selectedCategory;
     const isNotSelected = !selectedExercises.find((se: any) => se.exercise.id === exercise.id);
-    
+
     let matchesSource = true;
     if (sourceFilter === 'mine') {
       matchesSource = exercise.coach_id !== null;
@@ -1318,7 +1299,7 @@ function ExerciseSelectorModal({ exercises, selectedExercises, onSelect, onClose
       {showCreateExercise && (
         <CreateExerciseModal
           onClose={() => setShowCreateExercise(false)}
-          onSave={(newEx) => { onSelect(newEx); setShowCreateExercise(false); }}
+          onSave={(newEx: any) => { onSelect(newEx); setShowCreateExercise(false); }}
         />
       )}
     </div>

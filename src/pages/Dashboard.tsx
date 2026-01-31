@@ -347,38 +347,42 @@ function Dashboard() {
             })}
           </p>
         </div>
-        <div className="flex gap-3">
-          <div className="flex gap-3 items-center">
+        <div className="flex gap-3 w-full md:w-auto">
+          <div className="flex gap-3 items-center flex-wrap w-full md:w-auto">
             {coachCode && (
-              <div className="hidden md:flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2 rounded-xl mr-2">
-                <span className="text-sm text-gray-400">Code Coach:</span>
-                <code className="text-primary-400 font-mono font-bold">{coachCode}</code>
+              <div className="flex items-center justify-between gap-2 bg-white/5 border border-white/10 px-4 py-2 rounded-xl w-full md:w-auto md:mr-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-400">Code Coach:</span>
+                  <code className="text-primary-400 font-mono font-bold">{coachCode}</code>
+                </div>
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(coachCode);
                     // Optional: Add toast here
                   }}
-                  className="ml-2 p-1 hover:bg-white/10 rounded-md text-gray-400 hover:text-white transition-colors"
+                  className="p-2 hover:bg-white/10 rounded-md text-gray-400 hover:text-white transition-colors touch-target"
                   title="Copier le code"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></svg>
                 </button>
               </div>
             )}
-            <Link
-              to="/clients"
-              className="glass-button flex items-center gap-2 hover:bg-primary-500/20 text-sm"
-            >
-              <Users className="w-4 h-4" />
-              <span>Nouveau Client</span>
-            </Link>
-            <Link
-              to="/programs"
-              className="primary-button flex items-center gap-2 text-sm"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Créer Programme</span>
-            </Link>
+            <div className="flex gap-2 w-full md:w-auto">
+              <Link
+                to="/clients"
+                className="glass-button flex-1 md:flex-none flex items-center justify-center gap-2 hover:bg-primary-500/20 text-sm py-2 px-4"
+              >
+                <Users className="w-4 h-4" />
+                <span>Nouveau</span>
+              </Link>
+              <Link
+                to="/programs"
+                className="primary-button flex-1 md:flex-none flex items-center justify-center gap-2 text-sm py-2 px-4"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Programme</span>
+              </Link>
+            </div>
           </div>
         </div>
       </div>

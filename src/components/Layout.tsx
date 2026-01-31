@@ -89,7 +89,7 @@ function Layout() {
             <div className="flex items-center">
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="p-2 rounded-lg text-white hover:bg-white/10 lg:hidden"
+                className="p-2 rounded-lg text-white hover:bg-white/10 lg:hidden touch-target"
               >
                 {isMobileMenuOpen ? (
                   <X className="w-6 h-6" />
@@ -99,15 +99,15 @@ function Layout() {
               </button>
               <div className="ml-2 lg:ml-0 flex items-center gap-2">
                 <img src="/logo.png" alt="Coachency" className="h-8 w-8 rounded-lg" />
-                <span className="text-xl font-bold text-white">Coachency</span>
+                <span className="text-xl font-bold text-white hidden sm:block">Coachency</span>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2">
               {/* Language Selector */}
               <div className="relative">
                 <button
                   onClick={() => setIsLanguageMenuOpen(!isLanguageMenuOpen)}
-                  className="p-2 rounded-full hover:bg-white/10 text-white flex items-center gap-2"
+                  className="p-2 rounded-full hover:bg-white/10 text-white flex items-center gap-2 touch-target"
                   title="Changer de langue"
                 >
                   <Globe className="w-5 h-5" />
@@ -130,14 +130,14 @@ function Layout() {
               </div>
               <Link
                 to="/profile"
-                className="p-2 rounded-full hover:bg-white/10 text-white"
+                className="p-2 rounded-full hover:bg-white/10 text-white touch-target"
                 title="Profile"
               >
                 <User className="w-5 h-5" />
               </Link>
               <button
                 onClick={handleSignOut}
-                className="p-2 rounded-full hover:bg-white/10 text-white"
+                className="p-2 rounded-full hover:bg-white/10 text-white touch-target"
                 title={t('auth.logout', language)}
               >
                 <LogOut className="w-5 h-5" />
