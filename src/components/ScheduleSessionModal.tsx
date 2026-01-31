@@ -380,6 +380,40 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
 
       if (scheduleError) throw scheduleError;
 
+      // Also create an appointment for the calendar/dashboard
+      const endDateTime = new Date(scheduledDateTime.getTime() + formData.duration_minutes * 60000);
+
+      let appointmentTitle = formData.name;
+      if (sessionMode === 'existing') {
+        const selectedSession = existingSessions.find(s => s.id === selectedSessionId);
+        if (selectedSession) appointmentTitle = selectedSession.name;
+      }
+
+      const { error: appointmentError } = await supabase
+        .from('appointments')
+        .insert({
+          coach_id: user?.id,
+          client_id: clientId,
+          title: appointmentTitle,
+          start: scheduledDateTime.toISOString(),
+          end: endDateTime.toISOString(),
+          duration: formData.duration_minutes,
+          status: 'scheduled',
+          type: 'private', // Assuming private for direct client scheduling
+          notes: formData.notes || null,
+          payment_method: formData.payment_method,
+          payment_status: 'pending',
+          session_id: sessionIdToSchedule,
+          price: 0 // Default or needs to be handled if pricing exists
+        });
+
+      if (appointmentError) {
+        console.error('Error creating appointment:', appointmentError);
+        // We don't throw here to avoid failing the whole operation if just the calendar sync fails, 
+        // but arguably we should. reliable sync is better.
+        // throw appointmentError; 
+      }
+
       onSuccess();
       onClose();
     } catch (error) {

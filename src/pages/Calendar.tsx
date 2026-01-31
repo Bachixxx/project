@@ -624,6 +624,26 @@ function CalendarPage() {
                   }));
                   await supabase.from('appointment_participants').insert(participants);
                 }
+
+                // If a session template is linked, also create a created scheduled_session so it appears in Client Profile
+                if (appointmentData.session_id && appointmentData.client_id && appointmentData.type === 'private') {
+                  const { error: scheduledSessionError } = await supabase
+                    .from('scheduled_sessions')
+                    .insert({
+                      coach_id: user?.id,
+                      client_id: appointmentData.client_id,
+                      session_id: appointmentData.session_id,
+                      scheduled_date: formattedData.start,
+                      notes: formattedData.notes,
+                      status: 'scheduled',
+                      payment_method: formattedData.payment_method,
+                      payment_status: 'pending'
+                    });
+
+                  if (scheduledSessionError) {
+                    console.error('Error creating linked scheduled_session:', scheduledSessionError);
+                  }
+                }
               }
 
               fetchData();
