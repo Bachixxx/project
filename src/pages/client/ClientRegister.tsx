@@ -48,6 +48,7 @@ function ClientRegister() {
         options: {
           data: {
             full_name: fullName,
+            coach_code: coachCode || null,
           }
         }
       });
