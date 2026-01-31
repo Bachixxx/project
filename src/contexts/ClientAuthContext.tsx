@@ -192,12 +192,17 @@ export function ClientAuthProvider({ children }) {
       }
 
       setClient(null);
+      localStorage.removeItem('sb-timbwznomvhlgkaljerb-auth-token');
     } catch (error: any) {
       // Ignore if session is already missing
       if (error?.message?.includes('Auth session missing') || error?.name === 'AuthSessionMissingError') {
+        setClient(null);
+        localStorage.removeItem('sb-timbwznomvhlgkaljerb-auth-token');
         return;
       }
       console.error('Error signing out:', error);
+      setClient(null);
+      localStorage.removeItem('sb-timbwznomvhlgkaljerb-auth-token');
     }
   };
 

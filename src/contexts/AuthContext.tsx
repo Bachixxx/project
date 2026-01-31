@@ -154,12 +154,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (error) throw error;
+
+      // Explicitly clear state on success
+      setUser(null);
     } catch (error: any) {
       // Ignore if session is already missing (user is effectively logged out)
       if (error?.message?.includes('Auth session missing') || error?.name === 'AuthSessionMissingError') {
+        setUser(null);
+        localStorage.removeItem('sb-timbwznomvhlgkaljerb-auth-token'); // Force clear Supabase token
         return;
       }
       console.error('SignOut error:', error);
+      // Force cleanup even on error
+      setUser(null);
+      localStorage.removeItem('sb-timbwznomvhlgkaljerb-auth-token');
       throw error;
     }
   };
