@@ -42,6 +42,7 @@ function ClientRegister() {
       setError('');
 
       // 1. Create Auth User
+      // The database trigger 'on_auth_user_created' will handle creating/linking the client profile based on metadata.
       const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
@@ -68,42 +69,11 @@ function ClientRegister() {
 
       if (!authData.user) throw new Error('Erreur lors de la création du compte');
 
-      // 2. Client Profile Handling
-      if (isInviteFlow) {
-        // INVITE FLOW: Update existing placeholder client
-        const { data: updateData, error: updateError } = await supabase
-          .rpc('update_client_auth_id', {
-            p_email: email,
-            p_auth_id: authData.user.id,
-            p_full_name: fullName || null // Update name if provided? simplified to null as before if hidden
-          });
+      console.log('User created:', authData.user.id);
 
-        if (updateError) throw updateError;
-      } else {
-        // SELF-REGISTER FLOW: Create new client profile
-        const { error: insertError } = await supabase
-          .from('clients')
-          .insert({
-            auth_id: authData.user.id,
-            email: email,
-            full_name: fullName,
-            status: 'active' // Default status
-          });
-
-        if (insertError) throw insertError;
-
-        // 3. Link Coach if Code provided (Only for self-register usually)
-        if (coachCode) {
-          const { data: linkResult, error: linkError } = await supabase
-            .rpc('link_client_to_coach', { p_code: coachCode });
-
-          if (linkError) {
-            console.error('Error linking coach:', linkError);
-            // Don't block registration, just warn? Or maybe silent fail.
-          }
-        }
-      }
-
+      // Navigate to dashboard. 
+      // Note: If email confirmation is ON, user might not have an active session yet, 
+      // but the 'clients' record is created by trigger (status=active).
       navigate('/client/dashboard');
     } catch (error: any) {
       console.error('Registration error:', error);
