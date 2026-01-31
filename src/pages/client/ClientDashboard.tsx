@@ -254,29 +254,34 @@ function ClientDashboard() {
     );
   }
 
-  // Determine the primary action (Next Workout)
-  const getNextAction = () => {
-    try {
-      // Priority 1: Scheduled Session today/soon
-      if (upcomingSessions.length > 0) {
-        const next = upcomingSessions[0];
-        if (next && next.scheduled_date) {
-          const sessionDate = new Date(next.scheduled_date);
-          const isToday = new Date().toDateString() === sessionDate.toDateString();
-          const isPast = new Date() > sessionDate;
-          const isReadyCurrent = isToday || isPast;
+  // Determine ALL primary actions (Next Workouts) for Carousel
+  const getNextActions = () => {
+    const actions = [];
 
-          return {
-            type: 'scheduled',
-            data: next,
-            title: next.session?.name || "Session planifiée",
-            subtitle: sessionDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }),
-            link: isReadyCurrent ? `/client/live-workout/${next.id}` : `/client/appointments`
-          };
-        }
+    try {
+      // Priority 1: Scheduled Sessions today/soon
+      if (upcomingSessions.length > 0) {
+        upcomingSessions.forEach(next => {
+          if (next && next.scheduled_date) {
+            const sessionDate = new Date(next.scheduled_date);
+            const isToday = new Date().toDateString() === sessionDate.toDateString();
+            const isPast = new Date() > sessionDate;
+            const isReadyCurrent = isToday || isPast;
+
+            actions.push({
+              type: 'scheduled',
+              id: next.id,
+              data: next,
+              title: next.session?.name || "Session planifiée",
+              subtitle: sessionDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }),
+              link: isReadyCurrent ? `/client/live-workout/${next.id}` : `/client/appointments`
+            });
+          }
+        });
       }
 
-      // Priority 2: Active Program - Smart Next Session
+      // Priority 2: Active Program - Smart Next Session (Only if we need more content or no scheduled sessions?)
+      // Let's add it as a secondary option if it exists
       if (clientPrograms.length > 0) {
         const prog = clientPrograms[0];
 
@@ -286,46 +291,65 @@ function ClientDashboard() {
 
           if (programSessions.length > 0) {
             // Count how many sessions from this program have been completed
-            // Logic: Count workout sessions that happened AFTER the program start date
             const programStartDate = new Date(prog.start_date || new Date());
             const sessionsCompletedCount = workoutSessions.filter((ws: any) =>
               ws.date && new Date(ws.date) >= programStartDate
             ).length;
 
-            // The next session is the one at index 'sessionsCompletedCount' % totalSessions (cycling)
-            // or just clamp to the last one if linear. Let's assume cycling for now or linear.
-            // If linear:
             const nextSessionIndex = Math.min(sessionsCompletedCount, programSessions.length - 1);
-            // Ensure index is valid
             const safeIndex = Math.max(0, nextSessionIndex);
             const nextSession = programSessions[safeIndex];
 
             if (nextSession) {
-              return {
+              actions.push({
                 type: 'program',
+                id: prog.id,
                 data: prog,
                 title: nextSession.session?.name || "Prochaine séance",
                 subtitle: `${prog.program.name} • Séance ${safeIndex + 1}`,
-                link: `/client/workout/${prog.id}` // Ideally deep link to session, but program view works
-              };
+                link: `/client/workout/${prog.id}`
+              });
             }
           }
         }
       }
     } catch (error) {
-      console.error("Error in getNextAction:", error);
+      console.error("Error in getNextActions:", error);
     }
 
     // Fallback: No active content
-    return {
-      type: 'empty',
-      title: "Aucun programme actif",
-      subtitle: "Parcourez le catalogue pour commencer",
-      link: "/marketplace"
-    };
+    if (actions.length === 0) {
+      actions.push({
+        type: 'empty',
+        id: 'empty',
+        title: "Aucun programme actif",
+        subtitle: "Parcourez le catalogue pour commencer",
+        link: "/marketplace"
+      });
+    }
+
+    return actions;
   };
 
-  const nextAction = getNextAction();
+  const nextActions = getNextActions();
+  const [currentHeroIndex, setCurrentHeroIndex] = useState(0);
+
+  // Handle cycling if actions restrict/change
+  useEffect(() => {
+    if (currentHeroIndex >= nextActions.length) {
+      setCurrentHeroIndex(0);
+    }
+  }, [nextActions.length]);
+
+  const currentAction = nextActions[currentHeroIndex] || nextActions[0];
+
+  const nextHeroSlide = () => {
+    setCurrentHeroIndex((prev) => (prev + 1) % nextActions.length);
+  };
+
+  const prevHeroSlide = () => {
+    setCurrentHeroIndex((prev) => (prev - 1 + nextActions.length) % nextActions.length);
+  };
 
   return (
     <div className="min-h-screen bg-[#09090b] text-white font-sans p-4 pb-24 md:p-8">
@@ -364,33 +388,49 @@ function ClientDashboard() {
           className="mb-6"
         />
 
-        {/* ... (Rest of dashboard content) */}
-
-        {/* ... (Existing Quick Actions link to profile can remain or be removed if redundant, keeping header one is cleaner) */}
-
-
-        {/* Hero / Next Action Card */}
+        {/* Hero / Next Action Card (Carousel) */}
         <div className="grid lg:grid-cols-3 gap-6 animate-fade-in delay-100">
           <div className="lg:col-span-2">
-            <div className="relative overflow-hidden rounded-3xl glass-card border border-white/10 p-8 h-full flex flex-col justify-center group">
+            <div className="relative overflow-hidden rounded-3xl glass-card border border-white/10 p-8 h-full flex flex-col justify-center group transition-all duration-300">
               <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-cyan-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
               <div className="relative z-10">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-xs font-bold uppercase tracking-wider mb-4 border border-blue-500/20">
-                  <PlayCircle className="w-3 h-3 fill-current" />
-                  À faire ensuite
+                <div className="flex items-center justify-between mb-4">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-xs font-bold uppercase tracking-wider border border-blue-500/20">
+                    <PlayCircle className="w-3 h-3 fill-current" />
+                    À faire ensuite {nextActions.length > 1 && `(${currentHeroIndex + 1}/${nextActions.length})`}
+                  </div>
+
+                  {nextActions.length > 1 && (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={prevHeroSlide}
+                        className="p-1.5 rounded-full bg-white/5 hover:bg-white/10 hover:text-white text-gray-400 border border-white/5 transition-colors"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={nextHeroSlide}
+                        className="p-1.5 rounded-full bg-white/5 hover:bg-white/10 hover:text-white text-gray-400 border border-white/5 transition-colors"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
                 </div>
 
-                <h2 className="text-3xl font-bold text-white mb-2">{nextAction.title}</h2>
-                <p className="text-gray-400 text-lg mb-8">{nextAction.subtitle}</p>
+                <div className="animate-fade-in" key={currentAction.id || currentHeroIndex}>
+                  <h2 className="text-3xl font-bold text-white mb-2 line-clamp-2">{currentAction.title}</h2>
+                  <p className="text-gray-400 text-lg mb-8 line-clamp-1">{currentAction.subtitle}</p>
 
-                <Link
-                  to={nextAction.link}
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-bold rounded-xl shadow-lg shadow-blue-500/25 transition-all transform hover:translate-x-1"
-                >
-                  {nextAction.type === 'empty' ? 'Voir le catalogue' : 'Commencer la séance'}
-                  <ChevronRight className="w-5 h-5" />
-                </Link>
+                  <Link
+                    to={currentAction.link}
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-bold rounded-xl shadow-lg shadow-blue-500/25 transition-all transform hover:translate-x-1"
+                  >
+                    {currentAction.type === 'empty' ? 'Voir le catalogue' : 'Commencer la séance'}
+                    <ChevronRight className="w-5 h-5" />
+                  </Link>
+                </div>
               </div>
 
               {/* Decorative Icon */}
