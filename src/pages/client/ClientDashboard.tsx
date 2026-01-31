@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Activity, Calendar, TrendingUp, Clock, PlayCircle, Dumbbell, ChevronRight, Award, Flame, Info, X } from 'lucide-react';
+import { Activity, Calendar, TrendingUp, Clock, PlayCircle, Dumbbell, ChevronRight, ChevronLeft, Award, Flame, Info, X } from 'lucide-react';
 import { useClientAuth } from '../../contexts/ClientAuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { supabase } from '../../lib/supabase';
