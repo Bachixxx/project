@@ -666,16 +666,16 @@ function ClientLiveWorkout() {
                       </div>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {currentExercise.tracking_type === 'duration' ? (
-                        <div className="col-span-2">
+                        <div className="col-span-1 md:col-span-2">
                           <div className="flex items-center gap-4">
                             <div className="flex-1">
                               <label className="text-gray-500 text-xs font-bold uppercase mb-2 block">Durée (secondes)</label>
-                              <div className="flex items-center gap-1 bg-black/20 rounded-xl p-1 border border-white/5">
+                              <div className="flex items-center justify-between bg-black/20 rounded-xl p-1 border border-white/5">
                                 <button
                                   onClick={() => handleUpdateSet(idx, 'duration_seconds', Math.max(0, (set.duration_seconds || 0) - 5))}
-                                  className="w-12 h-12 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 transition-colors active:scale-95 touch-manipulation"
+                                  className="w-12 h-12 flex-none flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 transition-colors active:scale-95 touch-manipulation"
                                 >
                                   <Minus className="w-5 h-5" />
                                 </button>
@@ -683,11 +683,11 @@ function ClientLiveWorkout() {
                                   type="number"
                                   value={set.duration_seconds || 0}
                                   onChange={(e) => handleUpdateSet(idx, 'duration_seconds', parseInt(e.target.value) || 0)}
-                                  className="flex-1 bg-transparent text-white text-center font-bold text-lg focus:outline-none"
+                                  className="flex-1 min-w-[60px] bg-transparent text-white text-center font-bold text-lg focus:outline-none"
                                 />
                                 <button
                                   onClick={() => handleUpdateSet(idx, 'duration_seconds', (set.duration_seconds || 0) + 5)}
-                                  className="w-12 h-12 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 transition-colors active:scale-95 touch-manipulation"
+                                  className="w-12 h-12 flex-none flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 transition-colors active:scale-95 touch-manipulation"
                                 >
                                   <Plus className="w-5 h-5" />
                                 </button>
@@ -695,19 +695,19 @@ function ClientLiveWorkout() {
                             </div>
                             <button
                               onClick={() => handleStartTimer(idx, set.duration_seconds || 60)}
-                              className="w-14 h-14 bg-blue-600 hover:bg-blue-500 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-600/20 transition-all active:scale-95"
+                              className="w-14 h-14 flex-none bg-blue-600 hover:bg-blue-500 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-600/20 transition-all active:scale-95"
                             >
                               <Play className="w-6 h-6 text-white fill-current ml-1" />
                             </button>
                           </div>
                         </div>
                       ) : currentExercise.tracking_type === 'distance' ? (
-                        <div className="col-span-2">
+                        <div className="col-span-1 md:col-span-2">
                           <label className="text-gray-500 text-xs font-bold uppercase mb-2 block">Distance (m)</label>
-                          <div className="flex items-center gap-1 bg-black/20 rounded-xl p-1 border border-white/5">
+                          <div className="flex items-center justify-between bg-black/20 rounded-xl p-1 border border-white/5">
                             <button
                               onClick={() => handleUpdateSet(idx, 'distance_meters', Math.max(0, (set.distance_meters || 0) - 50))}
-                              className="w-12 h-12 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 transition-colors active:scale-95 touch-manipulation"
+                              className="w-12 h-12 flex-none flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 transition-colors active:scale-95 touch-manipulation"
                             >
                               <Minus className="w-5 h-5" />
                             </button>
@@ -715,11 +715,11 @@ function ClientLiveWorkout() {
                               type="number"
                               value={set.distance_meters || 0}
                               onChange={(e) => handleUpdateSet(idx, 'distance_meters', parseInt(e.target.value) || 0)}
-                              className="flex-1 bg-transparent text-white text-center font-bold text-lg focus:outline-none"
+                              className="flex-1 min-w-[60px] bg-transparent text-white text-center font-bold text-lg focus:outline-none"
                             />
                             <button
                               onClick={() => handleUpdateSet(idx, 'distance_meters', (set.distance_meters || 0) + 50)}
-                              className="w-12 h-12 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 transition-colors active:scale-95 touch-manipulation"
+                              className="w-12 h-12 flex-none flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 transition-colors active:scale-95 touch-manipulation"
                             >
                               <Plus className="w-5 h-5" />
                             </button>
@@ -729,10 +729,10 @@ function ClientLiveWorkout() {
                         <>
                           <div>
                             <label className="text-gray-500 text-xs font-bold uppercase mb-2 block">Répétitions</label>
-                            <div className="flex items-center gap-1 bg-black/20 rounded-xl p-1 border border-white/5">
+                            <div className="flex items-center justify-between bg-black/20 rounded-xl p-1 border border-white/5">
                               <button
                                 onClick={() => handleUpdateSet(idx, 'reps', Math.max(1, set.reps - 1))}
-                                className="w-12 h-12 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 transition-colors active:scale-95 touch-manipulation"
+                                className="w-12 h-12 flex-none flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 transition-colors active:scale-95 touch-manipulation"
                               >
                                 <Minus className="w-5 h-5" />
                               </button>
@@ -740,11 +740,11 @@ function ClientLiveWorkout() {
                                 type="number"
                                 value={set.reps}
                                 onChange={(e) => handleUpdateSet(idx, 'reps', parseInt(e.target.value) || 0)}
-                                className="flex-1 bg-transparent text-white text-center font-bold text-lg focus:outline-none"
+                                className="flex-1 min-w-[60px] bg-transparent text-white text-center font-bold text-lg focus:outline-none"
                               />
                               <button
                                 onClick={() => handleUpdateSet(idx, 'reps', set.reps + 1)}
-                                className="w-12 h-12 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 transition-colors active:scale-95 touch-manipulation"
+                                className="w-12 h-12 flex-none flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 transition-colors active:scale-95 touch-manipulation"
                               >
                                 <Plus className="w-5 h-5" />
                               </button>
@@ -753,10 +753,10 @@ function ClientLiveWorkout() {
 
                           <div>
                             <label className="text-gray-500 text-xs font-bold uppercase mb-2 block">Poids (kg)</label>
-                            <div className="flex items-center gap-1 bg-black/20 rounded-xl p-1 border border-white/5">
+                            <div className="flex items-center justify-between bg-black/20 rounded-xl p-1 border border-white/5">
                               <button
                                 onClick={() => handleUpdateSet(idx, 'weight', Math.max(0, set.weight - 2.5))}
-                                className="w-12 h-12 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 transition-colors active:scale-95 touch-manipulation"
+                                className="w-12 h-12 flex-none flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 transition-colors active:scale-95 touch-manipulation"
                               >
                                 <Minus className="w-5 h-5" />
                               </button>
@@ -765,11 +765,11 @@ function ClientLiveWorkout() {
                                 step="0.5"
                                 value={set.weight}
                                 onChange={(e) => handleUpdateSet(idx, 'weight', parseFloat(e.target.value) || 0)}
-                                className="flex-1 bg-transparent text-white text-center font-bold text-lg focus:outline-none"
+                                className="flex-1 min-w-[60px] bg-transparent text-white text-center font-bold text-lg focus:outline-none"
                               />
                               <button
                                 onClick={() => handleUpdateSet(idx, 'weight', set.weight + 2.5)}
-                                className="w-12 h-12 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 transition-colors active:scale-95 touch-manipulation"
+                                className="w-12 h-12 flex-none flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 transition-colors active:scale-95 touch-manipulation"
                               >
                                 <Plus className="w-5 h-5" />
                               </button>
