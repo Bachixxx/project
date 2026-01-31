@@ -1,0 +1,74 @@
+PODS:
+  - Capacitor (8.0.2):
+    - CapacitorCordova
+  - CapacitorCordova (8.0.2)
+  - OneSignal (5.4.0):
+    - OneSignal/OneSignalComplete (= 5.4.0)
+  - OneSignal/OneSignal (5.4.0):
+    - OneSignal/OneSignalCore
+    - OneSignal/OneSignalExtension
+    - OneSignal/OneSignalLiveActivities
+    - OneSignal/OneSignalNotifications
+    - OneSignal/OneSignalOSCore
+    - OneSignal/OneSignalOutcomes
+    - OneSignal/OneSignalUser
+  - OneSignal/OneSignalComplete (5.4.0):
+    - OneSignal/OneSignal
+    - OneSignal/OneSignalInAppMessages
+    - OneSignal/OneSignalLocation
+  - OneSignal/OneSignalCore (5.4.0)
+  - OneSignal/OneSignalExtension (5.4.0):
+    - OneSignal/OneSignalCore
+    - OneSignal/OneSignalOutcomes
+  - OneSignal/OneSignalInAppMessages (5.4.0):
+    - OneSignal/OneSignalCore
+    - OneSignal/OneSignalNotifications
+    - OneSignal/OneSignalOSCore
+    - OneSignal/OneSignalOutcomes
+    - OneSignal/OneSignalUser
+  - OneSignal/OneSignalLiveActivities (5.4.0):
+    - OneSignal/OneSignalCore
+    - OneSignal/OneSignalOSCore
+    - OneSignal/OneSignalUser
+  - OneSignal/OneSignalLocation (5.4.0):
+    - OneSignal/OneSignalCore
+    - OneSignal/OneSignalNotifications
+    - OneSignal/OneSignalOSCore
+    - OneSignal/OneSignalUser
+  - OneSignal/OneSignalNotifications (5.4.0):
+    - OneSignal/OneSignalCore
+    - OneSignal/OneSignalExtension
+    - OneSignal/OneSignalOutcomes
+  - OneSignal/OneSignalOSCore (5.4.0):
+    - OneSignal/OneSignalCore
+  - OneSignal/OneSignalOutcomes (5.4.0):
+    - OneSignal/OneSignalCore
+  - OneSignal/OneSignalUser (5.4.0):
+    - OneSignal/OneSignalCore
+    - OneSignal/OneSignalNotifications
+    - OneSignal/OneSignalOSCore
+    - OneSignal/OneSignalOutcomes
+
+DEPENDENCIES:
+  - "Capacitor (from `../../node_modules/@capacitor/ios`)"
+  - "CapacitorCordova (from `../../node_modules/@capacitor/ios`)"
+  - OneSignal (< 6.0, >= 3.0)
+
+SPEC REPOS:
+  trunk:
+    - OneSignal
+
+EXTERNAL SOURCES:
+  Capacitor:
+    :path: "../../node_modules/@capacitor/ios"
+  CapacitorCordova:
+    :path: "../../node_modules/@capacitor/ios"
+
+SPEC CHECKSUMS:
+  Capacitor: 2b79172ad27f3be2d103cce88b8eb9803fdcc744
+  CapacitorCordova: 921bdb690ebe82421b24fce45552fd3dea2ae43a
+  OneSignal: 5f424f6e0dd0e55f28a0ae553851316cf5c6dcfa
+
+PODFILE CHECKSUM: e6e4229acafe98fb37cc2134b1fd13307a86392a
+
+COCOAPODS: 1.16.2

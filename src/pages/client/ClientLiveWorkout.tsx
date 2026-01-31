@@ -502,7 +502,7 @@ function ClientLiveWorkout() {
   }
 
   return (
-    <div className="min-h-screen bg-[#09090b] text-white p-4 font-sans pb-24">
+    <div className="min-h-screen bg-[#09090b] text-white p-4 font-sans pb-40">
       {/* Background Gradients */}
       <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
         <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[128px]" />
@@ -675,9 +675,9 @@ function ClientLiveWorkout() {
                               <div className="flex items-center gap-1 bg-black/20 rounded-xl p-1 border border-white/5">
                                 <button
                                   onClick={() => handleUpdateSet(idx, 'duration_seconds', Math.max(0, (set.duration_seconds || 0) - 5))}
-                                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 transition-colors"
+                                  className="w-12 h-12 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 transition-colors active:scale-95 touch-manipulation"
                                 >
-                                  <Minus className="w-4 h-4" />
+                                  <Minus className="w-5 h-5" />
                                 </button>
                                 <input
                                   type="number"
@@ -687,9 +687,9 @@ function ClientLiveWorkout() {
                                 />
                                 <button
                                   onClick={() => handleUpdateSet(idx, 'duration_seconds', (set.duration_seconds || 0) + 5)}
-                                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 transition-colors"
+                                  className="w-12 h-12 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 transition-colors active:scale-95 touch-manipulation"
                                 >
-                                  <Plus className="w-4 h-4" />
+                                  <Plus className="w-5 h-5" />
                                 </button>
                               </div>
                             </div>
@@ -707,9 +707,9 @@ function ClientLiveWorkout() {
                           <div className="flex items-center gap-1 bg-black/20 rounded-xl p-1 border border-white/5">
                             <button
                               onClick={() => handleUpdateSet(idx, 'distance_meters', Math.max(0, (set.distance_meters || 0) - 50))}
-                              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 transition-colors"
+                              className="w-12 h-12 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 transition-colors active:scale-95 touch-manipulation"
                             >
-                              <Minus className="w-4 h-4" />
+                              <Minus className="w-5 h-5" />
                             </button>
                             <input
                               type="number"
@@ -719,9 +719,9 @@ function ClientLiveWorkout() {
                             />
                             <button
                               onClick={() => handleUpdateSet(idx, 'distance_meters', (set.distance_meters || 0) + 50)}
-                              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 transition-colors"
+                              className="w-12 h-12 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 transition-colors active:scale-95 touch-manipulation"
                             >
-                              <Plus className="w-4 h-4" />
+                              <Plus className="w-5 h-5" />
                             </button>
                           </div>
                         </div>
@@ -732,9 +732,9 @@ function ClientLiveWorkout() {
                             <div className="flex items-center gap-1 bg-black/20 rounded-xl p-1 border border-white/5">
                               <button
                                 onClick={() => handleUpdateSet(idx, 'reps', Math.max(1, set.reps - 1))}
-                                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 transition-colors"
+                                className="w-12 h-12 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 transition-colors active:scale-95 touch-manipulation"
                               >
-                                <Minus className="w-4 h-4" />
+                                <Minus className="w-5 h-5" />
                               </button>
                               <input
                                 type="number"
@@ -744,9 +744,9 @@ function ClientLiveWorkout() {
                               />
                               <button
                                 onClick={() => handleUpdateSet(idx, 'reps', set.reps + 1)}
-                                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 transition-colors"
+                                className="w-12 h-12 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 transition-colors active:scale-95 touch-manipulation"
                               >
-                                <Plus className="w-4 h-4" />
+                                <Plus className="w-5 h-5" />
                               </button>
                             </div>
                           </div>
@@ -756,9 +756,9 @@ function ClientLiveWorkout() {
                             <div className="flex items-center gap-1 bg-black/20 rounded-xl p-1 border border-white/5">
                               <button
                                 onClick={() => handleUpdateSet(idx, 'weight', Math.max(0, set.weight - 2.5))}
-                                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 transition-colors"
+                                className="w-12 h-12 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 transition-colors active:scale-95 touch-manipulation"
                               >
-                                <Minus className="w-4 h-4" />
+                                <Minus className="w-5 h-5" />
                               </button>
                               <input
                                 type="number"
@@ -769,9 +769,9 @@ function ClientLiveWorkout() {
                               />
                               <button
                                 onClick={() => handleUpdateSet(idx, 'weight', set.weight + 2.5)}
-                                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-400 transition-colors"
+                                className="w-12 h-12 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 transition-colors active:scale-95 touch-manipulation"
                               >
-                                <Plus className="w-4 h-4" />
+                                <Plus className="w-5 h-5" />
                               </button>
                             </div>
                           </div>
@@ -785,35 +785,8 @@ function ClientLiveWorkout() {
           </div>
         )}
 
-        {/* Navigation Buttons */}
-        <div className="flex gap-4 pt-4">
-          <button
-            onClick={handlePreviousExercise}
-            disabled={currentExerciseIndex === 0}
-            className="flex-1 px-6 py-4 bg-[#1e293b] border border-white/5 hover:bg-[#283548] disabled:opacity-50 disabled:cursor-not-allowed rounded-2xl text-white font-bold transition-all"
-          >
-            Précédent
-          </button>
-
-          {currentExerciseIndex < exercises.length - 1 ? (
-            <button
-              onClick={handleNextExercise}
-              className="flex-1 px-6 py-4 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 rounded-2xl text-white font-bold transition-all shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2"
-            >
-              Suivant
-              <ChevronRight className="w-5 h-5" />
-            </button>
-          ) : (
-            <button
-              onClick={handleCompleteWorkout}
-              disabled={!allExercisesCompleted}
-              className="flex-1 px-6 py-4 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-2xl text-white font-bold transition-all shadow-lg shadow-green-500/20 flex items-center justify-center gap-2"
-            >
-              <CheckCircle className="w-5 h-5" />
-              Terminer
-            </button>
-          )}
-        </div>
+        {/* Navigation Buttons (Moved to Sticky Footer) */}
+        {/* Placeholder for spacing if needed */}
 
         {/* Notes Section */}
         <div className="bg-[#1e293b]/60 border border-white/5 backdrop-blur-xl rounded-2xl p-6">
@@ -826,7 +799,40 @@ function ClientLiveWorkout() {
           />
         </div>
       </div>
+
+      {/* Sticky Footer Navigation */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 pb-8 bg-[#09090b]/90 backdrop-blur-xl border-t border-white/10 z-50">
+        <div className="max-w-2xl mx-auto flex gap-4">
+          <button
+            onClick={handlePreviousExercise}
+            disabled={currentExerciseIndex === 0}
+            className="px-6 py-4 bg-[#1e293b] border border-white/5 hover:bg-[#283548] disabled:opacity-30 disabled:cursor-not-allowed rounded-2xl text-white font-bold transition-all active:scale-95"
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </button>
+
+          {currentExerciseIndex < exercises.length - 1 ? (
+            <button
+              onClick={handleNextExercise}
+              className="flex-1 px-6 py-4 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 rounded-2xl text-white font-bold transition-all shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2 active:scale-95"
+            >
+              Suivant
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          ) : (
+            <button
+              onClick={handleCompleteWorkout}
+              disabled={!allExercisesCompleted}
+              className="flex-1 px-6 py-4 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-2xl text-white font-bold transition-all shadow-lg shadow-green-500/20 flex items-center justify-center gap-2 active:scale-95"
+            >
+              <CheckCircle className="w-5 h-5" />
+              Terminer
+            </button>
+          )}
+        </div>
+      </div>
     </div>
+
   );
 }
 
