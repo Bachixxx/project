@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { LiveSessionLauncher } from './LiveSessionLauncher'; // Added
 import {
   LayoutDashboard,
   Dumbbell,
@@ -20,6 +21,7 @@ import {
   Palette,
   Smartphone,
   Tag,
+  Play, // Added
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSubscription } from '../hooks/useSubscription';
@@ -37,6 +39,7 @@ function Layout() {
   const [isWorkoutMenuOpen, setIsWorkoutMenuOpen] = useState(false);
   const [isFinancesMenuOpen, setIsFinancesMenuOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isLauncherOpen, setIsLauncherOpen] = useState(false); // Added
 
   React.useEffect(() => {
     const checkAdminStatus = async () => {
@@ -159,6 +162,19 @@ function Layout() {
         >
           <nav className="h-full overflow-y-auto py-8 px-4">
             <div className="space-y-2">
+              {/* LIVE SESSION BUTTON */}
+              <button
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  setIsLauncherOpen(true);
+                }}
+                className="w-full mb-6 group relative flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-xl text-white font-bold shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40 transform hover:scale-[1.02] transition-all"
+              >
+                <div className="absolute inset-0 bg-white/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                <Play className="w-5 h-5 fill-current" />
+                <span className="text-base tracking-wide uppercase font-extrabold">Démarrer Live</span>
+              </button>
+
               <NavLink
                 to="/dashboard"
                 icon={<LayoutDashboard className="w-5 h-5" />}
@@ -325,6 +341,7 @@ function Layout() {
           </div>
         </main>
       </div>
+      <LiveSessionLauncher isOpen={isLauncherOpen} onClose={() => setIsLauncherOpen(false)} />
     </div>
   );
 }
