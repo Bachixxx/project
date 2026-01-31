@@ -18,12 +18,14 @@ function Login() {
   const { signIn, user, isPasswordRecovery } = useAuth();
 
   useEffect(() => {
+    // Check for recovery mode immediately from URL hash
+    if (window.location.hash.includes('type=recovery') || isPasswordRecovery) {
+      navigate('/update-password');
+      return;
+    }
+
     if (user) {
-      if (isPasswordRecovery || window.location.hash.includes('type=recovery')) {
-        navigate('/update-password');
-      } else {
-        navigate('/dashboard');
-      }
+      navigate('/dashboard');
     }
   }, [user, navigate, isPasswordRecovery]);
 

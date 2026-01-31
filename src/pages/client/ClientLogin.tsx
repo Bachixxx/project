@@ -17,12 +17,14 @@ function ClientLogin() {
   const { signIn, client, isPasswordRecovery } = useClientAuth();
 
   useEffect(() => {
+    // Check for recovery mode immediately from URL hash
+    if (window.location.hash.includes('type=recovery') || isPasswordRecovery) {
+      navigate('/update-password');
+      return;
+    }
+
     if (client) {
-      if (isPasswordRecovery || window.location.hash.includes('type=recovery')) {
-        navigate('/update-password');
-      } else {
-        navigate('/client/dashboard');
-      }
+      navigate('/client/dashboard');
     }
   }, [client, navigate, isPasswordRecovery]);
 
