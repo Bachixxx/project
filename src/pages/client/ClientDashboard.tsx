@@ -23,6 +23,8 @@ function ClientDashboard() {
     streak: 0
   });
 
+  const [currentHeroIndex, setCurrentHeroIndex] = useState(0);
+
   useEffect(() => {
     if (client) {
       fetchClientData();
@@ -246,14 +248,6 @@ function ClientDashboard() {
     return 'Bonsoir';
   };
 
-  if (authLoading || loading && !clientPrograms.length) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-[#0f172a]">
-        <div className="w-16 h-16 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin"></div>
-      </div>
-    );
-  }
-
   // Determine ALL primary actions (Next Workouts) for Carousel
   const getNextActions = () => {
     const actions = [];
@@ -332,7 +326,6 @@ function ClientDashboard() {
   };
 
   const nextActions = getNextActions();
-  const [currentHeroIndex, setCurrentHeroIndex] = useState(0);
 
   // Handle cycling if actions restrict/change
   useEffect(() => {
@@ -340,6 +333,14 @@ function ClientDashboard() {
       setCurrentHeroIndex(0);
     }
   }, [nextActions.length]);
+
+  if (authLoading || loading && !clientPrograms.length) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-[#0f172a]">
+        <div className="w-16 h-16 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   const currentAction = nextActions[currentHeroIndex] || nextActions[0];
 
