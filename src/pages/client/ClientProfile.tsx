@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { User, Mail, Phone, Calendar, Weight, Ruler, Edit, Save, X, Shield, Settings, Bell, LogOut, Camera, ChevronRight } from 'lucide-react';
+import { TutorialCard } from '../../components/client/TutorialCard';
 import { useClientAuth } from '../../contexts/ClientAuthContext';
 import { supabase } from '../../lib/supabase';
 import { useNavigate } from 'react-router-dom';
@@ -303,6 +304,15 @@ function ClientProfile() {
             {t('profile.settings')}
           </button>
         </div>
+
+        <TutorialCard
+          tutorialId="profile_intro"
+          title="Votre Espace Personnel 👤"
+          message="Mettez à jour vos informations, gérez votre abonnement et retrouvez les documents partagés par votre coach."
+          className="mb-6"
+        />
+
+        {/* Content Area */}
 
         {/* Content Area */}
         {activeTab === 'profile' ? (

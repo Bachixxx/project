@@ -8,6 +8,7 @@ import getDay from 'date-fns/getDay';
 import fr from 'date-fns/locale/fr';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { Calendar, Users, User, Loader, X, Clock, DollarSign, FileText, Dumbbell, CheckCircle, Play, ChevronLeft, ChevronRight } from 'lucide-react';
+import { TutorialCard } from '../../components/client/TutorialCard';
 import { useClientAuth } from '../../contexts/ClientAuthContext';
 import { supabase } from '../../lib/supabase';
 import { createCheckoutSession } from '../../lib/stripe';
@@ -576,103 +577,111 @@ function ClientAppointments() {
         </button>
       </div>
 
-      {loading ? (
-        <div className="flex items-center justify-center p-12">
-          <Loader className="w-8 h-8 text-white animate-spin" />
-        </div>
-      ) : (
-        <div className="grid gap-6 grid-cols-1 xl:grid-cols-4 w-full">
-          {/* Mobile View */}
-          <div className="md:hidden col-span-1 space-y-4">
-            <div className="flex items-center justify-between bg-white/5 p-4 rounded-xl border border-white/5">
-              <button
-                onClick={() => navigateWeek('prev')}
-                className="p-2 hover:bg-white/10 rounded-lg text-white/70 hover:text-white transition-colors"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              <span className="text-white font-medium">
-                {format(weekDays[0], 'd MMM', { locale: fr })} - {format(weekDays[6], 'd MMM yyyy', { locale: fr })}
-              </span>
-              <button
-                onClick={() => navigateWeek('next')}
-                className="p-2 hover:bg-white/10 rounded-lg text-white/70 hover:text-white transition-colors"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </div>
+      <TutorialCard
+        tutorialId="appointments_intro"
+        title="Gérez votre agenda 📅"
+        message="Réservez vos séances de coaching, consultez vos prochains créneaux et synchronisez-les avec votre agenda personnel."
+        className="mb-8"
+      />
 
-            <div className="space-y-4">
-              {weekDays.map((day) => {
-                const dayEvents = currentSessions.filter(event =>
-                  new Date(event.start).getDate() === day.getDate() &&
-                  new Date(event.start).getMonth() === day.getMonth() &&
-                  new Date(event.start).getFullYear() === day.getFullYear()
-                ).sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
-
-                const isToday = new Date().toDateString() === day.toDateString();
-
-                return (
-                  <div key={day.toISOString()} className={`rounded-xl border ${isToday ? 'bg-white/5 border-blue-500/30' : 'bg-transparent border-transparent'}`}>
-                    <div className="px-4 py-2 flex items-center gap-2">
-                      <span className={`text-sm font-medium ${isToday ? 'text-blue-400' : 'text-white/60'}`}>
-                        {format(day, 'EEEE d', { locale: fr })}
-                      </span>
-                      {dayEvents.length > 0 && (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-white/10 text-white/60">
-                          {dayEvents.length}
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="space-y-2 px-2 pb-2">
-                      {dayEvents.length > 0 ? (
-                        dayEvents.map(event => (
-                          <div
-                            key={event.id}
-                            onClick={() => handleSelectEvent(event)}
-                            className={`p-3 rounded-lg border border-white/5 cursor-pointer transition-colors ${event.type === 'personal'
-                              ? 'bg-blue-500/10 hover:bg-blue-500/20 border-l-4 border-l-blue-500'
-                              : 'bg-emerald-500/10 hover:bg-emerald-500/20 border-l-4 border-l-emerald-500'
-                              }`}
-                          >
-                            <div className="flex justify-between items-start mb-1">
-                              <span className="font-medium text-white text-sm">{event.title}</span>
-                              {event.registered && (
-                                <CheckCircle className="w-4 h-4 text-emerald-400" />
-                              )}
-                            </div>
-                            <div className="flex items-center gap-3 text-xs text-white/60">
-                              <span className="flex items-center gap-1">
-                                <Clock className="w-3 h-3" />
-                                {format(event.start, 'HH:mm')} - {format(event.end, 'HH:mm')}
-                              </span>
-                              {event.coach && (
-                                <span className="flex items-center gap-1">
-                                  <User className="w-3 h-3" />
-                                  {event.coach.full_name}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        isToday && (
-                          <div className="p-4 text-center text-sm text-white/40 italic">
-                            Aucun événement aujourd'hui
-                          </div>
-                        )
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+      {
+        loading ? (
+          <div className="flex items-center justify-center p-12" >
+            <Loader className="w-8 h-8 text-white animate-spin" />
           </div>
+        ) : (
+          <div className="grid gap-6 grid-cols-1 xl:grid-cols-4 w-full">
+            {/* Mobile View */}
+            <div className="md:hidden col-span-1 space-y-4">
+              <div className="flex items-center justify-between bg-white/5 p-4 rounded-xl border border-white/5">
+                <button
+                  onClick={() => navigateWeek('prev')}
+                  className="p-2 hover:bg-white/10 rounded-lg text-white/70 hover:text-white transition-colors"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <span className="text-white font-medium">
+                  {format(weekDays[0], 'd MMM', { locale: fr })} - {format(weekDays[6], 'd MMM yyyy', { locale: fr })}
+                </span>
+                <button
+                  onClick={() => navigateWeek('next')}
+                  className="p-2 hover:bg-white/10 rounded-lg text-white/70 hover:text-white transition-colors"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              </div>
 
-          {/* Desktop View */}
-          <div className="hidden md:block xl:col-span-3 glass p-6 w-full rounded-2xl">
-            <style>{`
+              <div className="space-y-4">
+                {weekDays.map((day) => {
+                  const dayEvents = currentSessions.filter(event =>
+                    new Date(event.start).getDate() === day.getDate() &&
+                    new Date(event.start).getMonth() === day.getMonth() &&
+                    new Date(event.start).getFullYear() === day.getFullYear()
+                  ).sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
+
+                  const isToday = new Date().toDateString() === day.toDateString();
+
+                  return (
+                    <div key={day.toISOString()} className={`rounded-xl border ${isToday ? 'bg-white/5 border-blue-500/30' : 'bg-transparent border-transparent'}`}>
+                      <div className="px-4 py-2 flex items-center gap-2">
+                        <span className={`text-sm font-medium ${isToday ? 'text-blue-400' : 'text-white/60'}`}>
+                          {format(day, 'EEEE d', { locale: fr })}
+                        </span>
+                        {dayEvents.length > 0 && (
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-white/10 text-white/60">
+                            {dayEvents.length}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="space-y-2 px-2 pb-2">
+                        {dayEvents.length > 0 ? (
+                          dayEvents.map(event => (
+                            <div
+                              key={event.id}
+                              onClick={() => handleSelectEvent(event)}
+                              className={`p-3 rounded-lg border border-white/5 cursor-pointer transition-colors ${event.type === 'personal'
+                                ? 'bg-blue-500/10 hover:bg-blue-500/20 border-l-4 border-l-blue-500'
+                                : 'bg-emerald-500/10 hover:bg-emerald-500/20 border-l-4 border-l-emerald-500'
+                                }`}
+                            >
+                              <div className="flex justify-between items-start mb-1">
+                                <span className="font-medium text-white text-sm">{event.title}</span>
+                                {event.registered && (
+                                  <CheckCircle className="w-4 h-4 text-emerald-400" />
+                                )}
+                              </div>
+                              <div className="flex items-center gap-3 text-xs text-white/60">
+                                <span className="flex items-center gap-1">
+                                  <Clock className="w-3 h-3" />
+                                  {format(event.start, 'HH:mm')} - {format(event.end, 'HH:mm')}
+                                </span>
+                                {event.coach && (
+                                  <span className="flex items-center gap-1">
+                                    <User className="w-3 h-3" />
+                                    {event.coach.full_name}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          isToday && (
+                            <div className="p-4 text-center text-sm text-white/40 italic">
+                              Aucun événement aujourd'hui
+                            </div>
+                          )
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Desktop View */}
+            <div className="hidden md:block xl:col-span-3 glass p-6 w-full rounded-2xl">
+              <style>{`
           .rbc-calendar { font-family: 'Inter', system-ui, sans-serif; color: #a1a1aa; }
           
           /* Toolbar */
@@ -822,138 +831,141 @@ function ClientAppointments() {
           /* Off Range */
           .rbc-off-range-bg { background: transparent !important; }
         `}</style>
-            <BigCalendar
-              localizer={localizer}
-              events={currentSessions}
-              startAccessor="start"
-              endAccessor="end"
-              style={{ height: 600 }}
-              views={['month', 'week', 'day']}
-              defaultView="week"
-              onSelectEvent={handleSelectEvent}
-              className="text-white calendar-dark"
-              formats={formats}
-              messages={{
-                allDay: 'Journée',
-                previous: 'Précédent',
-                next: 'Suivant',
-                today: "Aujourd'hui",
-                month: 'Mois',
-                week: 'Semaine',
-                day: 'Jour',
-                agenda: 'Agenda',
-                date: 'Date',
-                time: 'Heure',
-                event: 'Événement',
-                showMore: (total) => `+ ${total} événement${total > 1 ? 's' : ''}`,
-                noEventsInRange: activeTab === 'personal'
-                  ? "Aucune séance programmée dans cette période"
-                  : "Aucune séance de groupe disponible dans cette période"
-              }}
-              min={new Date(0, 0, 0, 6, 0, 0)}
-              max={new Date(0, 0, 0, 22, 0, 0)}
-              slotPropGetter={(date) => {
-                const hour = date.getHours();
-                const isWorkingHour = hour >= 9 && hour < 18;
-                return {
-                  className: isWorkingHour ? '' : 'bg-black/20',
+              <BigCalendar
+                localizer={localizer}
+                events={currentSessions}
+                startAccessor="start"
+                endAccessor="end"
+                style={{ height: 600 }}
+                views={['month', 'week', 'day']}
+                defaultView="week"
+                onSelectEvent={handleSelectEvent}
+                className="text-white calendar-dark"
+                formats={formats}
+                messages={{
+                  allDay: 'Journée',
+                  previous: 'Précédent',
+                  next: 'Suivant',
+                  today: "Aujourd'hui",
+                  month: 'Mois',
+                  week: 'Semaine',
+                  day: 'Jour',
+                  agenda: 'Agenda',
+                  date: 'Date',
+                  time: 'Heure',
+                  event: 'Événement',
+                  showMore: (total) => `+ ${total} événement${total > 1 ? 's' : ''}`,
+                  noEventsInRange: activeTab === 'personal'
+                    ? "Aucune séance programmée dans cette période"
+                    : "Aucune séance de groupe disponible dans cette période"
+                }}
+                min={new Date(0, 0, 0, 6, 0, 0)}
+                max={new Date(0, 0, 0, 22, 0, 0)}
+                slotPropGetter={(date) => {
+                  const hour = date.getHours();
+                  const isWorkingHour = hour >= 9 && hour < 18;
+                  return {
+                    className: isWorkingHour ? '' : 'bg-black/20',
+                    style: {
+                      backgroundColor: isWorkingHour ? 'transparent' : 'rgba(0,0,0,0.2)'
+                    }
+                  };
+                }}
+                eventPropGetter={(event) => ({
+                  className: `${event.type === 'personal' ? 'bg-blue-600/90' : 'bg-emerald-600/90'} backdrop-blur-md`,
                   style: {
-                    backgroundColor: isWorkingHour ? 'transparent' : 'rgba(0,0,0,0.2)'
+                    fontSize: '0.85rem',
+                    padding: '6px 10px',
+                    borderLeft: event.type === 'personal' ? '3px solid #60a5fa' : '3px solid #34d399'
                   }
-                };
-              }}
-              eventPropGetter={(event) => ({
-                className: `${event.type === 'personal' ? 'bg-blue-600/90' : 'bg-emerald-600/90'} backdrop-blur-md`,
-                style: {
-                  fontSize: '0.85rem',
-                  padding: '6px 10px',
-                  borderLeft: event.type === 'personal' ? '3px solid #60a5fa' : '3px solid #34d399'
-                }
-              })}
-              components={{
-                event: ({ event }: any) => (
-                  <div className="w-full h-full flex flex-col justify-center">
-                    <div className="flex items-center gap-1.5 mb-0.5">
-                      {event.type === 'personal' ? <User className="w-3 h-3 text-blue-200" /> : <Users className="w-3 h-3 text-emerald-200" />}
-                      <span className="font-semibold leading-tight truncate text-sm shadow-sm">{event.title}</span>
-                    </div>
-                    <div className="text-xs opacity-75 truncate pl-4.5">
-                      {format(event.start, 'HH:mm')} - {format(event.end, 'HH:mm')}
-                    </div>
-                  </div>
-                ),
-              }}
-            />
-          </div>
-
-          <div className="xl:col-span-1 space-y-4">
-            <div className="glass-card p-6 h-full w-full">
-              <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                <Calendar className="w-5 h-5" />
-                {activeTab === 'personal' ? 'Prochaines séances' : 'Séances disponibles'}
-              </h2>
-              <div className="space-y-4 w-full">
-                {upcomingSessions.length > 0 ? (
-                  upcomingSessions.map((s) => (
-                    <div
-                      key={s.id}
-                      onClick={() => handleSelectEvent(s)}
-                      className="flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 transition-colors rounded-lg mb-3 w-full overflow-hidden cursor-pointer"
-                    >
-                      {s.type === 'personal' ? (
-                        <User className="w-5 h-5 text-blue-300" />
-                      ) : (
-                        <Users className="w-5 h-5 text-green-300" />
-                      )}
-                      <div className="flex-1 min-w-0 overflow-hidden">
-                        <p className="text-white font-medium truncate">{s.title}</p>
-                        <p className="text-white/60 text-sm truncate">
-                          {format(s.start, 'dd/MM/yyyy HH:mm')}
-                        </p>
-                        {s.registered && (
-                          <span className="inline-flex items-center gap-1 text-xs text-green-300 mt-1">
-                            <CheckCircle className="w-3 h-3" />
-                            Inscrit
-                          </span>
-                        )}
+                })}
+                components={{
+                  event: ({ event }: any) => (
+                    <div className="w-full h-full flex flex-col justify-center">
+                      <div className="flex items-center gap-1.5 mb-0.5">
+                        {event.type === 'personal' ? <User className="w-3 h-3 text-blue-200" /> : <Users className="w-3 h-3 text-emerald-200" />}
+                        <span className="font-semibold leading-tight truncate text-sm shadow-sm">{event.title}</span>
+                      </div>
+                      <div className="text-xs opacity-75 truncate pl-4.5">
+                        {format(event.start, 'HH:mm')} - {format(event.end, 'HH:mm')}
                       </div>
                     </div>
-                  ))
-                ) : (
-                  <div className="text-center py-6 text-white/60">
-                    {activeTab === 'personal'
-                      ? 'Aucune séance programmée'
-                      : 'Aucune séance de groupe disponible'}
-                  </div>
-                )}
+                  ),
+                }}
+              />
+            </div>
+
+            <div className="xl:col-span-1 space-y-4">
+              <div className="glass-card p-6 h-full w-full">
+                <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                  <Calendar className="w-5 h-5" />
+                  {activeTab === 'personal' ? 'Prochaines séances' : 'Séances disponibles'}
+                </h2>
+                <div className="space-y-4 w-full">
+                  {upcomingSessions.length > 0 ? (
+                    upcomingSessions.map((s) => (
+                      <div
+                        key={s.id}
+                        onClick={() => handleSelectEvent(s)}
+                        className="flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 transition-colors rounded-lg mb-3 w-full overflow-hidden cursor-pointer"
+                      >
+                        {s.type === 'personal' ? (
+                          <User className="w-5 h-5 text-blue-300" />
+                        ) : (
+                          <Users className="w-5 h-5 text-green-300" />
+                        )}
+                        <div className="flex-1 min-w-0 overflow-hidden">
+                          <p className="text-white font-medium truncate">{s.title}</p>
+                          <p className="text-white/60 text-sm truncate">
+                            {format(s.start, 'dd/MM/yyyy HH:mm')}
+                          </p>
+                          {s.registered && (
+                            <span className="inline-flex items-center gap-1 text-xs text-green-300 mt-1">
+                              <CheckCircle className="w-3 h-3" />
+                              Inscrit
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-6 text-white/60">
+                      {activeTab === 'personal'
+                        ? 'Aucune séance programmée'
+                        : 'Aucune séance de groupe disponible'}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
-      {isModalOpen && selectedSession && (
-        <SessionModal
-          session={selectedSession}
-          exercises={sessionExercises}
-          loadingExercises={loadingExercises}
-          onClose={() => {
-            setIsModalOpen(false);
-            setSessionExercises([]);
-          }}
-          onRegister={handleRegister}
-          onUnregister={handleUnregister}
-          onStartTraining={() => {
-            if (selectedSession.source === 'appointment') {
-              navigate(`/client/live-workout/appointment/${selectedSession.id}`);
-            } else {
-              navigate(`/client/live-workout/${selectedSession.id}`);
-            }
-          }}
-          registering={registering}
-        />
-      )}
-    </div>
+      {
+        isModalOpen && selectedSession && (
+          <SessionModal
+            session={selectedSession}
+            exercises={sessionExercises}
+            loadingExercises={loadingExercises}
+            onClose={() => {
+              setIsModalOpen(false);
+              setSessionExercises([]);
+            }}
+            onRegister={handleRegister}
+            onUnregister={handleUnregister}
+            onStartTraining={() => {
+              if (selectedSession.source === 'appointment') {
+                navigate(`/client/live-workout/appointment/${selectedSession.id}`);
+              } else {
+                navigate(`/client/live-workout/${selectedSession.id}`);
+              }
+            }}
+            registering={registering}
+          />
+        )
+      }
+    </div >
   );
 }
 

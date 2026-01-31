@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Clock, Dumbbell, Target, ChevronRight, PlayCircle, Trophy, Activity, Filter, Search } from 'lucide-react';
+import { TutorialCard } from '../../components/client/TutorialCard';
 import { Link } from 'react-router-dom';
 import { useClientAuth } from '../../contexts/ClientAuthContext';
 import { supabase } from '../../lib/supabase';
@@ -179,6 +180,15 @@ function ClientWorkouts() {
             </div>
           </div>
         </div>
+
+        <TutorialCard
+          tutorialId="workouts_intro"
+          title="Vos Programmes 🏋️‍♂️"
+          message="Retrouvez ici tous vos programmes d'entraînement assignés. Cliquez sur une séance pour voir les détails et commencer."
+          className="mb-2"
+        />
+
+        {/* Programs List */}
 
         {/* Programs List */}
         <div className="space-y-6 animate-fade-in delay-200">
