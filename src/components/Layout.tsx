@@ -157,7 +157,7 @@ function Layout() {
 
         {/* Sidebar */}
         <aside
-          className={`fixed lg:sticky top-16 w-64 h-[calc(100vh-4rem)] bg-black/40 backdrop-blur-xl border-r border-white/5 z-40 transform transition-transform duration-300 lg:transform-none ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+          className={`fixed lg:sticky top-[calc(4rem+env(safe-area-inset-top))] w-64 h-[calc(100vh-4rem-env(safe-area-inset-top))] bg-black/40 backdrop-blur-xl border-r border-white/5 z-40 transform transition-transform duration-300 lg:transform-none ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
             }`}
         >
           <nav className="h-full overflow-y-auto py-8 px-4">
@@ -346,7 +346,16 @@ function Layout() {
   );
 }
 
-function NavLink({ to, icon, text, active, className = '', onClick }) {
+interface NavLinkProps {
+  to: string;
+  icon: React.ReactNode;
+  text: string;
+  active: boolean;
+  className?: string;
+  onClick?: () => void;
+}
+
+function NavLink({ to, icon, text, active, className = '', onClick }: NavLinkProps) {
   return (
     <Link
       to={to}
