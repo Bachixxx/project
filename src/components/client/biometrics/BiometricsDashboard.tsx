@@ -432,7 +432,7 @@ export function BiometricsDashboard({ clientId, readOnly = false }: BiometricsDa
                                 </div>
                             </div>
                         )}
-                        <PhotoEvolution clientId={clientId} />
+                        <PhotoEvolution clientId={clientId} readOnly={readOnly} />
                     </div>
                 </div>
             )}
