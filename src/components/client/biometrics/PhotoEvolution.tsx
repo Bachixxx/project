@@ -271,5 +271,6 @@ export function PhotoEvolution({ clientId }: PhotoEvolutionProps) {
                     </div>
                 )}
             </div>
-            );
+        </div>
+    );
 }
