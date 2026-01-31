@@ -7,6 +7,8 @@ import { eye } from 'react-icons-kit/feather/eye';
 import { supabase } from '../../lib/supabase';
 
 function ClientRegister() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
   const [password, setPassword] = useState('');
