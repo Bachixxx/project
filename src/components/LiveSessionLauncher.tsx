@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Search, Calendar, Play, Layers, Dumbbell, ChevronRight, User } from 'lucide-react';
+import { SessionSelector } from './library/SessionSelector';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useLiveSession } from '../contexts/LiveSessionContext';
@@ -54,6 +55,7 @@ export function LiveSessionLauncher({ isOpen, onClose, initialClientId }: LiveSe
     // Smart Options Data
     const [todaySession, setTodaySession] = useState<ScheduledSession | null>(null);
     const [nextProgramSession, setNextProgramSession] = useState<ClientProgram | null>(null);
+    const [showSessionSelector, setShowSessionSelector] = useState(false);
 
     useEffect(() => {
         if (isOpen && !initialClientId) {
@@ -76,6 +78,7 @@ export function LiveSessionLauncher({ isOpen, onClose, initialClientId }: LiveSe
             setSearchQuery('');
             setTodaySession(null);
             setNextProgramSession(null);
+            setShowSessionSelector(false);
             if (!initialClientId) setSelectedClientId(null);
         }
     }, [isOpen]);
@@ -398,7 +401,7 @@ export function LiveSessionLauncher({ isOpen, onClose, initialClientId }: LiveSe
                                         // Let's assume we implement a picker step NEXT.
                                         // Or just rely on user going to "Sessions" page? No, that breaks flow.
                                         // Let's alert for now or implement picker later.
-                                        alert("Bientôt disponible : Sélecteur de séance complet");
+                                        setShowSessionSelector(true);
                                     }}
                                     className="w-full p-4 border border-white/10 rounded-xl flex items-center gap-4 hover:bg-white/5 transition-all group"
                                 >
@@ -431,7 +434,19 @@ export function LiveSessionLauncher({ isOpen, onClose, initialClientId }: LiveSe
                     </div>
                 )}
 
+
+
             </div>
+
+            {showSessionSelector && (
+                <SessionSelector
+                    onSelect={(session) => {
+                        handleLaunch(session.id, 'library');
+                        setShowSessionSelector(false);
+                    }}
+                    onClose={() => setShowSessionSelector(false)}
+                />
+            )}
         </div>
     );
 }
