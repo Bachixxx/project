@@ -46,7 +46,6 @@ function Dashboard() {
   const [revenueData, setRevenueData] = useState<{ name: string, value: number }[]>([]);
   const [timeRange, setTimeRange] = useState<'6months' | 'year'>('6months');
   const [allPayments, setAllPayments] = useState<any[]>([]);
-  const [allPayments, setAllPayments] = useState<any[]>([]);
   const [upcomingAppointments, setUpcomingAppointments] = useState<any[]>([]);
   const [coachCode, setCoachCode] = useState<string | null>(null);
 
