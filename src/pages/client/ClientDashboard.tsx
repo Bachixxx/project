@@ -4,7 +4,8 @@ import { Activity, Calendar, TrendingUp, Clock, PlayCircle, Dumbbell, ChevronRig
 import { useClientAuth } from '../../contexts/ClientAuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { supabase } from '../../lib/supabase';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { TutorialCard } from '../../components/client/TutorialCard';
 
 function ClientDashboard() {
   const { client: authClient, loading: authLoading } = useClientAuth();
@@ -354,6 +355,14 @@ function ClientDashboard() {
             </button>
           </div>
         </div>
+
+        {/* Tutorial Card */}
+        <TutorialCard
+          tutorialId="dashboard_welcome"
+          title="Bienvenue sur votre QG 🏠"
+          message="C'est ici que tout se passe. Retrouvez votre prochaine séance, vos messages non lus et un résumé de votre progression. Cliquez sur une séance pour voir les détails."
+          className="mb-6"
+        />
 
         {/* ... (Rest of dashboard content) */}
 

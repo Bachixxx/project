@@ -3,6 +3,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { Award, Target, ArrowUpRight, Activity, Calendar, Plus, X, Dumbbell } from 'lucide-react';
 import { useClientAuth } from '../../contexts/ClientAuthContext';
 import { supabase } from '../../lib/supabase';
+import { TutorialCard } from '../../components/client/TutorialCard';
 
 interface WorkoutLog {
   id: string;
@@ -216,6 +217,13 @@ function ClientProgress() {
           </div>
         </div>
 
+        <TutorialCard
+          tutorialId="progress_tracking"
+          title="Suivez votre transformation 📈"
+          message="Ajoutez régulièrement vos pesées et mensurations via le bouton 'Ajouter un graphique'. Vos graphiques se mettront à jour automatiquement pour visualiser vos efforts."
+          className="mb-8"
+        />
+
         {workoutLogs.length === 0 ? (
           <div className="glass-card rounded-3xl p-12 text-center border border-dashed border-white/20 flex flex-col items-center justify-center animate-fade-in delay-100">
             <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-6">
@@ -385,7 +393,7 @@ function ClientProgress() {
 
               {goals.length > 0 ? (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {goals.map((goal, index) => (
+                  {goals.map((goal: any, index: number) => (
                     <div key={index} className="bg-gradient-to-br from-white/5 to-white/[0.02] p-5 rounded-2xl border border-white/5 hover:border-white/10 transition-all group relative overflow-hidden">
                       <div className="absolute top-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity">
                         <ArrowUpRight className="w-4 h-4 text-white/40" />
