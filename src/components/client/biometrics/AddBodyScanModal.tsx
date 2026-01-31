@@ -176,8 +176,8 @@ export function AddBodyScanModal({ isOpen, onClose, onSuccess }: AddBodyScanModa
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-            <div className="bg-[#1e293b] w-full max-w-md rounded-2xl border border-white/10 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-                <div className="p-4 md:p-6 border-b border-white/10 flex justify-between items-center bg-white/5">
+            <div className="bg-[#1e293b] w-full max-w-md rounded-2xl border border-white/10 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col max-h-[90dvh]">
+                <div className="p-4 md:p-6 border-b border-white/10 flex justify-between items-center bg-white/5 shrink-0">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400">
                             <Scale className="w-5 h-5" />
@@ -189,7 +189,7 @@ export function AddBodyScanModal({ isOpen, onClose, onSuccess }: AddBodyScanModa
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="p-4 md:p-6 space-y-4 max-h-[70vh] overflow-y-auto custom-scrollbar">
+                <form onSubmit={handleSubmit} className="p-4 md:p-6 space-y-4 overflow-y-auto custom-scrollbar flex-1 min-h-0">
                     {error && (
                         <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-3">
                             <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
@@ -333,7 +333,7 @@ export function AddBodyScanModal({ isOpen, onClose, onSuccess }: AddBodyScanModa
                     {renderSegmentalInputs('fat')}
                 </form>
 
-                <div className="p-4 md:p-6 border-t border-white/10 bg-white/5 flex gap-3">
+                <div className="p-4 md:p-6 border-t border-white/10 bg-white/5 flex gap-3 shrink-0">
                     <button
                         onClick={onClose}
                         className="flex-1 py-3 px-4 rounded-xl font-medium text-gray-300 hover:text-white hover:bg-white/5 transition-all text-sm"
