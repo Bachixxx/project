@@ -13,7 +13,7 @@ declare global {
 }
 
 function ClientProfile() {
-  const { client, signOut } = useClientAuth();
+  const { client, signOut, refreshClient } = useClientAuth();
   const navigate = useNavigate();
   const [clientDetails, setClientDetails] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -107,7 +107,8 @@ function ClientProfile() {
       alert("Coach modifié avec succès !");
       setShowCoachModal(false);
       setCoachCode('');
-      // Refresh data
+      // Refresh data (Global for branding/context and Local for UI)
+      await refreshClient();
       await fetchClientDetails();
     } catch (err: any) {
       console.error("Error changing coach:", err);
