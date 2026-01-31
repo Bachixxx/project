@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Camera, Grid, Columns, Plus, Trash2, Calendar, ChevronRight } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
-import { useClientAuth } from '../../../contexts/ClientAuthContext';
+// Removed useClientAuth import
 import { ComparisonSlider } from './ComparisonSlider';
 import { UploadPhotoModal } from './UploadPhotoModal';
 
@@ -12,8 +12,12 @@ interface ClientPhoto {
     date: string;
 }
 
-export function PhotoEvolution() {
-    const { client } = useClientAuth();
+interface PhotoEvolutionProps {
+    clientId: string;
+}
+
+export function PhotoEvolution({ clientId }: PhotoEvolutionProps) {
+    // const { client } = useClientAuth(); // Removed context usage
     const [photos, setPhotos] = useState<ClientPhoto[]>([]);
     const [loading, setLoading] = useState(true);
     const [viewMode, setViewMode] = useState<'gallery' | 'comparison'>('gallery');
@@ -25,13 +29,13 @@ export function PhotoEvolution() {
     const [afterPhotoId, setAfterPhotoId] = useState<string>('');
 
     const fetchPhotos = async () => {
-        if (!client?.id) return;
+        if (!clientId) return;
         setLoading(true);
         try {
             const { data, error } = await supabase
                 .from('client_photos')
                 .select('*')
-                .eq('client_id', client.id)
+                .eq('client_id', clientId)
                 .order('date', { ascending: false });
 
             if (error) throw error;
@@ -45,7 +49,7 @@ export function PhotoEvolution() {
 
     useEffect(() => {
         fetchPhotos();
-    }, [client]);
+    }, [clientId]);
 
     // Auto-select photos for comparison when pose changes or photos load
     useEffect(() => {
@@ -95,6 +99,7 @@ export function PhotoEvolution() {
                 isOpen={isUploadModalOpen}
                 onClose={() => setIsUploadModalOpen(false)}
                 onSuccess={fetchPhotos}
+                clientId={clientId}
             />
 
             {/* Header Controls */}

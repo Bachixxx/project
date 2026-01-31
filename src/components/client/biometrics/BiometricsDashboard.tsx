@@ -411,7 +411,9 @@ export function BiometricsDashboard({ clientId, readOnly = false }: BiometricsDa
 
             {activeTab === 'photos' && (
                 <div className="animate-fade-in">
-                    <PhotoEvolution />
+                    <div className="animate-fade-in">
+                        <PhotoEvolution clientId={clientId} />
+                    </div>
                 </div>
             )}
         </div>

@@ -1,16 +1,17 @@
 import React, { useState, useRef } from 'react';
 import { X, Upload, Camera, Calendar, Check } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
-import { useClientAuth } from '../../../contexts/ClientAuthContext';
+// Removed useClientAuth import
 
 interface UploadPhotoModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSuccess: () => void;
+    clientId: string;
 }
 
-export function UploadPhotoModal({ isOpen, onClose, onSuccess }: UploadPhotoModalProps) {
-    const { client } = useClientAuth();
+export function UploadPhotoModal({ isOpen, onClose, onSuccess, clientId }: UploadPhotoModalProps) {
+    // const { client } = useClientAuth(); // Removed context usage
     const [file, setFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [pose, setPose] = useState<'front' | 'side' | 'back'>('front');
@@ -36,14 +37,14 @@ export function UploadPhotoModal({ isOpen, onClose, onSuccess }: UploadPhotoModa
     };
 
     const handleSubmit = async () => {
-        if (!file || !client?.id) return;
+        if (!file || !clientId) return;
         setLoading(true);
         setError(null);
 
         try {
             // 1. Upload to Storage
             const fileExt = file.name.split('.').pop();
-            const fileName = `${client.id}/${Date.now()}_${pose}.${fileExt}`;
+            const fileName = `${clientId}/${Date.now()}_${pose}.${fileExt}`;
 
             const { error: uploadError } = await supabase.storage
                 .from('client_progress_photos')
@@ -60,7 +61,7 @@ export function UploadPhotoModal({ isOpen, onClose, onSuccess }: UploadPhotoModa
             const { error: dbError } = await supabase
                 .from('client_photos')
                 .insert({
-                    client_id: client.id,
+                    client_id: clientId,
                     photo_url: publicUrl,
                     pose,
                     date
@@ -142,8 +143,8 @@ export function UploadPhotoModal({ isOpen, onClose, onSuccess }: UploadPhotoModa
                                     key={p.id}
                                     onClick={() => setPose(p.id as any)}
                                     className={`py-2 px-3 rounded-xl text-sm font-medium transition-all ${pose === p.id
-                                            ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25'
-                                            : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25'
+                                        : 'bg-white/5 text-gray-400 hover:bg-white/10'
                                         }`}
                                 >
                                     {p.label}
