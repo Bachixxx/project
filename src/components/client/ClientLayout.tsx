@@ -18,9 +18,10 @@ function ClientLayout() {
   const handleSignOut = async () => {
     try {
       await signOut();
-      navigate('/client/login');
     } catch (error) {
       console.error('Error signing out:', error);
+    } finally {
+      navigate('/client/login');
     }
   };
 

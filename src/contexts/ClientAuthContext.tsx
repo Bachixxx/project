@@ -179,12 +179,16 @@ export function ClientAuthProvider({ children }) {
       await supabase.auth.signOut();
 
       // OneSignal Logout
-      // @ts-ignore
-      if (window.OneSignalDeferred) {
+      try {
         // @ts-ignore
-        window.OneSignalDeferred.push(function (OneSignal) {
-          OneSignal.logout();
-        });
+        if (window.OneSignalDeferred) {
+          // @ts-ignore
+          window.OneSignalDeferred.push(function (OneSignal) {
+            OneSignal.logout();
+          });
+        }
+      } catch (osError) {
+        console.error('OneSignal logout error:', osError);
       }
 
       setClient(null);
@@ -209,7 +213,7 @@ export function ClientAuthProvider({ children }) {
 
   return (
     <ClientAuthContext.Provider value={value}>
-      {!loading && children}
+      {children}
     </ClientAuthContext.Provider>
   );
 }

@@ -141,12 +141,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { error } = await supabase.auth.signOut();
 
       // OneSignal Logout
-      // @ts-ignore
-      if (window.OneSignalDeferred) {
+      try {
         // @ts-ignore
-        window.OneSignalDeferred.push(function (OneSignal) {
-          OneSignal.logout();
-        });
+        if (window.OneSignalDeferred) {
+          // @ts-ignore
+          window.OneSignalDeferred.push(function (OneSignal) {
+            OneSignal.logout();
+          });
+        }
+      } catch (osError) {
+        console.error('OneSignal logout error:', osError);
       }
 
       if (error) throw error;
@@ -166,19 +170,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading ? children : (
-        // Use the exact same structure as splash screen to avoid flickering
-        <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900">
-          <div className="relative flex flex-col items-center">
-            <img
-              src="/app-logo.jpg"
-              alt="Coachency"
-              className="w-32 h-32 md:w-48 md:h-48 rounded-2xl shadow-2xl mb-8 animate-pulse"
-            />
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
-          </div>
-        </div>
-      )}
+      {children}
     </AuthContext.Provider>
   );
 }
