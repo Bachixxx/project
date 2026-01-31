@@ -80,8 +80,13 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
                 if (data?.branding_settings) {
                     setBranding(data.branding_settings as BrandingSettings);
-                    // We will handle the actual CSS injection in a useEffect that watches 'branding'
+                } else {
+                    // Coach has no branding, reset to default
+                    setBranding(null);
                 }
+            } else {
+                // No coach linked, reset to default
+                setBranding(null);
             }
             // Note: If logged in as a Coach, we might want to preview our own branding? 
             // For now, let's focus on Client view.

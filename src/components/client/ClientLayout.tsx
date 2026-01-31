@@ -45,7 +45,7 @@ function ClientLayout() {
                 )}
               </button>
               <div className="ml-2 lg:ml-0 flex items-center gap-3">
-                <img src={branding?.logoUrl || "/app-logo.jpg"} alt="Coachency" className="h-8 w-8 rounded-lg shadow-lg" />
+                <img src={branding?.logoUrl || "/logo.png"} alt="Coachency" className="h-8 w-8 rounded-lg shadow-lg" />
                 <span className="text-xl font-bold text-white bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent">
                   {branding?.appName || 'Coachency Client'}
                   {client && (

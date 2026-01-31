@@ -98,7 +98,7 @@ function Layout() {
                 )}
               </button>
               <div className="ml-2 lg:ml-0 flex items-center gap-2">
-                <img src="/app-logo.jpg" alt="Coachency" className="h-8 w-8 rounded-lg" />
+                <img src="/logo.png" alt="Coachency" className="h-8 w-8 rounded-lg" />
                 <span className="text-xl font-bold text-white">Coachency</span>
               </div>
             </div>
