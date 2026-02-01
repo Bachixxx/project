@@ -1,7 +1,23 @@
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { ChevronLeft, User, Mail, Phone, Award, Crown, Clock, BadgeEuro, ExternalLink, CheckCircle, AlertTriangle, Trash2 } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
+import { useSubscription } from '../hooks/useSubscription';
+import { createPortalSession, createLoginLink, getStripeAccountStatus } from '../lib/stripe';
 import { ResponsiveModal } from '../components/ResponsiveModal';
-import { AlertTriangle, Trash2 } from 'lucide-react';
 
-// ... (existing helper functions if any, but adding inside main component)
+interface Coach {
+  id: string;
+  full_name: string;
+  email: string;
+  phone: string;
+  specialization: string;
+  bio: string;
+  profile_image_url: string | null;
+  created_at: string;
+  stripe_account_id?: string;
+}
 
 function ProfilePage() {
   // ... existing state
