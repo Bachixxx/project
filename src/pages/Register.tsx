@@ -52,7 +52,7 @@ function Register() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const [billingInterval, setBillingInterval] = useState<'month' | 'year' | 'lifetime'>('year'); // Default to annual as requested implied "Best"
+  const [billingInterval, setBillingInterval] = useState<'month' | 'year'>('year'); // Default to annual as requested implied "Best"
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const navigate = useNavigate();
   const { signUp, user } = useAuth(); // Removed unused signUp function
@@ -160,7 +160,7 @@ function Register() {
         `${window.location.origin}/register?payment=success`,
         `${window.location.origin}/register`,
         undefined,
-        billingInterval === 'lifetime' ? 'payment' : 'subscription'
+        'subscription'
       );
 
       if (!data.url) {
@@ -264,15 +264,6 @@ function Register() {
                 >
                   Annuel
                 </button>
-                <button
-                  onClick={() => setBillingInterval('lifetime')}
-                  className={`px-3 py-1.5 rounded-md font-medium transition-all ${billingInterval === 'lifetime'
-                    ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-sm'
-                    : 'text-gray-400 hover:text-white'
-                    }`}
-                >
-                  Lifetime
-                </button>
               </div>
             </h3>
 
@@ -299,22 +290,15 @@ function Register() {
 
                 <div className="flex items-baseline gap-1 my-6">
                   <span className="text-4xl font-bold text-white">
-                    {billingInterval === 'month' ? '19' : billingInterval === 'year' ? '199' : '1200'}
+                    {billingInterval === 'month' ? '19' : '199'}
                   </span>
                   <span className="text-xl font-bold text-white">CHF</span>
-                  {billingInterval !== 'lifetime' && (
-                    <span className="text-gray-400">/{billingInterval === 'month' ? 'mois' : 'an'}</span>
-                  )}
+                  <span className="text-gray-400">/{billingInterval === 'month' ? 'mois' : 'an'}</span>
                 </div>
 
                 {billingInterval === 'year' && (
                   <div className="inline-block bg-green-500/10 text-green-400 text-xs font-bold px-2 py-1 rounded-full mb-2">
                     -17% + 14 JOURS OFFERTS
-                  </div>
-                )}
-                {billingInterval === 'lifetime' && (
-                  <div className="inline-block bg-purple-500/10 text-purple-400 text-xs font-bold px-2 py-1 rounded-full mb-2">
-                    PAIEMENT UNIQUE À VIE
                   </div>
                 )}
               </div>
@@ -326,9 +310,7 @@ function Register() {
                 <FeatureRow text="Bibliothèque d'exercices illimitée" />
                 <FeatureRow text="Paiements sans commission" highlight />
                 <FeatureRow text="Support prioritaire 24/7" />
-                {billingInterval !== 'lifetime' && (
-                  <FeatureRow text="14 jours d'essai gratuit" highlight />
-                )}
+                <FeatureRow text="14 jours d'essai gratuit" highlight />
               </div>
             </div>
 
@@ -456,7 +438,7 @@ function Register() {
                         </>
                       ) : (
                         <>
-                          <span>{billingInterval === 'lifetime' ? 'Activer mon accès à vie' : "Commencer l'essai gratuit"}</span>
+                          <span>Commencer l'essai gratuit</span>
                           <ChevronLeft className="w-5 h-5 rotate-180" />
                         </>
                       )}
