@@ -12,6 +12,11 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
 const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY') || '';
 
+if (!supabaseUrl || !supabaseServiceKey || !stripeSecretKey) {
+    console.error('Missing environment variables');
+    throw new Error('Server Configuration Error: Missing required environment variables (STRIPE_SECRET_KEY or SUPABASE_SERVICE_ROLE_KEY)');
+}
+
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 const stripe = new Stripe(stripeSecretKey, {
@@ -71,10 +76,15 @@ serve(async (req) => {
             }
         }
 
-        // 4. Delete User from Supabase Auth
-        // This will trigger CASCADE delete on the 'public.coaches' table if configured,
-        // or we might need to manually clean up if FKs aren't set to CASCADE.
-        // Assuming standard Supabase setup where deleting auth.users cascades to public tables referencing id.
+        // 4. Force Cleanup of Public Data via RPC (Bypassing broken cascades)
+        const { error: rpcError } = await supabase.rpc('cleanup_coach_data', { target_coach_id: userId });
+
+        if (rpcError) {
+            console.error('Error cleaning up coach data:', rpcError);
+            // We continue anyway, as maybe the user was already partially deleted
+        }
+
+        // 5. Delete User from Supabase Auth
         const { error: deleteError } = await supabase.auth.admin.deleteUser(userId);
 
         if (deleteError) {
