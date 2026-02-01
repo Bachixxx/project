@@ -72,7 +72,7 @@ function Home() {
 
           {/* Desktop Nav */}
           <div className="hidden md:flex items-center gap-8">
-            <Link to="/marketplace" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">Marketplace</Link>
+
             <Link to="/features" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">Fonctionnalités</Link>
             <Link to="/pricing" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">Tarifs</Link>
           </div>
@@ -106,7 +106,7 @@ function Home() {
         {/* Mobile Menu */}
         {mobileMenuOpen && (
           <div className="md:hidden absolute top-full left-0 right-0 bg-[#0f172a] border-b border-white/10 p-6 flex flex-col gap-4 animate-fade-in shadow-2xl">
-            <Link to="/marketplace" className="text-gray-300 py-2">Marketplace</Link>
+
             <Link to="/features" className="text-gray-300 py-2">Fonctionnalités</Link>
             <Link to="/pricing" className="text-gray-300 py-2">Tarifs</Link>
             <Link to="/client/login" className="text-gray-300 py-2">Espace Client</Link>
@@ -481,7 +481,7 @@ function Home() {
               <ul className="space-y-4 text-gray-400">
                 <li><Link to="/features" className="hover:text-blue-400 transition-colors">Fonctionnalités</Link></li>
                 <li><Link to="/pricing" className="hover:text-blue-400 transition-colors">Tarifs</Link></li>
-                <li><Link to="/marketplace" className="hover:text-blue-400 transition-colors">Marketplace</Link></li>
+
               </ul>
             </div>
 

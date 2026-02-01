@@ -359,8 +359,8 @@ function ClientDashboard() {
         type: 'empty',
         id: 'empty',
         title: "Aucun programme actif",
-        subtitle: "Parcourez le catalogue pour commencer",
-        link: "/marketplace"
+        subtitle: "Demandez un programme à votre coach",
+        link: "/client/workouts"
       });
     }
 
@@ -604,13 +604,7 @@ function ClientDashboard() {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <Link to="/marketplace" className="glass-card p-6 rounded-2xl border border-white/10 hover:border-blue-500/50 hover:bg-white/5 transition-all group text-center">
-                <div className="w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center text-blue-400 mx-auto mb-3 group-hover:scale-110 transition-transform">
-                  <PlayCircle className="w-6 h-6" />
-                </div>
-                <p className="font-bold text-white mb-1">Explorer</p>
-                <p className="text-xs text-gray-500">Trouver un programme</p>
-              </Link>
+
 
               <Link to="/client/progress" className="glass-card p-6 rounded-2xl border border-white/10 hover:border-green-500/50 hover:bg-white/5 transition-all group text-center">
                 <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center text-green-400 mx-auto mb-3 group-hover:scale-110 transition-transform">

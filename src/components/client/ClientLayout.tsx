@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Dumbbell, Calendar, TrendingUp,
-  User, LogOut, Menu, X, ShoppingBag, Activity
+  User, LogOut, Menu, X, Activity
 } from 'lucide-react';
 import { useClientAuth } from '../../contexts/ClientAuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -57,6 +57,7 @@ function ClientLayout() {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              {/* Marketplace Link Hidden
               <Link
                 to="/marketplace"
                 className="hidden sm:flex items-center gap-2 px-4 py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 rounded-lg transition-colors"
@@ -72,6 +73,7 @@ function ClientLayout() {
               >
                 <ShoppingBag className="w-5 h-5" />
               </Link>
+              */}
               <Link
                 to="/client/profile"
                 className="p-2 rounded-full hover:bg-white/10 text-white"

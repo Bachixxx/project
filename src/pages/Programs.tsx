@@ -8,11 +8,9 @@ import {
   X,
   Dumbbell,
   AlertTriangle,
-  DollarSign,
   Layers,
   Clock,
-  Target,
-  Globe
+  Target
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -218,12 +216,7 @@ function ProgramsPage() {
                       <Target className="w-3 h-3 mr-1" />
                       {program.difficulty_level}
                     </span>
-                    {program.is_public && (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-500/10 text-purple-400 border border-purple-500/20">
-                        <Globe className="w-3 h-3 mr-1" />
-                        Public
-                      </span>
-                    )}
+
                   </div>
                 </div>
 
@@ -276,17 +269,7 @@ function ProgramsPage() {
                   </div>
                 </div>
 
-                {program.price ? (
-                  <div className="bg-gradient-to-r from-primary-500/10 to-accent-500/10 rounded-lg p-3 border border-primary-500/20 flex items-center justify-between">
-                    <span className="text-sm text-primary-400 font-medium">Prix</span>
-                    <span className="text-lg font-bold text-white">{program.price} CHF</span>
-                  </div>
-                ) : (
-                  <div className="bg-white/5 rounded-lg p-3 border border-white/10 flex items-center justify-between">
-                    <span className="text-sm text-gray-400 font-medium">Prix</span>
-                    <span className="text-lg font-bold text-gray-300">Gratuit</span>
-                  </div>
-                )}
+
               </div>
 
               <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-primary-500 to-accent-500 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -365,8 +348,8 @@ function ProgramModal({ program, onClose, onSave }: any) {
     description: program?.description || '',
     duration_weeks: program?.duration_weeks || 4,
     difficulty_level: program?.difficulty_level || 'Débutant',
-    price: program?.price ?? null,
-    is_public: program?.is_public || false,
+    price: null,
+    is_public: false,
   });
   const [sessions, setSessions] = useState<Session[]>([]);
   const [selectedSessions, setSelectedSessions] = useState<ProgramSession[]>(
@@ -406,8 +389,7 @@ function ProgramModal({ program, onClose, onSave }: any) {
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? checked :
-        name === 'duration_weeks' ? parseInt(value) || 1 :
-          name === 'price' ? (value === '' || value === null ? null : parseFloat(value)) : value,
+        name === 'duration_weeks' ? parseInt(value) || 1 : value,
     }));
   };
 
@@ -479,71 +461,7 @@ function ProgramModal({ program, onClose, onSave }: any) {
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Durée (semaines)</label>
-            <input
-              type="number"
-              name="duration_weeks"
-              value={formData.duration_weeks}
-              onChange={handleChange}
-              min="1"
-              required
-              className="input-field"
-            />
-          </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Niveau de difficulté</label>
-            <select
-              name="difficulty_level"
-              value={formData.difficulty_level}
-              onChange={handleChange}
-              className="input-field appearance-none cursor-pointer"
-            >
-              <option value="Débutant" className="bg-gray-800">Débutant</option>
-              <option value="Intermédiaire" className="bg-gray-800">Intermédiaire</option>
-              <option value="Avancé" className="bg-gray-800">Avancé</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Prix (CHF)</label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <DollarSign className="h-5 w-5 text-gray-500" />
-              </div>
-              <input
-                type="number"
-                name="price"
-                value={formData.price ?? ''}
-                onChange={handleChange}
-                min="0"
-                step="0.01"
-                placeholder="0.00"
-                className="input-field pl-10"
-              />
-            </div>
-            <p className="text-xs text-gray-500 mt-1">
-              Laissez vide pour un programme gratuit
-            </p>
-          </div>
-        </div>
-
-        <div>
-          <label className="flex items-center gap-2 cursor-pointer group">
-            <input
-              type="checkbox"
-              name="is_public"
-              checked={formData.is_public}
-              onChange={handleChange}
-              className="rounded border-gray-600 bg-gray-700 text-primary-500 focus:ring-primary-500"
-            />
-            <span className="text-sm font-medium text-gray-300 group-hover:text-white transition-colors">
-              Rendre ce programme public dans le marketplace
-            </span>
-          </label>
-        </div>
 
         <div>
           <div className="flex justify-between items-center mb-4">

@@ -19,8 +19,8 @@ import PublicHome from './components/PublicHome';
 import Home from './pages/Home';
 
 // Public Pages (Lazy)
-const Marketplace = lazy(() => import('./pages/Marketplace'));
-const ProgramDetails = lazy(() => import('./pages/ProgramDetails'));
+// const Marketplace = lazy(() => import('./pages/Marketplace'));
+// const ProgramDetails = lazy(() => import('./pages/ProgramDetails'));
 const Login = lazy(() => import('./pages/Login'));
 const Register = lazy(() => import('./pages/Register')); // Keep if we want to revert later, but unused for main route
 const Waitlist = lazy(() => import('./pages/Waitlist')); // New
@@ -119,10 +119,10 @@ function App() {
                         <Routes>
                           {/* Routes publiques */}
                           <Route path="/" element={<PublicHome />} />
-                          <Route path="/marketplace" element={<Marketplace />} />
+                          {/* <Route path="/marketplace" element={<Marketplace />} /> */}
                           <Route path="/features" element={<Features />} />
                           <Route path="/pricing" element={<Pricing />} />
-                          <Route path="/marketplace/program/:id" element={<ProgramDetails />} />
+                          {/* <Route path="/marketplace/program/:id" element={<ProgramDetails />} /> */}
 
                           <Route path="/login" element={<Login />} />
                           <Route path="/register" element={<Register />} />
