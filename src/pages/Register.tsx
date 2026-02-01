@@ -3,7 +3,7 @@ import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { Icon } from 'react-icons-kit';
 import { eyeOff } from 'react-icons-kit/feather/eyeOff';
 import { eye } from 'react-icons-kit/feather/eye';
-import { UserPlus, Check, Calendar, Users, DollarSign, Activity, Sparkles, Clock, ChevronLeft, Dumbbell } from 'lucide-react';
+import { Check, Activity, Sparkles, ChevronLeft, Dumbbell } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { t } from '../i18n';
 import { supabase } from '../lib/supabase';
@@ -51,7 +51,7 @@ function Register() {
   const [icon, setIcon] = useState(eyeOff);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<'free' | 'paid'>('free');
+
   const [billingInterval, setBillingInterval] = useState<'month' | 'year' | 'lifetime'>('year'); // Default to annual as requested implied "Best"
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const navigate = useNavigate();
@@ -148,32 +148,28 @@ function Register() {
         return;
       }
 
-      // If paid plan selected, redirect to Stripe checkout
-      if (selectedPlan === 'paid') {
-        const plan = plans.find(p => p.interval === billingInterval);
-        if (!plan) {
-          throw new Error('Selected plan not found');
-        }
-
-        const data = await createSubscriptionSession(
-          authData.user.id,
-          plan.stripe_price_id,
-          `${window.location.origin}/register?payment=success`,
-          `${window.location.origin}/register`,
-          undefined,
-          billingInterval === 'lifetime' ? 'payment' : 'subscription'
-        );
-
-        if (!data.url) {
-          throw new Error('No checkout URL received from payment provider');
-        }
-
-        // Redirect to Stripe Checkout
-        window.location.href = data.url;
-      } else {
-        // Free plan - go directly to dashboard
-        navigate('/dashboard');
+      // Proceed to Stripe checkout (Paid Only)
+      const plan = plans.find(p => p.interval === billingInterval);
+      if (!plan) {
+        throw new Error('Selected plan not found');
       }
+
+      const data = await createSubscriptionSession(
+        authData.user.id,
+        plan.stripe_price_id,
+        `${window.location.origin}/register?payment=success`,
+        `${window.location.origin}/register`,
+        undefined,
+        billingInterval === 'lifetime' ? 'payment' : 'subscription'
+      );
+
+      if (!data.url) {
+        throw new Error('No checkout URL received from payment provider');
+      }
+
+      // Redirect to Stripe Checkout
+      window.location.href = data.url;
+
     } catch (err: any) {
       console.error('Registration error:', err);
       setError('An unexpected error occurred. Please try again.');
@@ -280,100 +276,60 @@ function Register() {
               </div>
             </h3>
 
-            {/* Free Plan Card */}
-            <div
-              onClick={() => setSelectedPlan('free')}
-              className={`relative overflow-hidden group cursor-pointer transition-all duration-300 rounded-2xl border ${selectedPlan === 'free'
-                ? 'bg-blue-500/10 border-blue-500/50 shadow-[0_0_30px_rgba(59,130,246,0.15)]'
-                : 'bg-white/5 border-white/10 hover:bg-white/[0.07] hover:border-white/20'
-                }`}
-            >
-              <div className="p-6 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${selectedPlan === 'free' ? 'bg-blue-500 text-white' : 'bg-white/10 text-gray-400'}`}>
-                    <Users className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-white">Découverte</h3>
-                    <p className="text-sm text-gray-400">Idéal pour débuter</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-2xl font-bold text-white">0 CHF</div>
-                  <div className="text-xs text-gray-500 font-medium">/MOIS</div>
-                </div>
-              </div>
+            {/* Pro Plan Card (Single Option) */}
+            <div className="relative p-8 rounded-3xl bg-gradient-to-b from-[#1e293b] to-[#0f172a] border border-blue-500/50 flex flex-col shadow-2xl shadow-blue-500/10 transform transition-all">
 
-              {/* Radio Indicator */}
-              <div className={`absolute top-1/2 right-0 -translate-y-1/2 w-1.5 h-12 rounded-l-full transition-all ${selectedPlan === 'free' ? 'bg-blue-500' : 'bg-transparent'}`} />
-            </div>
+              {/* Glowing border effect */}
+              <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-blue-500 to-transparent opacity-50"></div>
 
-            {/* Pro Plan Card */}
-            <div
-              onClick={() => setSelectedPlan('paid')}
-              className={`relative overflow-hidden group cursor-pointer transition-all duration-300 rounded-2xl border ${selectedPlan === 'paid'
-                ? 'bg-blue-500/10 border-blue-500/50 shadow-[0_0_30px_rgba(59,130,246,0.15)]'
-                : 'bg-white/5 border-white/10 hover:bg-white/[0.07] hover:border-white/20 plan-card-hover'
-                }`}
-            >
               <div className="absolute top-0 right-0 bg-blue-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl uppercase tracking-wider">
                 Populaire
               </div>
 
-              <div className="p-6 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${selectedPlan === 'paid' ? 'bg-gradient-to-br from-blue-500 to-cyan-500 text-white' : 'bg-white/10 text-gray-400'}`}>
+              <div className="mb-6 mt-2">
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-br from-blue-500 to-cyan-500 text-white shadow-lg">
                     <Activity className="w-6 h-6" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-white">Professionnel</h3>
-                    <p className="text-sm text-gray-400">Pour les coachs ambitieux</p>
+                    <h3 className="text-xl font-bold text-blue-400">Professionnel</h3>
+                    <p className="text-sm text-gray-400">Tout ce qu'il faut pour scaler.</p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="text-2xl font-bold text-white">
-                    {billingInterval === 'month' ? '19 CHF' : billingInterval === 'year' ? '199 CHF' : '1200 CHF'}
-                  </div>
-                  {billingInterval !== 'lifetime' ? (
-                    <div className="text-xs text-blue-400 font-medium">
-                      {billingInterval === 'year' ? '/an' : '/mois'} • 14 JOURS OFFERTS
-                    </div>
-                  ) : (
-                    <div className="text-xs text-purple-400 font-medium">
-                      PAIEMENT UNIQUE
-                    </div>
+
+                <div className="flex items-baseline gap-1 my-6">
+                  <span className="text-4xl font-bold text-white">
+                    {billingInterval === 'month' ? '19' : billingInterval === 'year' ? '199' : '1200'}
+                  </span>
+                  <span className="text-xl font-bold text-white">CHF</span>
+                  {billingInterval !== 'lifetime' && (
+                    <span className="text-gray-400">/{billingInterval === 'month' ? 'mois' : 'an'}</span>
                   )}
                 </div>
+
+                {billingInterval === 'year' && (
+                  <div className="inline-block bg-green-500/10 text-green-400 text-xs font-bold px-2 py-1 rounded-full mb-2">
+                    -17% + 14 JOURS OFFERTS
+                  </div>
+                )}
+                {billingInterval === 'lifetime' && (
+                  <div className="inline-block bg-purple-500/10 text-purple-400 text-xs font-bold px-2 py-1 rounded-full mb-2">
+                    PAIEMENT UNIQUE À VIE
+                  </div>
+                )}
               </div>
 
-              {/* Radio Indicator */}
-              <div className={`absolute top-1/2 right-0 -translate-y-1/2 w-1.5 h-12 rounded-l-full transition-all ${selectedPlan === 'paid' ? 'bg-blue-500' : 'bg-transparent'}`} />
-            </div>
-
-            {/* Features List displaying based on selection */}
-            <div className="mt-8 bg-white/5 rounded-2xl p-6 border border-white/10">
-              <h4 className="text-sm font-semibold text-gray-300 mb-4 uppercase tracking-wider">
-                Inclus dans l'offre {selectedPlan === 'free' ? 'Découverte' : 'Professionnelle'}
-              </h4>
-              <ul className="space-y-3">
-                {selectedPlan === 'free' ? (
-                  <>
-                    <FeatureRow text="Jusqu'à 5 clients" />
-                    <FeatureRow text="Jusqu'à 5 programmes" />
-                    <FeatureRow text="Analyses avancées" />
-                    <FeatureRow text="Multi-coachs" />
-                    <FeatureRow text="Support standard" />
-                  </>
-                ) : (
-                  <>
-                    <FeatureRow text="Clients illimités" highlight />
-                    <FeatureRow text="Programmes illimités" highlight />
-                    <FeatureRow text="Paiements sans commission" highlight />
-                    <FeatureRow text="Support prioritaire 24/7" highlight />
-                    <FeatureRow text="14 jours d'essai gratuit" highlight />
-                  </>
+              {/* Features List */}
+              <div className="space-y-4 mb-4">
+                <FeatureRow text="Clients illimités" highlight />
+                <FeatureRow text="Programmes illimités" highlight />
+                <FeatureRow text="Bibliothèque d'exercices illimitée" />
+                <FeatureRow text="Paiements sans commission" highlight />
+                <FeatureRow text="Support prioritaire 24/7" />
+                {billingInterval !== 'lifetime' && (
+                  <FeatureRow text="14 jours d'essai gratuit" highlight />
                 )}
-              </ul>
+              </div>
             </div>
 
           </div>
@@ -500,7 +456,7 @@ function Register() {
                         </>
                       ) : (
                         <>
-                          <span>{selectedPlan === 'paid' ? `Commencer l'essai gratuit` : 'Créer mon compte gratuit'}</span>
+                          <span>{billingInterval === 'lifetime' ? 'Activer mon accès à vie' : "Commencer l'essai gratuit"}</span>
                           <ChevronLeft className="w-5 h-5 rotate-180" />
                         </>
                       )}
