@@ -216,9 +216,19 @@ CREATE POLICY "Coaches can update own data"
   USING (auth.uid() = id)
   WITH CHECK (auth.uid() = id);
 
-CREATE POLICY "Anyone can read subscription plans"
-  ON subscription_plans FOR SELECT
-  USING (true);
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE schemaname = 'public' 
+        AND tablename = 'subscription_plans' 
+        AND policyname = 'Anyone can read subscription plans'
+    ) THEN
+        CREATE POLICY "Anyone can read subscription plans"
+          ON subscription_plans FOR SELECT
+          USING (true);
+    END IF;
+END $$;
 
 CREATE POLICY "Coaches can view their own subscription history"
   ON subscription_history FOR SELECT

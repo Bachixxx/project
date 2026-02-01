@@ -132,7 +132,8 @@ function Register() {
           data: {
             full_name: formData.fullName,
             phone: formData.phone || null,
-            specialization: formData.specialization || null
+            specialization: formData.specialization || null,
+            role: 'coach'
           }
         }
       });

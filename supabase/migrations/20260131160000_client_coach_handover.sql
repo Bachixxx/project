@@ -41,47 +41,66 @@ DROP POLICY IF EXISTS "Coaches can CRUD own programs" ON programs;
 DROP POLICY IF EXISTS "Coaches can read assigned programs" ON programs; -- Safety drop
 
 -- Re-create Creator Policy (Full Access)
+DROP POLICY IF EXISTS "Coaches can CRUD own programs" ON programs;
 CREATE POLICY "Coaches can CRUD own programs"
   ON programs FOR ALL
   TO authenticated
   USING (auth.uid() = coach_id);
 
--- Create Inherited Read Policy
--- "I can see this program if one of my clients is using it"
-CREATE POLICY "Coaches can read assigned programs"
-  ON programs FOR SELECT
-  TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM client_programs cp
-      JOIN clients c ON c.id = cp.client_id
-      WHERE cp.program_id = programs.id
-      AND c.coach_id = auth.uid()
-    )
-  );
+-- Create Inherited Read Policy (Idempotent)
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE schemaname = 'public' 
+        AND tablename = 'programs' 
+        AND policyname = 'Coaches can read assigned programs'
+    ) THEN
+        CREATE POLICY "Coaches can read assigned programs"
+          ON programs FOR SELECT
+          TO authenticated
+          USING (
+            EXISTS (
+              SELECT 1 FROM client_programs cp
+              JOIN clients c ON c.id = cp.client_id
+              WHERE cp.program_id = programs.id
+              AND c.coach_id = auth.uid()
+            )
+          );
+    END IF;
+END $$;
 
 -- 3. Update RLS policies for Exercises (Optional but recommended)
--- If exercises are private to a coach, the substitute needs to see them too if they are part of a visible program.
 
 DROP POLICY IF EXISTS "Coaches can CRUD own exercises" ON exercises;
-
 CREATE POLICY "Coaches can CRUD own exercises"
   ON exercises FOR ALL
   TO authenticated
   USING (auth.uid() = coach_id);
 
-CREATE POLICY "Coaches can read assigned exercises"
-  ON exercises FOR SELECT
-  TO authenticated
-  USING (
-    EXISTS (
-      -- Is this exercise part of a program...
-      SELECT 1 FROM program_exercises pe
-      JOIN programs p ON p.id = pe.program_id
-      -- ...that is assigned to one of my clients?
-      JOIN client_programs cp ON cp.program_id = p.id
-      JOIN clients c ON c.id = cp.client_id
-      WHERE pe.exercise_id = exercises.id
-      AND c.coach_id = auth.uid()
-    )
-  );
+-- Create Inherited Read Policy for Exercises (Idempotent)
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE schemaname = 'public' 
+        AND tablename = 'exercises' 
+        AND policyname = 'Coaches can read assigned exercises'
+    ) THEN
+        CREATE POLICY "Coaches can read assigned exercises"
+          ON exercises FOR SELECT
+          TO authenticated
+          USING (
+            EXISTS (
+              -- Is this exercise part of a program...
+              SELECT 1 FROM program_exercises pe
+              JOIN programs p ON p.id = pe.program_id
+              -- ...that is assigned to one of my clients?
+              JOIN client_programs cp ON cp.program_id = p.id
+              JOIN clients c ON c.id = cp.client_id
+              WHERE pe.exercise_id = exercises.id
+              AND c.coach_id = auth.uid()
+            )
+          );
+    END IF;
+END $$;
