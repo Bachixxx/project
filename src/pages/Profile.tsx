@@ -121,6 +121,25 @@ function ProfilePage() {
     }
   };
 
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmation !== 'DELETE') return;
+
+    setDeleteLoading(true);
+    try {
+      const { error } = await supabase.functions.invoke('delete-account');
+      if (error) throw error;
+
+      await supabase.auth.signOut();
+      window.location.href = '/';
+    } catch (err: any) {
+      console.error('Delete Account Error:', err);
+      alert('Erreur lors de la suppression du compte: ' + (err.message || 'Erreur inconnue'));
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -415,6 +434,26 @@ function ProfilePage() {
                   {new Date(coach?.created_at || '').toLocaleDateString()}
                 </p>
               </div>
+            </div>
+          )}
+
+          {/* DANGER ZONE - Only verify not editing */}
+          {!isEditing && (
+            <div className="bg-red-500/5 border border-red-500/20 backdrop-blur-lg rounded-xl p-6 mt-8">
+              <h2 className="text-xl font-semibold text-red-400 mb-4 flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5" />
+                Zone de Danger
+              </h2>
+              <p className="text-gray-400 mb-6">
+                La suppression de votre compte est irréversible. Toutes vos données, vos clients et vos abonnements seront définitivement supprimés.
+              </p>
+              <button
+                onClick={() => setShowDeleteModal(true)}
+                className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/50 rounded-lg transition-colors flex items-center gap-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                Supprimer mon compte
+              </button>
             </div>
           )}
         </div>
