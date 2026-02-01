@@ -136,7 +136,7 @@ export function useSubscription() {
     }
   }
 
-  const upgradeSubscription = async (priceId?: string) => {
+  const upgradeSubscription = async (priceId?: string, mode: 'subscription' | 'payment' = 'subscription') => {
     try {
       setError(null);
 
@@ -167,7 +167,9 @@ export function useSubscription() {
         user.id,
         finalPriceId,
         `${window.location.origin}/upgrade?payment=success`,
-        `${window.location.origin}/upgrade`
+        `${window.location.origin}/upgrade`,
+        undefined,
+        mode
       );
 
       if (!data.url) {

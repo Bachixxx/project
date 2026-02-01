@@ -5,7 +5,7 @@ import { Dumbbell, Menu, X, Check, X as XIcon, HelpCircle, ChevronDown, ChevronU
 function Pricing() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
-    const [billingInterval, setBillingInterval] = useState<'month' | 'year'>('month');
+    const [billingInterval, setBillingInterval] = useState<'month' | 'year' | 'lifetime'>('month');
 
     const toggleFaq = (index: number) => {
         setOpenFaqIndex(openFaqIndex === index ? null : index);
@@ -122,6 +122,18 @@ function Pricing() {
                             -17%
                         </span>
                     </button>
+                    <button
+                        onClick={() => setBillingInterval('lifetime')}
+                        className={`px-6 md:px-8 py-3 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${billingInterval === 'lifetime'
+                            ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg'
+                            : 'text-gray-400 hover:text-white hover:bg-white/5'
+                            }`}
+                    >
+                        Lifetime
+                        <span className="text-[10px] bg-amber-500 text-white px-2 py-0.5 rounded-full font-bold shadow-sm">
+                            BEST
+                        </span>
+                    </button>
                 </div>
             </section>
 
@@ -144,10 +156,10 @@ function Pricing() {
                             <h3 className="text-xl font-bold text-blue-400 mb-2">Professionnel</h3>
                             <div className="flex items-baseline justify-center gap-1">
                                 <span className="text-5xl font-bold text-white">
-                                    {billingInterval === 'month' ? '49.90' : '499'}
+                                    {billingInterval === 'month' ? '19.00' : billingInterval === 'year' ? '199' : '1200'}
                                 </span>
                                 <span className="text-xl font-bold text-white">CHF</span>
-                                <span className="text-gray-400">/{billingInterval === 'month' ? 'mois' : 'an'}</span>
+                                <span className="text-gray-400">{billingInterval === 'lifetime' ? '' : `/${billingInterval === 'month' ? 'mois' : 'an'}`}</span>
                             </div>
                             <p className="text-gray-400 mt-4 text-sm">Tout ce qu'il faut pour scaler votre business.</p>
                         </div>

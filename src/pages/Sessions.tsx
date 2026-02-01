@@ -498,8 +498,14 @@ function SessionModal({ session, onClose, onSave }: any) {
               Annuler
             </button>
             <button
-              type="submit"
-              onClick={handleSubmit} // Trigger form submission logic if needed, or bind specific save function
+              type="button"
+              onClick={() => {
+                if (!formData.name || !formData.duration_minutes) {
+                  alert("Veuillez remplir le nom et la durée de la séance.");
+                  return;
+                }
+                onSave({ ...formData }, selectedExercises, exerciseGroups);
+              }}
               className="flex-1 primary-button"
             >
               Sauvegarder
@@ -615,16 +621,16 @@ function SessionModal({ session, onClose, onSave }: any) {
                 <button
                   type="button"
                   onClick={() => setShowGroupModal(true)}
-                  className="px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 text-xs font-medium flex items-center gap-1 transition-colors"
+                  className="px-4 py-2.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 text-sm font-medium flex items-center gap-2 transition-colors shadow-sm"
                 >
-                  <Plus className="w-3.5 h-3.5" /> Groupe
+                  <Plus className="w-4 h-4" /> Groupe
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowExerciseModal(true)}
-                  className="px-3 py-1.5 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 text-xs font-medium flex items-center gap-1 transition-colors"
+                  className="px-4 py-2.5 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 text-sm font-medium flex items-center gap-2 transition-colors shadow-sm"
                 >
-                  <Plus className="w-3.5 h-3.5" /> Exercice
+                  <Plus className="w-4 h-4" /> Exercice
                 </button>
               </div>
             </div>

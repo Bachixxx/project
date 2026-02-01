@@ -8,8 +8,9 @@ import { supabase } from '../lib/supabase';
 
 // Constants for Stripe Price IDs
 const PRICE_IDS = {
-  month: 'price_1Qp9ZyKjaGJ8zmprMs2hVbte',
-  year: 'price_1Qp9asKjaGJ8zmprq2QoGlim'
+  month: 'price_1Sw4I3KjaGJ8zmprFtqt5fyh',
+  year: 'price_1Sw4IdKjaGJ8zmprhClmpIHp',
+  lifetime: 'price_1Sw4JZKjaGJ8zmpr11p50J9p'
 };
 
 function UpgradePage() {
@@ -19,7 +20,7 @@ function UpgradePage() {
   const { refreshSubscriptionInfo, upgradeSubscription } = useSubscription();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [billingInterval, setBillingInterval] = useState<'month' | 'year'>('month');
+  const [billingInterval, setBillingInterval] = useState<'month' | 'year' | 'lifetime'>('month');
 
   useEffect(() => {
     const paymentStatus = searchParams.get('payment');
@@ -53,7 +54,7 @@ function UpgradePage() {
     }
   };
 
-  const handleUpgrade = async (interval: 'month' | 'year') => {
+  const handleUpgrade = async (interval: 'month' | 'year' | 'lifetime') => {
     try {
       setError(null);
       setIsLoading(true);
@@ -64,7 +65,7 @@ function UpgradePage() {
         throw new Error(`Price ID not found for ${interval}`);
       }
 
-      await upgradeSubscription(priceId);
+      await upgradeSubscription(priceId, interval === 'lifetime' ? 'payment' : 'subscription');
 
     } catch (error) {
       console.error('Error creating subscription session:', error);
@@ -136,8 +137,8 @@ function UpgradePage() {
             <button
               onClick={() => setBillingInterval('month')}
               className={`px-8 py-3 rounded-xl text-sm font-bold transition-all ${billingInterval === 'month'
-                  ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-lg'
-                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+                ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-lg'
+                : 'text-gray-400 hover:text-white hover:bg-white/5'
                 }`}
             >
               Mensuel
@@ -145,8 +146,8 @@ function UpgradePage() {
             <button
               onClick={() => setBillingInterval('year')}
               className={`px-8 py-3 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${billingInterval === 'year'
-                  ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-lg'
-                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+                ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-lg'
+                : 'text-gray-400 hover:text-white hover:bg-white/5'
                 }`}
             >
               Annuel
@@ -191,10 +192,10 @@ function UpgradePage() {
                 </div>
                 <div className="text-right mt-2">
                   <div className="text-4xl font-bold text-white tracking-tight">
-                    {billingInterval === 'month' ? '49.90' : '499'} <span className="text-lg text-gray-500 font-normal">CHF</span>
+                    {billingInterval === 'month' ? '19.00' : billingInterval === 'year' ? '199' : '1200'} <span className="text-lg text-gray-500 font-normal">CHF</span>
                   </div>
                   <div className="text-sm text-gray-500 font-medium">
-                    /{billingInterval === 'month' ? 'mois' : 'an'}
+                    {billingInterval === 'lifetime' ? 'Paiement unique' : `/${billingInterval === 'month' ? 'mois' : 'an'}`}
                   </div>
                 </div>
               </div>
@@ -221,8 +222,8 @@ function UpgradePage() {
                 onClick={() => handleUpgrade(billingInterval)}
                 disabled={isLoading}
                 className={`w-full py-4 rounded-xl text-center font-bold text-lg shadow-xl transition-all transform hover:scale-[1.02] flex items-center justify-center gap-2 ${isLoading
-                    ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                    : 'bg-gradient-to-r from-primary-500 to-accent-500 hover:from-primary-600 hover:to-accent-600 text-white shadow-primary-500/25'
+                  ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-primary-500 to-accent-500 hover:from-primary-600 hover:to-accent-600 text-white shadow-primary-500/25'
                   }`}
               >
                 {isLoading ? (
@@ -237,7 +238,7 @@ function UpgradePage() {
 
               <div className="mt-6 text-center space-y-2">
                 <p className="text-sm text-gray-400">
-                  14 jours offerts, puis {billingInterval === 'month' ? '49.90' : '499'} CHF/{billingInterval === 'month' ? 'mois' : 'an'}.
+                  {billingInterval === 'lifetime' ? 'Accès à vie, paiement unique.' : `14 jours offerts, puis ${billingInterval === 'month' ? '19.00' : '199'} CHF/${billingInterval === 'month' ? 'mois' : 'an'}.`}
                 </p>
                 <p className="text-xs text-gray-500">
                   Sans engagement. Annulable à tout moment en un clic.

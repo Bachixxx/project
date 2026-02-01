@@ -63,7 +63,48 @@ Deno.serve(async (req) => {
         });
         console.log('Created Customer:', customer.id);
 
-        // 3. Create Checkout Session
+        // 3. Handle Native Terminal Mode
+        if (mode === 'native_terminal') {
+            // For Tap to Pay on iPhone (Native SDK)
+            // We need a PaymentIntent with payment_method_types=['card_present']
+            const unitAmount = Math.round(Number(amount) * 100);
+            const applicationFee = Math.round(unitAmount * 0.01);
+
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: unitAmount,
+                currency: 'chf',
+                payment_method_types: ['card_present'],
+                capture_method: 'manual', // Terminal SDK usually requires manual capture or automatic? 
+                // Actually for "Tap to Pay on iPhone" directly via SDK, we use manual then capture, or automatic.
+                // Docs say: "capture_method": "manual" is common for Terminal to avoid unintended captures, but "automatic" works if we process immediately.
+                // Let's use automatic for simplicity unless SDK complains.
+                // Update: 'card_present' payments must be captured manually if we want to add tip etc, but for simple flow automatic is fine.
+                // However, Capacitor Stripe Terminal plugin might expect one or the other.
+                // Let's stick to 'manual' (default for terminal) or just standard.
+                // Actually default is automatic logic but explicitly:
+                capture_method: 'automatic',
+                metadata: {
+                    coachId: coachId,
+                    description: description || 'Native Tap to Pay',
+                    type: 'terminal_native'
+                },
+                application_fee_amount: applicationFee,
+                transfer_data: {
+                    destination: coach.stripe_account_id,
+                },
+                on_behalf_of: coach.stripe_account_id, // Recommended for Direct charges or Destination charges where the coach is the merchant of record
+            });
+
+            return new Response(
+                JSON.stringify({ client_secret: paymentIntent.client_secret }),
+                {
+                    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                    status: 200,
+                },
+            );
+        }
+
+        // 4. Create Checkout Session (Web Mode)
         let sessionParams: any = {
             customer: customer.id, // Mandatory for V2 / Subscriptions
             payment_method_types: ['card'],

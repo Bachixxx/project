@@ -197,78 +197,88 @@ function ExerciseCardContent({
       </div>
 
       {/* Content: Horizontal Layout */}
-      <div className="flex flex-col lg:flex-row gap-4 ml-11">
-        {/* Instructions Field (Full width or grow) */}
-        <div className="flex-1 min-w-[200px]">
+      <div className="flex flex-col lg:flex-row gap-4 lg:ml-11 mb-2">
+        {/* Instructions Field */}
+        <div className="flex-1 w-full">
           <input
             type="text"
             value={exercise.instructions || ''}
             onChange={(e) => onUpdate({ instructions: e.target.value })}
             className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm text-gray-300 placeholder-gray-600 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all"
-            placeholder="Instructions spéciales (ex: tempo 3-0-1)"
+            placeholder="Instructions..."
           />
         </div>
 
         {/* Metrics: Sets/Reps/Rest Row */}
-        <div className="flex gap-3 items-center shrink-0">
+        <div className="grid grid-cols-3 lg:flex gap-2 lg:gap-3 items-center shrink-0 w-full lg:w-auto">
           {exercise.tracking_type === 'duration' ? (
-            <div className="flex items-center gap-2 bg-black/20 px-3 py-1.5 rounded-lg border border-white/5">
-              <span className="text-xs text-gray-500 uppercase font-bold">Secs</span>
-              <input
-                type="number"
-                value={exercise.duration_seconds || 0}
-                onChange={(e) => onUpdate({ duration_seconds: parseInt(e.target.value) || 0 })}
-                className="w-16 bg-transparent text-white font-mono text-center focus:outline-none"
-                step="10"
-              />
+            <div className="col-span-2 lg:col-span-1 flex items-center justify-between lg:justify-start gap-2 bg-black/20 px-2 lg:px-3 py-1.5 rounded-lg border border-white/5">
+              <span className="text-[10px] lg:text-xs text-gray-500 uppercase font-bold">Durée</span>
+              <div className="flex items-center gap-1">
+                <input
+                  type="number"
+                  value={exercise.duration_seconds || 0}
+                  onChange={(e) => onUpdate({ duration_seconds: parseInt(e.target.value) || 0 })}
+                  className="w-12 lg:w-16 bg-transparent text-white font-mono text-center focus:outline-none"
+                  step="10"
+                />
+                <span className="text-xs text-gray-600">s</span>
+              </div>
             </div>
           ) : exercise.tracking_type === 'distance' ? (
-            <div className="flex items-center gap-2 bg-black/20 px-3 py-1.5 rounded-lg border border-white/5">
-              <span className="text-xs text-gray-500 uppercase font-bold">Mètres</span>
-              <input
-                type="number"
-                value={exercise.distance_meters || 0}
-                onChange={(e) => onUpdate({ distance_meters: parseInt(e.target.value) || 0 })}
-                className="w-20 bg-transparent text-white font-mono text-center focus:outline-none"
-                step="100"
-              />
+            <div className="col-span-2 lg:col-span-1 flex items-center justify-between lg:justify-start gap-2 bg-black/20 px-2 lg:px-3 py-1.5 rounded-lg border border-white/5">
+              <span className="text-[10px] lg:text-xs text-gray-500 uppercase font-bold">Dist.</span>
+              <div className="flex items-center gap-1">
+                <input
+                  type="number"
+                  value={exercise.distance_meters || 0}
+                  onChange={(e) => onUpdate({ distance_meters: parseInt(e.target.value) || 0 })}
+                  className="w-16 lg:w-20 bg-transparent text-white font-mono text-center focus:outline-none"
+                  step="100"
+                />
+                <span className="text-xs text-gray-600">m</span>
+              </div>
             </div>
           ) : (
             <>
-              <div className="flex items-center gap-2 bg-black/20 px-3 py-1.5 rounded-lg border border-white/5">
-                <span className="text-xs text-gray-500 uppercase font-bold">Séries</span>
+              <div className="flex flex-col lg:flex-row items-center justify-center gap-1 lg:gap-2 bg-black/20 px-1 lg:px-3 py-1.5 rounded-lg border border-white/5">
+                <span className="text-[10px] lg:text-xs text-gray-500 uppercase font-bold">Séries</span>
                 <input
                   type="number"
                   value={exercise.sets}
                   onChange={(e) => onUpdate({ sets: parseInt(e.target.value) || 0 })}
-                  className="w-12 bg-transparent text-white font-mono text-center focus:outline-none"
+                  className="w-full lg:w-12 bg-transparent text-white font-mono text-center focus:outline-none p-0"
                 />
               </div>
-              <span className="text-gray-600 text-sm">×</span>
-              <div className="flex items-center gap-2 bg-black/20 px-3 py-1.5 rounded-lg border border-white/5">
-                <span className="text-xs text-gray-500 uppercase font-bold">Reps</span>
+
+              <span className="hidden lg:block text-gray-600 text-sm">×</span>
+
+              <div className="flex flex-col lg:flex-row items-center justify-center gap-1 lg:gap-2 bg-black/20 px-1 lg:px-3 py-1.5 rounded-lg border border-white/5">
+                <span className="text-[10px] lg:text-xs text-gray-500 uppercase font-bold">Reps</span>
                 <input
                   type="number"
                   value={exercise.reps}
                   onChange={(e) => onUpdate({ reps: parseInt(e.target.value) || 0 })}
-                  className="w-12 bg-transparent text-white font-mono text-center focus:outline-none"
+                  className="w-full lg:w-12 bg-transparent text-white font-mono text-center focus:outline-none p-0"
                 />
               </div>
             </>
           )}
 
-          <div className="w-px h-8 bg-white/10 mx-1" />
+          <div className="hidden lg:block w-px h-8 bg-white/10 mx-1" />
 
-          <div className="flex items-center gap-2 bg-black/20 px-3 py-1.5 rounded-lg border border-white/5" title="Temps de repos">
-            <span className="text-xs text-gray-500 uppercase font-bold">Repos</span>
-            <input
-              type="number"
-              value={exercise.rest_time}
-              onChange={(e) => onUpdate({ rest_time: parseInt(e.target.value) })}
-              className="w-12 bg-transparent text-gray-400 focus:text-white font-mono text-center focus:outline-none"
-              placeholder="60"
-            />
-            <span className="text-xs text-gray-600">s</span>
+          <div className="flex flex-col lg:flex-row items-center justify-center gap-1 lg:gap-2 bg-black/20 px-1 lg:px-3 py-1.5 rounded-lg border border-white/5" title="Temps de repos">
+            <span className="text-[10px] lg:text-xs text-gray-500 uppercase font-bold">Repos</span>
+            <div className="flex items-center gap-1 justify-center w-full lg:w-auto">
+              <input
+                type="number"
+                value={exercise.rest_time}
+                onChange={(e) => onUpdate({ rest_time: parseInt(e.target.value) })}
+                className="w-full lg:w-12 bg-transparent text-gray-400 focus:text-white font-mono text-center focus:outline-none p-0"
+                placeholder="60"
+              />
+              <span className="text-xs text-gray-600 lg:hidden">s</span>
+            </div>
           </div>
         </div>
       </div>

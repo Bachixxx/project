@@ -21,7 +21,8 @@ export async function createSubscriptionSession(
   priceId: string,
   successUrl: string,
   cancelUrl: string,
-  metadata?: Record<string, any>
+  metadata?: Record<string, any>,
+  mode: 'subscription' | 'payment' = 'subscription'
 ) {
   try {
     console.log('Creating subscription session with:', {
@@ -29,7 +30,8 @@ export async function createSubscriptionSession(
       priceId,
       successUrl,
       cancelUrl,
-      metadata
+      metadata,
+      mode
     });
 
     const { data, error } = await supabase.functions.invoke(
@@ -40,7 +42,8 @@ export async function createSubscriptionSession(
           priceId: priceId,
           successUrl: successUrl,
           cancelUrl: cancelUrl,
-          metadata: metadata
+          metadata: metadata,
+          mode: mode
         }
       }
     );

@@ -52,6 +52,7 @@ function Register() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<'free' | 'paid'>('free');
+  const [billingInterval, setBillingInterval] = useState<'month' | 'year' | 'lifetime'>('year'); // Default to annual as requested implied "Best"
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const navigate = useNavigate();
   const { signUp, user } = useAuth(); // Removed unused signUp function
@@ -149,7 +150,7 @@ function Register() {
 
       // If paid plan selected, redirect to Stripe checkout
       if (selectedPlan === 'paid') {
-        const plan = plans.find(p => p.interval === 'month');
+        const plan = plans.find(p => p.interval === billingInterval);
         if (!plan) {
           throw new Error('Selected plan not found');
         }
@@ -158,7 +159,9 @@ function Register() {
           authData.user.id,
           plan.stripe_price_id,
           `${window.location.origin}/register?payment=success`,
-          `${window.location.origin}/register`
+          `${window.location.origin}/register`,
+          undefined,
+          billingInterval === 'lifetime' ? 'payment' : 'subscription'
         );
 
         if (!data.url) {
@@ -239,17 +242,41 @@ function Register() {
 
           {/* Left Column: Plan Selection */}
           <div className="space-y-6 animate-slide-in delay-100">
-            <h3 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-blue-400" />
-              Choisissez votre offre
+            <h3 className="text-xl font-semibold text-white mb-6 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-blue-400" />
+                Choisissez votre offre
+              </div>
+
+              {/* Billing Toggle (Mini) */}
+              <div className="inline-flex p-1 bg-white/5 rounded-lg border border-white/10 text-xs">
+                <button
+                  onClick={() => setBillingInterval('month')}
+                  className={`px-3 py-1.5 rounded-md font-medium transition-all ${billingInterval === 'month'
+                    ? 'bg-blue-500/20 text-blue-400'
+                    : 'text-gray-400 hover:text-white'
+                    }`}
+                >
+                  Mensuel
+                </button>
+                <button
+                  onClick={() => setBillingInterval('year')}
+                  className={`px-3 py-1.5 rounded-md font-medium transition-all ${billingInterval === 'year'
+                    ? 'bg-blue-500/20 text-blue-400'
+                    : 'text-gray-400 hover:text-white'
+                    }`}
+                >
+                  Annuel
+                </button>
+              </div>
             </h3>
 
             {/* Free Plan Card */}
             <div
               onClick={() => setSelectedPlan('free')}
               className={`relative overflow-hidden group cursor-pointer transition-all duration-300 rounded-2xl border ${selectedPlan === 'free'
-                  ? 'bg-blue-500/10 border-blue-500/50 shadow-[0_0_30px_rgba(59,130,246,0.15)]'
-                  : 'bg-white/5 border-white/10 hover:bg-white/[0.07] hover:border-white/20'
+                ? 'bg-blue-500/10 border-blue-500/50 shadow-[0_0_30px_rgba(59,130,246,0.15)]'
+                : 'bg-white/5 border-white/10 hover:bg-white/[0.07] hover:border-white/20'
                 }`}
             >
               <div className="p-6 flex items-center justify-between">
@@ -276,8 +303,8 @@ function Register() {
             <div
               onClick={() => setSelectedPlan('paid')}
               className={`relative overflow-hidden group cursor-pointer transition-all duration-300 rounded-2xl border ${selectedPlan === 'paid'
-                  ? 'bg-blue-500/10 border-blue-500/50 shadow-[0_0_30px_rgba(59,130,246,0.15)]'
-                  : 'bg-white/5 border-white/10 hover:bg-white/[0.07] hover:border-white/20 plan-card-hover'
+                ? 'bg-blue-500/10 border-blue-500/50 shadow-[0_0_30px_rgba(59,130,246,0.15)]'
+                : 'bg-white/5 border-white/10 hover:bg-white/[0.07] hover:border-white/20 plan-card-hover'
                 }`}
             >
               <div className="absolute top-0 right-0 bg-blue-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl uppercase tracking-wider">

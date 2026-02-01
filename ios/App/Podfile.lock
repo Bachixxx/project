@@ -1,7 +1,14 @@
 PODS:
   - Capacitor (8.0.2):
     - CapacitorCordova
+  - CapacitorCommunityStripeTerminal (8.0.1):
+    - Capacitor
+    - StripeTerminal (~> 4.7)
   - CapacitorCordova (8.0.2)
+  - CapacitorDevice (8.0.0):
+    - Capacitor
+  - CapacitorSplashScreen (8.0.0):
+    - Capacitor
   - OneSignal (5.4.0):
     - OneSignal/OneSignalComplete (= 5.4.0)
   - OneSignal/OneSignal (5.4.0):
@@ -48,27 +55,42 @@ PODS:
     - OneSignal/OneSignalNotifications
     - OneSignal/OneSignalOSCore
     - OneSignal/OneSignalOutcomes
+  - StripeTerminal (4.7.3)
 
 DEPENDENCIES:
   - "Capacitor (from `../../node_modules/@capacitor/ios`)"
+  - "CapacitorCommunityStripeTerminal (from `../../node_modules/@capacitor-community/stripe-terminal`)"
   - "CapacitorCordova (from `../../node_modules/@capacitor/ios`)"
+  - "CapacitorDevice (from `../../node_modules/@capacitor/device`)"
+  - "CapacitorSplashScreen (from `../../node_modules/@capacitor/splash-screen`)"
   - OneSignal (< 6.0, >= 3.0)
 
 SPEC REPOS:
   trunk:
     - OneSignal
+    - StripeTerminal
 
 EXTERNAL SOURCES:
   Capacitor:
     :path: "../../node_modules/@capacitor/ios"
+  CapacitorCommunityStripeTerminal:
+    :path: "../../node_modules/@capacitor-community/stripe-terminal"
   CapacitorCordova:
     :path: "../../node_modules/@capacitor/ios"
+  CapacitorDevice:
+    :path: "../../node_modules/@capacitor/device"
+  CapacitorSplashScreen:
+    :path: "../../node_modules/@capacitor/splash-screen"
 
 SPEC CHECKSUMS:
   Capacitor: 2b79172ad27f3be2d103cce88b8eb9803fdcc744
+  CapacitorCommunityStripeTerminal: 555919ab4afb7871fe85665f047d9534cca6bebd
   CapacitorCordova: 921bdb690ebe82421b24fce45552fd3dea2ae43a
+  CapacitorDevice: 9a16fb36a19ff391bf75afbe3cf16f883b3b3aa0
+  CapacitorSplashScreen: 422880d7117605c30699eb4b21644b62db42e86c
   OneSignal: 5f424f6e0dd0e55f28a0ae553851316cf5c6dcfa
+  StripeTerminal: b9e92913da8a08ff5c62af75056ad39bf8b02ac6
 
-PODFILE CHECKSUM: e6e4229acafe98fb37cc2134b1fd13307a86392a
+PODFILE CHECKSUM: 0ed4e6798656d13b764f45c2821403ede096bb0a
 
 COCOAPODS: 1.16.2

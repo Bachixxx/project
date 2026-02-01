@@ -1,6 +1,8 @@
 import React from 'react';
 import { useSubscription } from '../hooks/useSubscription';
 import { supabase } from '../lib/supabase';
+import { Capacitor } from '@capacitor/core';
+import { useTerminal } from '../contexts/TerminalContext';
 import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '../contexts/AuthContext';
 import { CreditCard, Smartphone, ShieldCheck, Check, Ban as Block } from 'lucide-react';
@@ -16,6 +18,7 @@ interface CoachPlan {
 function Terminal() {
     const { subscriptionInfo, loading: subLoading, subscribeToTerminal } = useSubscription();
     const { user } = useAuth(); // Need user ID for the edge function
+    const { connectLocalReader, collectPayment, isReady } = useTerminal();
 
     // Active View State
     const [amount, setAmount] = React.useState('');
@@ -55,7 +58,76 @@ function Terminal() {
         }
     }
 
+    const resetTerminal = () => {
+        setQrUrl(null);
+        setAmount('');
+        setDescription('');
+        setClientEmail('');
+        setSelectedPlan(null);
+    };
+
+    const handleNativePayment = async () => {
+        if (!user || !user.id) return;
+
+        try {
+            setGenerating(true);
+            alert("1. Démarrage...");
+
+            // 1. Ensure Reader Connected
+            if (!isReady) {
+                alert("1a. Connexion au lecteur...");
+                const connected = await connectLocalReader();
+                if (!connected) {
+                    alert("Échec connexion lecteur.");
+                    setGenerating(false);
+                    return;
+                }
+            } else {
+                alert("1b. Déjà connecté.");
+            }
+
+            // 2. Create Payment Intent
+            alert("2. Création paiement...");
+            const payload = {
+                coachId: user?.id,
+                amount: Number(amount),
+                description: description,
+                clientEmail: clientEmail,
+                mode: 'native_terminal',
+                priceId: selectedPlan?.stripe_price_id
+            };
+
+            const { data, error } = await supabase.functions.invoke('create-terminal-payment', {
+                body: payload
+            });
+
+            if (error) throw error;
+            alert("2b. Réponse Serveur: " + JSON.stringify(data));
+
+            if (data?.client_secret) {
+                alert("2c. Client Secret Reçu OK");
+                // 3. Hand off to Terminal SDK
+                alert("3. Lancement Tap to Pay...");
+                await collectPayment(data.client_secret);
+                alert("Paiement réussi !");
+                resetTerminal();
+            }
+
+        } catch (error: any) {
+            console.error(error);
+            alert(`Erreur: ${error.message}`);
+        } finally {
+            setGenerating(false);
+        }
+    };
+
     const generatePaymentLink = async () => {
+        // Check Platform
+        if (Capacitor.isNativePlatform()) {
+            await handleNativePayment();
+            return;
+        }
+
         if (!user || !user.id) {
             alert("Erreur: Utilisateur non trouvé. Essayez de vous reconnecter.");
             return;
@@ -83,9 +155,7 @@ function Terminal() {
             });
 
             if (error) {
-                // Determine if it's a FunctionsHttpError and try to extract body
                 let errorMessage = error.message || "Impossible de créer le paiement.";
-
                 try {
                     if ((error as any).context && typeof (error as any).context.json === 'function') {
                         const body = await (error as any).context.json();
@@ -96,7 +166,6 @@ function Terminal() {
                 } catch (e) {
                     console.error('Failed to parse error context JSON', e);
                 }
-
                 console.error('Edge Function Error:', error);
                 throw new Error(errorMessage);
             }
@@ -110,14 +179,6 @@ function Terminal() {
         } finally {
             setGenerating(false);
         }
-    };
-
-    const resetTerminal = () => {
-        setQrUrl(null);
-        setAmount('');
-        setDescription('');
-        setClientEmail('');
-        setSelectedPlan(null);
     };
 
     // Check Stripe Connect Status
@@ -368,10 +429,18 @@ function Terminal() {
                         ) : (
                             <>
                                 <Smartphone className="w-5 h-5" />
-                                {paymentMode === 'one_time' ? 'Générer le QR Code' : 'Abonner le client'}
+                                {Capacitor.isNativePlatform()
+                                    ? (paymentMode === 'one_time' ? 'Encaisser (Tap to Pay)' : 'Encaisser Abonnement')
+                                    : (paymentMode === 'one_time' ? 'Générer le QR Code' : 'Abonner le client')
+                                }
                             </>
                         )}
                     </button>
+                    {Capacitor.isNativePlatform() && (
+                        <p className="text-xs text-center mt-4 text-gray-500">
+                            Utilisez Tap to Pay sur votre iPhone
+                        </p>
+                    )}
                 </div>
 
                 {/* Right Side: QR Code Display for Client */}
@@ -421,6 +490,10 @@ function Terminal() {
                             </button>
                         </div>
                     )}
+                </div>
+
+                <div className="mt-8 text-center text-xs text-gray-600 font-mono">
+                    DEBUG: Platform={Capacitor.getPlatform()} | Native={Capacitor.isNativePlatform() ? 'TRUE' : 'FALSE'}
                 </div>
 
             </div>

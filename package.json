@@ -11,8 +11,10 @@
     "ios": "vite build && npx cap sync ios && npx cap open ios"
   },
   "dependencies": {
+    "@capacitor-community/stripe-terminal": "^8.0.1",
     "@capacitor/cli": "^8.0.2",
     "@capacitor/core": "^8.0.2",
+    "@capacitor/device": "^8.0.0",
     "@capacitor/ios": "^8.0.2",
     "@capacitor/splash-screen": "^8.0.0",
     "@stripe/stripe-js": "^3.0.7",

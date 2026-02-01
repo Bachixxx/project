@@ -37,7 +37,7 @@ serve(async (req) => {
   try {
     // Parse request body
     const body = await req.json();
-    const { coachId, priceId, successUrl, cancelUrl, metadata = {} } = body;
+    const { coachId, priceId, successUrl, cancelUrl, mode = 'subscription', metadata = {} } = body;
 
     // Validate required parameters
     if (!coachId || !priceId || !successUrl || !cancelUrl) {
@@ -105,26 +105,35 @@ serve(async (req) => {
           quantity: 1,
         },
       ],
-      mode: 'subscription',
+      mode: mode as Stripe.Checkout.SessionCreateParams.Mode,
       success_url: successUrl,
       cancel_url: cancelUrl,
       metadata: {
         coachId: coachId,
-        ...metadata // Merge custom metadata (e.g., type: 'branding_addon')
+        ...metadata
       },
       allow_promotion_codes: true,
       billing_address_collection: 'required',
       customer_update: {
         address: 'auto',
       },
-      subscription_data: {
+    };
+
+    // Add subscription data only if mode is subscription
+    if (mode === 'subscription') {
+      sessionData.subscription_data = {
         metadata: {
           coachId: coachId,
-          ...metadata // Also put in subscription metadata for webhook retrieval
+          ...metadata
         },
-        trial_period_days: (metadata.type === 'branding_addon' || metadata.type === 'terminal_addon') ? undefined : 14, // No trial for add-ons unless specified
-      },
-    };
+        trial_period_days: (metadata.type === 'branding_addon' || metadata.type === 'terminal_addon') ? undefined : 14,
+      };
+    } else {
+      // For one-time payments, invoice creation is automatic, but we can enable it explicitly if needed
+      sessionData.invoice_creation = {
+        enabled: true,
+      };
+    }
 
     const session = await stripe.checkout.sessions.create(sessionData);
 
