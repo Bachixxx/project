@@ -12,6 +12,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/ionic-team/capacitor-swift-pm.git", exact: "8.0.2"),
+        .package(name: "AdaptyCapacitor", path: "../../../node_modules/@adapty/capacitor"),
         .package(name: "CapacitorCommunityStripeTerminal", path: "../../../node_modules/@capacitor-community/stripe-terminal"),
         .package(name: "CapacitorDevice", path: "../../../node_modules/@capacitor/device"),
         .package(name: "CapacitorSplashScreen", path: "../../../node_modules/@capacitor/splash-screen"),
@@ -23,6 +24,7 @@ let package = Package(
             dependencies: [
                 .product(name: "Capacitor", package: "capacitor-swift-pm"),
                 .product(name: "Cordova", package: "capacitor-swift-pm"),
+                .product(name: "AdaptyCapacitor", package: "AdaptyCapacitor"),
                 .product(name: "CapacitorCommunityStripeTerminal", package: "CapacitorCommunityStripeTerminal"),
                 .product(name: "CapacitorDevice", package: "CapacitorDevice"),
                 .product(name: "CapacitorSplashScreen", package: "CapacitorSplashScreen"),

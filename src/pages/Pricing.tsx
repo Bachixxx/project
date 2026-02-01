@@ -1,11 +1,45 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Dumbbell, Menu, X, Check, X as XIcon, HelpCircle, ChevronDown, ChevronUp, Palette, Sparkles } from 'lucide-react';
+import { Capacitor } from '@capacitor/core';
+import { useAdapty } from '../hooks/useAdapty';
 
 function Pricing() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
     const [billingInterval, setBillingInterval] = useState<'month' | 'year' | 'lifetime'>('month');
+
+    // Mobile IAP Integration
+    const { products, makePurchase, loading: adaptyLoading } = useAdapty();
+    const isNative = Capacitor.isNativePlatform();
+
+    const handleSubscribe = async () => {
+        if (!isNative) return; // Web flow handled by Link to /waitlist or Stripe
+
+        // Find product matching current interval
+        // Note: product IDs should be configured in Adapty as: 
+        // 'pro_monthly', 'pro_annual', 'pro_lifetime'
+        const productMap: Record<string, string> = {
+            'month': 'pro_monthly',
+            'year': 'pro_annual',
+            'lifetime': 'pro_lifetime'
+        };
+
+        const productId = productMap[billingInterval];
+        const product = products.find(p => p.vendorProductId === productId);
+
+        if (product) {
+            try {
+                await makePurchase(product);
+                alert('Achat réussi ! Bienvenue dans Coachency Pro.');
+                // Redirect or refresh state
+            } catch (e) {
+                // Error handled in hook or silent
+            }
+        } else {
+            alert('Produit introuvable dans le store. Veuillez réessayer plus tard.');
+        }
+    };
 
     const toggleFaq = (index: number) => {
         setOpenFaqIndex(openFaqIndex === index ? null : index);
@@ -175,9 +209,19 @@ function Pricing() {
                             <FeatureItem text="Multi-coachs" included={true} />
                         </div>
 
-                        <Link to="/waitlist" className="w-full py-4 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-bold text-center shadow-lg shadow-blue-500/25 transition-all transform hover:scale-105">
-                            Commencer l'essai gratuit
-                        </Link>
+                        {isNative ? (
+                            <button
+                                onClick={handleSubscribe}
+                                disabled={adaptyLoading}
+                                className="w-full py-4 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-bold text-center shadow-lg shadow-blue-500/25 transition-all transform hover:scale-105 disabled:opacity-50"
+                            >
+                                {adaptyLoading ? 'Chargement...' : 'S\'abonner avec ' + (Capacitor.getPlatform() === 'ios' ? 'Apple' : 'Google')}
+                            </button>
+                        ) : (
+                            <Link to="/waitlist" className="w-full py-4 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-bold text-center shadow-lg shadow-blue-500/25 transition-all transform hover:scale-105">
+                                Commencer l'essai gratuit
+                            </Link>
+                        )}
                     </div>
                 </div>
 

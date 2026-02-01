@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { createSubscriptionSession } from '../lib/stripe';
+import { useAdapty } from './useAdapty';
 
 export interface SubscriptionInfo {
   type: 'free' | 'paid';
@@ -21,12 +22,13 @@ export function useSubscription() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
+  const { hasPremium } = useAdapty();
 
   useEffect(() => {
     if (user) {
       fetchSubscriptionInfo();
     }
-  }, [user]);
+  }, [user, hasPremium]);
 
   const fetchSubscriptionInfo = async () => {
     try {
@@ -44,6 +46,10 @@ export function useSubscription() {
         return;
       }
 
+      // Check native premium status
+      const isNativePremium = hasPremium();
+      const isPaid = coachData.subscription_type === 'paid' || isNativePremium;
+
       // Get current client count
       const { count: currentClients } = await supabase
         .from('clients')
@@ -51,11 +57,11 @@ export function useSubscription() {
         .eq('coach_id', user?.id);
 
       setSubscriptionInfo({
-        type: coachData.subscription_type,
-        clientLimit: coachData.client_limit,
+        type: isPaid ? 'paid' : 'free',
+        clientLimit: isPaid ? 999999 : coachData.client_limit, // Unlimited if paid
         currentClients: currentClients || 0,
         canAddClient:
-          coachData.subscription_type === 'paid' ||
+          isPaid ||
           (currentClients || 0) < coachData.client_limit,
         subscriptionEnd: coachData.subscription_end_date,
         hasBranding: coachData.has_branding || false,

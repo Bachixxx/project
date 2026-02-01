@@ -268,6 +268,15 @@ function Register() {
                 >
                   Annuel
                 </button>
+                <button
+                  onClick={() => setBillingInterval('lifetime')}
+                  className={`px-3 py-1.5 rounded-md font-medium transition-all ${billingInterval === 'lifetime'
+                    ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-sm'
+                    : 'text-gray-400 hover:text-white'
+                    }`}
+                >
+                  Lifetime
+                </button>
               </div>
             </h3>
 
@@ -322,8 +331,18 @@ function Register() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-2xl font-bold text-white">49.90 CHF</div>
-                  <div className="text-xs text-blue-400 font-medium">+ 14 JOURS OFFERTS</div>
+                  <div className="text-2xl font-bold text-white">
+                    {billingInterval === 'month' ? '19 CHF' : billingInterval === 'year' ? '199 CHF' : '1200 CHF'}
+                  </div>
+                  {billingInterval !== 'lifetime' ? (
+                    <div className="text-xs text-blue-400 font-medium">
+                      {billingInterval === 'year' ? '/an' : '/mois'} • 14 JOURS OFFERTS
+                    </div>
+                  ) : (
+                    <div className="text-xs text-purple-400 font-medium">
+                      PAIEMENT UNIQUE
+                    </div>
+                  )}
                 </div>
               </div>
 
