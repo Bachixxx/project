@@ -290,7 +290,7 @@ function Register() {
 
                 <div className="flex items-baseline gap-1 my-6">
                   <span className="text-4xl font-bold text-white">
-                    {billingInterval === 'month' ? '19' : '199'}
+                    {billingInterval === 'month' ? '19.90' : '199'}
                   </span>
                   <span className="text-xl font-bold text-white">CHF</span>
                   <span className="text-gray-400">/{billingInterval === 'month' ? 'mois' : 'an'}</span>

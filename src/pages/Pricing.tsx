@@ -177,7 +177,7 @@ function Pricing() {
                             <h3 className="text-xl font-bold text-blue-400 mb-2">Professionnel</h3>
                             <div className="flex items-baseline justify-center gap-1">
                                 <span className="text-5xl font-bold text-white">
-                                    {billingInterval === 'month' ? '19.00' : '199'}
+                                    {billingInterval === 'month' ? '19.90' : '199'}
                                 </span>
                                 <span className="text-xl font-bold text-white">CHF</span>
                                 <span className="text-gray-400">/{billingInterval === 'month' ? 'mois' : 'an'}</span>
