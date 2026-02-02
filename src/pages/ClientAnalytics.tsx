@@ -11,6 +11,8 @@ interface WorkoutLog {
   completed_at: string;
   weight: number;
   reps: number;
+  duration_seconds: number;
+  distance_meters: number;
   exercise_id: string;
   scheduled_session: {
     scheduled_date: string;
@@ -20,6 +22,7 @@ interface WorkoutLog {
 interface Exercise {
   id: string;
   name: string;
+  tracking_type?: 'reps_weight' | 'duration' | 'distance';
 }
 
 interface ClientData {
@@ -78,6 +81,8 @@ function ClientAnalytics() {
           completed_at,
           weight,
           reps,
+          duration_seconds,
+          distance_meters,
           exercise_id,
           scheduled_session:scheduled_sessions (
             scheduled_date
@@ -94,8 +99,10 @@ function ClientAnalytics() {
       const formattedLogs: WorkoutLog[] = (logs || []).map(log => ({
         id: log.id,
         completed_at: log.completed_at,
-        weight: log.weight,
-        reps: log.reps,
+        weight: log.weight || 0,
+        reps: log.reps || 0,
+        duration_seconds: log.duration_seconds || 0,
+        distance_meters: log.distance_meters || 0,
         exercise_id: log.exercise_id,
         scheduled_session: Array.isArray(log.scheduled_session)
           ? log.scheduled_session[0]
@@ -110,7 +117,7 @@ function ClientAnalytics() {
       if (exerciseIds.length > 0) {
         const { data: exercisesData, error: exercisesError } = await supabase
           .from('exercises')
-          .select('id, name')
+          .select('id, name, tracking_type')
           .in('id', exerciseIds);
 
         if (exercisesError) throw exercisesError;
@@ -129,7 +136,7 @@ function ClientAnalytics() {
     }
   };
 
-  const getStrengthDataForExercise = (exerciseId: string) => {
+  const getExerciseData = (exerciseId: string, trackingType?: string) => {
     if (!exerciseId || workoutLogs.length === 0) return [];
 
     const sessionGroups: Record<string, WorkoutLog[]> = {};
@@ -150,15 +157,29 @@ function ClientAnalytics() {
       });
 
     return Object.entries(sessionGroups).map(([dateStr, logs]) => {
-      const maxWeight = Math.max(...logs.map(l => l.weight));
-      const totalVolume = logs.reduce((sum, l) => sum + (l.weight * l.reps), 0);
       const dateObj = new Date(dateStr);
+      let metricValue = 0;
+      let totalVolume = 0;
+
+      if (trackingType === 'duration') {
+        // Max Duration in minutes
+        metricValue = Math.max(...logs.map(l => l.duration_seconds)) / 60;
+        totalVolume = logs.reduce((sum, l) => sum + l.duration_seconds, 0) / 60;
+      } else if (trackingType === 'distance') {
+        // Max Distance in meters
+        metricValue = Math.max(...logs.map(l => l.distance_meters));
+        totalVolume = logs.reduce((sum, l) => sum + l.distance_meters, 0);
+      } else {
+        // Weight
+        metricValue = Math.max(...logs.map(l => l.weight));
+        totalVolume = logs.reduce((sum, l) => sum + (l.weight * l.reps), 0);
+      }
 
       return {
         date: dateObj.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }),
         rawDate: dateObj,
-        maxWeight: maxWeight > 0 ? maxWeight : 0,
-        totalVolume
+        value: Number(metricValue.toFixed(2)),
+        totalVolume: Number(totalVolume.toFixed(2))
       };
     }).sort((a, b) => a.rawDate.getTime() - b.rawDate.getTime());
   };
@@ -320,9 +341,19 @@ function ClientAnalytics() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {selectedExercises.map(exerciseId => {
                   const exercise = exercises.find(e => e.id === exerciseId);
-                  const data = getStrengthDataForExercise(exerciseId);
+                  const data = getExerciseData(exerciseId, exercise?.tracking_type);
 
                   if (!exercise) return null;
+
+                  let yAxisLabel = "Charge Max (kg)";
+                  let dataKey = "value";
+                  // let unit = "kg"; // You can use this for tooltip formatting if needed
+
+                  if (exercise.tracking_type === 'distance') {
+                    yAxisLabel = "Distance Max (m)";
+                  } else if (exercise.tracking_type === 'duration') {
+                    yAxisLabel = "Durée Max (min)";
+                  }
 
                   return (
                     <div key={exerciseId} className="bg-[#1e293b]/50 border border-white/5 backdrop-blur-xl p-6 rounded-3xl flex flex-col h-[400px] animate-fade-in">
@@ -333,7 +364,7 @@ function ClientAnalytics() {
                           </div>
                           <div>
                             <h2 className="text-lg font-bold text-white leading-tight">{exercise.name}</h2>
-                            <p className="text-xs text-gray-400">Charge Max (kg)</p>
+                            <p className="text-xs text-gray-400">{yAxisLabel}</p>
                           </div>
                         </div>
                         <button
@@ -377,9 +408,9 @@ function ClientAnalytics() {
                               />
                               <Line
                                 type="monotone"
-                                dataKey="maxWeight"
+                                dataKey={dataKey}
                                 stroke="#a855f7"
-                                name="Charge Max (kg)"
+                                name={yAxisLabel}
                                 strokeWidth={3}
                                 dot={{ fill: '#a855f7', strokeWidth: 0, r: 4 }}
                                 activeDot={{ r: 6, strokeWidth: 0 }}
