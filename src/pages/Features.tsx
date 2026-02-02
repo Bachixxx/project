@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Dumbbell, Users, Calendar, LineChart, Shield, Smartphone, MessageSquare, CheckCircle, ArrowRight, Menu, X, Timer, CreditCard, Layout } from 'lucide-react';
 
@@ -20,7 +20,7 @@ function Features() {
                     </Link>
 
                     <div className="hidden md:flex items-center gap-8">
-                        <Link to="/marketplace" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">Marketplace</Link>
+
                         <Link to="/features" className="text-sm font-medium text-white transition-colors">Fonctionnalités</Link>
                         <Link to="/pricing" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">Tarifs</Link>
                     </div>
@@ -51,7 +51,7 @@ function Features() {
 
                 {mobileMenuOpen && (
                     <div className="md:hidden absolute top-full left-0 right-0 bg-[#0f172a] border-b border-white/10 p-6 flex flex-col gap-4 animate-fade-in shadow-2xl">
-                        <Link to="/marketplace" className="text-gray-300 py-2">Marketplace</Link>
+
                         <Link to="/features" className="text-white py-2 font-medium">Fonctionnalités</Link>
                         <Link to="/client/login" className="text-gray-300 py-2">Espace Client</Link>
                         <div className="h-px bg-white/10 my-2"></div>
@@ -105,94 +105,88 @@ function Features() {
                                 title: "Live Workout Coach",
                                 description: "Interface dédiée pour suivre la séance du client en direct. Ajustez les charges, validez les répétitions et fournissez un feedback immédiat.",
                                 icon: Timer,
-                                color: "blue"
+                                color: "blue",
+                                desktopImage: "/feature-live-workout-desktop.png",
+                                mobileImage: "/feature-live-workout-mobile.png"
                             },
                             {
                                 title: "Dashboard",
                                 description: "Votre tour de contrôle. Visualisez revenus, nouveaux clients et séances à venir en un clin d'œil.",
                                 icon: Layout,
-                                color: "cyan"
+                                color: "cyan",
+                                desktopImage: "/feature-dashboard-desktop.png",
+                                mobileImage: "/feature-dashboard-mobile.png"
                             },
                             {
                                 title: "Entraînement",
                                 description: "Gérez votre bibliothèque d'exercices, construisez des séances et assemblez des programmes complets.",
                                 icon: Dumbbell,
-                                color: "purple"
+                                color: "purple",
+                                carousel: [
+                                    {
+                                        desktop: "/feature-training-desktop-exercises.png",
+                                        mobile: "/feature-training-mobile-exercises.png"
+                                    },
+                                    {
+                                        desktop: "/feature-training-desktop-programs.png",
+                                        mobile: "/feature-training-mobile-programs.png"
+                                    },
+                                    {
+                                        desktop: "/feature-training-desktop-sessions.png",
+                                        mobile: "/feature-training-mobile-sessions.png"
+                                    }
+                                ]
                             },
                             {
                                 title: "Client",
                                 description: "CRM complet pour centraliser profils, historiques de progression, notes privées et objectifs.",
                                 icon: Users,
-                                color: "pink"
+                                color: "pink",
+                                carousel: [
+                                    { desktop: "/feature-client-desktop-list.png", mobile: "/feature-client-mobile-list.png" },
+                                    { desktop: "/feature-client-desktop-profile.png", mobile: "/feature-client-mobile-profile.png" },
+                                    { desktop: "/feature-client-desktop-perf.png", mobile: "/feature-client-mobile-perf.png" },
+                                    { desktop: "/feature-client-desktop-body.png", mobile: "/feature-client-mobile-body.png" }
+                                ]
                             },
                             {
                                 title: "Calendrier",
                                 description: "Planification bidirectionnelle. Synchronisez votre agenda et gérez vos disponibilités en temps réel.",
                                 icon: Calendar,
-                                color: "orange"
+                                color: "orange",
+                                desktopImage: "/feature-calendar-desktop.png",
+                                mobileImage: "/feature-calendar-mobile.png"
                             },
                             {
                                 title: "Multi-coaching",
                                 description: "Travaillez en équipe. Collaborez avec d'autres coachs sur les mêmes clients ou programmes.",
                                 icon: MessageSquare,
-                                color: "green"
+                                color: "green",
+                                desktopImage: "/feature-multi-coaching-desktop.png"
                             },
                             {
                                 title: "Finance",
                                 description: "Monétisez sans friction. Abonnements, liens de paiement et encaissement physique via Terminal.",
                                 icon: CreditCard,
-                                color: "emerald"
+                                color: "emerald",
+                                isPaid: true,
+                                carousel: [
+                                    { desktop: "/feature-finance-desktop-payments.png", mobile: "/feature-finance-mobile-payments.png" },
+                                    { desktop: "/feature-finance-desktop-terminal.png", mobile: "/feature-finance-mobile-terminal.png" },
+                                    { desktop: "/feature-finance-desktop-offers.png", mobile: "/feature-finance-mobile-offers.png" }
+                                ]
                             },
                             {
                                 title: "Branding",
                                 description: "Votre marque en avant. Personnalisez l'interface client avec votre logo et vos couleurs.",
                                 icon: Shield,
-                                color: "indigo"
+                                color: "indigo",
+                                isPaid: true,
+                                desktopImage: "/feature-branding-desktop.png",
+                                mobileImage: "/feature-branding-mobile.png"
                             }
-                        ].map((feature, index) => (
-                            <div
-                                key={index}
-                                className={`flex flex-col md:flex-row items-center gap-12 group ${index % 2 === 1 ? 'md:flex-row-reverse' : ''
-                                    }`}
-                            >
-                                {/* Text Content */}
-                                <div className="flex-1">
-                                    <div className={`w-12 h-12 rounded-xl bg-${feature.color}-500/20 flex items-center justify-center text-${feature.color}-400 mb-6`}>
-                                        <feature.icon className="w-6 h-6" />
-                                    </div>
-                                    <h3 className="text-3xl md:text-4xl font-bold text-white mb-6">
-                                        {feature.title}
-                                    </h3>
-                                    <p className="text-gray-400 text-lg leading-relaxed mb-8">
-                                        {feature.description}
-                                    </p>
-                                    <ul className="space-y-3">
-                                        <li className="flex items-center gap-3 text-gray-300">
-                                            <CheckCircle className={`w-5 h-5 text-${feature.color}-500`} />
-                                            Fonctionnalité clé incluse
-                                        </li>
-                                    </ul>
-                                </div>
-
-                                {/* Visual Content */}
-                                <div className="flex-1 w-full">
-                                    <div className={`
-                                        aspect-video rounded-2xl border border-white/10 p-2 shadow-2xl 
-                                        bg-gradient-to-br from-gray-900 to-gray-800
-                                        hover:border-${feature.color}-500/30 transition-all duration-500
-                                        group-hover:scale-[1.02]
-                                    `}>
-                                        <div className="w-full h-full bg-[#0f172a] rounded-xl overflow-hidden flex items-center justify-center relative">
-                                            {/* Placeholder for future screenshots */}
-                                            <div className={`absolute inset-0 bg-gradient-to-br from-${feature.color}-500/10 to-transparent opacity-50`}></div>
-                                            <feature.icon className={`w-16 h-16 text-${feature.color}-500/20`} />
-                                            <div className="absolute bottom-4 right-4 text-xs font-mono text-gray-600 bg-black/50 px-2 py-1 rounded">
-                                                Image: {feature.title}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                        ].map((feature: any, index) => (
+                            <FeatureCard key={index} feature={feature} index={index} />
                         ))}
                     </div>
                 ) : (
@@ -280,6 +274,107 @@ function Features() {
                 <p>© {new Date().getFullYear()} Coachency. Tous droits réservés.</p>
             </footer>
 
+        </div>
+    );
+}
+
+function FeatureCard({ feature, index }: { feature: any, index: number }) {
+    const [carouselIndex, setCarouselIndex] = useState(0);
+
+    useEffect(() => {
+        if (feature.carousel && feature.carousel.length > 1) {
+            const interval = setInterval(() => {
+                setCarouselIndex((prev) => (prev + 1) % feature.carousel.length);
+            }, 4000); // Rotate every 4 seconds
+            return () => clearInterval(interval);
+        }
+    }, [feature.carousel]);
+
+    const currentImage = feature.carousel
+        ? feature.carousel[carouselIndex]
+        : { desktop: feature.desktopImage, mobile: feature.mobileImage };
+
+    return (
+        <div className={`flex flex-col md:flex-row items-center gap-12 group ${index % 2 === 1 ? 'md:flex-row-reverse' : ''}`}>
+            {/* Text Content */}
+            <div className="flex-1">
+                <div className={`w-12 h-12 rounded-xl bg-${feature.color}-500/20 flex items-center justify-center text-${feature.color}-400 mb-6`}>
+                    <feature.icon className="w-6 h-6" />
+                </div>
+                <div className="flex items-center gap-4 mb-6">
+                    <h3 className="text-3xl md:text-4xl font-bold text-white">
+                        {feature.title}
+                    </h3>
+                    {feature.isPaid && (
+                        <span className="bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/50 text-amber-400 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                            Option Payante
+                        </span>
+                    )}
+                </div>
+                <p className="text-gray-400 text-lg leading-relaxed mb-8">
+                    {feature.description}
+                </p>
+                <ul className="space-y-3">
+                    <li className="flex items-center gap-3 text-gray-300">
+                        <CheckCircle className={`w-5 h-5 text-${feature.color}-500`} />
+                        Fonctionnalité clé incluse
+                    </li>
+                </ul>
+
+                {/* Carousel Indicators (if functional carousel) */}
+                {feature.carousel && (
+                    <div className="flex gap-2 mt-6">
+                        {feature.carousel.map((_: any, idx: number) => (
+                            <div
+                                key={idx}
+                                className={`h-1.5 rounded-full transition-all duration-300 ${idx === carouselIndex ? `w-8 bg-${feature.color}-500` : 'w-2 bg-gray-700'
+                                    }`}
+                            />
+                        ))}
+                    </div>
+                )}
+            </div>
+
+            {/* Visual Content */}
+            <div className="flex-1 w-full">
+                <div className={`
+                    aspect-video rounded-2xl border border-white/10 p-2 shadow-2xl 
+                    bg-gradient-to-br from-gray-900 to-gray-800
+                    hover:border-${feature.color}-500/30 transition-all duration-500
+                    group-hover:scale-[1.02] relative
+                `}>
+                    <div className="w-full h-full bg-[#0f172a] rounded-xl overflow-hidden flex items-center justify-center relative">
+                        {currentImage.desktop ? (
+                            <img
+                                key={`desktop-${carouselIndex}`}
+                                src={currentImage.desktop}
+                                alt={feature.title}
+                                className="w-full h-full object-cover animate-fade-in"
+                            />
+                        ) : (
+                            <>
+                                <div className={`absolute inset-0 bg-gradient-to-br from-${feature.color}-500/10 to-transparent opacity-50`}></div>
+                                <feature.icon className={`w-16 h-16 text-${feature.color}-500/20`} />
+                                <div className="absolute bottom-4 right-4 text-xs font-mono text-gray-600 bg-black/50 px-2 py-1 rounded">
+                                    Image: {feature.title}
+                                </div>
+                            </>
+                        )}
+                    </div>
+
+                    {/* Mobile Overlay */}
+                    {currentImage.mobile && (
+                        <div className="absolute -bottom-8 -right-8 w-1/4 aspect-[9/19] rounded-2xl border-4 border-gray-900 shadow-2xl overflow-hidden hidden md:block animate-fade-in delay-300 hover:scale-105 transition-transform duration-300">
+                            <img
+                                key={`mobile-${carouselIndex}`}
+                                src={currentImage.mobile}
+                                alt={`${feature.title} Mobile`}
+                                className="w-full h-full object-cover animate-fade-in"
+                            />
+                        </div>
+                    )}
+                </div>
+            </div>
         </div>
     );
 }
