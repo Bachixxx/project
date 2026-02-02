@@ -90,7 +90,7 @@ export function SessionDetailsModal({ scheduledSessionId, onClose, onStatusChang
       const { data, error } = await supabase
         .from('exercises')
         .select('id, name, category, tracking_type')
-        .eq('coach_id', user?.id)
+        .or(`coach_id.eq.${user?.id},coach_id.is.null`)
         .order('name');
 
       if (error) throw error;

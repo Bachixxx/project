@@ -14,7 +14,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-serve(async (req) => {
+serve(async (req: any) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -28,11 +28,11 @@ serve(async (req) => {
 
     let subject = overrideSubject
     let html = overrideHtml
-    let templateName = template_name
+    const templateName = template_name
 
     // Generate content from template if specified
-    if (template_name && TEMPLATES[template_name]) {
-      const template = TEMPLATES[template_name](data || {})
+    if (templateName && TEMPLATES[templateName as keyof typeof TEMPLATES]) {
+      const template = TEMPLATES[templateName as keyof typeof TEMPLATES](data || {})
       subject = subject || template.subject
       html = html || template.html
     }
@@ -43,10 +43,11 @@ serve(async (req) => {
 
     // Send email via Resend
     const { data: emailData, error: emailError } = await resend.emails.send({
-      from: 'Coachency <onboarding@resend.dev>', // Update this with verified domain later
+      from: 'Coachency <onboarding@coachency.app>',
       to: [to],
       subject: subject,
       html: html,
+      reply_to: 'jeremybachtold@gmail.com'
     })
 
     if (emailError) {
@@ -80,9 +81,9 @@ serve(async (req) => {
         table_name: 'emails',
         event_type: 'error',
         status: 'error',
-        error_message: error.message
+        error_message: error instanceof Error ? error.message : String(error)
       })
-    } catch (logError) {
+    } catch {
       // Ignore logging errors
     }
 

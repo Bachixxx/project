@@ -45,9 +45,9 @@ export const MASTER_TEMPLATE = (content: string, title: string) => `
 `;
 
 export const TEMPLATES = {
-    'coach.welcome': (data: any) => ({
-        subject: 'Bienvenue sur Coachency ! 🚀',
-        html: MASTER_TEMPLATE(`
+  'coach.welcome': (data: Record<string, any>) => ({
+    subject: 'Bienvenue sur Coachency ! 🚀',
+    html: MASTER_TEMPLATE(`
       <h1>Bienvenue ${data.name} !</h1>
       <p>Nous sommes ravis de vous compter parmi nos coachs. Coachency est conçu pour vous faire gagner du temps et propulser votre activité.</p>
       <p>Pour bien démarrer, nous vous conseillons de :</p>
@@ -60,11 +60,11 @@ export const TEMPLATES = {
         <a href="${data.dashboard_url}" class="btn">Accéder à mon Dashboard</a>
       </div>
     `, 'Bienvenue sur Coachency')
-    }),
+  }),
 
-    'client.welcome': (data: any) => ({
-        subject: 'Bienvenue sur votre espace client Coachency',
-        html: MASTER_TEMPLATE(`
+  'client.welcome': (data: Record<string, any>) => ({
+    subject: 'Bienvenue sur votre espace client Coachency',
+    html: MASTER_TEMPLATE(`
       <h1>Votre espace personnel est prêt</h1>
       <p>Bonjour ${data.name},</p>
       <p>Votre compte client a été créé avec succès. Vous pouvez désormais accéder à vos programmes, suivre vos progrès et échanger avec votre coach.</p>
@@ -72,11 +72,11 @@ export const TEMPLATES = {
         <a href="${data.dashboard_url}" class="btn">Accéder à mon Espace</a>
       </div>
     `, 'Bienvenue Client')
-    }),
+  }),
 
-    'client.invite': (data: any) => ({
-        subject: `${data.coach_name} vous invite sur Coachency`,
-        html: MASTER_TEMPLATE(`
+  'client.invite': (data: Record<string, any>) => ({
+    subject: `${data.coach_name} vous invite sur Coachency`,
+    html: MASTER_TEMPLATE(`
       <h1>Invitation de ${data.coach_name}</h1>
       <p>Bonjour ${data.client_name || ''},</p>
       <p>Votre coach utilise Coachency pour gérer ses suivis et vous invite à rejoindre sa plateforme.</p>
@@ -91,11 +91,11 @@ export const TEMPLATES = {
       </div>
       <p style="font-size: 13px; color: #94a3b8; margin-top: 20px; text-align: center;">Ce lien n'expire pas.</p>
     `, 'Invitation Client')
-    }),
+  }),
 
-    'session.confirm': (data: any) => ({
-        subject: 'Confirmation de séance : ' + data.date,
-        html: MASTER_TEMPLATE(`
+  'session.confirm': (data: Record<string, any>) => ({
+    subject: 'Confirmation de séance : ' + data.date,
+    html: MASTER_TEMPLATE(`
       <h1>Séance confirmée ✅</h1>
       <p>Votre séance est bien programmée.</p>
       
@@ -118,11 +118,11 @@ export const TEMPLATES = {
         <a href="${data.dashboard_url}" class="btn">Voir ma séance</a>
       </div>
     `, 'Séance Confirmée')
-    }),
+  }),
 
-    'payment.receipt': (data: any) => ({
-        subject: `Reçu de paiement - ${data.amount}`,
-        html: MASTER_TEMPLATE(`
+  'payment.receipt': (data: Record<string, any>) => ({
+    subject: `Reçu de paiement - ${data.amount}`,
+    html: MASTER_TEMPLATE(`
       <h1>Paiement reçu</h1>
       <p>Merci ! Votre paiement a été validé avec succès.</p>
       
@@ -145,5 +145,5 @@ export const TEMPLATES = {
         <a href="${data.dashboard_url}" class="btn">Télécharger la facture</a>
       </div>
     `, 'Reçu de Paiement')
-    })
+  })
 };

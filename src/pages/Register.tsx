@@ -65,6 +65,7 @@ function Register() {
     if (paymentStatus === 'success') {
       handleSuccessfulPayment();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
   const fetchPlans = async () => {
@@ -187,8 +188,9 @@ function Register() {
       // Redirect to Stripe Checkout
       window.location.href = data.url;
 
-    } catch (err: any) {
-      console.error('Registration error:', err);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
+      console.error('Registration error:', errorMessage);
       setError('An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);

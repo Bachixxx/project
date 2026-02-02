@@ -7,9 +7,8 @@ import {
   Phone,
   Target,
   Calendar,
-  X,
-  ChevronRight,
-  Share2
+  Share2,
+  ChevronRight
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
@@ -54,11 +53,12 @@ function ClientsPage() {
       fetchClients();
       fetchCoachCode();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const fetchCoachCode = async () => {
     try {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('coaches')
         .select('coach_code')
         .eq('id', user?.id)
@@ -283,13 +283,13 @@ function ClientsPage() {
         <ClientModal
           client={selectedClient}
           onClose={() => setIsModalOpen(false)}
-          onSave={async (clientData: any) => {
+          onSave={async (clientData: ClientFormData) => {
             try {
               // Sanitize numeric fields
               const sanitizedData = {
                 ...clientData,
-                height: clientData.height === '' ? null : parseFloat(clientData.height),
-                weight: clientData.weight === '' ? null : parseFloat(clientData.weight),
+                height: clientData.height === '' ? null : parseFloat(clientData.height.toString()),
+                weight: clientData.weight === '' ? null : parseFloat(clientData.weight.toString()),
               };
 
               if (selectedClient) {
@@ -319,9 +319,10 @@ function ClientsPage() {
 
               fetchClients();
               setIsModalOpen(false);
-            } catch (error: any) {
+            } catch (error: unknown) {
+              const errorMessage = error instanceof Error ? error.message : 'Une erreur est survenue lors de la création du client';
               console.error('Error saving client:', error);
-              alert(error.message || 'Une erreur est survenue lors de la création du client');
+              alert(errorMessage);
             }
           }}
         />
@@ -334,7 +335,21 @@ import { ResponsiveModal } from '../components/ResponsiveModal';
 
 // ... (existing helper function code if any, though ClientModal is standalone here)
 
-function ClientModal({ client, onClose, onSave }: { client: any, onClose: () => void, onSave: (data: any) => void }) {
+interface ClientFormData {
+  full_name: string;
+  email: string;
+  phone: string;
+  date_of_birth: string;
+  gender: string;
+  height: number | string;
+  weight: number | string;
+  fitness_goals: string[];
+  medical_conditions: string[];
+  notes: string;
+  status: string;
+}
+
+function ClientModal({ client, onClose, onSave }: { client: Client | null, onClose: () => void, onSave: (data: ClientFormData) => void }) {
   const [formData, setFormData] = useState({
     full_name: client?.full_name || '',
     email: client?.email || '',
@@ -349,7 +364,7 @@ function ClientModal({ client, onClose, onSave }: { client: any, onClose: () => 
     status: client?.status || 'active',
   });
 
-  const handleChange = (e: any) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };

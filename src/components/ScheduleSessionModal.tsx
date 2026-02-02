@@ -89,6 +89,7 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
   useEffect(() => {
     fetchExercises();
     fetchExistingSessions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -106,7 +107,7 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
       const { data, error } = await supabase
         .from('exercises')
         .select('id, name, category, tracking_type')
-        .eq('coach_id', user?.id)
+        .or(`coach_id.eq.${user?.id},coach_id.is.null`)
         .order('name');
 
       if (error) throw error;
