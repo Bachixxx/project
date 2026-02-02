@@ -13,6 +13,7 @@ interface WorkoutLog {
   reps: number;
   duration_seconds: number;
   distance_meters: number;
+  calories: number;
   exercise_id: string;
   scheduled_session: {
     scheduled_date: string;
@@ -22,6 +23,11 @@ interface WorkoutLog {
 interface Exercise {
   id: string;
   name: string;
+  track_reps: boolean;
+  track_weight: boolean;
+  track_duration: boolean;
+  track_distance: boolean;
+  track_calories: boolean;
   tracking_type?: 'reps_weight' | 'duration' | 'distance';
 }
 
@@ -83,6 +89,7 @@ function ClientAnalytics() {
           reps,
           duration_seconds,
           distance_meters,
+          calories,
           exercise_id,
           scheduled_session:scheduled_sessions (
             scheduled_date
@@ -103,6 +110,7 @@ function ClientAnalytics() {
         reps: log.reps || 0,
         duration_seconds: log.duration_seconds || 0,
         distance_meters: log.distance_meters || 0,
+        calories: log.calories || 0,
         exercise_id: log.exercise_id,
         scheduled_session: Array.isArray(log.scheduled_session)
           ? log.scheduled_session[0]
@@ -117,7 +125,7 @@ function ClientAnalytics() {
       if (exerciseIds.length > 0) {
         const { data: exercisesData, error: exercisesError } = await supabase
           .from('exercises')
-          .select('id, name, tracking_type')
+          .select('id, name, tracking_type, track_reps, track_weight, track_duration, track_distance, track_calories')
           .in('id', exerciseIds);
 
         if (exercisesError) throw exercisesError;
@@ -136,7 +144,7 @@ function ClientAnalytics() {
     }
   };
 
-  const getExerciseData = (exerciseId: string, trackingType?: string) => {
+  const getExerciseData = (exerciseId: string) => {
     if (!exerciseId || workoutLogs.length === 0) return [];
 
     const sessionGroups: Record<string, WorkoutLog[]> = {};
@@ -158,28 +166,24 @@ function ClientAnalytics() {
 
     return Object.entries(sessionGroups).map(([dateStr, logs]) => {
       const dateObj = new Date(dateStr);
-      let metricValue = 0;
-      let totalVolume = 0;
 
-      if (trackingType === 'duration') {
-        // Max Duration in minutes
-        metricValue = Math.max(...logs.map(l => l.duration_seconds)) / 60;
-        totalVolume = logs.reduce((sum, l) => sum + l.duration_seconds, 0) / 60;
-      } else if (trackingType === 'distance') {
-        // Max Distance in meters
-        metricValue = Math.max(...logs.map(l => l.distance_meters));
-        totalVolume = logs.reduce((sum, l) => sum + l.distance_meters, 0);
-      } else {
-        // Weight
-        metricValue = Math.max(...logs.map(l => l.weight));
-        totalVolume = logs.reduce((sum, l) => sum + (l.weight * l.reps), 0);
-      }
+      // Calculate all potential metrics
+      const maxWeight = Math.max(...logs.map(l => l.weight));
+      const totalVolume = logs.reduce((sum, l) => sum + (l.weight * l.reps), 0);
+      const maxDistance = Math.max(...logs.map(l => l.distance_meters));
+      const totalDistance = logs.reduce((sum, l) => sum + l.distance_meters, 0);
+      const maxDuration = Math.max(...logs.map(l => l.duration_seconds)) / 60; // Minutes
+      const totalDuration = logs.reduce((sum, l) => sum + l.duration_seconds, 0) / 60; // Minutes
+      const totalCalories = logs.reduce((sum, l) => sum + l.calories, 0);
 
       return {
         date: dateObj.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }),
         rawDate: dateObj,
-        value: Number(metricValue.toFixed(2)),
-        totalVolume: Number(totalVolume.toFixed(2))
+        weight: Number(maxWeight.toFixed(2)),
+        volume: Number(totalVolume.toFixed(2)),
+        distance: Number(maxDistance.toFixed(2)),
+        duration: Number(maxDuration.toFixed(2)),
+        calories: Number(totalCalories.toFixed(0))
       };
     }).sort((a, b) => a.rawDate.getTime() - b.rawDate.getTime());
   };
@@ -341,18 +345,28 @@ function ClientAnalytics() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {selectedExercises.map(exerciseId => {
                   const exercise = exercises.find(e => e.id === exerciseId);
-                  const data = getExerciseData(exerciseId, exercise?.tracking_type);
+                  const data = getExerciseData(exerciseId);
 
                   if (!exercise) return null;
 
                   let yAxisLabel = "Charge Max (kg)";
-                  let dataKey = "value";
-                  // let unit = "kg"; // You can use this for tooltip formatting if needed
+                  let dataKey = "weight";
 
-                  if (exercise.tracking_type === 'distance') {
+                  if (exercise.track_weight) {
+                    yAxisLabel = "Charge Max (kg)";
+                    dataKey = "weight";
+                  } else if (exercise.track_distance) {
                     yAxisLabel = "Distance Max (m)";
-                  } else if (exercise.tracking_type === 'duration') {
+                    dataKey = "distance";
+                  } else if (exercise.track_duration) {
                     yAxisLabel = "Durée Max (min)";
+                    dataKey = "duration";
+                  } else if (exercise.track_calories) {
+                    yAxisLabel = "Calories";
+                    dataKey = "calories";
+                  } else if (exercise.track_reps) { // Fallback
+                    yAxisLabel = "Volume (Rep x Kg)";
+                    dataKey = "volume";
                   }
 
                   return (

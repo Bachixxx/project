@@ -24,17 +24,28 @@ interface SessionExercise {
     name: string;
     category: string;
     difficulty_level: string;
+    // New Tracking Booleans
+    track_reps: boolean;
+    track_weight: boolean;
+    track_duration: boolean;
+    track_distance: boolean;
+    track_calories: boolean;
+    // Legacy
     tracking_type?: 'reps_weight' | 'duration' | 'distance';
   };
   sets: number;
   reps: number;
+  weight: number;
   rest_time: number;
   order_index: number;
   instructions?: string;
   group_id?: string | null;
+  // Legacy
   tracking_type?: 'reps_weight' | 'duration' | 'distance';
+  // New metrics
   duration_seconds?: number;
   distance_meters?: number;
+  calories?: number;
 }
 
 interface ExerciseGroup {
@@ -51,6 +62,11 @@ interface Exercise {
   category: string;
   difficulty_level: string;
   coach_id: string | null;
+  track_reps: boolean;
+  track_weight: boolean;
+  track_duration: boolean;
+  track_distance: boolean;
+  track_calories: boolean;
   tracking_type?: 'reps_weight' | 'duration' | 'distance';
 }
 
@@ -98,13 +114,18 @@ function SessionsPage() {
             order_index,
             instructions,
             group_id,
-            exercise:exercises (
-              id,
-              name,
-              category,
-              category,
-              difficulty_level,
-              tracking_type
+              exercise:exercises (
+                id,
+                name,
+                category,
+                difficulty_level,
+                tracking_type,
+                track_reps,
+                track_weight,
+                track_duration,
+                track_distance,
+                track_calories
+              )
             )
           )
         `)
@@ -473,7 +494,7 @@ function SessionModal({ session, onClose, onSave }: any) {
       setError(null);
       const { data, error } = await supabase
         .from('exercises')
-        .select('id, name, category, difficulty_level, coach_id, tracking_type')
+        .select('id, name, category, difficulty_level, coach_id, tracking_type, track_reps, track_weight, track_duration, track_distance, track_calories')
         .or(`coach_id.eq.${user?.id},coach_id.is.null`)
         .order('name');
 
@@ -835,15 +856,17 @@ function SessionModal({ session, onClose, onSave }: any) {
               const newExercisesToBeAdded = selectedItems.map((exercise, idx) => ({
                 id: `temp-${Date.now()}-${idx}`,
                 exercise,
-                sets: 3,
-                reps: 12,
+                sets: exercise.track_reps ? 3 : 0,
+                reps: exercise.track_reps ? 12 : 0,
+                weight: 0,
                 rest_time: 60,
                 instructions: '',
                 order_index: selectedExercises.length + idx,
                 group_id: null,
                 tracking_type: exercise.tracking_type || 'reps_weight',
-                duration_seconds: exercise.tracking_type === 'duration' ? 60 : undefined,
-                distance_meters: exercise.tracking_type === 'distance' ? 1000 : undefined,
+                duration_seconds: exercise.track_duration ? 60 : 0,
+                distance_meters: exercise.track_distance ? 1000 : 0,
+                calories: 0,
               }));
 
               if (activeGroupId) {

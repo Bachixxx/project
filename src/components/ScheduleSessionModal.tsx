@@ -17,18 +17,29 @@ interface Exercise {
   id: string;
   name: string;
   category: string;
-  tracking_type: 'reps_weight' | 'duration' | 'distance';
+  // New Tracking Booleans
+  track_reps: boolean;
+  track_weight: boolean;
+  track_duration: boolean;
+  track_distance: boolean;
+  track_calories: boolean;
+  // Legacy
+  tracking_type?: 'reps_weight' | 'duration' | 'distance';
 }
 
 interface SelectedExercise {
   exercise_id: string;
   sets: number;
   reps: number;
+  weight: number;
   rest_time: number;
   group_id?: string;
+  // Legacy
   tracking_type?: 'reps_weight' | 'duration' | 'distance';
-  duration_seconds?: number;
-  distance_meters?: number;
+  // New metrics
+  duration_seconds: number;
+  distance_meters: number;
+  calories: number;
 }
 
 interface ExerciseGroup {
@@ -106,7 +117,7 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
     try {
       const { data, error } = await supabase
         .from('exercises')
-        .select('id, name, category, tracking_type')
+        .select('id, name, category, tracking_type, track_reps, track_weight, track_duration, track_distance, track_calories')
         .or(`coach_id.eq.${user?.id},coach_id.is.null`)
         .order('name');
 
@@ -142,12 +153,15 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
           type: 'exercise',
           data: {
             exercise_id: exercises[0].id,
-            sets: 3,
-            reps: 12,
+            sets: exercises[0].track_reps ? 3 : 0,
+            reps: exercises[0].track_reps ? 12 : 0,
+            weight: 0,
             rest_time: 60,
-            tracking_type: exercises[0].tracking_type || 'reps_weight',
-            duration_seconds: 60,
-            distance_meters: 1000,
+            tracking_type: exercises[0].tracking_type,
+            duration_seconds: exercises[0].track_duration ? 60 : 0,
+            distance_meters: exercises[0].track_distance ? 1000 : 0,
+            calories: 0,
+
           }
         }
       ]);
@@ -193,10 +207,12 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
         exercise_id: exercises[0].id,
         sets: 1,
         reps: 12,
+        weight: 0,
         rest_time: 30,
         tracking_type: exercises[0].tracking_type || 'reps_weight',
         duration_seconds: 60,
         distance_meters: 1000,
+        calories: 0,
       }] : []
     };
     setWorkoutItems([...workoutItems, { type: 'group', data: newGroup }]);
@@ -224,10 +240,12 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
           exercise_id: exercises[0].id,
           sets: 1,
           reps: 12,
+          weight: 0,
           rest_time: 30,
           tracking_type: exercises[0].tracking_type || 'reps_weight',
           duration_seconds: 60,
           distance_meters: 1000,
+          calories: 0,
         });
         setWorkoutItems(updated);
       }
@@ -892,65 +910,110 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
                             </button>
                           </div>
 
-                          <div className="grid grid-cols-3 gap-2">
-                            {item.data.tracking_type === 'duration' ? (
-                              <div className="col-span-2">
-                                <label className="block text-xs font-medium text-gray-400 mb-1">
-                                  Durée (secondes)
-                                </label>
-                                <input
-                                  type="number"
-                                  value={item.data.duration_seconds || 60}
-                                  onChange={(e) => handleExerciseChange(index, 'duration_seconds', parseInt(e.target.value))}
-                                  min="0"
-                                  step="10"
-                                  className="w-full rounded-lg bg-white/5 border-white/10 text-white text-sm focus:border-blue-500 focus:ring-blue-500"
-                                />
-                              </div>
-                            ) : item.data.tracking_type === 'distance' ? (
-                              <div className="col-span-2">
-                                <label className="block text-xs font-medium text-gray-400 mb-1">
-                                  Distance (mètres)
-                                </label>
-                                <input
-                                  type="number"
-                                  value={item.data.distance_meters || 1000}
-                                  onChange={(e) => handleExerciseChange(index, 'distance_meters', parseInt(e.target.value))}
-                                  min="0"
-                                  step="100"
-                                  className="w-full rounded-lg bg-white/5 border-white/10 text-white text-sm focus:border-blue-500 focus:ring-blue-500"
-                                />
-                              </div>
-                            ) : (
-                              <>
-                                <div>
-                                  <label className="block text-xs font-medium text-gray-400 mb-1">
-                                    Séries
-                                  </label>
-                                  <input
-                                    type="number"
-                                    value={item.data.sets}
-                                    onChange={(e) => handleExerciseChange(index, 'sets', parseInt(e.target.value))}
-                                    min="1"
-                                    max="10"
-                                    className="w-full rounded-lg bg-white/5 border-white/10 text-white text-sm focus:border-blue-500 focus:ring-blue-500"
-                                  />
-                                </div>
-                                <div>
-                                  <label className="block text-xs font-medium text-gray-400 mb-1">
-                                    Reps
-                                  </label>
-                                  <input
-                                    type="number"
-                                    value={item.data.reps}
-                                    onChange={(e) => handleExerciseChange(index, 'reps', parseInt(e.target.value))}
-                                    min="1"
-                                    max="100"
-                                    className="w-full rounded-lg bg-white/5 border-white/10 text-white text-sm focus:border-blue-500 focus:ring-blue-500"
-                                  />
-                                </div>
-                              </>
-                            )}
+                          <div className="grid grid-cols-2 gap-2">
+                            {(() => {
+                              const exerciseDef = exercises.find(e => e.id === item.data.exercise_id);
+                              if (!exerciseDef) return null;
+
+                              return (
+                                <>
+                                  {exerciseDef.track_duration && (
+                                    <div className="col-span-1">
+                                      <label className="block text-xs font-medium text-gray-400 mb-1">
+                                        Durée (s)
+                                      </label>
+                                      <input
+                                        type="number"
+                                        value={item.data.duration_seconds || 0}
+                                        onChange={(e) => handleExerciseChange(index, 'duration_seconds', parseInt(e.target.value))}
+                                        min="0"
+                                        step="10"
+                                        className="w-full rounded-lg bg-white/5 border-white/10 text-white text-sm focus:border-blue-500 focus:ring-blue-500"
+                                      />
+                                    </div>
+                                  )}
+
+                                  {exerciseDef.track_distance && (
+                                    <div className="col-span-1">
+                                      <label className="block text-xs font-medium text-gray-400 mb-1">
+                                        Distance (m)
+                                      </label>
+                                      <input
+                                        type="number"
+                                        value={item.data.distance_meters || 0}
+                                        onChange={(e) => handleExerciseChange(index, 'distance_meters', parseInt(e.target.value))}
+                                        min="0"
+                                        step="100"
+                                        className="w-full rounded-lg bg-white/5 border-white/10 text-white text-sm focus:border-blue-500 focus:ring-blue-500"
+                                      />
+                                    </div>
+                                  )}
+
+                                  {exerciseDef.track_reps && (
+                                    <>
+                                      <div className="col-span-1">
+                                        <label className="block text-xs font-medium text-gray-400 mb-1">
+                                          Séries
+                                        </label>
+                                        <input
+                                          type="number"
+                                          value={item.data.sets || 0}
+                                          onChange={(e) => handleExerciseChange(index, 'sets', parseInt(e.target.value))}
+                                          min="0"
+                                          max="20"
+                                          className="w-full rounded-lg bg-white/5 border-white/10 text-white text-sm focus:border-blue-500 focus:ring-blue-500"
+                                        />
+                                      </div>
+                                      <div className="col-span-1">
+                                        <label className="block text-xs font-medium text-gray-400 mb-1">
+                                          Reps
+                                        </label>
+                                        <input
+                                          type="number"
+                                          value={item.data.reps || 0}
+                                          onChange={(e) => handleExerciseChange(index, 'reps', parseInt(e.target.value))}
+                                          min="0"
+                                          max="100"
+                                          className="w-full rounded-lg bg-white/5 border-white/10 text-white text-sm focus:border-blue-500 focus:ring-blue-500"
+                                        />
+                                      </div>
+                                    </>
+                                  )}
+
+                                  {exerciseDef.track_weight && (
+                                    <div className="col-span-1">
+                                      <label className="block text-xs font-medium text-gray-400 mb-1">
+                                        Poids (kg)
+                                      </label>
+                                      <input
+                                        type="number"
+                                        value={item.data.weight || 0}
+                                        onChange={(e) => handleExerciseChange(index, 'weight', parseFloat(e.target.value))}
+                                        min="0"
+                                        step="0.5"
+                                        className="w-full rounded-lg bg-white/5 border-white/10 text-white text-sm focus:border-blue-500 focus:ring-blue-500"
+                                      />
+                                    </div>
+                                  )}
+
+                                  {exerciseDef.track_calories && (
+                                    <div className="col-span-1">
+                                      <label className="block text-xs font-medium text-gray-400 mb-1">
+                                        Calories
+                                      </label>
+                                      <input
+                                        type="number"
+                                        value={item.data.calories || 0}
+                                        onChange={(e) => handleExerciseChange(index, 'calories', parseInt(e.target.value))}
+                                        min="0"
+                                        step="1"
+                                        className="w-full rounded-lg bg-white/5 border-white/10 text-white text-sm focus:border-blue-500 focus:ring-blue-500"
+                                      />
+                                    </div>
+                                  )}
+                                </>
+                              );
+                            })()}
                             <div>
                               <label className="block text-xs font-medium text-gray-400 mb-1">
                                 Repos (s)

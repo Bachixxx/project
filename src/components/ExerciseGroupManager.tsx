@@ -9,16 +9,28 @@ interface SessionExercise {
     name: string;
     category: string;
     difficulty_level: string;
+    // New Tracking Booleans
+    track_weight: boolean;
+    track_reps: boolean;
+    track_duration: boolean;
+    track_distance: boolean;
+    track_calories: boolean;
+    // Legacy
+    tracking_type?: 'reps_weight' | 'duration' | 'distance';
   };
   sets: number;
   reps: number;
+  weight: number;
   rest_time: number;
   order_index: number;
   instructions?: string;
   group_id?: string | null;
+  // Legacy
   tracking_type?: 'reps_weight' | 'duration' | 'distance';
+  // New metrics
   duration_seconds?: number;
   distance_meters?: number;
+  calories?: number;
 }
 
 interface ExerciseGroup {
@@ -210,9 +222,9 @@ function ExerciseCardContent({
         </div>
 
         {/* Metrics: Sets/Reps/Rest Row */}
-        <div className="grid grid-cols-3 lg:flex gap-2 lg:gap-3 items-center shrink-0 w-full lg:w-auto">
-          {exercise.tracking_type === 'duration' ? (
-            <div className="col-span-2 lg:col-span-1 flex items-center justify-between lg:justify-start gap-2 bg-black/20 px-2 lg:px-3 py-1.5 rounded-lg border border-white/5">
+        <div className="grid grid-cols-2 lg:flex gap-2 lg:gap-3 items-center shrink-0 w-full lg:w-auto flex-wrap">
+          {exercise.exercise.track_duration && (
+            <div className="col-span-1 lg:col-span-1 flex items-center justify-between lg:justify-start gap-2 bg-black/20 px-2 lg:px-3 py-1.5 rounded-lg border border-white/5">
               <span className="text-[10px] lg:text-xs text-gray-500 uppercase font-bold">Durée</span>
               <div className="flex items-center gap-1">
                 <input
@@ -225,8 +237,10 @@ function ExerciseCardContent({
                 <span className="text-xs text-gray-600">s</span>
               </div>
             </div>
-          ) : exercise.tracking_type === 'distance' ? (
-            <div className="col-span-2 lg:col-span-1 flex items-center justify-between lg:justify-start gap-2 bg-black/20 px-2 lg:px-3 py-1.5 rounded-lg border border-white/5">
+          )}
+
+          {exercise.exercise.track_distance && (
+            <div className="col-span-1 lg:col-span-1 flex items-center justify-between lg:justify-start gap-2 bg-black/20 px-2 lg:px-3 py-1.5 rounded-lg border border-white/5">
               <span className="text-[10px] lg:text-xs text-gray-500 uppercase font-bold">Dist.</span>
               <div className="flex items-center gap-1">
                 <input
@@ -239,7 +253,9 @@ function ExerciseCardContent({
                 <span className="text-xs text-gray-600">m</span>
               </div>
             </div>
-          ) : (
+          )}
+
+          {exercise.exercise.track_reps && (
             <>
               <div className="flex flex-col lg:flex-row items-center justify-center gap-1 lg:gap-2 bg-black/20 px-1 lg:px-3 py-1.5 rounded-lg border border-white/5">
                 <span className="text-[10px] lg:text-xs text-gray-500 uppercase font-bold">Séries</span>
@@ -247,11 +263,9 @@ function ExerciseCardContent({
                   type="number"
                   value={exercise.sets}
                   onChange={(e) => onUpdate({ sets: parseInt(e.target.value) || 0 })}
-                  className="w-full lg:w-12 bg-transparent text-white font-mono text-center focus:outline-none p-0"
+                  className="w-full lg:w-10 bg-transparent text-white font-mono text-center focus:outline-none p-0"
                 />
               </div>
-
-              <span className="hidden lg:block text-gray-600 text-sm">×</span>
 
               <div className="flex flex-col lg:flex-row items-center justify-center gap-1 lg:gap-2 bg-black/20 px-1 lg:px-3 py-1.5 rounded-lg border border-white/5">
                 <span className="text-[10px] lg:text-xs text-gray-500 uppercase font-bold">Reps</span>
@@ -259,10 +273,41 @@ function ExerciseCardContent({
                   type="number"
                   value={exercise.reps}
                   onChange={(e) => onUpdate({ reps: parseInt(e.target.value) || 0 })}
-                  className="w-full lg:w-12 bg-transparent text-white font-mono text-center focus:outline-none p-0"
+                  className="w-full lg:w-10 bg-transparent text-white font-mono text-center focus:outline-none p-0"
                 />
               </div>
             </>
+          )}
+
+          {exercise.exercise.track_weight && (
+            <div className="flex flex-col lg:flex-row items-center justify-center gap-1 lg:gap-2 bg-black/20 px-1 lg:px-3 py-1.5 rounded-lg border border-white/5">
+              <span className="text-[10px] lg:text-xs text-gray-500 uppercase font-bold">Poids</span>
+              <div className="flex items-center gap-1">
+                <input
+                  type="number"
+                  value={exercise.weight || 0}
+                  onChange={(e) => onUpdate({ weight: parseFloat(e.target.value) || 0 })}
+                  className="w-full lg:w-12 bg-transparent text-white font-mono text-center focus:outline-none p-0"
+                  step="0.5"
+                />
+                <span className="text-xs text-gray-600 lg:hidden">kg</span>
+              </div>
+            </div>
+          )}
+
+          {exercise.exercise.track_calories && (
+            <div className="flex flex-col lg:flex-row items-center justify-center gap-1 lg:gap-2 bg-black/20 px-1 lg:px-3 py-1.5 rounded-lg border border-white/5">
+              <span className="text-[10px] lg:text-xs text-gray-500 uppercase font-bold">Cal.</span>
+              <div className="flex items-center gap-1">
+                <input
+                  type="number"
+                  value={exercise.calories || 0}
+                  onChange={(e) => onUpdate({ calories: parseInt(e.target.value) || 0 })}
+                  className="w-full lg:w-12 bg-transparent text-white font-mono text-center focus:outline-none p-0"
+                />
+                <span className="text-xs text-gray-600 lg:hidden">cal</span>
+              </div>
+            </div>
           )}
 
           <div className="hidden lg:block w-px h-8 bg-white/10 mx-1" />

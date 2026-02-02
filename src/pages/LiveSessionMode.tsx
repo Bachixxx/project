@@ -7,8 +7,11 @@ import { ExerciseSelector } from '../components/library/ExerciseSelector';
 
 interface WorkoutSet {
   id: string; // unique temp id
-  reps: number;
-  weight: number;
+  reps?: number;
+  weight?: number;
+  duration_seconds?: number;
+  distance_meters?: number;
+  calories?: number;
   completed: boolean;
 }
 
@@ -19,6 +22,13 @@ interface ActiveExercise {
   order_index: number;
   rest_time: number;
   sets: WorkoutSet[];
+  tracking_flags: {
+    track_reps: boolean;
+    track_weight: boolean;
+    track_duration: boolean;
+    track_distance: boolean;
+    track_calories: boolean;
+  };
 }
 
 export default function LiveSessionMode() {
@@ -111,10 +121,17 @@ export default function LiveSessionMode() {
         name: ex.name,
         order_index: nextOrderIndex++,
         rest_time: 60,
+        tracking_flags: {
+          track_reps: ex.track_reps !== false, // Default true if undefined/null
+          track_weight: ex.track_weight !== false,
+          track_duration: !!ex.track_duration,
+          track_distance: !!ex.track_distance,
+          track_calories: !!ex.track_calories
+        },
         sets: [
-          { id: `set-new-${Date.now()}-1`, reps: 10, weight: 0, completed: false },
-          { id: `set-new-${Date.now()}-2`, reps: 10, weight: 0, completed: false },
-          { id: `set-new-${Date.now()}-3`, reps: 10, weight: 0, completed: false }
+          { id: `set-new-${Date.now()}-1`, reps: ex.track_reps ? 10 : undefined, weight: ex.track_weight ? 0 : undefined, duration_seconds: ex.track_duration ? 0 : undefined, distance_meters: ex.track_distance ? 0 : undefined, calories: ex.track_calories ? 0 : undefined, completed: false },
+          { id: `set-new-${Date.now()}-2`, reps: ex.track_reps ? 10 : undefined, weight: ex.track_weight ? 0 : undefined, duration_seconds: ex.track_duration ? 0 : undefined, distance_meters: ex.track_distance ? 0 : undefined, calories: ex.track_calories ? 0 : undefined, completed: false },
+          { id: `set-new-${Date.now()}-3`, reps: ex.track_reps ? 10 : undefined, weight: ex.track_weight ? 0 : undefined, duration_seconds: ex.track_duration ? 0 : undefined, distance_meters: ex.track_distance ? 0 : undefined, calories: ex.track_calories ? 0 : undefined, completed: false }
         ]
       });
     });
@@ -125,19 +142,44 @@ export default function LiveSessionMode() {
 
   const initializeActiveExercises = (exercises: any[]) => {
     const sorted = exercises?.sort((a: any, b: any) => a.order_index - b.order_index) || [];
-    const mapped: ActiveExercise[] = sorted.map((ex: any) => ({
-      id: ex.id,
-      exercise_id: ex.exercise.id,
-      name: ex.exercise.name,
-      order_index: ex.order_index,
-      rest_time: ex.rest_time,
-      sets: Array.from({ length: ex.sets }).map((_, idx) => ({
-        id: `set-${ex.id}-${idx}`,
-        reps: ex.reps,
-        weight: 0, // Default weight
-        completed: false
-      }))
-    }));
+    const mapped: ActiveExercise[] = sorted.map((ex: any) => {
+      // Determine flags from exercise definition
+      // If tracking_type legacy exists, we might Map it. But likely the DB has the boolean columns now.
+      // We assume the DB select (*) includes them.
+
+      const flags = {
+        track_reps: ex.exercise.track_reps,
+        track_weight: ex.exercise.track_weight,
+        track_duration: ex.exercise.track_duration,
+        track_distance: ex.exercise.track_distance,
+        track_calories: ex.exercise.track_calories,
+      };
+
+      // Fallback for legacy data if booleans are null (shouldn't happen if migrated, but safe to check)
+      if (flags.track_reps === undefined && ex.exercise.tracking_type) {
+        if (ex.exercise.tracking_type === 'reps_weight') { flags.track_reps = true; flags.track_weight = true; }
+        if (ex.exercise.tracking_type === 'duration') { flags.track_duration = true; }
+        if (ex.exercise.tracking_type === 'distance') { flags.track_distance = true; }
+      }
+
+      return {
+        id: ex.id,
+        exercise_id: ex.exercise.id,
+        name: ex.exercise.name,
+        order_index: ex.order_index,
+        rest_time: ex.rest_time,
+        tracking_flags: flags,
+        sets: Array.from({ length: ex.sets }).map((_, idx) => ({
+          id: `set-${ex.id}-${idx}`,
+          reps: flags.track_reps ? ex.reps : undefined,
+          weight: flags.track_weight ? 0 : undefined, // Session definition doesn't store weight usually, maybe? Or it stores target weight? Schema says session_exercises has sets/reps but weight is usually per-set log.
+          duration_seconds: flags.track_duration ? 0 : undefined,
+          distance_meters: flags.track_distance ? 0 : undefined,
+          calories: flags.track_calories ? 0 : undefined,
+          completed: false
+        }))
+      };
+    });
     setActiveExercises(mapped);
   };
 
@@ -164,10 +206,15 @@ export default function LiveSessionMode() {
   const addSet = (exerciseIndex: number) => {
     const newExercises = [...activeExercises];
     const previousSet = newExercises[exerciseIndex].sets[newExercises[exerciseIndex].sets.length - 1];
+
+    // Copy values from previous set or use defaults
     newExercises[exerciseIndex].sets.push({
       id: `set-${Date.now()}`,
-      reps: previousSet ? previousSet.reps : 10,
-      weight: previousSet ? previousSet.weight : 0,
+      reps: previousSet?.reps ?? 10,
+      weight: previousSet?.weight ?? 0,
+      duration_seconds: previousSet?.duration_seconds ?? 0,
+      distance_meters: previousSet?.distance_meters ?? 0,
+      calories: previousSet?.calories ?? 0,
       completed: false
     });
     setActiveExercises(newExercises);
@@ -199,6 +246,9 @@ export default function LiveSessionMode() {
               set_number: i + 1,
               reps: s.reps,
               weight: s.weight,
+              duration_seconds: s.duration_seconds,
+              distance_meters: s.distance_meters,
+              calories: s.calories,
               completed_at: completedAt,
               // context links
               scheduled_session_id: sessionState.scheduledSessionId || null,
@@ -294,38 +344,89 @@ export default function LiveSessionMode() {
                 </div>
 
                 {/* Sets Table */}
+                {/* Sets Table */}
                 <div className="p-2">
-                  <div className="grid grid-cols-10 gap-2 mb-2 px-2 text-xs uppercase text-gray-500 font-bold tracking-wider text-center">
-                    <div className="col-span-1">Set</div>
-                    <div className="col-span-3">kg</div>
-                    <div className="col-span-3">Reps</div>
-                    <div className="col-span-3">Valider</div>
+                  <div className={`grid gap-2 mb-2 px-2 text-xs uppercase text-gray-500 font-bold tracking-wider text-center`}
+                    style={{ gridTemplateColumns: `40px repeat(${Object.values(ex.tracking_flags).filter(Boolean).length}, 1fr) 60px` }}>
+                    <div>Set</div>
+                    {ex.tracking_flags.track_weight && <div>kg</div>}
+                    {ex.tracking_flags.track_reps && <div>Reps</div>}
+                    {ex.tracking_flags.track_duration && <div>Temps</div>}
+                    {ex.tracking_flags.track_distance && <div>Dist</div>}
+                    {ex.tracking_flags.track_calories && <div>Cal</div>}
+                    <div>OK</div>
                   </div>
 
                   <div className="space-y-2">
                     {ex.sets.map((set, setIdx) => (
-                      <div key={set.id} className={`grid grid-cols-10 gap-2 items-center p-2 rounded-xl transition-all ${set.completed ? 'bg-green-500/10 border border-green-500/20' : 'bg-black/20 border border-transparent'}`}>
-                        <div className="col-span-1 text-center font-bold text-gray-400">
+                      <div key={set.id}
+                        className={`grid gap-2 items-center p-2 rounded-xl transition-all ${set.completed ? 'bg-green-500/10 border border-green-500/20' : 'bg-black/20 border border-transparent'}`}
+                        style={{ gridTemplateColumns: `40px repeat(${Object.values(ex.tracking_flags).filter(Boolean).length}, 1fr) 60px` }}>
+                        <div className="text-center font-bold text-gray-400">
                           {setIdx + 1}
                         </div>
-                        <div className="col-span-3">
-                          <input
-                            type="number"
-                            value={set.weight}
-                            onChange={(e) => handleSetUpdate(exIdx, setIdx, 'weight', parseFloat(e.target.value))}
-                            className={`w-full bg-black/40 border border-white/10 rounded-lg py-2 px-1 text-center font-bold text-white focus:outline-none focus:border-blue-500 ${set.completed ? 'text-green-400' : ''}`}
-                            placeholder="0"
-                          />
-                        </div>
-                        <div className="col-span-3">
-                          <input
-                            type="number"
-                            value={set.reps}
-                            onChange={(e) => handleSetUpdate(exIdx, setIdx, 'reps', parseFloat(e.target.value))}
-                            className={`w-full bg-black/40 border border-white/10 rounded-lg py-2 px-1 text-center font-bold text-white focus:outline-none focus:border-blue-500 ${set.completed ? 'text-green-400' : ''}`}
-                          />
-                        </div>
-                        <div className="col-span-3 flex justify-center gap-2">
+
+                        {ex.tracking_flags.track_weight && (
+                          <div>
+                            <input
+                              type="number"
+                              value={set.weight || ''}
+                              onChange={(e) => handleSetUpdate(exIdx, setIdx, 'weight', parseFloat(e.target.value))}
+                              className={`w-full bg-black/40 border border-white/10 rounded-lg py-2 px-1 text-center font-bold text-white focus:outline-none focus:border-blue-500 ${set.completed ? 'text-green-400' : ''}`}
+                              placeholder="0"
+                            />
+                          </div>
+                        )}
+
+                        {ex.tracking_flags.track_reps && (
+                          <div>
+                            <input
+                              type="number"
+                              value={set.reps || ''}
+                              onChange={(e) => handleSetUpdate(exIdx, setIdx, 'reps', parseFloat(e.target.value))}
+                              className={`w-full bg-black/40 border border-white/10 rounded-lg py-2 px-1 text-center font-bold text-white focus:outline-none focus:border-blue-500 ${set.completed ? 'text-green-400' : ''}`}
+                              placeholder="0"
+                            />
+                          </div>
+                        )}
+
+                        {ex.tracking_flags.track_duration && (
+                          <div>
+                            <input
+                              type="number"
+                              value={set.duration_seconds || ''}
+                              onChange={(e) => handleSetUpdate(exIdx, setIdx, 'duration_seconds', parseFloat(e.target.value))}
+                              className={`w-full bg-black/40 border border-white/10 rounded-lg py-2 px-1 text-center font-bold text-white focus:outline-none focus:border-blue-500 ${set.completed ? 'text-green-400' : ''}`}
+                              placeholder="s"
+                            />
+                          </div>
+                        )}
+
+                        {ex.tracking_flags.track_distance && (
+                          <div>
+                            <input
+                              type="number"
+                              value={set.distance_meters || ''}
+                              onChange={(e) => handleSetUpdate(exIdx, setIdx, 'distance_meters', parseFloat(e.target.value))}
+                              className={`w-full bg-black/40 border border-white/10 rounded-lg py-2 px-1 text-center font-bold text-white focus:outline-none focus:border-blue-500 ${set.completed ? 'text-green-400' : ''}`}
+                              placeholder="m"
+                            />
+                          </div>
+                        )}
+
+                        {ex.tracking_flags.track_calories && (
+                          <div>
+                            <input
+                              type="number"
+                              value={set.calories || ''}
+                              onChange={(e) => handleSetUpdate(exIdx, setIdx, 'calories', parseFloat(e.target.value))}
+                              className={`w-full bg-black/40 border border-white/10 rounded-lg py-2 px-1 text-center font-bold text-white focus:outline-none focus:border-blue-500 ${set.completed ? 'text-green-400' : ''}`}
+                              placeholder="cal"
+                            />
+                          </div>
+                        )}
+
+                        <div className="flex justify-center gap-2">
                           <button
                             onClick={() => toggleSetComplete(exIdx, setIdx)}
                             className={`w-full h-full min-h-[36px] rounded-lg flex items-center justify-center transition-all ${set.completed ? 'bg-green-500 text-white shadow-lg shadow-green-500/20' : 'bg-white/10 text-gray-400 hover:bg-white/20'}`}

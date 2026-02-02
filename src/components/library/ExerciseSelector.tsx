@@ -8,6 +8,13 @@ interface Exercise {
     category: string;
     difficulty_level: string;
     coach_id: string | null;
+    // New Tracking Booleans
+    track_weight: boolean;
+    track_reps: boolean;
+    track_distance: boolean;
+    track_duration: boolean;
+    track_calories: boolean;
+    // Legacy
     tracking_type?: 'reps_weight' | 'duration' | 'distance';
 }
 

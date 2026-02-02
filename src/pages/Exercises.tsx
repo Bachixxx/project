@@ -12,7 +12,8 @@ import {
   Filter,
   List,
   AlertCircle,
-  Shield
+  Shield,
+  Activity
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -20,7 +21,7 @@ import { t } from '../i18n';
 
 interface Exercise {
   id: string;
-  coach_id: string | null; // Added
+  coach_id: string | null;
   name: string;
   description: string;
   category: string;
@@ -28,6 +29,13 @@ interface Exercise {
   equipment: string[];
   instructions: string[];
   video_url?: string;
+  // New Tracking Booleans
+  track_reps: boolean;
+  track_weight: boolean;
+  track_duration: boolean;
+  track_distance: boolean;
+  track_calories: boolean;
+  // Legacy
   tracking_type?: 'reps_weight' | 'duration' | 'distance';
 }
 
@@ -36,7 +44,7 @@ function ExercisesPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
-  const [sourceFilter, setSourceFilter] = useState<'all' | 'mine' | 'system'>('all'); // New Filter
+  const [sourceFilter, setSourceFilter] = useState<'all' | 'mine' | 'system'>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
   const { user } = useAuth();
@@ -60,7 +68,7 @@ function ExercisesPage() {
       const { data, error } = await supabase
         .from('exercises')
         .select('*')
-        .or(`coach_id.eq.${user?.id},coach_id.is.null`) // Fetch BOTH
+        .or(`coach_id.eq.${user?.id},coach_id.is.null`)
         .order('name');
 
       if (error) throw error;
@@ -83,7 +91,6 @@ function ExercisesPage() {
       exercise.description?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = !selectedCategory || exercise.category === selectedCategory;
 
-    // New Source Filtering Logic
     let matchesSource = true;
     if (sourceFilter === 'mine') {
       matchesSource = exercise.coach_id === user?.id;
@@ -93,24 +100,6 @@ function ExercisesPage() {
 
     return matchesSearch && matchesCategory && matchesSource;
   });
-
-  // ... (tracking helper functions remain same)
-
-  const getTrackingIcon = (type: string) => {
-    switch (type) {
-      case 'duration': return <Timer className="w-3 h-3 mr-1" />;
-      case 'distance': return <Ruler className="w-3 h-3 mr-1" />;
-      default: return <Dumbbell className="w-3 h-3 mr-1" />;
-    }
-  };
-
-  const getTrackingLabel = (type: string) => {
-    switch (type) {
-      case 'duration': return t('exercises.form.trackingType.duration');
-      case 'distance': return t('exercises.form.trackingType.distance');
-      default: return t('exercises.form.trackingType.reps_weight');
-    }
-  };
 
   const handleDelete = async (id: string) => {
     if (!window.confirm(t('common.confirmDelete'))) return;
@@ -287,10 +276,12 @@ function ExercisesPage() {
                 </div>
 
                 <div className="flex flex-wrap gap-2 mb-4">
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                    {getTrackingIcon(exercise.tracking_type || 'reps_weight')}
-                    {exercise.category}
-                  </span>
+                  {exercise.track_reps && <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20"><List className="w-3 h-3 mr-1" /> Reps</span>}
+                  {exercise.track_weight && <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-500/10 text-purple-400 border border-purple-500/20"><Dumbbell className="w-3 h-3 mr-1" /> Charge</span>}
+                  {exercise.track_distance && <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-400 border border-green-500/20"><Ruler className="w-3 h-3 mr-1" /> Distance</span>}
+                  {exercise.track_duration && <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-500/10 text-yellow-400 border border-yellow-500/20"><Timer className="w-3 h-3 mr-1" /> Durée</span>}
+                  {exercise.track_calories && <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-500/10 text-orange-400 border border-orange-500/20"><Activity className="w-3 h-3 mr-1" /> Cals</span>}
+
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${exercise.difficulty_level === 'Débutant' || exercise.difficulty_level === 'Beginner'
                     ? 'bg-green-500/10 text-green-400 border-green-500/20'
                     : exercise.difficulty_level === 'Intermédiaire' || exercise.difficulty_level === 'Intermediate'
@@ -363,12 +354,19 @@ function ExerciseModal({ exercise, onClose, onSave, categories, difficultyLevels
     equipment: exercise?.equipment || [],
     instructions: exercise?.instructions || [],
     video_url: exercise?.video_url || '',
-    tracking_type: exercise?.tracking_type || 'reps_weight',
+    track_reps: exercise ? exercise.track_reps : true,
+    track_weight: exercise ? exercise.track_weight : true,
+    track_duration: exercise ? exercise.track_duration : false,
+    track_distance: exercise ? exercise.track_distance : false,
+    track_calories: exercise ? exercise.track_calories : false,
   });
 
   const handleChange = (e: any) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
   };
 
   const handleArrayChange = (field: string, index: number, value: string) => {
@@ -411,7 +409,6 @@ function ExerciseModal({ exercise, onClose, onSave, categories, difficultyLevels
           <form onSubmit={(e) => {
             e.preventDefault();
             onSave(formData);
-            // Auto close is handled by parent, but we can prevent default
           }} className="space-y-6">
 
             <div>
@@ -427,20 +424,23 @@ function ExerciseModal({ exercise, onClose, onSave, categories, difficultyLevels
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">{t('exercises.form.trackingType.label')}</label>
-              <div className="grid grid-cols-3 gap-3">
+              <label className="block text-sm font-medium text-gray-300 mb-2">{t('exercises.form.trackingType.label')} (Plusieurs choix possibles)</label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {[
-                  { id: 'reps_weight', label: t('exercises.form.trackingType.reps_weight'), icon: Dumbbell },
-                  { id: 'duration', label: t('exercises.form.trackingType.duration'), icon: Timer },
-                  { id: 'distance', label: t('exercises.form.trackingType.distance'), icon: Ruler },
+                  { id: 'track_weight', label: 'Charge (Poids)', icon: Dumbbell },
+                  { id: 'track_reps', label: 'Répétitions', icon: List },
+                  { id: 'track_distance', label: 'Distance', icon: Ruler },
+                  { id: 'track_duration', label: 'Durée', icon: Timer },
+                  { id: 'track_calories', label: 'Calories', icon: Activity },
                 ].map((type) => {
                   const Icon = type.icon;
-                  const isSelected = formData.tracking_type === type.id;
+                  // @ts-ignore
+                  const isSelected = formData[type.id];
                   return (
                     <button
                       key={type.id}
                       type="button"
-                      onClick={() => setFormData(prev => ({ ...prev, tracking_type: type.id }))}
+                      onClick={() => setFormData(prev => ({ ...prev, [type.id]: !prev[type.id as keyof typeof prev] }))}
                       className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all ${isSelected
                         ? 'bg-blue-500/20 border-blue-500 text-blue-400'
                         : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'
