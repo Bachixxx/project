@@ -24,6 +24,7 @@ interface SessionExercise {
     name: string;
     category: string;
     difficulty_level: string;
+    tracking_type?: 'reps_weight' | 'duration' | 'distance';
   };
   sets: number;
   reps: number;
@@ -31,6 +32,9 @@ interface SessionExercise {
   order_index: number;
   instructions?: string;
   group_id?: string | null;
+  tracking_type?: 'reps_weight' | 'duration' | 'distance';
+  duration_seconds?: number;
+  distance_meters?: number;
 }
 
 interface ExerciseGroup {
@@ -47,6 +51,7 @@ interface Exercise {
   category: string;
   difficulty_level: string;
   coach_id: string | null;
+  tracking_type?: 'reps_weight' | 'duration' | 'distance';
 }
 
 function SessionsPage() {
@@ -97,7 +102,9 @@ function SessionsPage() {
               id,
               name,
               category,
-              difficulty_level
+              category,
+              difficulty_level,
+              tracking_type
             )
           )
         `)
@@ -111,10 +118,22 @@ function SessionsPage() {
       const processedSessions = (sessionsData || []).map(session => {
         const groups = (session.exercise_groups || []).map(group => ({
           ...group,
-          exercises: (session.session_exercises || []).filter(ex => ex.group_id === group.id)
+          exercises: (session.session_exercises || []).filter(ex => ex.group_id === group.id).map(ex => {
+            const exerciseData = Array.isArray(ex.exercise) ? ex.exercise[0] : ex.exercise;
+            return {
+              ...ex,
+              tracking_type: exerciseData?.tracking_type
+            };
+          })
         }));
 
-        const standaloneExercises = (session.session_exercises || []).filter(ex => !ex.group_id);
+        const standaloneExercises = (session.session_exercises || []).filter(ex => !ex.group_id).map(ex => {
+          const exerciseData = Array.isArray(ex.exercise) ? ex.exercise[0] : ex.exercise;
+          return {
+            ...ex,
+            tracking_type: exerciseData?.tracking_type
+          };
+        });
 
         return {
           ...session,
@@ -454,7 +473,7 @@ function SessionModal({ session, onClose, onSave }: any) {
       setError(null);
       const { data, error } = await supabase
         .from('exercises')
-        .select('id, name, category, difficulty_level, coach_id')
+        .select('id, name, category, difficulty_level, coach_id, tracking_type')
         .or(`coach_id.eq.${user?.id},coach_id.is.null`)
         .order('name');
 
@@ -812,6 +831,7 @@ function SessionModal({ session, onClose, onSave }: any) {
             exercises={exercises}
             // The new component expects onSelect to return an array of objects.
             onSelect={(selectedItems: any[]) => {
+              console.log('Selected items from selector:', selectedItems);
               const newExercisesToBeAdded = selectedItems.map((exercise, idx) => ({
                 id: `temp-${Date.now()}-${idx}`,
                 exercise,
@@ -821,6 +841,9 @@ function SessionModal({ session, onClose, onSave }: any) {
                 instructions: '',
                 order_index: selectedExercises.length + idx,
                 group_id: null,
+                tracking_type: exercise.tracking_type || 'reps_weight',
+                duration_seconds: exercise.tracking_type === 'duration' ? 60 : undefined,
+                distance_meters: exercise.tracking_type === 'distance' ? 1000 : undefined,
               }));
 
               if (activeGroupId) {

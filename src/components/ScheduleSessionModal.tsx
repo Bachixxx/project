@@ -111,6 +111,7 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
         .order('name');
 
       if (error) throw error;
+      console.log('Fetched exercises:', data);
       setExercises(data || []);
     } catch (error) {
       console.error('Error fetching exercises:', error);
@@ -163,9 +164,15 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
       const newData = { ...updated[index].data, [field]: value };
 
       if (field === 'exercise_id') {
+        console.log('Changing exercise to ID:', value);
         const selectedEx = exercises.find(e => e.id === value);
+        console.log('Found exercise:', selectedEx);
+
         if (selectedEx) {
+          console.log('Setting tracking_type to:', selectedEx.tracking_type);
           newData.tracking_type = selectedEx.tracking_type;
+        } else {
+          console.warn('Exercise not found in list!');
         }
       }
 

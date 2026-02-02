@@ -8,6 +8,7 @@ interface Exercise {
     category: string;
     difficulty_level: string;
     coach_id: string | null;
+    tracking_type?: 'reps_weight' | 'duration' | 'distance';
 }
 
 interface ExerciseSelectorProps {

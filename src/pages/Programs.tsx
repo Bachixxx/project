@@ -743,7 +743,12 @@ function CreateSessionModal({ onClose, onSave }: any) {
       order_index: selectedExercises.length,
       instructions: '',
       group_id: activeGroupId,
-      tracking_type: exercise.tracking_type || 'reps_weight',
+      tracking_type: (() => {
+        console.log('Adding exercise:', exercise.name);
+        console.log('Exercise object:', exercise);
+        console.log('Tracking type from object:', exercise.tracking_type);
+        return exercise.tracking_type || 'reps_weight';
+      })(),
       duration_seconds: 60,
       distance_meters: 1000,
     };
