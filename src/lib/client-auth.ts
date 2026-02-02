@@ -25,8 +25,8 @@ export async function createClientInvitation(clientId: string) {
     const { error: sendError } = await supabase.functions.invoke('send-invitation', {
       body: { token, clientId },
       headers: {
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
-        }
+        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+      }
     });
 
     if (sendError) throw sendError;
@@ -67,4 +67,27 @@ export async function acceptClientInvitation(token: string, authId: string) {
     console.error('Error accepting client invitation:', error);
     throw error;
   }
+}
+
+export async function sendClientInvitation(
+  clientEmail: string,
+  clientName: string,
+  coachCode: string,
+  coachName: string
+) {
+  const inviteUrl = `${window.location.origin}/client/register?code=${coachCode}&email=${encodeURIComponent(clientEmail)}`;
+
+  const { error } = await supabase.functions.invoke('send-email', {
+    body: {
+      to: clientEmail,
+      template_name: 'client.invite',
+      data: {
+        coach_name: coachName,
+        client_name: clientName,
+        invite_url: inviteUrl
+      }
+    }
+  });
+
+  if (error) throw error;
 }

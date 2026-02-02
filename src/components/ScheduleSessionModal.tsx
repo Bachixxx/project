@@ -414,6 +414,37 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
         // throw appointmentError; 
       }
 
+
+
+      // Send Confirmation Email
+      try {
+        const { data: clientData } = await supabase
+          .from('clients')
+          .select('email, full_name')
+          .eq('id', clientId)
+          .single();
+
+        if (clientData?.email) {
+          const dateStr = scheduledDateTime.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+          const timeStr = scheduledDateTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+
+          await supabase.functions.invoke('send-email', {
+            body: {
+              to: clientData.email,
+              template_name: 'session.confirm',
+              data: {
+                date: dateStr,
+                time: timeStr,
+                type: appointmentTitle,
+                dashboard_url: `${window.location.origin}/client/appointments`
+              }
+            }
+          });
+        }
+      } catch (emailError) {
+        console.error('Failed to send session confirmation email:', emailError);
+      }
+
       onSuccess();
       onClose();
     } catch (error) {

@@ -21,18 +21,29 @@ function ClientRegister() {
   const [isInviteFlow, setIsInviteFlow] = useState(false);
 
   useEffect(() => {
-    // Check if email was passed from check-email (Invite Flow)
+    // Check for params in URL (Share Link Flow & Email Invites)
+    const searchParams = new URLSearchParams(location.search);
+    const codeParam = searchParams.get('code');
+    const emailParam = searchParams.get('email');
+
+    if (codeParam) {
+      setCoachCode(codeParam.toUpperCase());
+    }
+
+    if (emailParam) {
+      setEmail(emailParam);
+      // If we have an email param, it might be an invite flow too, but strictly speaking 
+      // isInviteFlow disables inputs. We might want to allow editing if it's just a pre-fill?
+      // Let's assume pre-fill for now, but if it comes from a "forced" invite maybe lock it?
+      // The user just clicked a link, they should be able to change it if it's wrong technically.
+      // But keeping it editable is safer.
+    }
+
+    // Check if email was passed from check-email (Legacy Invite Flow)
     const state = location.state as { email?: string };
     if (state?.email) {
       setEmail(state.email);
       setIsInviteFlow(true);
-    }
-
-    // Check for coach code in URL query params (Share Link Flow)
-    const searchParams = new URLSearchParams(location.search);
-    const codeParam = searchParams.get('code');
-    if (codeParam) {
-      setCoachCode(codeParam.toUpperCase());
     }
   }, [location]);
 
@@ -77,6 +88,22 @@ function ClientRegister() {
       if (!authData.user) throw new Error('Erreur lors de la création du compte');
 
       console.log('User created:', authData.user.id);
+
+      // Send Welcome Email
+      try {
+        await supabase.functions.invoke('send-email', {
+          body: {
+            to: email,
+            template_name: 'client.welcome',
+            data: {
+              name: fullName,
+              login_url: `${window.location.origin}/client/login`
+            }
+          }
+        });
+      } catch (emailError) {
+        console.error('Failed to send welcome email:', emailError);
+      }
 
       // Note: If email confirmation is ON, user might not have an active session yet, 
       // but the 'clients' record is created by trigger (status=active).

@@ -149,6 +149,22 @@ function Register() {
         return;
       }
 
+      // Send Welcome Email
+      try {
+        await supabase.functions.invoke('send-email', {
+          body: {
+            to: formData.email,
+            template_name: 'coach.welcome',
+            data: {
+              name: formData.fullName,
+              dashboard_url: `${window.location.origin}/dashboard`
+            }
+          }
+        });
+      } catch (emailError) {
+        console.error('Failed to send welcome email:', emailError);
+      }
+
       // Proceed to Stripe checkout (Paid Only)
       const plan = plans.find(p => p.interval === billingInterval);
       if (!plan) {

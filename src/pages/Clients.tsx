@@ -16,6 +16,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { t } from '../i18n';
 import { useSubscription } from '../hooks/useSubscription';
+import { sendClientInvitation } from '../lib/client-auth';
 import { SubscriptionAlert } from '../components/SubscriptionAlert';
 import { UpgradeModal } from '../components/UpgradeModal';
 
@@ -304,6 +305,16 @@ function ClientsPage() {
                   .insert([{ ...sanitizedData, coach_id: user?.id }]);
 
                 if (error) throw error;
+
+                // Send Invitation Email
+                if (coachCode && user) {
+                  const coachName = user.user_metadata?.full_name || 'Votre Coach';
+                  try {
+                    await sendClientInvitation(clientData.email, clientData.full_name, coachCode, coachName);
+                  } catch (err) {
+                    console.error('Error sending invite email', err);
+                  }
+                }
               }
 
               fetchClients();

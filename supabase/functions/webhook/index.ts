@@ -234,7 +234,34 @@ Deno.serve(async (req) => {
 
             console.log('Successfully processed payment and registration for appointment:', appointmentId);
           }
+
+          // Send Payment Receipt Email
+          try {
+            const { data: clientData } = await supabase
+              .from('clients')
+              .select('email')
+              .eq('id', clientId)
+              .single();
+
+            if (clientData?.email) {
+              await supabase.functions.invoke('send-email', {
+                body: {
+                  to: clientData.email,
+                  template_name: 'payment.receipt',
+                  data: {
+                    amount: `${(session.amount_total || 0) / 100} ${session.currency?.toUpperCase() || 'CHF'}`,
+                    date: new Date().toLocaleDateString('fr-FR'),
+                    invoice_id: (session.payment_intent as string) || session.id,
+                    dashboard_url: 'https://coachency.app/client'
+                  }
+                }
+              });
+            }
+          } catch (emailError) {
+            console.error('Failed to send payment receipt:', emailError);
+          }
         }
+
         break;
       }
 
