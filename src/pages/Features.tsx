@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Dumbbell, Users, Calendar, LineChart, Shield, Smartphone, Zap, MessageSquare, CheckCircle, ArrowRight, Menu, X, Timer, CreditCard, Layout } from 'lucide-react';
+import { Dumbbell, Users, Calendar, LineChart, Shield, Smartphone, MessageSquare, CheckCircle, ArrowRight, Menu, X, Timer, CreditCard, Layout } from 'lucide-react';
 
 function Features() {
     const [activeTab, setActiveTab] = useState<'coach' | 'client'>('coach');
@@ -99,68 +99,101 @@ function Features() {
             {/* Features Grid */}
             <section className="pb-32 container mx-auto px-6">
                 {activeTab === 'coach' ? (
-                    <div className="grid md:grid-cols-2 gap-8 animate-fade-in">
-                        {/* Coach Feature 1 */}
-                        <div className="glass-card p-8 rounded-2xl border border-white/10 md:col-span-2 flex flex-col md:flex-row items-center gap-12 group">
-                            <div className="flex-1 order-2 md:order-1">
-                                <div className="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center text-blue-400 mb-6">
-                                    <Layout className="w-6 h-6" />
+                    <div className="flex flex-col gap-32 animate-fade-in">
+                        {[
+                            {
+                                title: "Live Workout Coach",
+                                description: "Interface dédiée pour suivre la séance du client en direct. Ajustez les charges, validez les répétitions et fournissez un feedback immédiat.",
+                                icon: Timer,
+                                color: "blue"
+                            },
+                            {
+                                title: "Dashboard",
+                                description: "Votre tour de contrôle. Visualisez revenus, nouveaux clients et séances à venir en un clin d'œil.",
+                                icon: Layout,
+                                color: "cyan"
+                            },
+                            {
+                                title: "Entraînement",
+                                description: "Gérez votre bibliothèque d'exercices, construisez des séances et assemblez des programmes complets.",
+                                icon: Dumbbell,
+                                color: "purple"
+                            },
+                            {
+                                title: "Client",
+                                description: "CRM complet pour centraliser profils, historiques de progression, notes privées et objectifs.",
+                                icon: Users,
+                                color: "pink"
+                            },
+                            {
+                                title: "Calendrier",
+                                description: "Planification bidirectionnelle. Synchronisez votre agenda et gérez vos disponibilités en temps réel.",
+                                icon: Calendar,
+                                color: "orange"
+                            },
+                            {
+                                title: "Multi-coaching",
+                                description: "Travaillez en équipe. Collaborez avec d'autres coachs sur les mêmes clients ou programmes.",
+                                icon: MessageSquare,
+                                color: "green"
+                            },
+                            {
+                                title: "Finance",
+                                description: "Monétisez sans friction. Abonnements, liens de paiement et encaissement physique via Terminal.",
+                                icon: CreditCard,
+                                color: "emerald"
+                            },
+                            {
+                                title: "Branding",
+                                description: "Votre marque en avant. Personnalisez l'interface client avec votre logo et vos couleurs.",
+                                icon: Shield,
+                                color: "indigo"
+                            }
+                        ].map((feature, index) => (
+                            <div
+                                key={index}
+                                className={`flex flex-col md:flex-row items-center gap-12 group ${index % 2 === 1 ? 'md:flex-row-reverse' : ''
+                                    }`}
+                            >
+                                {/* Text Content */}
+                                <div className="flex-1">
+                                    <div className={`w-12 h-12 rounded-xl bg-${feature.color}-500/20 flex items-center justify-center text-${feature.color}-400 mb-6`}>
+                                        <feature.icon className="w-6 h-6" />
+                                    </div>
+                                    <h3 className="text-3xl md:text-4xl font-bold text-white mb-6">
+                                        {feature.title}
+                                    </h3>
+                                    <p className="text-gray-400 text-lg leading-relaxed mb-8">
+                                        {feature.description}
+                                    </p>
+                                    <ul className="space-y-3">
+                                        <li className="flex items-center gap-3 text-gray-300">
+                                            <CheckCircle className={`w-5 h-5 text-${feature.color}-500`} />
+                                            Fonctionnalité clé incluse
+                                        </li>
+                                    </ul>
                                 </div>
-                                <h3 className="text-3xl font-bold text-white mb-4">Tableau de bord tout-en-un</h3>
-                                <p className="text-gray-400 text-lg mb-6 leading-relaxed">
-                                    Gérez toute votre activité depuis une seule interface. Vos clients, vos programmes, votre planning et vos revenus sont accessibles en un clin d'œil.
-                                </p>
-                                <ul className="space-y-3 mb-8">
-                                    <li className="flex items-center gap-3 text-gray-300"><CheckCircle className="w-5 h-5 text-blue-500" /> Vue d'ensemble de l'activité journalière</li>
-                                    <li className="flex items-center gap-3 text-gray-300"><CheckCircle className="w-5 h-5 text-blue-500" /> Suivi financier en temps réel</li>
-                                    <li className="flex items-center gap-3 text-gray-300"><CheckCircle className="w-5 h-5 text-blue-500" /> Accès rapide aux tâches urgentes</li>
-                                </ul>
-                                <Link to="/waitlist" className="text-blue-400 font-bold hover:text-blue-300 flex items-center gap-2 group-hover:gap-3 transition-all">
-                                    Rejoindre la liste <ArrowRight className="w-4 h-4" />
-                                </Link>
-                            </div>
-                            <div className="flex-1 order-1 md:order-2 bg-[#1e293b] rounded-xl border border-white/10 p-2 shadow-2xl rotate-2 group-hover:rotate-0 transition-transform duration-500">
-                                <div className="aspect-video bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg flex items-center justify-center text-gray-600">
-                                    {/* Placeholder for Dashboard Screenshot */}
-                                    <Layout className="w-16 h-16 opacity-20" />
-                                </div>
-                            </div>
-                        </div>
 
-                        {/* Coach Feature 2 */}
-                        <div className="glass-card p-8 rounded-2xl border border-white/10 hover:border-blue-500/30 transition-colors group">
-                            <div className="w-12 h-12 rounded-xl bg-cyan-500/20 flex items-center justify-center text-cyan-400 mb-6">
-                                <Dumbbell className="w-6 h-6" />
-                            </div>
-                            <h3 className="text-2xl font-bold text-white mb-3">Créateur de Programmes</h3>
-                            <p className="text-gray-400 mb-6">
-                                Créez des plans d'entraînement complexes, des supersets, des circuits et assignez-les à vos clients en quelques clics.
-                            </p>
-                            <div className="bg-white/5 rounded-lg p-4 border border-white/5">
-                                <div className="flex items-center justify-between text-sm text-gray-300 mb-2">
-                                    <span>Semaine 1 - Pecs / Dos</span>
-                                    <span className="text-cyan-400">4 Séances</span>
+                                {/* Visual Content */}
+                                <div className="flex-1 w-full">
+                                    <div className={`
+                                        aspect-video rounded-2xl border border-white/10 p-2 shadow-2xl 
+                                        bg-gradient-to-br from-gray-900 to-gray-800
+                                        hover:border-${feature.color}-500/30 transition-all duration-500
+                                        group-hover:scale-[1.02]
+                                    `}>
+                                        <div className="w-full h-full bg-[#0f172a] rounded-xl overflow-hidden flex items-center justify-center relative">
+                                            {/* Placeholder for future screenshots */}
+                                            <div className={`absolute inset-0 bg-gradient-to-br from-${feature.color}-500/10 to-transparent opacity-50`}></div>
+                                            <feature.icon className={`w-16 h-16 text-${feature.color}-500/20`} />
+                                            <div className="absolute bottom-4 right-4 text-xs font-mono text-gray-600 bg-black/50 px-2 py-1 rounded">
+                                                Image: {feature.title}
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="w-full bg-gray-700 h-1.5 rounded-full overflow-hidden">
-                                    <div className="bg-cyan-500 w-3/4 h-full"></div>
-                                </div>
                             </div>
-                        </div>
-
-                        {/* Coach Feature 3 */}
-                        <div className="glass-card p-8 rounded-2xl border border-white/10 hover:border-blue-500/30 transition-colors group">
-                            <div className="w-12 h-12 rounded-xl bg-green-500/20 flex items-center justify-center text-green-400 mb-6">
-                                <CreditCard className="w-6 h-6" />
-                            </div>
-                            <h3 className="text-2xl font-bold text-white mb-3">Paiements Simplifiés</h3>
-                            <p className="text-gray-400 mb-6">
-                                Générez des liens de paiement, suivez les factures en attente et sécurisez vos revenus grâce à l'intégration Stripe.
-                            </p>
-                            <div className="flex items-center gap-4">
-                                <div className="px-3 py-1 bg-green-500/10 text-green-400 text-sm rounded-lg border border-green-500/20">Payé</div>
-                                <div className="px-3 py-1 bg-yellow-500/10 text-yellow-400 text-sm rounded-lg border border-yellow-500/20">En attente</div>
-                            </div>
-                        </div>
+                        ))}
                     </div>
                 ) : (
                     <div className="grid md:grid-cols-2 gap-8 animate-fade-in">
