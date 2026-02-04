@@ -78,49 +78,74 @@ serve(async (req) => {
         }
 
         // 1.5 New Scheduled Session (Clients Page)
-        if (table === 'scheduled_sessions' && type === 'INSERT') {
-            if (record.client_id && record.session_id) {
-                const { data: sessionData } = await supabase
-                    .from('sessions')
-                    .select('name')
-                    .eq('id', record.session_id)
-                    .single();
+        // 1.5 Scheduled Session (Clients Page)
+        if (table === 'scheduled_sessions') {
+            const { data: sessionData } = await supabase
+                .from('sessions')
+                .select('name')
+                .eq('id', record.session_id)
+                .single();
 
-                // Fetch ID
-                const { data: clientData, error: clientError } = await supabase
-                    .from('clients')
-                    .select('auth_id')
-                    .eq('id', record.client_id)
-                    .single();
+            const { data: clientData, error: clientError } = await supabase
+                .from('clients')
+                .select('auth_id')
+                .eq('id', record.client_id)
+                .single();
 
-                if (clientError) {
-                    console.error("Error fetching client for scheduled_session:", clientError);
-                }
+            if (clientData?.auth_id) {
+                const sessionName = sessionData?.name || "Session privée";
+                const dateObj = new Date(record.scheduled_date);
+                const formattedDate = dateObj.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
 
-                console.log(`Scheduled Session - Client Lookup Result:`, clientData);
-
-                if (clientData?.auth_id) {
-                    const sessionName = sessionData?.name || "Session privée";
-                    // Format Date for subtitle
-                    const dateObj = new Date(record.scheduled_date);
-                    const formattedDate = dateObj.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
-
-                    notification = {
-                        headings: { en: "New Workout Session 💪", fr: "Nouvelle Séance 💪" },
-                        subtitle: { en: sessionName, fr: sessionName },
-                        contents: { en: `Scheduled for ${formattedDate}`, fr: `Prévue pour le ${formattedDate}` },
-                        include_aliases: { external_id: [clientData.auth_id] },
-                        target_channel: "push",
-                        data: { type: 'scheduled_session', id: record.id },
-                        ios_badgeType: 'Increase',
-                        ios_badgeCount: 1,
-                        buttons: [{ id: "view_session", text: "Voir mon planning" }]
+                // SCENARIO 1: Session Planning (INSERT)
+                // We only notify if it's a FUTURE session (Planning).
+                // If it's "NOW" (Live Session launch), we confirm silence.
+                if (type === 'INSERT') {
+                    const scheduledTime = new Date(record.scheduled_date).getTime();
+                    const now = new Date().getTime();
+                    // If scheduled more than 15 minutes in the future, it's a Planning -> Send Notif.
+                    // If it's essentially "now" (Live), we SKIP.
+                    if (scheduledTime - now > 15 * 60 * 1000) {
+                        notification = {
+                            headings: { en: "New Workout Planned 📅", fr: "Nouvelle Séance Planifiée 📅" },
+                            subtitle: { en: sessionName, fr: sessionName },
+                            contents: { en: `Scheduled for ${formattedDate}`, fr: `Prévue pour le ${formattedDate}` },
+                            include_aliases: { external_id: [clientData.auth_id] },
+                            target_channel: "push",
+                            data: { type: 'scheduled_session', id: record.id },
+                            ios_badgeType: 'Increase',
+                            ios_badgeCount: 1,
+                            buttons: [{ id: "view_session", text: "Voir mon planning" }]
+                        }
+                    } else {
+                        console.log("Skipping notification for Live Session start (too close to now).");
                     }
-                } else {
-                    console.error(`SCHEDULED SESSION ERROR: No Auth ID found for client ${record.client_id}. Check if client has signed up/logged in.`);
                 }
+
+                // SCENARIO 2: Session Finished (UPDATE)
+                // Notifies when status changes to 'completed'
+                if (type === 'UPDATE') {
+                    const oldStatus = payload.old_record?.status;
+                    const newStatus = record.status;
+
+                    if (newStatus === 'completed' && oldStatus !== 'completed') {
+                        notification = {
+                            headings: { en: "Session Completed! ✅", fr: "Séance Terminée ! ✅" },
+                            subtitle: { en: "Great job!", fr: "Bien joué !" },
+                            contents: { en: `Check your summary for ${sessionName}`, fr: `Regarde ton résumé pour ${sessionName}` },
+                            include_aliases: { external_id: [clientData.auth_id] },
+                            target_channel: "push",
+                            data: { type: 'session_completed', id: record.id },
+                            ios_badgeType: 'Increase',
+                            ios_badgeCount: 1,
+                            buttons: [{ id: "view_summary", text: "Voir le résumé" }]
+                        }
+                    }
+                }
+
             } else {
-                console.error("SCHEDULED SESSION ERROR: Missing client_id or session_id in record", record);
+                if (clientError) console.error("Error fetching client:", clientError);
+                else console.error(`SCHEDULED SESSION ERROR: No Auth ID for client ${record.client_id}`);
             }
         }
 
