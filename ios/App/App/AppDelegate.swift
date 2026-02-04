@@ -1,5 +1,6 @@
 import UIKit
 import Capacitor
+import Cordova
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -44,6 +45,21 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // Feel free to add additional processing here, but if you want the App API to support
         // tracking app url opens, make sure to keep this call
         return ApplicationDelegateProxy.shared.application(application, continue: userActivity, restorationHandler: restorationHandler)
+    }
+
+    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        let tokenParts = deviceToken.map { data in String(format: "%02.2hhx", data) }
+        let token = tokenParts.joined()
+        print("⚡️ [AppDelegate] Successfully registered for notifications! Device Token: \(token)")
+        
+        // Let the Capacitor/Cordova plugin handle the rest via Swizzling, but this print confirms iOS side is OK.
+        // If swizzling fails, we might need to manually pass this to OneSignal, but let's debug first.
+        // ApplicationDelegateProxy.shared.application(application, didRegisterForRemoteNotificationsWithDeviceToken: deviceToken)
+    }
+
+    func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        print("⚡️ [AppDelegate] Failed to register for notifications: \(error.localizedDescription)")
+        // ApplicationDelegateProxy.shared.application(application, didFailToRegisterForRemoteNotificationsWithError: error)
     }
 
 }

@@ -20,8 +20,8 @@ function Pricing() {
         // Note: product IDs should be configured in Adapty as: 
         // 'pro_monthly', 'pro_annual', 'pro_lifetime'
         const productMap: Record<string, string> = {
-            'month': 'pro_monthly',
-            'year': 'pro_annual'
+            'month': 'monthly_pro',
+            'year': 'annual_pro'
         };
 
         const productId = productMap[billingInterval];

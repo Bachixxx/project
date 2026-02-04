@@ -5,6 +5,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { ClientAuthProvider } from './contexts/ClientAuthContext';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+// NotificationsProvider moved here to be accessible by ClientAuthProvider
 import { NotificationsProvider } from './contexts/NotificationsContext';
 import { LiveSessionProvider } from './contexts/LiveSessionContext'; // Added
 import { TerminalProvider } from './contexts/TerminalContext'; // Added
@@ -108,10 +109,10 @@ function App() {
   return (
     <AuthProvider>
       <AdaptyProvider>
-        <ClientAuthProvider>
-          <LanguageProvider>
-            <ThemeProvider>
-              <NotificationsProvider>
+        <NotificationsProvider>
+          <ClientAuthProvider>
+            <LanguageProvider>
+              <ThemeProvider>
                 <LiveSessionProvider>
                   <TerminalProvider>
                     <Router>
@@ -376,10 +377,10 @@ function App() {
                     </Router>
                   </TerminalProvider>
                 </LiveSessionProvider>
-              </NotificationsProvider>
-            </ThemeProvider>
-          </LanguageProvider>
-        </ClientAuthProvider>
+              </ThemeProvider>
+            </LanguageProvider>
+          </ClientAuthProvider>
+        </NotificationsProvider>
       </AdaptyProvider>
     </AuthProvider >
   );

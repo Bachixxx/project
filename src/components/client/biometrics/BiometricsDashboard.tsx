@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Scale, Droplets, Activity, Bone, Plus, ChevronLeft } from 'lucide-react';
+import { Droplets, Activity, Bone, Plus } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import { BiometricRingChart } from './BiometricRingChart';
 import { BiometricTrendChart } from './BiometricTrendChart';
@@ -123,8 +123,6 @@ export function BiometricsDashboard({ clientId, readOnly = false }: BiometricsDa
     const tabs = [
         { id: 'general', label: 'Général' },
         { id: 'fat', label: 'Graisse' },
-        { id: 'muscle', label: 'Muscle' },
-        { id: 'water', label: 'Eau' },
         { id: 'muscle', label: 'Muscle' },
         { id: 'water', label: 'Eau' },
         { id: 'bone', label: 'Os' },

@@ -1,21 +1,28 @@
 platform :ios, '15.0'
 use_frameworks!
 
+# Define Capacitor pods explicitly since helper is failing in this environment
 def capacitor_pods
-  # Core
   pod 'Capacitor', :path => '../../node_modules/@capacitor/ios'
   pod 'CapacitorCordova', :path => '../../node_modules/@capacitor/ios'
-  
-  # Standard Plugins (Manually Linked)
-  pod 'CapacitorDevice', :path => '../../node_modules/@capacitor/device'
-  pod 'CapacitorSplashScreen', :path => '../../node_modules/@capacitor/splash-screen'
-  
-  # Community Plugins
-  pod 'CapacitorCommunityStripeTerminal', :path => '../../node_modules/@capacitor-community/stripe-terminal'
 end
 
 target 'App' do
   capacitor_pods
+  # Add OneSignal manually
+  pod 'OneSignal', '>= 3.0', '< 6.0'
+  # Add the glue code (bridge) manually
+  pod 'OnesignalCordovaPlugin', :path => '../capacitor-cordova-ios-plugins/sourcesstatic/OnesignalCordovaPlugin'
+
+  # Add other missing Capacitor plugins manually
+  pod 'AdaptyCapacitor', :path => '../../node_modules/@adapty/capacitor'
+  pod 'CapacitorCommunityStripeTerminal', :path => '../../node_modules/@capacitor-community/stripe-terminal'
+  pod 'CapacitorDevice', :path => '../../node_modules/@capacitor/device'
+  pod 'CapacitorSplashScreen', :path => '../../node_modules/@capacitor/splash-screen'
+end
+
+target 'OneSignalNotificationServiceExtension' do
+  use_frameworks!
   pod 'OneSignal', '>= 3.0', '< 6.0'
 end
 
@@ -23,6 +30,12 @@ post_install do |installer|
   installer.pods_project.targets.each do |target|
     target.build_configurations.each do |config|
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
+      config.build_settings['OTHER_LDFLAGS'] ||= ['$(inherited)']
+      config.build_settings['OTHER_LDFLAGS'] << '-ObjC'
+      
+      # Ensure search paths are inherited
+      config.build_settings['FRAMEWORK_SEARCH_PATHS'] ||= ['$(inherited)']
+      config.build_settings['HEADER_SEARCH_PATHS'] ||= ['$(inherited)']
     end
   end
 end

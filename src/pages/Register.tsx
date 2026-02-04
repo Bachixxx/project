@@ -4,7 +4,9 @@ import { Icon } from 'react-icons-kit';
 import { eyeOff } from 'react-icons-kit/feather/eyeOff';
 import { eye } from 'react-icons-kit/feather/eye';
 import { Check, Activity, Sparkles, ChevronLeft, Dumbbell } from 'lucide-react';
+import { Capacitor } from '@capacitor/core';
 import { useAuth } from '../contexts/AuthContext';
+import { useAdapty } from '../hooks/useAdapty';
 import { t } from '../i18n';
 import { supabase } from '../lib/supabase';
 import { createSubscriptionSession } from '../lib/stripe';
@@ -56,6 +58,7 @@ function Register() {
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const navigate = useNavigate();
   const { signUp, user } = useAuth(); // Removed unused signUp function
+  const { products, makePurchase } = useAdapty();
 
   useEffect(() => {
     fetchPlans();
@@ -166,34 +169,66 @@ function Register() {
         console.error('Failed to send welcome email:', emailError);
       }
 
-      // Proceed to Stripe checkout (Paid Only)
-      const plan = plans.find(p => p.interval === billingInterval);
-      if (!plan) {
-        throw new Error('Selected plan not found');
+      // Proceed to Payment (Hybrid Logic)
+      if (Capacitor.isNativePlatform()) {
+        // --- NATIVE FLOW (Adapty) ---
+        const productMap: Record<string, string> = {
+          'month': 'monthly_pro',
+          'year': 'annual_pro'
+        };
+        const productId = productMap[billingInterval];
+        const product = products.find(p => p.vendorProductId === productId);
+
+        if (!product) {
+          throw new Error('Produit introuvable dans le store (vérifiez la connexion).');
+        }
+
+        try {
+          await makePurchase(product);
+          // On success, sync is handled by AdaptyContext + Edge Function
+          // Redirect to dashboard
+          navigate('/dashboard');
+          return;
+        } catch (iapError: any) {
+          if (iapError.code === 2 || iapError.adaptyCode === 2) {
+            // User cancelled, stop spinner but don't show error
+            setLoading(false);
+            return;
+          }
+          throw iapError;
+        }
+
+      } else {
+        // --- WEB FLOW (Stripe) ---
+        const plan = plans.find(p => p.interval === billingInterval);
+        if (!plan) {
+          throw new Error('Selected plan not found');
+        }
+
+        const data = await createSubscriptionSession(
+          authData.user.id,
+          plan.stripe_price_id,
+          `${window.location.origin}/register?payment=success`,
+          `${window.location.origin}/register`,
+          undefined,
+          'subscription'
+        );
+
+        if (!data.url) {
+          throw new Error('No checkout URL received from payment provider');
+        }
+
+        window.location.href = data.url;
       }
-
-      const data = await createSubscriptionSession(
-        authData.user.id,
-        plan.stripe_price_id,
-        `${window.location.origin}/register?payment=success`,
-        `${window.location.origin}/register`,
-        undefined,
-        'subscription'
-      );
-
-      if (!data.url) {
-        throw new Error('No checkout URL received from payment provider');
-      }
-
-      // Redirect to Stripe Checkout
-      window.location.href = data.url;
-
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
       console.error('Registration error:', errorMessage);
       setError('An unexpected error occurred. Please try again.');
     } finally {
-      setLoading(false);
+      // Only stop loading if we didn't redirect (Web redirects, Native navigates)
+      if (!Capacitor.isNativePlatform() || error) {
+        setLoading(false);
+      }
     }
   };
 

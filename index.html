@@ -15,20 +15,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Coachency" />
 
-  <!-- OneSignal SDK -->
-  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-  <script>
-    window.OneSignalDeferred = window.OneSignalDeferred || [];
-    OneSignalDeferred.push(async function (OneSignal) {
-      await OneSignal.init({
-        appId: "4554f523-0919-4c97-9df2-acdd2f459914",
-        safari_web_id: "web.onesignal.auto.4bead971-106d-461b-853f-83aecbd62d40",
-        notifyButton: {
-          enable: false,
-        },
-      });
-    });
-  </script>
+  <!-- OneSignal SDK removed: Loaded conditionally in NotificationsContext for Web only -->
 
   <!-- SEO & Social Media -->
   <title>Coachency | L'App Tout-en-Un pour les Coachs Sportifs 🚀</title>

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { useNotifications } from './NotificationsContext';
 
 // Define the shape of the context
 interface ClientAuthContextType {
@@ -17,6 +18,7 @@ export function ClientAuthProvider({ children }: { children: React.ReactNode }) 
   const [client, setClient] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
+  const { login, logout: logoutOneSignal, addTag } = useNotifications();
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session }, error }) => {
@@ -89,18 +91,12 @@ export function ClientAuthProvider({ children }: { children: React.ReactNode }) 
         console.log("Client data found:", clientData);
         setClient(clientData);
 
-        // OneSignal Login for Client
-        // @ts-ignore
-        if (window.OneSignalDeferred) {
-          // @ts-ignore
-          window.OneSignalDeferred.push(function (OneSignal) {
-            OneSignal.login(user.id);
-            OneSignal.User.addTag("role", "client");
-            // Add coach_id tag if available to group clients by coach
-            if (clientData.coach_id) {
-              OneSignal.User.addTag("coach_id", clientData.coach_id);
-            }
-          });
+        // OneSignal Login for Client via Context (Handles Web & Native)
+        login(user.id);
+        addTag("role", "client");
+        // Add coach_id tag if available to group clients by coach
+        if (clientData.coach_id) {
+          addTag("coach_id", clientData.coach_id);
         }
       } else {
         console.log("No client found with auth_id:", user.id);
@@ -194,17 +190,7 @@ export function ClientAuthProvider({ children }: { children: React.ReactNode }) 
       await supabase.auth.signOut();
 
       // OneSignal Logout
-      try {
-        // @ts-ignore
-        if (window.OneSignalDeferred) {
-          // @ts-ignore
-          window.OneSignalDeferred.push(function (OneSignal) {
-            OneSignal.logout();
-          });
-        }
-      } catch (osError) {
-        console.error('OneSignal logout error:', osError);
-      }
+      logoutOneSignal();
 
       setClient(null);
       localStorage.removeItem('sb-timbwznomvhlgkaljerb-auth-token');

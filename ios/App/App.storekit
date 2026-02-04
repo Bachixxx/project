@@ -1,0 +1,90 @@
+{
+  "identifier" : "com.coachency.app",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+
+  ],
+  "settings" : {
+    "_failTransactionsEnabled" : false,
+    "_locale" : "fr_FR",
+    "_storefront" : "CHE",
+    "_storeKitError" : 0
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "7AA68C9E",
+      "localizations" : [
+
+      ],
+      "name" : "Pro",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "19.90",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "0D8532F3",
+          "introductoryOffer" : {
+            "displayPrice" : "0.99",
+            "internalID" : "7E5E3D2A",
+            "paymentMode" : "free",
+            "subscriptionPeriod" : "P2W"
+          },
+          "localizations" : [
+            {
+              "description" : "Tout ce qu'il faut pour scaler.",
+              "displayName" : "Professionnel (Mensuel)",
+              "locale" : "fr_FR"
+            }
+          ],
+          "productID" : "monthly_pro",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Pro Monthly",
+          "subscriptionGroupID" : "7AA68C9E",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "199.00",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "3C1A2B4D",
+          "introductoryOffer" : {
+            "displayPrice" : "0.99",
+            "internalID" : "1A2B3C4D",
+            "paymentMode" : "free",
+            "subscriptionPeriod" : "P2W"
+          },
+          "localizations" : [
+            {
+              "description" : "Tout ce qu'il faut pour scaler.",
+              "displayName" : "Professionnel (Annuel)",
+              "locale" : "fr_FR"
+            }
+          ],
+          "productID" : "annual_pro",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Pro Annual",
+          "subscriptionGroupID" : "7AA68C9E",
+          "type" : "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 3,
+    "minor" : 0
+  }
+}

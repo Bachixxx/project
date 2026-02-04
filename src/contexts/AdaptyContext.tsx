@@ -4,7 +4,7 @@ import { Capacitor } from '@capacitor/core';
 import { useAuth } from './AuthContext';
 
 // Replace with your actual Adapty Public API Key
-const ADAPTY_PUBLIC_KEY = 'public_live_YOUR_API_KEY_HERE';
+const ADAPTY_PUBLIC_KEY = 'public_live_IarJQ0st.EIiSoWvDYgqfrO7T54yd';
 
 interface AdaptyContextType {
     loading: boolean;
@@ -47,7 +47,15 @@ export function AdaptyProvider({ children }: { children: ReactNode }) {
 
                 // Load Paywalls
                 try {
-                    const paywall = await adapty.getPaywall({ placementId: 'main_paywall', locale: 'en' });
+                    // Try 'main_paywall' first, then fallback to 'onboarding' (common default)
+                    let paywall;
+                    try {
+                        paywall = await adapty.getPaywall({ placementId: 'main_paywall', locale: 'en' });
+                    } catch (e) {
+                        console.warn('main_paywall not found, trying "onboarding"...');
+                        paywall = await adapty.getPaywall({ placementId: 'onboarding', locale: 'en' });
+                    }
+
                     const products = await adapty.getPaywallProducts({ paywall });
 
                     setPaywalls([paywall]);

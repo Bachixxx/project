@@ -1,4 +1,24 @@
 PODS:
+  - Adapty (3.15.3):
+    - AdaptyLogger (= 3.15.3)
+    - AdaptyUIBuilder (= 3.15.3)
+  - AdaptyCapacitor (3.16.0-beta.0):
+    - Adapty (= 3.15.3)
+    - AdaptyPlugin (= 3.15.3)
+    - AdaptyUI (= 3.15.3)
+    - Capacitor
+  - AdaptyLogger (3.15.3)
+  - AdaptyPlugin (3.15.3):
+    - Adapty (= 3.15.3)
+    - AdaptyLogger (= 3.15.3)
+    - AdaptyUI (= 3.15.3)
+    - AdaptyUIBuilder (= 3.15.3)
+  - AdaptyUI (3.15.3):
+    - Adapty (= 3.15.3)
+    - AdaptyLogger (= 3.15.3)
+    - AdaptyUIBuilder (= 3.15.3)
+  - AdaptyUIBuilder (3.15.3):
+    - AdaptyLogger (= 3.15.3)
   - Capacitor (8.0.2):
     - CapacitorCordova
   - CapacitorCommunityStripeTerminal (8.0.1):
@@ -55,22 +75,34 @@ PODS:
     - OneSignal/OneSignalNotifications
     - OneSignal/OneSignalOSCore
     - OneSignal/OneSignalOutcomes
+  - OnesignalCordovaPlugin (5.3.0):
+    - CapacitorCordova
+    - OneSignal (< 6.0, >= 3.0)
   - StripeTerminal (4.7.3)
 
 DEPENDENCIES:
+  - "AdaptyCapacitor (from `../../node_modules/@adapty/capacitor`)"
   - "Capacitor (from `../../node_modules/@capacitor/ios`)"
   - "CapacitorCommunityStripeTerminal (from `../../node_modules/@capacitor-community/stripe-terminal`)"
   - "CapacitorCordova (from `../../node_modules/@capacitor/ios`)"
   - "CapacitorDevice (from `../../node_modules/@capacitor/device`)"
   - "CapacitorSplashScreen (from `../../node_modules/@capacitor/splash-screen`)"
   - OneSignal (< 6.0, >= 3.0)
+  - OnesignalCordovaPlugin (from `../capacitor-cordova-ios-plugins/sourcesstatic/OnesignalCordovaPlugin`)
 
 SPEC REPOS:
   trunk:
+    - Adapty
+    - AdaptyLogger
+    - AdaptyPlugin
+    - AdaptyUI
+    - AdaptyUIBuilder
     - OneSignal
     - StripeTerminal
 
 EXTERNAL SOURCES:
+  AdaptyCapacitor:
+    :path: "../../node_modules/@adapty/capacitor"
   Capacitor:
     :path: "../../node_modules/@capacitor/ios"
   CapacitorCommunityStripeTerminal:
@@ -81,16 +113,25 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@capacitor/device"
   CapacitorSplashScreen:
     :path: "../../node_modules/@capacitor/splash-screen"
+  OnesignalCordovaPlugin:
+    :path: "../capacitor-cordova-ios-plugins/sourcesstatic/OnesignalCordovaPlugin"
 
 SPEC CHECKSUMS:
+  Adapty: 9d5c8378ddf71747e5182ae9dd3426b2a4dc274a
+  AdaptyCapacitor: 412345357c160ce2ec34d9305fc94864d2cff49b
+  AdaptyLogger: 8a58745fe27ac991d2b2f05de57bfa9d932383ca
+  AdaptyPlugin: d832e606563b2cc3e77dbc4ca23e64725a3b21c5
+  AdaptyUI: 7b8515dade06d8a046826f024940c009bedb5f00
+  AdaptyUIBuilder: e94ea218d936f58f13123fda19f3c13fba5cdb7d
   Capacitor: 2b79172ad27f3be2d103cce88b8eb9803fdcc744
   CapacitorCommunityStripeTerminal: 555919ab4afb7871fe85665f047d9534cca6bebd
   CapacitorCordova: 921bdb690ebe82421b24fce45552fd3dea2ae43a
   CapacitorDevice: 9a16fb36a19ff391bf75afbe3cf16f883b3b3aa0
   CapacitorSplashScreen: 422880d7117605c30699eb4b21644b62db42e86c
   OneSignal: 5f424f6e0dd0e55f28a0ae553851316cf5c6dcfa
+  OnesignalCordovaPlugin: ad8ef8968c52ca8fb812c931202cb40a14a10a36
   StripeTerminal: b9e92913da8a08ff5c62af75056ad39bf8b02ac6
 
-PODFILE CHECKSUM: 0ed4e6798656d13b764f45c2821403ede096bb0a
+PODFILE CHECKSUM: c65ccc5612c4d083006c06a75596b65ae167f356
 
 COCOAPODS: 1.16.2
