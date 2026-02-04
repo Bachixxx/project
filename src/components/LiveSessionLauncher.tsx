@@ -242,6 +242,30 @@ export function LiveSessionLauncher({ isOpen, onClose, initialClientId }: LiveSe
 
                 if (error) throw error;
                 finalSessionId = data.id;
+
+                // Create a scheduled_session entry so it appears in history/calendar
+                const { data: schedData, error: schedError } = await supabase
+                    .from('scheduled_sessions')
+                    .insert([
+                        {
+                            client_id: selectedClientId,
+                            session_id: finalSessionId,
+                            coach_id: user?.id,
+                            scheduled_date: new Date().toISOString(),
+                            status: 'in_progress' // Will be updated to 'completed' by LiveSessionMode on finish
+                        }
+                    ])
+                    .select()
+                    .single();
+
+                if (!schedError && schedData) {
+                    contextId = schedData.id;
+                    source = 'schedule'; // Treat it as a scheduled session now
+                } else {
+                    console.error("Error creating history entry:", schedError);
+                    // We continue even if history fails, just to start the session
+                }
+
             } catch (error) {
                 console.error("Error creating free session:", error);
                 alert("Erreur lors de la création de la séance libre.");
