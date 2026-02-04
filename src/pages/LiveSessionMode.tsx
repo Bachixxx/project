@@ -96,7 +96,7 @@ export default function LiveSessionMode() {
       setLoadingExercises(true);
       const { data, error } = await supabase
         .from('exercises')
-        .select('id, name, category, difficulty_level, coach_id')
+        .select('id, name, category, difficulty_level, coach_id, tracking_type, track_reps, track_weight, track_duration, track_distance, track_calories')
         .order('name');
 
       if (error) throw error;
@@ -122,9 +122,9 @@ export default function LiveSessionMode() {
         order_index: nextOrderIndex++,
         rest_time: 60,
         tracking_flags: {
-          track_reps: ex.track_reps !== false, // Default true if undefined/null
-          track_weight: ex.track_weight !== false,
-          track_duration: !!ex.track_duration,
+          track_reps: ex.track_reps ?? (ex.tracking_type === 'reps_weight' || !ex.tracking_type), // Default strictly if undefined
+          track_weight: ex.track_weight ?? (ex.tracking_type === 'reps_weight' || !ex.tracking_type),
+          track_duration: !!ex.track_duration, // Boolean columns are trustworthy now
           track_distance: !!ex.track_distance,
           track_calories: !!ex.track_calories
         },
