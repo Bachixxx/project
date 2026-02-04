@@ -506,8 +506,8 @@ function ExerciseChartCard({ exercise, data, onClose }: { exercise: Exercise, da
             key={tab.id}
             onClick={() => setMetric(tab.id as any)}
             className={`px-3 py-1 text-xs font-bold rounded-full transition-all border ${metric === tab.id
-              ? 'bg-white text-black border-white'
-              : 'bg-white/5 text-gray-400 border-white/5 hover:bg-white/10'
+              ? 'bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-500/25'
+              : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10 hover:text-white'
               }`}
           >
             {tab.label}
