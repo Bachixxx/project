@@ -47,6 +47,9 @@ function ClientLiveWorkout() {
     preStartTimeLeft: number;
   } | null>(null);
 
+  // Global Session Timer (seconds)
+  const [elapsedTime, setElapsedTime] = useState(0);
+
   useEffect(() => {
     if (client) {
       if (scheduledSessionId || appointmentId) {
@@ -90,6 +93,19 @@ function ClientLiveWorkout() {
     }
     return () => clearInterval(interval);
   }, [activeTimer?.isRunning, activeTimer?.timeLeft, activeTimer?.isPreStart, activeTimer?.preStartTimeLeft]);
+
+  // Global Session Timer Logic
+  useEffect(() => {
+    // Start counting as soon as the component loads and we have session data
+    // (Meaning the workout started)
+    if (loading || !sessionData) return;
+
+    const interval = setInterval(() => {
+      setElapsedTime(prev => prev + 1);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [loading, sessionData]);
 
   const handleStartTimer = (setIndex: number, duration: number) => {
     if (activeTimer && activeTimer.setIndex === setIndex) {
@@ -519,8 +535,10 @@ function ClientLiveWorkout() {
           .from('scheduled_sessions')
           .update({
             status: 'completed',
+            status: 'completed',
             completed_at: new Date().toISOString(),
-            notes: notes
+            notes: notes,
+            actual_duration_seconds: elapsedTime
           })
           .eq('id', scheduledSessionId);
         if (error) throw error;
