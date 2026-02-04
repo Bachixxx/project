@@ -109,13 +109,19 @@ function ClientDashboard() {
       if (sessionsError) throw sessionsError;
 
       // Map scheduled_sessions to the format expected by the dashboard
-      const sessions = (sessionsData || []).map(s => ({
-        id: s.id,
-        date: s.completed_at || s.scheduled_date,
-        duration_minutes: s.actual_duration || s.session?.duration_minutes || 0,
-        actual_duration: s.actual_duration,
-        session: s.session
-      }));
+      const sessions = (sessionsData || []).map(s => {
+        // Use actual recorded duration if available (convert seconds to minutes), otherwise fallback to planned duration
+        const actualMinutes = s.actual_duration_seconds ? Math.round(s.actual_duration_seconds / 60) : 0;
+        const plannedMinutes = s.session?.duration_minutes || 0;
+
+        return {
+          id: s.id,
+          date: s.completed_at || s.scheduled_date,
+          duration_minutes: actualMinutes > 0 ? actualMinutes : plannedMinutes,
+          actual_duration_seconds: s.actual_duration_seconds,
+          session: s.session
+        };
+      });
 
       const fetchedWorkouts = sessions.slice(0, 5);
       setWorkoutSessions(fetchedWorkouts); // Keep only last 5 for display
