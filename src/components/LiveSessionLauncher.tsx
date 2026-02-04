@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Search, Calendar, Play, Layers, Dumbbell, ChevronRight, User } from 'lucide-react';
+import { X, Search, Calendar, Play, Layers, Dumbbell, ChevronRight, User, Check } from 'lucide-react';
 import { SessionSelector } from './library/SessionSelector';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -56,6 +56,7 @@ export function LiveSessionLauncher({ isOpen, onClose, initialClientId }: LiveSe
     const [todaySession, setTodaySession] = useState<ScheduledSession | null>(null);
     const [nextProgramSession, setNextProgramSession] = useState<ClientProgram | null>(null);
     const [showSessionSelector, setShowSessionSelector] = useState(false);
+    const [saveAsTemplate, setSaveAsTemplate] = useState(false);
 
     useEffect(() => {
         if (isOpen && !initialClientId) {
@@ -222,7 +223,8 @@ export function LiveSessionLauncher({ isOpen, onClose, initialClientId }: LiveSe
                             description: 'Séance créée en direct',
                             duration_minutes: 60,
                             difficulty_level: 'Intermédiaire',
-                            session_type: 'private'
+                            session_type: 'private',
+                            is_template: saveAsTemplate // Use state
                         }
                     ])
                     .select()
@@ -428,6 +430,21 @@ export function LiveSessionLauncher({ isOpen, onClose, initialClientId }: LiveSe
                                     </div>
                                     <ChevronRight className="w-5 h-5 text-gray-600" />
                                 </button>
+
+                                <div className="ml-2 flex items-center gap-3 py-2">
+                                    <div
+                                        onClick={() => setSaveAsTemplate(!saveAsTemplate)}
+                                        className={`w-5 h-5 rounded border flex items-center justify-center cursor-pointer transition-colors ${saveAsTemplate ? 'bg-blue-500 border-blue-500' : 'border-gray-500 hover:border-gray-400'}`}
+                                    >
+                                        {saveAsTemplate && <Check className="w-3.5 h-3.5 text-white" />}
+                                    </div>
+                                    <label
+                                        onClick={() => setSaveAsTemplate(!saveAsTemplate)}
+                                        className="text-sm text-gray-400 cursor-pointer select-none hover:text-gray-300"
+                                    >
+                                        Enregistrer comme modèle dans la bibliothèque
+                                    </label>
+                                </div>
 
                             </div>
                         )}

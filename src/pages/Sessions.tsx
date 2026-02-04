@@ -130,6 +130,7 @@ function SessionsPage() {
           )
         `)
         .eq('coach_id', user?.id)
+        .eq('is_template', true)
         .order('name');
 
       if (sessionsError) {
