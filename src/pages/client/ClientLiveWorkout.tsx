@@ -15,6 +15,10 @@ interface Exercise {
   instructions: string;
   order_index: number;
   tracking_type?: 'reps_weight' | 'duration' | 'distance';
+  track_reps?: boolean;
+  track_weight?: boolean;
+  track_duration?: boolean;
+  track_distance?: boolean;
   duration_seconds?: number;
   distance_meters?: number;
 }
@@ -272,7 +276,14 @@ function ClientLiveWorkout() {
             description,
             category,
             equipment,
-            tracking_type
+            description,
+            category,
+            equipment,
+            tracking_type,
+            track_reps,
+            track_weight,
+            track_duration,
+            track_distance
           ),
           duration_seconds,
           distance_meters
@@ -291,7 +302,13 @@ function ClientLiveWorkout() {
         rest_time: se.rest_time,
         instructions: se.instructions,
         order_index: se.order_index,
+        instructions: se.instructions,
+        order_index: se.order_index,
         tracking_type: se.exercise.tracking_type,
+        track_reps: se.exercise.track_reps,
+        track_weight: se.exercise.track_weight,
+        track_duration: se.exercise.track_duration,
+        track_distance: se.exercise.track_distance,
         duration_seconds: se.duration_seconds,
         distance_meters: se.distance_meters
       }));
@@ -782,7 +799,7 @@ function ClientLiveWorkout() {
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {currentExercise.tracking_type === 'duration' ? (
+                      {currentExercise.tracking_type === 'duration' || currentExercise.track_duration ? (
                         <div className="col-span-1 md:col-span-2">
                           <div className="flex items-center gap-4">
                             <div className="flex-1">
@@ -816,7 +833,7 @@ function ClientLiveWorkout() {
                             </button>
                           </div>
                         </div>
-                      ) : currentExercise.tracking_type === 'distance' ? (
+                      ) : currentExercise.tracking_type === 'distance' || currentExercise.track_distance ? (
                         <div className="col-span-1 md:col-span-2">
                           <label className="text-gray-500 text-xs font-bold uppercase mb-2 block">Distance (m)</label>
                           <div className="flex items-center justify-between bg-black/20 rounded-xl p-1 border border-white/5">
