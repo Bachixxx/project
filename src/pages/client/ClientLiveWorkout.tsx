@@ -282,16 +282,48 @@ function ClientLiveWorkout() {
 
       setExercises(exerciseList);
 
+      // --- STATE RESTORATION LOGIC ---
+      // Fetch existing logs to restore progress
+      let existingLogsQuery = supabase.from('workout_logs').select('*');
+
+      if (scheduledSessionId) {
+        existingLogsQuery = existingLogsQuery.eq('scheduled_session_id', scheduledSessionId);
+      } else if (appointmentId) {
+        existingLogsQuery = existingLogsQuery.eq('appointment_id', appointmentId);
+      }
+
+      const { data: logs, error: logsError } = await existingLogsQuery;
+
+      if (logsError) {
+        console.error("Error fetching existing logs:", logsError);
+        // Non-blocking error, we just start fresh if restoration fails
+      }
+
       const initialCompleted = {};
       exerciseList.forEach(ex => {
         initialCompleted[ex.id] = {
-          sets: Array(ex.sets).fill(null).map(() => ({
-            reps: ex.reps,
-            weight: 0,
-            duration_seconds: ex.duration_seconds,
-            distance_meters: ex.distance_meters,
-            completed: false
-          }))
+          sets: Array(ex.sets).fill(null).map((_, idx) => {
+            // Check if we have a log for this specific set
+            const log = logs?.find(l => l.exercise_id === ex.id && l.set_number === idx + 1);
+
+            if (log) {
+              return {
+                reps: log.reps,
+                weight: log.weight,
+                duration_seconds: log.duration_seconds,
+                distance_meters: log.distance_meters,
+                completed: true // Mark as completed if log exists
+              };
+            } else {
+              return {
+                reps: ex.reps,
+                weight: 0,
+                duration_seconds: ex.duration_seconds,
+                distance_meters: ex.distance_meters,
+                completed: false
+              }
+            }
+          })
         };
       });
       setCompletedExercises(initialCompleted);

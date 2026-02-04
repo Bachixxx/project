@@ -129,16 +129,46 @@ serve(async (req) => {
                     const newStatus = record.status;
 
                     if (newStatus === 'completed' && oldStatus !== 'completed') {
-                        notification = {
-                            headings: { en: "Session Completed! ✅", fr: "Séance Terminée ! ✅" },
-                            subtitle: { en: "Great job!", fr: "Bien joué !" },
-                            contents: { en: `Check your summary for ${sessionName}`, fr: `Regarde ton résumé pour ${sessionName}` },
-                            include_aliases: { external_id: [clientData.auth_id] },
-                            target_channel: "push",
-                            data: { type: 'session_completed', id: record.id },
-                            ios_badgeType: 'Increase',
-                            ios_badgeCount: 1,
-                            buttons: [{ id: "view_summary", text: "Voir le résumé" }]
+                        // DISTINCTION: Live vs Planned
+                        // Live Session: Created and Scheduled almost at the same time (diff < 20 mins)
+                        // Planned Session: Created well in advance of the Scheduled Date (diff > 20 mins) 
+                        // Note: scheduled_date is the PLANNING date. created_at is the Booking date.
+
+                        const scheduledTime = new Date(record.scheduled_date).getTime();
+                        const createdTime = new Date(record.created_at).getTime();
+                        const isLiveSession = (scheduledTime - createdTime) < 20 * 60 * 1000; // < 20 mins diff
+
+                        if (isLiveSession) {
+                            // CASE A: Live Session (Coach is with Client)
+                            // Notify CLIENT to check summary
+                            notification = {
+                                headings: { en: "Session Completed! ✅", fr: "Séance Terminée ! ✅" },
+                                subtitle: { en: "Great job!", fr: "Bien joué !" },
+                                contents: { en: `Check your summary for ${sessionName}`, fr: `Regarde ton résumé pour ${sessionName}` },
+                                include_aliases: { external_id: [clientData.auth_id] },
+                                target_channel: "push",
+                                data: { type: 'session_completed', id: record.id },
+                                ios_badgeType: 'Increase',
+                                ios_badgeCount: 1,
+                                buttons: [{ id: "view_summary", text: "Voir le résumé" }]
+                            }
+                        } else {
+                            // CASE B: Planned Session (Client is alone)
+                            // Notify COACH that client finished
+                            // We need to fetch Coach ID (from user? No, from session/client relation)
+                            // record.coach_id exists in scheduled_sessions
+
+                            if (record.coach_id) {
+                                notification = {
+                                    headings: { en: "Workout Completed 🚀", fr: "Séance Terminée 🚀" },
+                                    contents: { en: `A client finished ${sessionName}`, fr: `Un client a terminé ${sessionName}` },
+                                    include_aliases: { external_id: [record.coach_id] },
+                                    target_channel: "push",
+                                    data: { type: 'client_finished_session', id: record.id },
+                                    ios_badgeType: 'Increase',
+                                    ios_badgeCount: 1
+                                }
+                            }
                         }
                     }
                 }
