@@ -302,8 +302,6 @@ function ClientLiveWorkout() {
         rest_time: se.rest_time,
         instructions: se.instructions,
         order_index: se.order_index,
-        instructions: se.instructions,
-        order_index: se.order_index,
         tracking_type: se.exercise.tracking_type,
         track_reps: se.exercise.track_reps,
         track_weight: se.exercise.track_weight,
@@ -314,6 +312,7 @@ function ClientLiveWorkout() {
       }));
 
       setExercises(exerciseList);
+      console.log('LIVE WORKOUT EXERCISES:', exerciseList); // DEBUG LOG
 
       // --- STATE RESTORATION & GHOST MODE LOGIC ---
 

@@ -21,6 +21,10 @@ interface Exercise {
   instructions?: string;
   exercise_id: string; // Reference to the base exercise definition
   tracking_type?: 'reps_weight' | 'duration' | 'distance';
+  track_reps?: boolean;
+  track_weight?: boolean;
+  track_duration?: boolean;
+  track_distance?: boolean;
   duration_seconds?: number;
   distance_meters?: number;
 }
@@ -59,6 +63,10 @@ interface BaseExercise {
   name: string;
   category: string;
   tracking_type: 'reps_weight' | 'duration' | 'distance';
+  track_reps?: boolean;
+  track_weight?: boolean;
+  track_duration?: boolean;
+  track_distance?: boolean;
 }
 
 export function SessionDetailsModal({ scheduledSessionId, onClose, onStatusChange }: SessionDetailsModalProps) {
@@ -89,7 +97,7 @@ export function SessionDetailsModal({ scheduledSessionId, onClose, onStatusChang
     try {
       const { data, error } = await supabase
         .from('exercises')
-        .select('id, name, category, tracking_type')
+        .select('id, name, category, tracking_type, track_reps, track_weight, track_duration, track_distance')
         .or(`coach_id.eq.${user?.id},coach_id.is.null`)
         .order('name');
 
@@ -144,7 +152,11 @@ export function SessionDetailsModal({ scheduledSessionId, onClose, onStatusChang
             id,
             name,
             category,
-            tracking_type
+            tracking_type,
+            track_reps,
+            track_weight,
+            track_duration,
+            track_distance
           )
         `)
         .eq('session_id', sessionData.session.id)
@@ -164,6 +176,10 @@ export function SessionDetailsModal({ scheduledSessionId, onClose, onStatusChang
         group_id: ex.group_id,
         instructions: ex.instructions,
         tracking_type: ex.exercise.tracking_type,
+        track_reps: ex.exercise.track_reps,
+        track_weight: ex.exercise.track_weight,
+        track_duration: ex.exercise.track_duration,
+        track_distance: ex.exercise.track_distance,
         duration_seconds: ex.duration_seconds,
         distance_meters: ex.distance_meters
       }));
@@ -252,6 +268,10 @@ export function SessionDetailsModal({ scheduledSessionId, onClose, onStatusChang
         duration_seconds: 60,
         distance_meters: 1000,
         tracking_type: newExercise.tracking_type,
+        track_reps: newExercise.track_reps,
+        track_weight: newExercise.track_weight,
+        track_duration: newExercise.track_duration,
+        track_distance: newExercise.track_distance,
         order_index: editedItems.length,
         group_id: null,
         instructions: ''
@@ -273,6 +293,10 @@ export function SessionDetailsModal({ scheduledSessionId, onClose, onStatusChang
           newItems[index].data.name = exercise.name;
           newItems[index].data.category = exercise.category;
           newItems[index].data.tracking_type = exercise.tracking_type;
+          newItems[index].data.track_reps = exercise.track_reps;
+          newItems[index].data.track_weight = exercise.track_weight;
+          newItems[index].data.track_duration = exercise.track_duration;
+          newItems[index].data.track_distance = exercise.track_distance;
         }
       }
     }
@@ -545,11 +569,11 @@ export function SessionDetailsModal({ scheduledSessionId, onClose, onStatusChang
 
                           {/* Planned Details */}
                           <div className="flex flex-wrap gap-4 text-sm text-gray-300 mb-3">
-                            {item.data.tracking_type === 'duration' ? (
+                            {item.data.track_duration || item.data.tracking_type === 'duration' ? (
                               <span className="bg-blue-500/10 text-blue-300 px-2 py-0.5 rounded border border-blue-500/20">
                                 {Math.floor((item.data.duration_seconds || 0) / 60)}m {(item.data.duration_seconds || 0) % 60}s
                               </span>
-                            ) : item.data.tracking_type === 'distance' ? (
+                            ) : item.data.track_distance || item.data.tracking_type === 'distance' ? (
                               <span className="bg-blue-500/10 text-blue-300 px-2 py-0.5 rounded border border-blue-500/20">
                                 {item.data.distance_meters}m
                               </span>
@@ -684,7 +708,7 @@ export function SessionDetailsModal({ scheduledSessionId, onClose, onStatusChang
 
 
                         <div className="grid grid-cols-3 gap-3">
-                          {item.data.tracking_type === 'duration' ? (
+                          {item.data.track_duration || item.data.tracking_type === 'duration' ? (
                             <div className="col-span-3">
                               <label className="block text-xs font-medium text-gray-500 mb-1">Durée (secondes)</label>
                               <input
@@ -696,7 +720,7 @@ export function SessionDetailsModal({ scheduledSessionId, onClose, onStatusChang
                                 className="w-full bg-[#0f172a] border border-white/10 rounded-lg py-2 px-3 text-white text-sm focus:border-blue-500"
                               />
                             </div>
-                          ) : item.data.tracking_type === 'distance' ? (
+                          ) : item.data.track_distance || item.data.tracking_type === 'distance' ? (
                             <div className="col-span-3">
                               <label className="block text-xs font-medium text-gray-500 mb-1">Distance (mètres)</label>
                               <input

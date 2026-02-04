@@ -422,7 +422,11 @@ function ClientAppointments() {
             description,
             category,
             equipment,
-            tracking_type
+            tracking_type,
+            track_reps,
+            track_weight,
+            track_duration,
+            track_distance
           ),
           duration_seconds,
           distance_meters
