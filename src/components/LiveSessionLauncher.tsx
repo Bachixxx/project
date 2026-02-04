@@ -252,7 +252,7 @@ export function LiveSessionLauncher({ isOpen, onClose, initialClientId }: LiveSe
                             session_id: finalSessionId,
                             coach_id: user?.id,
                             scheduled_date: new Date().toISOString(),
-                            status: 'in_progress' // Will be updated to 'completed' by LiveSessionMode on finish
+                            status: 'scheduled' // 'in_progress' status doesn't exist. We use 'scheduled' until completion.
                         }
                     ])
                     .select()
