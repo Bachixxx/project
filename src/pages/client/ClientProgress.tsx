@@ -457,27 +457,22 @@ function ExerciseChartCard({ exercise, data, onClose }: { exercise: Exercise, da
 
   const config = metricConfig[metric];
 
-  // Available tabs for this exercise - Default to true if undefined to show options
-  const isUndefined = (val: any) => val === undefined || val === null;
+  // Available tabs for this exercise
+  // FORCE DISPLAY: Always show core metrics (Weight, Reps) to ensure versatility
+  // The user wants to see them even if tracking was disabled in the past.
+  const tabs = [
+    { id: 'weight', label: 'Poids' },
+    { id: 'total_reps', label: 'Reps' }
+  ];
 
-  const tabs = [];
-  if (exercise.track_weight || isUndefined(exercise.track_weight)) tabs.push({ id: 'weight', label: 'Poids' });
-  if (exercise.track_reps || isUndefined(exercise.track_reps)) tabs.push({ id: 'total_reps', label: 'Reps' });
-
-  // Volume needs both weight and reps conceptually, but let's show it if either is present
-  if ((exercise.track_weight || isUndefined(exercise.track_weight)) && (exercise.track_reps || isUndefined(exercise.track_reps))) {
+  // Add optional metrics if enabled (or if meaningful data exists)
+  if (exercise.track_weight && exercise.track_reps) {
     tabs.push({ id: 'volume', label: 'Volume' });
   }
 
   if (exercise.track_distance) tabs.push({ id: 'distance', label: 'Distance' });
   if (exercise.track_duration) tabs.push({ id: 'duration', label: 'Temps' });
   if (exercise.track_calories) tabs.push({ id: 'calories', label: 'Kcal' });
-
-  // Fallback: If no tabs, show weight and reps at minimum
-  if (tabs.length === 0) {
-    tabs.push({ id: 'weight', label: 'Poids' });
-    tabs.push({ id: 'total_reps', label: 'Reps' });
-  }
 
   return (
     <div className="glass-card p-6 rounded-3xl border border-white/10 flex flex-col h-[500px] animate-fade-in relative group">
@@ -500,7 +495,7 @@ function ExerciseChartCard({ exercise, data, onClose }: { exercise: Exercise, da
       </div>
 
       {/* Tabs / Pills */}
-      <div className="flex flex-wrap gap-2 mb-4">
+      <div className="flex flex-wrap gap-2 mb-4 min-h-[32px] z-10 relative">
         {tabs.map(tab => (
           <button
             key={tab.id}
