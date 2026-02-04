@@ -57,6 +57,8 @@ export function LiveSessionLauncher({ isOpen, onClose, initialClientId }: LiveSe
     const [nextProgramSession, setNextProgramSession] = useState<ClientProgram | null>(null);
     const [showSessionSelector, setShowSessionSelector] = useState(false);
     const [saveAsTemplate, setSaveAsTemplate] = useState(false);
+    const [isConfiguringFreeSession, setIsConfiguringFreeSession] = useState(false);
+    const [freeSessionName, setFreeSessionName] = useState('');
 
     useEffect(() => {
         if (isOpen && !initialClientId) {
@@ -81,6 +83,9 @@ export function LiveSessionLauncher({ isOpen, onClose, initialClientId }: LiveSe
             setNextProgramSession(null);
             setShowSessionSelector(false);
             if (!initialClientId) setSelectedClientId(null);
+            setIsConfiguringFreeSession(false);
+            setFreeSessionName('');
+            setSaveAsTemplate(false);
         }
     }, [isOpen]);
 
@@ -207,6 +212,11 @@ export function LiveSessionLauncher({ isOpen, onClose, initialClientId }: LiveSe
         fetchSmartOptions(client.id);
     };
 
+    const handleStartFreeSessionConfig = () => {
+        setFreeSessionName(`Séance - ${new Date().toLocaleDateString()}`);
+        setIsConfiguringFreeSession(true);
+    };
+
     const handleLaunch = async (sessionId: string, source: 'schedule' | 'program' | 'library', contextId?: string) => {
         let finalSessionId = sessionId;
 
@@ -219,12 +229,12 @@ export function LiveSessionLauncher({ isOpen, onClose, initialClientId }: LiveSe
                     .insert([
                         {
                             coach_id: user?.id,
-                            name: `Séance Libre - ${new Date().toLocaleDateString()}`,
+                            name: freeSessionName || `Séance Libre - ${new Date().toLocaleDateString()}`,
                             description: 'Séance créée en direct',
                             duration_minutes: 60,
                             difficulty_level: 'Intermédiaire',
                             session_type: 'private',
-                            is_template: saveAsTemplate // Use state
+                            is_template: saveAsTemplate
                         }
                     ])
                     .select()
@@ -315,20 +325,61 @@ export function LiveSessionLauncher({ isOpen, onClose, initialClientId }: LiveSe
                     <div className="p-6">
                         <div className="flex items-center gap-2 mb-6">
                             <button
-                                onClick={() => !initialClientId && setStep('client')}
-                                className={`text-sm text-gray-400 hover:text-white flex items-center gap-1 ${initialClientId ? 'cursor-default pointer-events-none' : ''}`}
+                                onClick={() => {
+                                    if (isConfiguringFreeSession) {
+                                        setIsConfiguringFreeSession(false);
+                                    } else if (!initialClientId) {
+                                        setStep('client');
+                                    }
+                                }}
+                                className={`text-sm text-gray-400 hover:text-white flex items-center gap-1 ${initialClientId && !isConfiguringFreeSession ? 'cursor-default pointer-events-none' : ''}`}
                             >
-                                {!initialClientId && <ChevronRight className="w-4 h-4 rotate-180" />}
-                                <User className="w-4 h-4" />
-                                {selectedClientName}
+                                {(!initialClientId || isConfiguringFreeSession) && <ChevronRight className="w-4 h-4 rotate-180" />}
+                                {isConfiguringFreeSession ? 'Retour aux options' : <><User className="w-4 h-4" /> {selectedClientName}</>}
                             </button>
                         </div>
 
-                        <h2 className="text-2xl font-bold text-white mb-6">Prêt à démarrer ?</h2>
+                        <h2 className="text-2xl font-bold text-white mb-6">
+                            {isConfiguringFreeSession ? 'Configuration de la séance' : 'Prêt à démarrer ?'}
+                        </h2>
 
                         {loading ? (
                             <div className="flex justify-center py-10">
                                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                            </div>
+                        ) : isConfiguringFreeSession ? (
+                            <div className="space-y-6">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-400 mb-2">Nom de la séance</label>
+                                    <input
+                                        type="text"
+                                        value={freeSessionName}
+                                        onChange={(e) => setFreeSessionName(e.target.value)}
+                                        className="w-full bg-[#0f172a] border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-blue-500 transition-colors"
+                                        autoFocus
+                                    />
+                                </div>
+
+                                <div
+                                    onClick={() => setSaveAsTemplate(!saveAsTemplate)}
+                                    className="flex items-center gap-3 p-4 bg-white/5 border border-white/10 rounded-xl cursor-pointer hover:bg-white/10 transition-colors"
+                                >
+                                    <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${saveAsTemplate ? 'bg-blue-500 border-blue-500' : 'border-gray-500'}`}>
+                                        {saveAsTemplate && <Check className="w-3.5 h-3.5 text-white" />}
+                                    </div>
+                                    <div className="flex-1">
+                                        <div className="font-bold text-gray-300">Enregistrer comme modèle</div>
+                                        <div className="text-xs text-gray-500">La séance sera visible dans votre bibliothèque</div>
+                                    </div>
+                                </div>
+
+                                <button
+                                    onClick={() => handleLaunch('ad-hoc-free', 'library')}
+                                    className="w-full py-4 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-xl shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2"
+                                >
+                                    <Play className="w-5 h-5 fill-current" />
+                                    DÉMARRER LA SÉANCE
+                                </button>
                             </div>
                         ) : (
                             <div className="space-y-4">
@@ -418,7 +469,7 @@ export function LiveSessionLauncher({ isOpen, onClose, initialClientId }: LiveSe
                                 </button>
 
                                 <button
-                                    onClick={() => handleLaunch('ad-hoc-free', 'library')} // Placeholder ID
+                                    onClick={handleStartFreeSessionConfig}
                                     className="w-full p-4 border border-white/10 rounded-xl flex items-center gap-4 hover:bg-white/5 transition-all group"
                                 >
                                     <div className="w-10 h-10 rounded-xl bg-gray-800 flex items-center justify-center text-gray-400 group-hover:text-white transition-colors">
@@ -430,21 +481,6 @@ export function LiveSessionLauncher({ isOpen, onClose, initialClientId }: LiveSe
                                     </div>
                                     <ChevronRight className="w-5 h-5 text-gray-600" />
                                 </button>
-
-                                <div className="ml-2 flex items-center gap-3 py-2">
-                                    <div
-                                        onClick={() => setSaveAsTemplate(!saveAsTemplate)}
-                                        className={`w-5 h-5 rounded border flex items-center justify-center cursor-pointer transition-colors ${saveAsTemplate ? 'bg-blue-500 border-blue-500' : 'border-gray-500 hover:border-gray-400'}`}
-                                    >
-                                        {saveAsTemplate && <Check className="w-3.5 h-3.5 text-white" />}
-                                    </div>
-                                    <label
-                                        onClick={() => setSaveAsTemplate(!saveAsTemplate)}
-                                        className="text-sm text-gray-400 cursor-pointer select-none hover:text-gray-300"
-                                    >
-                                        Enregistrer comme modèle dans la bibliothèque
-                                    </label>
-                                </div>
 
                             </div>
                         )}
