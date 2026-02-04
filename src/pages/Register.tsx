@@ -6,20 +6,12 @@ import { eye } from 'react-icons-kit/feather/eye';
 import { Check, Activity, Sparkles, ChevronLeft, Dumbbell } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
 import { useAuth } from '../contexts/AuthContext';
-import { useAdapty } from '../hooks/useAdapty';
+// import { useAdapty } from '../hooks/useAdapty';
 import { t } from '../i18n';
 import { supabase } from '../lib/supabase';
-import { createSubscriptionSession } from '../lib/stripe';
+// import { createSubscriptionSession } from '../lib/stripe';
 
-interface SubscriptionPlan {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  interval: string;
-  features: string[];
-  stripe_price_id: string;
-}
+
 
 const specializationOptions = [
   'Coach sportif personnel (musculation, remise en forme)',
@@ -55,14 +47,13 @@ function Register() {
   const [loading, setLoading] = useState(false);
 
   const [billingInterval, setBillingInterval] = useState<'month' | 'year'>('year'); // Default to annual as requested implied "Best"
-  const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
+  /* const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
+     const { products, makePurchase } = useAdapty(); */
+
   const navigate = useNavigate();
-  const { signUp, user } = useAuth(); // Removed unused signUp function
-  const { products, makePurchase } = useAdapty();
+  const { signUp, user } = useAuth();
 
   useEffect(() => {
-    fetchPlans();
-
     // Check for successful payment
     const paymentStatus = searchParams.get('payment');
     if (paymentStatus === 'success') {
@@ -71,20 +62,7 @@ function Register() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
-  const fetchPlans = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('subscription_plans')
-        .select('*')
-        .eq('is_test', true);
-
-      if (error) throw error;
-      setPlans(data || []);
-    } catch (error) {
-      console.error('Error fetching plans:', error);
-      setError('Failed to load subscription plans');
-    }
-  };
+  /* const fetchPlans = async () => { ... } removed */
 
   const handlePasswordToggle = () => {
     if (type === 'password') {
@@ -169,63 +147,15 @@ function Register() {
         console.error('Failed to send welcome email:', emailError);
       }
 
-      // Proceed to Payment (Hybrid Logic)
-      if (Capacitor.isNativePlatform()) {
-        // --- NATIVE FLOW (Adapty) ---
-        const productMap: Record<string, string> = {
-          'month': 'monthly_pro',
-          'year': 'annual_pro'
-        };
-        const productId = productMap[billingInterval];
-        const product = products.find(p => p.vendorProductId === productId);
+      // --- CARDLESS TRIAL FLOW ---
+      // No payment required at signup. Immediate access.
+      navigate('/dashboard');
 
-        if (!product) {
-          throw new Error('Produit introuvable dans le store (vérifiez la connexion).');
-        }
-
-        try {
-          await makePurchase(product);
-          // On success, sync is handled by AdaptyContext + Edge Function
-          // Redirect to dashboard
-          navigate('/dashboard');
-          return;
-        } catch (iapError: any) {
-          if (iapError.code === 2 || iapError.adaptyCode === 2) {
-            // User cancelled, stop spinner but don't show error
-            setLoading(false);
-            return;
-          }
-          throw iapError;
-        }
-
-      } else {
-        // --- WEB FLOW (Stripe) ---
-        const plan = plans.find(p => p.interval === billingInterval);
-        if (!plan) {
-          throw new Error('Selected plan not found');
-        }
-
-        const data = await createSubscriptionSession(
-          authData.user.id,
-          plan.stripe_price_id,
-          `${window.location.origin}/register?payment=success`,
-          `${window.location.origin}/register`,
-          undefined,
-          'subscription'
-        );
-
-        if (!data.url) {
-          throw new Error('No checkout URL received from payment provider');
-        }
-
-        window.location.href = data.url;
-      }
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
       console.error('Registration error:', errorMessage);
       setError('An unexpected error occurred. Please try again.');
     } finally {
-      // Only stop loading if we didn't redirect (Web redirects, Native navigates)
       if (!Capacitor.isNativePlatform() || error) {
         setLoading(false);
       }

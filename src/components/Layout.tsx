@@ -21,6 +21,7 @@ import {
   Palette,
   Smartphone,
   Tag,
+  Sparkles, // Added for banner
   Play, // Added
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -336,6 +337,45 @@ function Layout() {
         <main className="flex-1 min-w-0 overflow-x-hidden">
           <div className="flex-1">
             <div className="max-w-[2560px] mx-auto">
+              {/* Trial Warning Banner */}
+              {subscriptionInfo?.type === 'free' && user?.created_at && (() => {
+                const createdAt = new Date(user.created_at);
+                const now = new Date();
+                const diffTime = Math.abs(now.getTime() - createdAt.getTime());
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                const remainingDays = 14 - diffDays;
+
+                if (remainingDays >= 0 && remainingDays <= 14) {
+                  // Calculate urgency color
+                  const isUrgent = remainingDays <= 3;
+
+                  return (
+                    <div className={`${isUrgent ? 'bg-orange-500/10 border-orange-500/20' : 'bg-blue-500/10 border-blue-500/20'} border-b backdrop-blur-sm px-4 py-3`}>
+                      <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-3 text-center sm:text-left">
+                        <div className="flex items-center gap-2">
+                          {isUrgent ? <Shield className="w-5 h-5 text-orange-400 animate-pulse" /> : <Sparkles className="w-5 h-5 text-blue-400" />}
+                          <span className={`text-sm font-medium ${isUrgent ? 'text-orange-200' : 'text-blue-200'}`}>
+                            {isUrgent
+                              ? `⚠️ Période d'essai : J-${remainingDays} — Il ne vous reste que ${remainingDays} jours pour profiter de Coachency.`
+                              : `🚀 Période d'essai active — Il vous reste ${remainingDays} jours gratuits.`}
+                          </span>
+                        </div>
+                        <Link
+                          to="/upgrade"
+                          className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors ${isUrgent
+                            ? 'bg-orange-500 text-white hover:bg-orange-600'
+                            : 'bg-blue-500 text-white hover:bg-blue-600'
+                            }`}
+                        >
+                          S'abonner maintenant
+                        </Link>
+                      </div>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+
               <Outlet />
             </div>
           </div>
