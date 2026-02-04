@@ -350,23 +350,20 @@ function ClientProgress() {
             {/* Charts Grid */}
             {selectedExercises.length > 0 ? (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {selectedExercises.map(exerciseId => {
                   const exercise = exercises.find(e => e.id === exerciseId);
-                const data = getExerciseData(exerciseId);
-                  // Local state for this chart's selected metric (would be better in a sub-component, but inline for now)
-                  // We'll use a simple default based on tracking type, but allow override if we implement state.
-                  // Since we are mapping inside the render, we can't use hooks here easily without extracting a component.
-                  // LIMITATION: To add state per chart, we MUST extract a component.
-                  // I will extract 'ExerciseChartCard' in a future refactor, but for now I will hardcode a way or use a shared state?
-                  // Shared state 'chartMetrics' map: {[exerciseId]: 'weight' | 'reps' ... }
+                  const data = getExerciseData(exerciseId);
 
-                return (
-                <ExerciseChartCard
-                  key={exerciseId}
-                  exercise={exercise}
-                  data={data}
-                  onClose={() => toggleExercise(exerciseId)}
-                />
-                );
+                  if (!exercise) return null;
+
+                  return (
+                    <ExerciseChartCard
+                      key={exerciseId}
+                      exercise={exercise}
+                      data={data}
+                      onClose={() => toggleExercise(exerciseId)}
+                    />
+                  );
                 })}
               </div>
             ) : (
