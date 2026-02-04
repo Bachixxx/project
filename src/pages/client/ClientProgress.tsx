@@ -179,6 +179,7 @@ function ClientProgress() {
 
       const maxWeight = Math.max(...logs.map(l => l.weight));
       const totalVolume = logs.reduce((sum, l) => sum + (l.weight * l.reps), 0);
+      const totalReps = logs.reduce((sum, l) => sum + l.reps, 0); // New metric
       const maxDistance = Math.max(...logs.map(l => l.distance_meters));
       const maxDuration = Math.max(...logs.map(l => l.duration_seconds)) / 60;
       const totalCalories = logs.reduce((sum, l) => sum + l.calories, 0);
@@ -188,6 +189,7 @@ function ClientProgress() {
         rawDate: dateObj, // helper for sort
         weight: Number(maxWeight.toFixed(2)),
         volume: Number(totalVolume.toFixed(2)),
+        total_reps: Number(totalReps),
         distance: Number(maxDistance.toFixed(2)),
         duration: Number(maxDuration.toFixed(2)),
         calories: Number(totalCalories.toFixed(0)),
@@ -348,102 +350,23 @@ function ClientProgress() {
             {/* Charts Grid */}
             {selectedExercises.length > 0 ? (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {selectedExercises.map(exerciseId => {
                   const exercise = exercises.find(e => e.id === exerciseId);
-                  const data = getExerciseData(exerciseId);
+                const data = getExerciseData(exerciseId);
+                  // Local state for this chart's selected metric (would be better in a sub-component, but inline for now)
+                  // We'll use a simple default based on tracking type, but allow override if we implement state.
+                  // Since we are mapping inside the render, we can't use hooks here easily without extracting a component.
+                  // LIMITATION: To add state per chart, we MUST extract a component.
+                  // I will extract 'ExerciseChartCard' in a future refactor, but for now I will hardcode a way or use a shared state?
+                  // Shared state 'chartMetrics' map: {[exerciseId]: 'weight' | 'reps' ... }
 
-                  if (!exercise) return null;
-
-                  let yAxisLabel = "Charge Max (kg)";
-                  let dataKey = "weight";
-
-                  if (exercise.track_weight) {
-                    yAxisLabel = "Charge Max (kg)";
-                    dataKey = "weight";
-                  } else if (exercise.track_distance) {
-                    yAxisLabel = "Distance Max (m)";
-                    dataKey = "distance";
-                  } else if (exercise.track_duration) {
-                    yAxisLabel = "Durée Max (min)";
-                    dataKey = "duration";
-                  } else if (exercise.track_calories) {
-                    yAxisLabel = "Calories";
-                    dataKey = "calories";
-                  } else if (exercise.track_reps) { // Fallback
-                    yAxisLabel = "Volume (Rep x Kg)";
-                    dataKey = "volume";
-                  }
-
-                  return (
-                    <div key={exerciseId} className="glass-card p-6 rounded-3xl border border-white/10 flex flex-col h-[400px] animate-fade-in">
-                      <div className="flex items-center justify-between mb-6">
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 bg-purple-500/20 rounded-xl">
-                            <Dumbbell className="w-5 h-5 text-purple-400" />
-                          </div>
-                          <div>
-                            <h2 className="text-lg font-bold text-white leading-tight">{exercise.name}</h2>
-                            <p className="text-xs text-gray-400">{yAxisLabel}</p>
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => toggleExercise(exerciseId)}
-                          className="text-gray-500 hover:text-gray-300 transition-colors"
-                        >
-                          <X className="w-5 h-5" />
-                        </button>
-                      </div>
-
-                      {data.length > 0 ? (
-                        <div className="flex-1 w-full min-h-0">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={data}>
-                              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                              <XAxis
-                                dataKey="date"
-                                stroke="rgba(255,255,255,0.3)"
-                                tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 12 }}
-                                tickLine={false}
-                                axisLine={false}
-                                dy={10}
-                              />
-                              <YAxis
-                                stroke="rgba(255,255,255,0.3)"
-                                tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 12 }}
-                                tickLine={false}
-                                axisLine={false}
-                                dx={-10}
-                                domain={['dataMin - 5', 'auto']}
-                              />
-                              <Tooltip
-                                contentStyle={{
-                                  backgroundColor: 'rgba(15, 23, 42, 0.9)',
-                                  backdropFilter: 'blur(10px)',
-                                  border: '1px solid rgba(255,255,255,0.1)',
-                                  borderRadius: '1rem',
-                                  color: 'white',
-                                  boxShadow: '0 10px 30px -10px rgba(0,0,0,0.5)'
-                                }}
-                              />
-                              <Line
-                                type="monotone"
-                                dataKey={dataKey}
-                                stroke="#a855f7"
-                                name={yAxisLabel}
-                                strokeWidth={3}
-                                dot={{ fill: '#a855f7', strokeWidth: 0, r: 4 }}
-                                activeDot={{ r: 6, strokeWidth: 0 }}
-                              />
-                            </LineChart>
-                          </ResponsiveContainer>
-                        </div>
-                      ) : (
-                        <div className="flex-1 flex flex-col items-center justify-center text-center">
-                          <p className="text-gray-500 text-sm">Pas assez de données</p>
-                        </div>
-                      )}
-                    </div>
-                  );
+                return (
+                <ExerciseChartCard
+                  key={exerciseId}
+                  exercise={exercise}
+                  data={data}
+                  onClose={() => toggleExercise(exerciseId)}
+                />
+                );
                 })}
               </div>
             ) : (
@@ -505,6 +428,135 @@ function ClientProgress() {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+// Sub-component for individual charts to handle metric state independently
+function ExerciseChartCard({ exercise, data, onClose }: { exercise: Exercise, data: any[], onClose: () => void }) {
+  // Determine default metric based on tracking type priority
+  const getDefaultMetric = () => {
+    if (exercise.track_weight) return 'weight';
+    if (exercise.track_reps) return 'total_reps'; // Use total reps for bodyweight
+    if (exercise.track_distance) return 'distance';
+    if (exercise.track_duration) return 'duration';
+    if (exercise.track_calories) return 'calories';
+    return 'weight';
+  };
+
+  const [metric, setMetric] = useState<'weight' | 'total_reps' | 'volume' | 'distance' | 'duration' | 'calories'>(getDefaultMetric());
+
+  if (!exercise) return null;
+
+  // Configuration for the chart based on current metric
+  const metricConfig = {
+    weight: { label: "Charge Max (kg)", color: "#a855f7" },
+    total_reps: { label: "Total Répétitions", color: "#3b82f6" },
+    volume: { label: "Volume (kg × reps)", color: "#10b981" },
+    distance: { label: "Distance (m)", color: "#f59e0b" },
+    duration: { label: "Durée (min)", color: "#ef4444" },
+    calories: { label: "Calories", color: "#ec4899" }
+  };
+
+  const config = metricConfig[metric];
+
+  // Available tabs for this exercise
+  const tabs = [];
+  if (exercise.track_weight) tabs.push({ id: 'weight', label: 'Poids' });
+  if (exercise.track_reps) tabs.push({ id: 'total_reps', label: 'Reps' });
+  if (exercise.track_weight && exercise.track_reps) tabs.push({ id: 'volume', label: 'Volume' });
+  if (exercise.track_distance) tabs.push({ id: 'distance', label: 'Distance' });
+  if (exercise.track_duration) tabs.push({ id: 'duration', label: 'Temps' });
+  if (exercise.track_calories) tabs.push({ id: 'calories', label: 'Kcal' });
+
+  return (
+    <div className="glass-card p-6 rounded-3xl border border-white/10 flex flex-col h-[500px] animate-fade-in relative group">
+      <div className="flex items-start justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-white/5 rounded-xl border border-white/5">
+            <Dumbbell className="w-5 h-5 text-gray-300" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-white leading-tight">{exercise.name}</h2>
+            <p className="text-xs text-gray-400">{config.label}</p>
+          </div>
+        </div>
+        <button
+          onClick={onClose}
+          className="text-gray-500 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-lg"
+        >
+          <X className="w-5 h-5" />
+        </button>
+      </div>
+
+      {/* Tabs / Pills */}
+      <div className="flex flex-wrap gap-2 mb-4">
+        {tabs.map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setMetric(tab.id as any)}
+            className={`px-3 py-1 text-xs font-bold rounded-full transition-all border ${metric === tab.id
+              ? 'bg-white text-black border-white'
+              : 'bg-white/5 text-gray-400 border-white/5 hover:bg-white/10'
+              }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {data.length > 0 ? (
+        <div className="flex-1 w-full min-h-0">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={data}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+              <XAxis
+                dataKey="date"
+                stroke="rgba(255,255,255,0.3)"
+                tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 10 }}
+                tickLine={false}
+                axisLine={false}
+                dy={10}
+                minTickGap={30}
+              />
+              <YAxis
+                stroke="rgba(255,255,255,0.3)"
+                tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 10 }}
+                tickLine={false}
+                axisLine={false}
+                dx={-10}
+                domain={['auto', 'auto']}
+              />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                  backdropFilter: 'blur(10px)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: '1rem',
+                  color: 'white',
+                  boxShadow: '0 10px 30px -10px rgba(0,0,0,0.5)'
+                }}
+                labelStyle={{ color: '#94a3b8', marginBottom: '0.5rem', fontSize: '0.75rem' }}
+                itemStyle={{ fontSize: '0.875rem', fontWeight: 600 }}
+              />
+              <Line
+                type="monotone"
+                dataKey={metric}
+                stroke={config.color}
+                name={config.label}
+                strokeWidth={3}
+                dot={{ fill: config.color, strokeWidth: 2, stroke: '#0f172a', r: 4 }}
+                activeDot={{ r: 6, strokeWidth: 0, fill: 'white' }}
+                animationDuration={1000}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      ) : (
+        <div className="flex-1 flex flex-col items-center justify-center text-center">
+          <p className="text-gray-500 text-sm">Pas assez de données pour ce graphique</p>
+        </div>
+      )}
     </div>
   );
 }
