@@ -131,6 +131,9 @@ function SessionsPage() {
         `)
         .eq('coach_id', user?.id)
         .eq('is_template', true)
+        .eq('coach_id', user?.id)
+        .eq('is_template', true)
+        .is('archived_at', null)
         .order('name');
 
       if (sessionsError) {
@@ -259,7 +262,7 @@ function SessionsPage() {
                             try {
                               const { error } = await supabase
                                 .from('sessions')
-                                .delete()
+                                .update({ archived_at: new Date().toISOString() })
                                 .eq('id', session.id);
 
                               if (error) throw error;
