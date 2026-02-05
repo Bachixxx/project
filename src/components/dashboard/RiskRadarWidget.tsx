@@ -80,19 +80,6 @@ export function RiskRadarWidget() {
                 }
 
                 if (daysInactive > 7) {
-                    // Debug log for specific cases
-                    if (client.full_name.toLowerCase().includes('gerald')) {
-                        console.log('Gerald Risk Debug:', { lastActivity, daysInactive, lastSession, sessionError, userId: user?.id });
-
-                        // DEEP DIVE DEBUG: Check if we can see ANY session
-                        const { data: anySession, error: anyError } = await supabase
-                            .from('scheduled_sessions')
-                            .select('id, status, coach_id')
-                            .eq('client_id', client.id)
-                            .limit(1);
-                        console.log('Gerald Any Session Check:', { anySession, anyError });
-                    }
-
                     clientsAnalysis.push({
                         id: client.id,
                         full_name: client.full_name,
@@ -163,13 +150,6 @@ export function RiskRadarWidget() {
                                     <Clock className="w-3 h-3 text-red-400" />
                                     <span className="text-red-300 font-medium">{client.days_inactive} jours</span>
                                     <span>sans séance</span>
-                                    {client.full_name.toLowerCase().includes('gerald') && (
-                                        <span className="text-[10px] text-gray-500 block max-w-xs break-all">
-                                            Me: {user?.id?.slice(0, 4)}...
-                                            Cl: {client.id.slice(0, 4)}...
-                                            {client.last_activity_date ? `Found: ${client.last_activity_date}` : ' NoSess'}
-                                        </span>
-                                    )}
                                 </div>
                             </div>
 
