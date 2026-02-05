@@ -52,14 +52,16 @@ export function RiskRadarWidget() {
                 // Fetch last completed session
                 const { data: lastSession, error: sessionError } = await supabase
                     .from('scheduled_sessions')
-                    .select('completed_at')
+                    .select('completed_at, scheduled_date')
                     .eq('client_id', client.id)
                     .eq('status', 'completed')
                     .order('completed_at', { ascending: false })
                     .limit(1)
                     .maybeSingle();
 
-                let lastActivity = lastSession?.completed_at ? parseISO(lastSession.completed_at) : null;
+                let lastActivity = lastSession?.completed_at
+                    ? parseISO(lastSession.completed_at)
+                    : (lastSession?.scheduled_date ? parseISO(lastSession.scheduled_date) : null);
 
                 // If no session, check creation date (for new clients who haven't started)
                 let daysInactive = 0;
