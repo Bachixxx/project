@@ -142,7 +142,9 @@ Deno.serve(async (req) => {
               status: 'paid',
               payment_method: 'online',
               payment_date: new Date().toISOString(),
-              notes: description || 'Paiement sans contact (Terminal)'
+              notes: description || 'Paiement sans contact (Terminal)',
+              guest_name: session.customer_details?.name || null,
+              guest_email: session.customer_details?.email || null
             });
 
             if (paymentError) {

@@ -26,6 +26,8 @@ interface Payment {
     full_name: string;
     email: string;
   } | null;
+  guest_name?: string;
+  guest_email?: string;
 }
 
 function PaymentsPage() {
@@ -33,7 +35,7 @@ function PaymentsPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [coachInfo, setCoachInfo] = useState(null);
+  const [coachInfo, setCoachInfo] = useState<{ full_name: any; email: any; phone: any; } | null>(null);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -106,6 +108,7 @@ function PaymentsPage() {
       payment.client?.full_name ||
       payment.appointment?.title ||
       payment.notes ||
+      payment.guest_name ||
       'Paiement Terminal'
     ).toLowerCase();
 
@@ -135,7 +138,7 @@ function PaymentsPage() {
     const pdfPayments = filteredPayments.map(payment => ({
       id: payment.id,
       date: payment.appointment?.start || payment.payment_date || payment.created_at,
-      client_name: payment.client?.full_name || (payment.appointment ? payment.appointment.title : 'Client Terminal'),
+      client_name: payment.client?.full_name || payment.guest_name || (payment.appointment ? payment.appointment.title : 'Client Terminal'),
       program_name: payment.appointment?.title || payment.notes || 'Paiement sans contact',
       amount: calculateGroupRevenue(payment),
       status: payment.status
@@ -269,7 +272,7 @@ function PaymentsPage() {
                         ? (payment.appointment?.type === 'private'
                           ? (payment.client?.full_name || 'Client Inconnu')
                           : payment.appointment?.title || 'Séance inconnue')
-                        : (payment.notes || 'Paiement Terminal')
+                        : (payment.guest_name || payment.notes || 'Paiement Terminal')
                       }
                     </h4>
                     <div className="flex items-center gap-3 text-sm text-gray-400 mt-1">
@@ -285,7 +288,7 @@ function PaymentsPage() {
                         }
                         {payment.appointment
                           ? (payment.appointment.type === 'private' ? 'Privé' : `Groupe (${payment.appointment.current_participants}/${payment.appointment.max_participants})`)
-                          : 'Terminal'
+                          : (payment.guest_email || 'Terminal')
                         }
                       </span>
                       {payment.payment_method === 'online' && (
