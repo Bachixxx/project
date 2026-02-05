@@ -28,6 +28,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { t } from '../i18n';
 import { RiskRadarWidget } from '../components/dashboard/RiskRadarWidget';
+import { LivePulseWidget } from '../components/dashboard/LivePulseWidget';
 
 function Dashboard() {
   const { language } = useLanguage();
@@ -430,9 +431,17 @@ function Dashboard() {
         {/* Left Column - Priority & Charts */}
         <div className="lg:col-span-2 space-y-8">
 
-          {/* 1. PRIORITY: RISK RADAR */}
-          <div className="h-[300px]">
-            <RiskRadarWidget />
+          {/* 1. PRIORITY & PULSE */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-auto md:h-[300px]">
+            {/* Risk Radar - Urgent Attention */}
+            <div className="md:col-span-2 h-full min-h-[300px] md:min-h-0">
+              <RiskRadarWidget />
+            </div>
+
+            {/* Live Pulse - Weekly Activity */}
+            <div className="h-full min-h-[200px] md:min-h-0">
+              <LivePulseWidget />
+            </div>
           </div>
 
           {/* Revenue Chart */}
