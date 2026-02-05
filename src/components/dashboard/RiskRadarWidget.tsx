@@ -153,6 +153,12 @@ export function RiskRadarWidget() {
                                     <Clock className="w-3 h-3 text-red-400" />
                                     <span className="text-red-300 font-medium">{client.days_inactive} jours</span>
                                     <span>sans séance</span>
+                                    {client.full_name.toLowerCase().includes('gerald') && (
+                                        <span className="text-[10px] text-gray-500 block">
+                                            Debug: ID {client.id.slice(0, 4)}...
+                                            {client.last_activity_date ? `Found: ${client.last_activity_date}` : 'No Session Found'}
+                                        </span>
+                                    )}
                                 </div>
                             </div>
 
