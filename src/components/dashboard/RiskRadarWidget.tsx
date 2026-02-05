@@ -55,7 +55,7 @@ export function RiskRadarWidget() {
                     .select('completed_at, scheduled_date')
                     .eq('client_id', client.id)
                     .eq('status', 'completed')
-                    .order('completed_at', { ascending: false })
+                    .order('scheduled_date', { ascending: false })
                     .limit(1)
                     .maybeSingle();
 
