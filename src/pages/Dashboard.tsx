@@ -27,6 +27,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { t } from '../i18n';
+import { RiskRadarWidget } from '../components/dashboard/RiskRadarWidget';
 
 function Dashboard() {
   const { language } = useLanguage();
@@ -422,10 +423,18 @@ function Dashboard() {
         />
       </div>
 
+
+
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column - Revenue Chart & Progress */}
+        {/* Left Column - Priority & Charts */}
         <div className="lg:col-span-2 space-y-8">
+
+          {/* 1. PRIORITY: RISK RADAR */}
+          <div className="h-[300px]">
+            <RiskRadarWidget />
+          </div>
+
           {/* Revenue Chart */}
           <div className="glass-card p-6 border-white/5">
             <div className="flex items-center justify-between mb-6">
