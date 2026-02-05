@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AlertTriangle, Mail, MessageCircle, ChevronRight, Clock } from 'lucide-react';
+import { AlertTriangle, Mail, MessageCircle, ChevronRight, Clock, RefreshCcw } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { Link } from 'react-router-dom';
@@ -39,6 +39,7 @@ export function RiskRadarWidget() {
 
             if (!clients || clients.length === 0) {
                 setRiskClients([]);
+                setLoading(false);
                 return;
             }
 
@@ -49,20 +50,18 @@ export function RiskRadarWidget() {
             // 3. Check activity for each client (Parallel fetches for speed)
             await Promise.all(clients.map(async (client) => {
                 // Fetch last completed session
-                const { data: lastSession } = await supabase
+                const { data: lastSession, error: sessionError } = await supabase
                     .from('scheduled_sessions')
                     .select('completed_at')
                     .eq('client_id', client.id)
                     .eq('status', 'completed')
                     .order('completed_at', { ascending: false })
                     .limit(1)
-                    .single();
+                    .maybeSingle();
 
                 let lastActivity = lastSession?.completed_at ? parseISO(lastSession.completed_at) : null;
 
                 // If no session, check creation date (for new clients who haven't started)
-                // If created < 7 days ago and no session, they are NOT immediately at risk (let them onboard)
-                // If created > 7 days ago and no session, they ARE at risk.
                 let daysInactive = 0;
 
                 if (lastActivity) {
@@ -79,6 +78,11 @@ export function RiskRadarWidget() {
                 }
 
                 if (daysInactive > 7) {
+                    // Debug log for specific cases
+                    if (client.full_name.toLowerCase().includes('gerald')) {
+                        console.log('Gerald Risk Debug:', { lastActivity, daysInactive, lastSession });
+                    }
+
                     clientsAnalysis.push({
                         id: client.id,
                         full_name: client.full_name,
@@ -123,9 +127,18 @@ export function RiskRadarWidget() {
                         <p className="text-xs text-red-400 font-medium">Inactifs {'>'} 7 jours</p>
                     </div>
                 </div>
-                <span className="bg-red-500/20 text-red-300 text-xs font-bold px-2 py-1 rounded-full border border-red-500/20">
-                    {riskClients.length}
-                </span>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={fetchRiskClients}
+                        className="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors"
+                        title="Actualiser la liste"
+                    >
+                        <RefreshCcw className="w-4 h-4" />
+                    </button>
+                    <span className="bg-red-500/20 text-red-300 text-xs font-bold px-2 py-1 rounded-full border border-red-500/20">
+                        {riskClients.length}
+                    </span>
+                </div>
             </div>
 
             <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
