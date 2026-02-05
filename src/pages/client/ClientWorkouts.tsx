@@ -1,45 +1,34 @@
-import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, Dumbbell, Target, ChevronRight, PlayCircle, Trophy, Activity, Filter, Search } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Clock, Dumbbell, Target, ChevronRight, PlayCircle, Trophy, Activity, Search, CalendarDays, History } from 'lucide-react';
 import { TutorialCard } from '../../components/client/TutorialCard';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useClientAuth } from '../../contexts/ClientAuthContext';
 import { supabase } from '../../lib/supabase';
+import { format, isToday, isTomorrow, parseISO } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 function ClientWorkouts() {
   const { client: authClient } = useClientAuth();
+  const navigate = useNavigate();
   const client = authClient as any;
   const [loading, setLoading] = useState(true);
   const [clientPrograms, setClientPrograms] = useState<any[]>([]);
+  const [recentHistory, setRecentHistory] = useState<any[]>([]);
+  const [nextSession, setNextSession] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     if (client) {
-      fetchClientPrograms();
+      fetchTrainingData();
     }
   }, [client]);
 
-  const fetchClientPrograms = async () => {
+  const fetchTrainingData = async () => {
     try {
-      // 1. Try cache first
-      const cacheKey = `workouts_data_${client?.id}`;
-      const cachedData = localStorage.getItem(cacheKey);
+      setLoading(true);
 
-      if (cachedData) {
-        try {
-          const { programs } = JSON.parse(cachedData);
-          setClientPrograms(programs || []);
-          // Don't set loading to true if we have cache
-        } catch (e) {
-          console.error("Error parsing workouts cache", e);
-          setLoading(true);
-        }
-      } else {
-        setLoading(true);
-      }
-
-      // 2. Network Fetch
-      // Fetch client programs with all related data
-      const { data: clientProgramsData, error: programsError } = await supabase
+      // 1. Fetch Client Programs (Existing Logic)
+      const { data: clientProgramsData } = await supabase
         .from('client_programs')
         .select(`
           id,
@@ -79,21 +68,14 @@ function ClientWorkouts() {
         .eq('client_id', client?.id)
         .order('created_at', { ascending: false });
 
-      if (programsError) throw programsError;
-
-      // Format data
-      const formattedWorkouts = (clientProgramsData || []).map(cp => {
+      // Format Programs
+      const formattedPrograms = (clientProgramsData || []).map(cp => {
         const program = cp.program as any;
         if (!program) return null;
-
-        // Flatten exercises for preview
         const allExercises = program.program_sessions?.flatMap((s: any) =>
           s.session?.session_exercises?.map((se: any) => se.exercise?.name) || []
         ) || [];
-
-        // Unique exercises, up to 5
         const uniqueExercises = [...new Set(allExercises)].slice(0, 5);
-
         return {
           id: cp.id,
           name: program.name,
@@ -108,17 +90,74 @@ function ClientWorkouts() {
           previewExercises: uniqueExercises
         };
       }).filter(Boolean);
+      setClientPrograms(formattedPrograms);
 
-      setClientPrograms(formattedWorkouts);
+      // 2. Fetch Recent History (Completed Sessions)
+      const { data: historyData } = await supabase
+        .from('scheduled_sessions')
+        .select(`
+          id,
+          completed_at,
+          session:sessions (name, duration_minutes)
+        `)
+        .eq('client_id', client?.id)
+        .eq('status', 'completed')
+        .order('completed_at', { ascending: false })
+        .limit(3);
 
-      // 3. Update Cache
-      localStorage.setItem(cacheKey, JSON.stringify({
-        programs: formattedWorkouts,
-        timestamp: new Date().getTime()
-      }));
+      setRecentHistory(historyData || []);
+
+      // 3. Fetch Next Session (Pending Scheduled Sessions OR Appointments)
+      // A. Scheduled Sessions (Program)
+      const { data: pendingSessions } = await supabase
+        .from('scheduled_sessions')
+        .select(`
+          id,
+          scheduled_date,
+          session:sessions (name, duration_minutes)
+        `)
+        .eq('client_id', client?.id)
+        .neq('status', 'completed')
+        .gte('scheduled_date', new Date().toISOString().split('T')[0])
+        .order('scheduled_date', { ascending: true })
+        .limit(1);
+
+      // B. Appointments
+      const { data: upcomingAppointments } = await supabase
+        .from('appointments')
+        .select(`
+          id,
+          start_time,
+          title
+        `)
+        .eq('client_id', client?.id)
+        .eq('status', 'confirmed')
+        .gte('start_time', new Date().toISOString())
+        .order('start_time', { ascending: true })
+        .limit(1);
+
+      // Determine which is sooner
+      let nextItem = null;
+      const progSession = pendingSessions?.[0];
+      const appt = upcomingAppointments?.[0];
+
+      if (progSession && appt) {
+        // Compare dates
+        if (new Date(progSession.scheduled_date) < new Date(appt.start_time)) {
+          nextItem = { type: 'program_session', data: progSession, date: progSession.scheduled_date };
+        } else {
+          nextItem = { type: 'appointment', data: appt, date: appt.start_time };
+        }
+      } else if (progSession) {
+        nextItem = { type: 'program_session', data: progSession, date: progSession.scheduled_date };
+      } else if (appt) {
+        nextItem = { type: 'appointment', data: appt, date: appt.start_time };
+      }
+
+      setNextSession(nextItem);
 
     } catch (error) {
-      console.error('Error fetching client programs:', error);
+      console.error('Error fetching training data:', error);
     } finally {
       setLoading(false);
     }
@@ -147,7 +186,17 @@ function ClientWorkouts() {
     }
   };
 
-  // Check if we have data (either from cache or fetch) to decide on spinner
+  const formatDate = (dateString: string) => {
+    try {
+      const date = parseISO(dateString);
+      if (isToday(date)) return "Aujourd'hui";
+      if (isTomorrow(date)) return "Demain";
+      return format(date, 'd MMMM', { locale: fr });
+    } catch (e) {
+      return dateString;
+    }
+  };
+
   if (loading && clientPrograms.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-[#0f172a]">
@@ -169,8 +218,8 @@ function ClientWorkouts() {
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 animate-slide-in">
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Mes Programmes</h1>
-            <p className="text-gray-400">Gérez vos programmes d'entraînement actifs et passés.</p>
+            <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Entraînement</h1>
+            <p className="text-gray-400">Votre hub central pour toutes vos activités sportives.</p>
           </div>
 
           <Link to="/marketplace" className="flex items-center gap-2 px-6 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl border border-white/5 transition-all text-sm font-medium">
@@ -179,43 +228,111 @@ function ClientWorkouts() {
           </Link>
         </div>
 
-        {/* Search & Stats */}
-        <div className="grid md:grid-cols-3 gap-6 animate-fade-in delay-100">
-          {/* Search Bar */}
-          <div className="md:col-span-2 glass-card p-2 rounded-2xl border border-white/10 flex items-center">
-            <Search className="w-5 h-5 text-gray-500 ml-4" />
-            <input
-              type="text"
-              placeholder="Rechercher un programme, un coach..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-transparent border-none text-white placeholder-gray-500 focus:ring-0 px-4 py-3"
-            />
-          </div>
+        {/* 1. NEXT SESSION (Prochaine Séance) */}
+        <div className="animate-fade-in delay-100">
+          <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+            <CalendarDays className="w-5 h-5 text-blue-400" />
+            Prochaine Séance
+          </h2>
 
-          {/* Active Programs Count */}
-          <div className="glass-card p-5 rounded-2xl border border-white/10 flex items-center justify-between">
-            <div>
-              <p className="text-gray-400 text-sm font-medium">Programmes actifs</p>
-              <p className="text-2xl font-bold text-white">{clientPrograms.filter(p => p.status === 'active').length}</p>
+          {nextSession ? (
+            <div
+              onClick={() => {
+                if (nextSession.type === 'appointment') {
+                  navigate(`/client/live-workout/appointment/${nextSession.data.id}`);
+                } else {
+                  navigate(`/client/live-workout/${nextSession.data.id}`);
+                }
+              }}
+              className="glass-card p-6 rounded-2xl border border-blue-500/30 bg-gradient-to-r from-blue-500/10 to-transparent cursor-pointer hover:border-blue-500/50 transition-all group"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="px-2 py-0.5 rounded bg-blue-500 text-white text-xs font-bold uppercase tracking-wider">
+                      {formatDate(nextSession.date)}
+                    </span>
+                    {nextSession.type === 'appointment' && (
+                      <span className="px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 text-xs font-bold uppercase tracking-wider border border-purple-500/30">
+                        Rendez-vous
+                      </span>
+                    )}
+                  </div>
+                  <h3 className="text-2xl font-bold text-white mb-1 group-hover:text-blue-400 transition-colors">
+                    {nextSession.type === 'appointment' ? nextSession.data.title : nextSession.data.session?.name}
+                  </h3>
+                  <p className="text-gray-400 flex items-center gap-2">
+                    <Clock className="w-4 h-4" />
+                    {nextSession.type === 'appointment' ? '60 min' : `${nextSession.data.session?.duration_minutes || '?'} min`}
+                  </p>
+                </div>
+                <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center shadow-lg shadow-blue-500/40 group-hover:scale-110 transition-transform">
+                  <PlayCircle className="w-6 h-6 text-white" />
+                </div>
+              </div>
             </div>
-            <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center text-blue-400">
-              <Activity className="w-6 h-6" />
+          ) : (
+            <div className="glass-card p-6 rounded-2xl border border-white/10 flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-white mb-1">Aucune séance prévue</h3>
+                <p className="text-gray-400 text-sm">Profitez du repos ou découvrez un nouveau programme.</p>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
-        <TutorialCard
-          tutorialId="workouts_intro"
-          title="Vos Programmes 🏋️‍♂️"
-          message="Retrouvez ici tous vos programmes d'entraînement assignés. Cliquez sur une séance pour voir les détails et commencer."
-          className="mb-2"
-        />
+        {/* 2. RECENT HISTORY (Historique Récent) */}
+        {recentHistory.length > 0 && (
+          <div className="animate-fade-in delay-200">
+            <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+              <History className="w-5 h-5 text-cyan-400" />
+              Historique Récent
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {recentHistory.map((item) => (
+                <div key={item.id} className="glass-card p-4 rounded-xl border border-white/5 bg-white/5 flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">{formatDate(item.completed_at || '')}</p>
+                    <p className="font-semibold text-white">{item.session?.name}</p>
+                  </div>
+                  <div className="text-green-400">
+                    <Activity className="w-5 h-5" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
-        {/* Programs List */}
+        {/* 3. MY PROGRAMS (Mes Programmes) */}
+        <div className="space-y-6 animate-fade-in delay-300">
+          <TutorialCard
+            tutorialId="workouts_intro"
+            title="Hub Entraînement 🏋️‍♂️"
+            message="Retrouvez ici vos prochaines séances, votre historique et tous vos programmes."
+            className="mb-4"
+          />
 
-        {/* Programs List */}
-        <div className="space-y-6 animate-fade-in delay-200">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+              <Dumbbell className="w-5 h-5 text-purple-400" />
+              Mes Programmes
+            </h2>
+
+            {/* Search Bar Inline */}
+            <div className="glass-card px-3 py-1.5 rounded-lg border border-white/10 flex items-center w-full max-w-xs">
+              <Search className="w-4 h-4 text-gray-500 mr-2" />
+              <input
+                type="text"
+                placeholder="Filtrer..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="bg-transparent border-none text-white placeholder-gray-500 focus:ring-0 text-sm w-full p-0"
+              />
+            </div>
+          </div>
+
+
           {filteredPrograms.length > 0 ? (
             filteredPrograms.map((program) => (
               <div key={program.id} className="glass-card rounded-3xl border border-white/10 overflow-hidden hover:border-blue-500/30 transition-all group">
