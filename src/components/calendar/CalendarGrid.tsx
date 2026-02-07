@@ -14,6 +14,7 @@ import {
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { eachDayOfInterval, format, isSameDay, parseISO, isSameWeek } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { WorkoutBuilderDrawer } from './WorkoutBuilderDrawer';
 import { DayColumn } from './DayColumn';
 import { CalendarItem as CalendarItemComponent } from './CalendarItem';
 import { CreateItemModal } from './CreateItemModal';
@@ -39,6 +40,10 @@ export function CalendarGrid({ clientId }: CalendarGridProps) {
     const [activeId, setActiveId] = useState<string | null>(null);
     const [addingToDate, setAddingToDate] = useState<Date | null>(null);
     const [copiedItem, setCopiedItem] = useState<CalendarItem | null>(null);
+
+    // active builder state
+    const [isBuilderOpen, setIsBuilderOpen] = useState(false);
+    const [builderDate, setBuilderDate] = useState<Date | null>(null);
 
     // Visible Month State
     const [visibleMonth, setVisibleMonth] = useState<string>('');
@@ -90,13 +95,8 @@ export function CalendarGrid({ clientId }: CalendarGridProps) {
         const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
 
         // Update Visible Month Badge
-        // Estimate visible date based on scrollTop
-        // A better way: find the first visible day element
         const gridContainer = scrollRef.current.querySelector('.grid-container');
         if (gridContainer) {
-            // Let's use the date of the day at the rough "top" of the view
-            // Assuming average row height ~200px (min-h-[200px])
-            // This is an approximation.
             const estimatedRowIndex = Math.floor(scrollTop / 200);
             const estimatedDayIndex = estimatedRowIndex * 7;
             const days = eachDayOfInterval({ start: startDate, end: endDate });
@@ -201,6 +201,32 @@ export function CalendarGrid({ clientId }: CalendarGridProps) {
         } catch (error) {
             console.error('Failed to paste item', error);
         }
+    };
+
+    // --- Builder Logic ---
+    const handleOpenBuilderFromModal = () => {
+        if (addingToDate) {
+            setBuilderDate(addingToDate);
+            setAddingToDate(null); // Close modal
+            setIsBuilderOpen(true);
+        }
+    };
+
+    const handleSaveWorkout = async (workoutData: any) => {
+        if (!builderDate) return;
+
+        await createItem({
+            client_id: clientId,
+            scheduled_date: format(builderDate, 'yyyy-MM-dd'),
+            item_type: 'session',
+            title: workoutData.title,
+            content: workoutData.content || {}, // ensure content is passed
+            position: 0,
+            status: 'scheduled'
+        });
+
+        setIsBuilderOpen(false);
+        setBuilderDate(null);
     };
 
     if (loading && !items.length) {
@@ -325,8 +351,21 @@ export function CalendarGrid({ clientId }: CalendarGridProps) {
                     date={addingToDate}
                     clientId={clientId}
                     onCreate={createItem} // createItem from hook matches signature
+                    onOpenBuilder={handleOpenBuilderFromModal}
                 />
             )}
+
+            {/* Workout Builder Drawer */}
+            <WorkoutBuilderDrawer
+                isOpen={isBuilderOpen}
+                onClose={() => {
+                    setIsBuilderOpen(false);
+                    setBuilderDate(null);
+                }}
+                onSave={handleSaveWorkout}
+                initialDate={builderDate || new Date()}
+                clientId={clientId}
+            />
         </div>
     );
 }

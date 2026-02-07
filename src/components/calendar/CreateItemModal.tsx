@@ -9,11 +9,12 @@ interface CreateItemModalProps {
     date: Date;
     clientId: string;
     onCreate: (item: any) => Promise<void>;
+    onOpenBuilder: () => void; // New prop
 }
 
 type ItemType = 'session' | 'note' | 'rest' | 'metric';
 
-export function CreateItemModal({ isOpen, onClose, date, clientId, onCreate }: CreateItemModalProps) {
+export function CreateItemModal({ isOpen, onClose, date, clientId, onCreate, onOpenBuilder }: CreateItemModalProps) {
     const [type, setType] = useState<ItemType>('session');
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
@@ -33,7 +34,7 @@ export function CreateItemModal({ isOpen, onClose, date, clientId, onCreate }: C
                 item_type: type,
                 title: type === 'rest' ? 'Jour de repos' : title,
                 content: content ? { text: content } : {},
-                position: 0, // Should be calculated or default to 0 (top)
+                position: 0,
                 status: 'scheduled'
             });
             onClose();
@@ -45,6 +46,11 @@ export function CreateItemModal({ isOpen, onClose, date, clientId, onCreate }: C
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleOpenBuilder = () => {
+        onClose();
+        onOpenBuilder();
     };
 
     const types: { id: ItemType; label: string; icon: any; color: string }[] = [
@@ -95,6 +101,33 @@ export function CreateItemModal({ isOpen, onClose, date, clientId, onCreate }: C
                             ))}
                         </div>
 
+                        {/* Builder CTA */}
+                        {type === 'session' && (
+                            <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 flex items-center justify-between group cursor-pointer hover:bg-blue-500/20 transition-colors" onClick={handleOpenBuilder}>
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center">
+                                        <Dumbbell className="w-5 h-5" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-white text-sm">Créer une séance complète</h3>
+                                        <p className="text-xs text-blue-200">Constructeur d'exercices & sets</p>
+                                    </div>
+                                </div>
+                                <div className="px-3 py-1.5 bg-blue-500 text-white text-xs font-bold rounded-lg shadow-lg shadow-blue-500/20">
+                                    Ouvrir
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Divider */}
+                        {type === 'session' && (
+                            <div className="relative flex items-center py-2">
+                                <div className="flex-grow border-t border-white/10"></div>
+                                <span className="flex-shrink-0 mx-4 text-gray-500 text-xs uppercase">Ou ajout rapide</span>
+                                <div className="flex-grow border-t border-white/10"></div>
+                            </div>
+                        )}
+
                         {/* Fields */}
                         {type !== 'rest' && (
                             <div className="space-y-4">
@@ -140,7 +173,7 @@ export function CreateItemModal({ isOpen, onClose, date, clientId, onCreate }: C
                                 disabled={loading || (!title && type !== 'rest')}
                                 className="px-6 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl hover:from-blue-700 hover:to-cyan-700 shadow-lg shadow-blue-500/20 font-bold disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                {loading ? 'Création...' : 'Créer'}
+                                {loading ? 'Création...' : (type === 'session' ? 'Créer Simple' : 'Créer')}
                             </button>
                         </div>
                     </form>
