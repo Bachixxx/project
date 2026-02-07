@@ -1035,6 +1035,7 @@ function ClientAppointments() {
               }
             }}
             registering={registering}
+          />
         )
       }
 
