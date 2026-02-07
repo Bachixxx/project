@@ -1,7 +1,7 @@
 import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Dumbbell, StickyNote, Moon, Activity, GripVertical, CheckCircle, Clock, Copy } from 'lucide-react';
+import { Dumbbell, StickyNote, Moon, Activity, GripVertical, CheckCircle, Clock, Copy, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -23,9 +23,10 @@ export interface CalendarItemProps {
     isOverlay?: boolean;
     onCopy?: (item: any) => void;
     onClick?: (item: any) => void;
+    onDelete?: (id: string) => void;
 }
 
-export function CalendarItem({ item, isOverlay, onCopy, onClick }: CalendarItemProps) {
+export function CalendarItem({ item, isOverlay, onCopy, onClick, onDelete }: CalendarItemProps) {
     const {
         setNodeRef,
         transform,
@@ -127,12 +128,14 @@ export function CalendarItem({ item, isOverlay, onCopy, onClick }: CalendarItemP
             {...listeners}
             onClick={(e) => {
                 if (isDragging) return;
+                // Don't trigger click if we clicked an action button
+                if ((e.target as HTMLElement).closest('button')) return;
                 onClick?.(item);
             }}
         >
             {/* Actions (Visible on Hover) */}
             {!isOverlay && (
-                <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                     {onCopy && (
                         <button
                             onClick={(e) => { e.stopPropagation(); onCopy(item); }}
@@ -140,6 +143,18 @@ export function CalendarItem({ item, isOverlay, onCopy, onClick }: CalendarItemP
                             title="Dupliquer"
                         >
                             <Copy className="w-3 h-3" />
+                        </button>
+                    )}
+                    {onDelete && (
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                if (window.confirm('Supprimer cet élément ?')) onDelete(item.id);
+                            }}
+                            className="p-1 hover:bg-red-500/20 rounded text-gray-400 hover:text-red-400"
+                            title="Supprimer"
+                        >
+                            <Trash2 className="w-3 h-3" />
                         </button>
                     )}
                     <div className="cursor-grab active:cursor-grabbing text-gray-500 hover:text-white p-1">

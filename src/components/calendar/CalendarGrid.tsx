@@ -351,6 +351,7 @@ export function CalendarGrid({ clientId }: CalendarGridProps) {
                                         onPaste={handlePasteItem}
                                         onCopyItem={handleCopyItem}
                                         onItemClick={handleItemClick}
+                                        onDeleteItem={deleteItem}
                                     />
                                 </div>
                             );

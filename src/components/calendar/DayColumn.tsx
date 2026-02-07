@@ -14,9 +14,10 @@ interface DayColumnProps {
     onPaste?: (date: Date) => void;
     onCopyItem?: (item: any) => void;
     onItemClick?: (item: any) => void;
+    onDeleteItem?: (id: string) => void;
 }
 
-export function DayColumn({ date, items, onAddItem, hasCopiedItem, onPaste, onCopyItem, onItemClick }: DayColumnProps) {
+export function DayColumn({ date, items, onAddItem, hasCopiedItem, onPaste, onCopyItem, onItemClick, onDeleteItem }: DayColumnProps) {
     const { setNodeRef, isOver } = useDroppable({
         id: `day-${format(date, 'yyyy-MM-dd')}`,
         data: { date }
@@ -64,6 +65,7 @@ export function DayColumn({ date, items, onAddItem, hasCopiedItem, onPaste, onCo
                             item={item}
                             onCopy={onCopyItem}
                             onClick={onItemClick}
+                            onDelete={onDeleteItem}
                         />
                     ))}
                 </SortableContext>
