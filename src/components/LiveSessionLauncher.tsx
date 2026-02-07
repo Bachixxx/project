@@ -135,6 +135,7 @@ export function LiveSessionLauncher({ isOpen, onClose, initialClientId }: LiveSe
                 .lte('scheduled_date', todayEnd.toISOString())
                 .neq('status', 'cancelled')
                 .neq('status', 'completed') // Only show pending/scheduled
+                .not('session_id', 'is', null) // Only show actual sessions, not notes/rest
                 .order('scheduled_date', { ascending: true })
                 .limit(1)
                 .single();

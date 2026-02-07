@@ -8,6 +8,8 @@ import { InviteClientButton } from '../components/InviteClientButton';
 import { ScheduleSessionModal } from '../components/ScheduleSessionModal';
 import { SessionDetailsModal } from '../components/SessionDetailsModal';
 
+import { CalendarGrid } from '../components/calendar/CalendarGrid';
+
 interface Client {
   id: string;
   full_name: string;
@@ -50,6 +52,9 @@ interface ScheduledSession {
   status: string;
   notes: string | null;
   session: any;
+  item_type?: string;
+  position?: number;
+  content?: any;
 }
 
 function ClientDetails() {
@@ -63,7 +68,13 @@ function ClientDetails() {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [scheduledSessions, setScheduledSessions] = useState<ScheduledSession[]>([]);
   const [selectedSlot, setSelectedSlot] = useState(null);
+
+
+  // ... existing imports ...
+
+  // ... inside the component ...
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'overview' | 'planning'>('overview');
   const [agendaTab, setAgendaTab] = useState<'upcoming' | 'past'>('upcoming');
 
   useEffect(() => {
@@ -125,12 +136,15 @@ function ClientDetails() {
 
       const formattedSessions = (sessionsData || []).map(s => ({
         id: s.id,
-        title: s.session.name,
+        title: s.title || s.session?.name || 'Untitled',
         start: new Date(s.scheduled_date),
-        end: new Date(new Date(s.scheduled_date).getTime() + s.session.duration_minutes * 60000),
+        end: new Date(new Date(s.scheduled_date).getTime() + (s.session?.duration_minutes || 60) * 60000),
         status: s.status,
         notes: s.notes,
-        session: s.session
+        session: s.session,
+        item_type: s.item_type,
+        position: s.position,
+        content: s.content
       }));
 
       setClient(clientData);
@@ -268,217 +282,245 @@ function ClientDetails() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-[#1e293b]/50 border border-white/5 backdrop-blur-xl rounded-2xl p-6 hover:border-white/10 transition-colors">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2.5 bg-blue-500/20 rounded-xl">
-                <Activity className="w-5 h-5 text-blue-400" />
-              </div>
-              <h2 className="text-lg font-bold text-white">Métriques</h2>
-            </div>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center border-b border-white/5 pb-2">
-                <span className="text-gray-400">Taille</span>
-                <span className="text-xl font-bold text-white">{client.height} cm</span>
-              </div>
-              <div className="flex justify-between items-center border-b border-white/5 pb-2">
-                <span className="text-gray-400">Poids</span>
-                <span className="text-xl font-bold text-white">{client.weight} kg</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-400">IMC</span>
-                <span className="text-xl font-bold text-white">
-                  {(client.weight / Math.pow(client.height / 100, 2)).toFixed(1)}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-[#1e293b]/50 border border-white/5 backdrop-blur-xl rounded-2xl p-6 hover:border-white/10 transition-colors">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2.5 bg-purple-500/20 rounded-xl">
-                <BarChart className="w-5 h-5 text-purple-400" />
-              </div>
-              <h2 className="text-lg font-bold text-white">Objectifs</h2>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {client.fitness_goals.map((goal, index) => (
-                <span
-                  key={index}
-                  className="px-3 py-1.5 bg-purple-500/10 border border-purple-500/20 rounded-lg text-sm text-purple-300"
-                >
-                  {goal}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <div className="bg-[#1e293b]/50 border border-white/5 backdrop-blur-xl rounded-2xl p-6 hover:border-white/10 transition-colors">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2.5 bg-red-500/20 rounded-xl">
-                <Activity className="w-5 h-5 text-red-400" />
-              </div>
-              <h2 className="text-lg font-bold text-white">Infos Médicales</h2>
-            </div>
-            <div className="space-y-2">
-              {client.medical_conditions.length > 0 ? (
-                client.medical_conditions.map((condition, index) => (
-                  <div key={index} className="flex items-start gap-2 text-gray-300">
-                    <span className="text-red-400 mt-1.5">•</span>
-                    {condition}
-                  </div>
-                ))
-              ) : (
-                <span className="text-gray-500 italic">Aucune condition signalée.</span>
-              )}
-            </div>
-          </div>
+        {/* View Switcher */}
+        <div className="flex items-center gap-4 mb-6 border-b border-white/5 pb-1">
+          <button
+            onClick={() => setViewMode('overview')}
+            className={`pb-3 px-2 font-medium transition-colors relative ${viewMode === 'overview' ? 'text-blue-400' : 'text-gray-400 hover:text-white'}`}
+          >
+            Vue d'ensemble
+            {viewMode === 'overview' && <div className="absolute bottom-[-1px] left-0 w-full h-0.5 bg-blue-500 rounded-full" />}
+          </button>
+          <button
+            onClick={() => setViewMode('planning')}
+            className={`pb-3 px-2 font-medium transition-colors relative ${viewMode === 'planning' ? 'text-blue-400' : 'text-gray-400 hover:text-white'}`}
+          >
+            Planning
+            {viewMode === 'planning' && <div className="absolute bottom-[-1px] left-0 w-full h-0.5 bg-blue-500 rounded-full" />}
+          </button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Active Programs Section */}
-          <div className="bg-[#1e293b]/50 border border-white/5 backdrop-blur-xl rounded-2xl p-6">
-            <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-              <Activity className="w-5 h-5 text-cyan-400" />
-              Programmes Actifs
-            </h2>
-            <div className="space-y-4">
-              {clientPrograms.length > 0 ? (
-                clientPrograms.map((cp) => (
-                  <div
-                    key={cp.id}
-                    className="bg-white/5 border border-white/5 rounded-xl p-5 hover:bg-white/10 transition-colors group"
-                  >
-                    <div className="flex items-start justify-between mb-4">
-                      <div>
-                        <h3 className="text-lg font-bold text-white group-hover:text-blue-400 transition-colors">
-                          {cp.program.name}
-                        </h3>
-                        <p className="text-gray-400 text-sm mt-1">
-                          {new Date(cp.start_date).toLocaleDateString()} - {new Date(cp.end_date).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <Link
-                        to={`/workout/${cp.id}`}
-                        className="px-4 py-2 bg-blue-500/10 text-blue-400 rounded-lg text-sm font-medium hover:bg-blue-500/20 transition-colors"
-                      >
-                        Voir détails
-                      </Link>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm text-gray-400">
-                        <span>Progression</span>
-                        <span className="text-white font-medium">{cp.progress}%</span>
-                      </div>
-                      <div className="w-full bg-gray-700/50 rounded-full h-2 overflow-hidden">
-                        <div
-                          className="bg-gradient-to-r from-blue-500 to-cyan-500 h-full rounded-full transition-all duration-300"
-                          style={{ width: `${cp.progress}%` }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="text-center py-10 text-gray-500">
-                  Aucun programme assigné.
-                </div>
-              )}
-            </div>
+        {viewMode === 'planning' ? (
+          <div className="h-[calc(100vh-300px)] animate-fade-in">
+            <CalendarGrid clientId={client.id} />
           </div>
+        ) : (
+          <>
 
-          {/* Agenda View Section */}
-          <div className="bg-[#1e293b]/50 border border-white/5 backdrop-blur-xl rounded-2xl p-6 mt-8 lg:mt-0 flex flex-col">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <CalendarIcon className="w-5 h-5 text-cyan-400" />
-                Agenda
-              </h2>
-              <div className="flex bg-white/5 rounded-lg p-1 border border-white/5">
-                <button
-                  onClick={() => setAgendaTab('upcoming')}
-                  className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${agendaTab === 'upcoming'
-                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
-                    : 'text-gray-400 hover:text-white'
-                    }`}
-                >
-                  À venir
-                </button>
-                <button
-                  onClick={() => setAgendaTab('past')}
-                  className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${agendaTab === 'past'
-                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
-                    : 'text-gray-400 hover:text-white'
-                    }`}
-                >
-                  Passé
-                </button>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <div className="bg-[#1e293b]/50 border border-white/5 backdrop-blur-xl rounded-2xl p-6 hover:border-white/10 transition-colors">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-2.5 bg-blue-500/20 rounded-xl">
+                    <Activity className="w-5 h-5 text-blue-400" />
+                  </div>
+                  <h2 className="text-lg font-bold text-white">Métriques</h2>
+                </div>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                    <span className="text-gray-400">Taille</span>
+                    <span className="text-xl font-bold text-white">{client.height} cm</span>
+                  </div>
+                  <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                    <span className="text-gray-400">Poids</span>
+                    <span className="text-xl font-bold text-white">{client.weight} kg</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-400">IMC</span>
+                    <span className="text-xl font-bold text-white">
+                      {(client.weight / Math.pow(client.height / 100, 2)).toFixed(1)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-[#1e293b]/50 border border-white/5 backdrop-blur-xl rounded-2xl p-6 hover:border-white/10 transition-colors">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-2.5 bg-purple-500/20 rounded-xl">
+                    <BarChart className="w-5 h-5 text-purple-400" />
+                  </div>
+                  <h2 className="text-lg font-bold text-white">Objectifs</h2>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {client.fitness_goals.map((goal, index) => (
+                    <span
+                      key={index}
+                      className="px-3 py-1.5 bg-purple-500/10 border border-purple-500/20 rounded-lg text-sm text-purple-300"
+                    >
+                      {goal}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-[#1e293b]/50 border border-white/5 backdrop-blur-xl rounded-2xl p-6 hover:border-white/10 transition-colors">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-2.5 bg-red-500/20 rounded-xl">
+                    <Activity className="w-5 h-5 text-red-400" />
+                  </div>
+                  <h2 className="text-lg font-bold text-white">Infos Médicales</h2>
+                </div>
+                <div className="space-y-2">
+                  {client.medical_conditions.length > 0 ? (
+                    client.medical_conditions.map((condition, index) => (
+                      <div key={index} className="flex items-start gap-2 text-gray-300">
+                        <span className="text-red-400 mt-1.5">•</span>
+                        {condition}
+                      </div>
+                    ))
+                  ) : (
+                    <span className="text-gray-500 italic">Aucune condition signalée.</span>
+                  )}
+                </div>
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto max-h-[600px] pr-2 space-y-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
-              {/* Add Session Button */}
-              <button
-                onClick={() => setShowScheduleModal(true)}
-                className="w-full py-4 border-2 border-dashed border-white/10 rounded-xl text-gray-400 hover:border-blue-500/30 hover:bg-blue-500/5 hover:text-blue-400 transition-all flex items-center justify-center gap-2 group mb-4"
-              >
-                <Plus className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                <span>Planifier une nouvelle séance</span>
-              </button>
-
-              {filteredSessions.length > 0 ? (
-                filteredSessions.map((session) => (
-                  <div
-                    key={session.id}
-                    onClick={() => handleSelectSession(session.id)}
-                    className="group bg-white/5 border border-white/5 hover:border-white/10 rounded-xl p-4 transition-all cursor-pointer hover:bg-white/10 flex items-center gap-4"
-                  >
-                    {/* Date Box */}
-                    <div className="flex flex-col items-center justify-center bg-white/5 rounded-lg w-16 h-16 border border-white/5">
-                      <span className="text-xs text-gray-400 uppercase font-bold">
-                        {new Date(session.start).toLocaleDateString('fr-FR', { month: 'short' })}
-                      </span>
-                      <span className="text-2xl font-bold text-white leading-none">
-                        {new Date(session.start).getDate()}
-                      </span>
-                    </div>
-
-                    {/* Content */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="text-lg font-bold text-white truncate group-hover:text-cyan-400 transition-colors">
-                          {session.title}
-                        </h3>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Active Programs Section */}
+              <div className="bg-[#1e293b]/50 border border-white/5 backdrop-blur-xl rounded-2xl p-6">
+                <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                  <Activity className="w-5 h-5 text-cyan-400" />
+                  Programmes Actifs
+                </h2>
+                <div className="space-y-4">
+                  {clientPrograms.length > 0 ? (
+                    clientPrograms.map((cp) => (
+                      <div
+                        key={cp.id}
+                        className="bg-white/5 border border-white/5 rounded-xl p-5 hover:bg-white/10 transition-colors group"
+                      >
+                        <div className="flex items-start justify-between mb-4">
+                          <div>
+                            <h3 className="text-lg font-bold text-white group-hover:text-blue-400 transition-colors">
+                              {cp.program.name}
+                            </h3>
+                            <p className="text-gray-400 text-sm mt-1">
+                              {new Date(cp.start_date).toLocaleDateString()} - {new Date(cp.end_date).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <Link
+                            to={`/workout/${cp.id}`}
+                            className="px-4 py-2 bg-blue-500/10 text-blue-400 rounded-lg text-sm font-medium hover:bg-blue-500/20 transition-colors"
+                          >
+                            Voir détails
+                          </Link>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm text-gray-400">
+                            <span>Progression</span>
+                            <span className="text-white font-medium">{cp.progress}%</span>
+                          </div>
+                          <div className="w-full bg-gray-700/50 rounded-full h-2 overflow-hidden">
+                            <div
+                              className="bg-gradient-to-r from-blue-500 to-cyan-500 h-full rounded-full transition-all duration-300"
+                              style={{ width: `${cp.progress}%` }}
+                            />
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-3 text-sm text-gray-400">
-                        <div className="flex items-center gap-1.5">
-                          <Clock className="w-4 h-4 text-cyan-500/70" />
-                          <span>
-                            {new Date(session.start).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                    ))
+                  ) : (
+                    <div className="text-center py-10 text-gray-500">
+                      Aucun programme assigné.
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Agenda View Section */}
+              <div className="bg-[#1e293b]/50 border border-white/5 backdrop-blur-xl rounded-2xl p-6 mt-8 lg:mt-0 flex flex-col">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                    <CalendarIcon className="w-5 h-5 text-cyan-400" />
+                    Agenda
+                  </h2>
+                  <div className="flex bg-white/5 rounded-lg p-1 border border-white/5">
+                    <button
+                      onClick={() => setAgendaTab('upcoming')}
+                      className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${agendaTab === 'upcoming'
+                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
+                        : 'text-gray-400 hover:text-white'
+                        }`}
+                    >
+                      À venir
+                    </button>
+                    <button
+                      onClick={() => setAgendaTab('past')}
+                      className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${agendaTab === 'past'
+                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
+                        : 'text-gray-400 hover:text-white'
+                        }`}
+                    >
+                      Passé
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex-1 overflow-y-auto max-h-[600px] pr-2 space-y-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+                  {/* Add Session Button */}
+                  <button
+                    onClick={() => setShowScheduleModal(true)}
+                    className="w-full py-4 border-2 border-dashed border-white/10 rounded-xl text-gray-400 hover:border-blue-500/30 hover:bg-blue-500/5 hover:text-blue-400 transition-all flex items-center justify-center gap-2 group mb-4"
+                  >
+                    <Plus className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                    <span>Planifier une nouvelle séance</span>
+                  </button>
+
+                  {filteredSessions.length > 0 ? (
+                    filteredSessions.map((session) => (
+                      <div
+                        key={session.id}
+                        onClick={() => handleSelectSession(session.id)}
+                        className="group bg-white/5 border border-white/5 hover:border-white/10 rounded-xl p-4 transition-all cursor-pointer hover:bg-white/10 flex items-center gap-4"
+                      >
+                        {/* Date Box */}
+                        <div className="flex flex-col items-center justify-center bg-white/5 rounded-lg w-16 h-16 border border-white/5">
+                          <span className="text-xs text-gray-400 uppercase font-bold">
+                            {new Date(session.start).toLocaleDateString('fr-FR', { month: 'short' })}
+                          </span>
+                          <span className="text-2xl font-bold text-white leading-none">
+                            {new Date(session.start).getDate()}
                           </span>
                         </div>
-                        <span className={`px-2 py-0.5 rounded text-xs font-medium border ${getStatusColor(session.status)}`}>
-                          {getStatusLabel(session.status)}
-                        </span>
-                      </div>
-                    </div>
 
-                    {/* Arrow */}
-                    <div className="p-2 bg-white/5 rounded-full text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity -translate-x-2 group-hover:translate-x-0">
-                      <ChevronRight className="w-5 h-5" />
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="text-lg font-bold text-white truncate group-hover:text-cyan-400 transition-colors">
+                              {session.title}
+                            </h3>
+                          </div>
+                          <div className="flex items-center gap-3 text-sm text-gray-400">
+                            <div className="flex items-center gap-1.5">
+                              <Clock className="w-4 h-4 text-cyan-500/70" />
+                              <span>
+                                {new Date(session.start).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            </div>
+                            <span className={`px-2 py-0.5 rounded text-xs font-medium border ${getStatusColor(session.status)}`}>
+                              {getStatusLabel(session.status)}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Arrow */}
+                        <div className="p-2 bg-white/5 rounded-full text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity -translate-x-2 group-hover:translate-x-0">
+                          <ChevronRight className="w-5 h-5" />
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-12 text-gray-500">
+                      <CalendarIcon className="w-12 h-12 mb-3 text-gray-700" />
+                      <p className="font-medium">Aucune séance {agendaTab === 'upcoming' ? 'à venir' : 'passée'}.</p>
                     </div>
-                  </div>
-                ))
-              ) : (
-                <div className="flex flex-col items-center justify-center py-12 text-gray-500">
-                  <CalendarIcon className="w-12 h-12 mb-3 text-gray-700" />
-                  <p className="font-medium">Aucune séance {agendaTab === 'upcoming' ? 'à venir' : 'passée'}.</p>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
           </div>
-        </div>
-      </div>
+
+      </>
+      )}
 
       {showAssignModal && (
         <AssignProgramModal
