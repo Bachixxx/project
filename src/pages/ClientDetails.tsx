@@ -517,10 +517,11 @@ function ClientDetails() {
                 </div>
               </div>
             </div>
-          </div>
 
-      </>
-      )}
+          </>
+        )}
+
+      </div>
 
       {showAssignModal && (
         <AssignProgramModal
