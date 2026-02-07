@@ -112,47 +112,49 @@ export function useCalendar(clientId: string, initialDate: Date = new Date()) {
             console.error('Error moving item:', err);
             setItems(oldItems); // Revert
         }
-        const createItem = async (newItem: Omit<CalendarItem, 'id'>) => {
-            const tempId = crypto.randomUUID();
-            const optimisticItem = { ...newItem, id: tempId };
+    };
 
-            setItems([...items, optimisticItem as CalendarItem]);
+    const createItem = async (newItem: Omit<CalendarItem, 'id'>) => {
+        const tempId = crypto.randomUUID();
+        const optimisticItem = { ...newItem, id: tempId };
 
-            try {
-                const { data, error } = await supabase
-                    .from('scheduled_sessions')
-                    .insert([{
-                        client_id: newItem.client_id,
-                        scheduled_date: newItem.scheduled_date,
-                        item_type: newItem.item_type,
-                        title: newItem.title,
-                        content: newItem.content,
-                        position: newItem.position,
-                        status: newItem.status
-                    }])
-                    .select()
-                    .single();
+        setItems([...items, optimisticItem as CalendarItem]);
 
-                if (error) throw error;
+        try {
+            const { data, error } = await supabase
+                .from('scheduled_sessions')
+                .insert([{
+                    client_id: newItem.client_id,
+                    scheduled_date: newItem.scheduled_date,
+                    item_type: newItem.item_type,
+                    title: newItem.title,
+                    content: newItem.content,
+                    position: newItem.position,
+                    status: newItem.status
+                }])
+                .select()
+                .single();
 
-                // Replace optimistic item with real one
-                setItems(prev => prev.map(i => i.id === tempId ? (data as any) : i));
-            } catch (err) {
-                console.error('Error creating item:', err);
-                // Revert
-                setItems(prev => prev.filter(i => i.id !== tempId));
-            }
-        };
+            if (error) throw error;
 
-        return {
-            items,
-            loading,
-            startDate,
-            endDate,
-            currentDate,
-            setCurrentDate,
-            fetchItems,
-            moveItem,
-            createItem
-        };
-    }
+            // Replace optimistic item with real one
+            setItems(prev => prev.map(i => i.id === tempId ? (data as any) : i));
+        } catch (err) {
+            console.error('Error creating item:', err);
+            // Revert
+            setItems(prev => prev.filter(i => i.id !== tempId));
+        }
+    };
+
+    return {
+        items,
+        loading,
+        startDate,
+        endDate,
+        currentDate,
+        setCurrentDate,
+        fetchItems,
+        moveItem,
+        createItem
+    };
+}
