@@ -22,9 +22,10 @@ export interface CalendarItemProps {
     listeners?: any;
     isOverlay?: boolean;
     onCopy?: (item: any) => void;
+    onClick?: (item: any) => void;
 }
 
-export function CalendarItem({ item, isOverlay, onCopy }: CalendarItemProps) {
+export function CalendarItem({ item, isOverlay, onCopy, onClick }: CalendarItemProps) {
     const {
         setNodeRef,
         transform,
@@ -124,6 +125,10 @@ export function CalendarItem({ item, isOverlay, onCopy }: CalendarItemProps) {
             className={`${baseClasses} ${typeClasses} ${item.item_type === 'session' ? getStatusColor(item.status) : ''}`}
             {...attributes}
             {...listeners}
+            onClick={(e) => {
+                if (isDragging) return;
+                onClick?.(item);
+            }}
         >
             {/* Actions (Visible on Hover) */}
             {!isOverlay && (

@@ -33,6 +33,8 @@ export function CalendarGrid({ clientId }: CalendarGridProps) {
         endDate,
         moveItem,
         createItem,
+        updateItem,
+        deleteItem,
         loadMorePast,
         loadMoreFuture
     } = useCalendar(clientId);
@@ -203,6 +205,27 @@ export function CalendarGrid({ clientId }: CalendarGridProps) {
         }
     };
 
+    // --- Edit / Delete Logic ---
+    const [itemToEdit, setItemToEdit] = useState<any>(null);
+
+    const [builderInitialData, setBuilderInitialData] = useState<any>(null);
+
+    // --- Updated handleItemClick ---
+    const handleItemClick = (item: any) => {
+        // Check if it's a builder session
+        const isBuilderSession = item.item_type === 'session' && item.content?.modules;
+
+        if (isBuilderSession) {
+            setBuilderDate(new Date(item.scheduled_date));
+            setBuilderInitialData(item);
+            setIsBuilderOpen(true);
+        } else {
+            // Open standard modal
+            setItemToEdit(item);
+            setAddingToDate(new Date(item.scheduled_date));
+        }
+    };
+
     // --- Builder Logic ---
     const handleOpenBuilderFromModal = () => {
         if (addingToDate) {
@@ -327,6 +350,7 @@ export function CalendarGrid({ clientId }: CalendarGridProps) {
                                         hasCopiedItem={!!copiedItem}
                                         onPaste={handlePasteItem}
                                         onCopyItem={handleCopyItem}
+                                        onItemClick={handleItemClick}
                                     />
                                 </div>
                             );
@@ -343,14 +367,20 @@ export function CalendarGrid({ clientId }: CalendarGridProps) {
                 </DragOverlay>
             </DndContext>
 
-            {/* Add Item Modal */}
-            {addingToDate && (
+            {/* Add/Edit Item Modal */}
+            {(addingToDate || itemToEdit) && (
                 <CreateItemModal
                     isOpen={true}
-                    onClose={() => setAddingToDate(null)}
-                    date={addingToDate}
+                    onClose={() => {
+                        setAddingToDate(null);
+                        setItemToEdit(null);
+                    }}
+                    date={addingToDate || new Date(itemToEdit.scheduled_date)}
                     clientId={clientId}
-                    onCreate={createItem} // createItem from hook matches signature
+                    onCreate={createItem}
+                    onUpdate={updateItem}
+                    onDelete={deleteItem}
+                    itemToEdit={itemToEdit}
                     onOpenBuilder={handleOpenBuilderFromModal}
                 />
             )}
@@ -361,10 +391,13 @@ export function CalendarGrid({ clientId }: CalendarGridProps) {
                 onClose={() => {
                     setIsBuilderOpen(false);
                     setBuilderDate(null);
+                    setBuilderInitialData(null);
                 }}
                 onSave={handleSaveWorkout}
+                onDelete={deleteItem}
                 initialDate={builderDate || new Date()}
                 clientId={clientId}
+                initialData={builderInitialData}
             />
         </div>
     );

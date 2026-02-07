@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Plus, Save, Dumbbell, GripVertical, Trash2 } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
@@ -6,16 +6,18 @@ import { CSS } from '@dnd-kit/utilities';
 import { ExerciseSelector } from '../library/ExerciseSelector';
 import { supabase } from '../../lib/supabase';
 import { useWorkoutBuilder, BuilderExercise, WorkoutSet } from '../../hooks/useWorkoutBuilder';
+import { v4 as uuidv4 } from 'uuid';
 
 // --- Types ---
-// Imported from hook
 
 interface WorkoutBuilderDrawerProps {
     isOpen: boolean;
     onClose: () => void;
     onSave: (workoutData: any) => Promise<void>;
+    onDelete?: (id: string) => Promise<void>;
     initialDate: Date;
     clientId: string;
+    initialData?: any;
 }
 
 // --- Sortable Exercise Item Component ---
@@ -124,7 +126,7 @@ function SortableExerciseItem({
 }
 
 // --- Main Drawer Component ---
-export function WorkoutBuilderDrawer({ isOpen, onClose, onSave, initialDate, clientId }: WorkoutBuilderDrawerProps) {
+export function WorkoutBuilderDrawer({ isOpen, onClose, onSave, onDelete, initialDate, clientId, initialData }: WorkoutBuilderDrawerProps) {
     // Hooks & State
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
@@ -138,8 +140,39 @@ export function WorkoutBuilderDrawer({ isOpen, onClose, onSave, initialDate, cli
         addSet,
         removeSet,
         reorderExercises,
-        reset
+        reset,
+        setExercises
     } = useWorkoutBuilder();
+
+    // Load initial data when drawer opens or initialData changes
+    useEffect(() => {
+        if (isOpen && initialData) {
+            setTitle(initialData.title || '');
+            setDescription(initialData.content?.description || '');
+
+            // Parse modules back to BuilderExercise
+            if (initialData.content?.modules) {
+                const parsedExercises = initialData.content.modules.map((mod: any) => ({
+                    id: uuidv4(), // Generate new temp ID for builder content (or could try to persist if saved)
+                    exercise_id: mod.exercise_id || uuidv4(),
+                    name: mod.name,
+                    sets: mod.sets.map((s: any) => ({
+                        id: uuidv4(),
+                        reps: s.reps,
+                        weight: s.weight,
+                        rpe: s.rpe
+                    }))
+                }));
+                setExercises(parsedExercises);
+            }
+        } else if (isOpen && !initialData) {
+            // Reset if opening new
+            setTitle('');
+            setDescription('');
+            reset();
+        }
+    }, [isOpen, initialData, reset, setExercises]);
+
 
     const [showExerciseSelector, setShowExerciseSelector] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -246,12 +279,25 @@ export function WorkoutBuilderDrawer({ isOpen, onClose, onSave, initialDate, cli
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
+                        {initialData && onDelete && (
+                            <button
+                                onClick={async () => {
+                                    if (window.confirm('Supprimer cette séance ?')) {
+                                        await onDelete(initialData.id);
+                                        handleClose();
+                                    }
+                                }}
+                                className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                            >
+                                <Trash2 className="w-5 h-5" />
+                            </button>
+                        )}
                         <button
                             onClick={handleSave}
                             disabled={isSaving}
                             className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
                         >
-                            {isSaving ? '...' : <><Save className="w-4 h-4" /> Enregistrer</>}
+                            {isSaving ? '...' : <><Save className="w-4 h-4" /> {initialData ? 'Modifier' : 'Enregistrer'}</>}
                         </button>
                         <button onClick={handleClose} className="p-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
                             <X className="w-6 h-6" />

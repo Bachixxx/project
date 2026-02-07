@@ -183,6 +183,37 @@ export function useCalendar(clientId: string, initialDate: Date = new Date()) {
         }
     };
 
+    const updateItem = async (itemId: string, updates: Partial<CalendarItem>) => {
+        setItems(prev => prev.map(i => i.id === itemId ? { ...i, ...updates } : i));
+
+        try {
+            const { error } = await supabase
+                .from('scheduled_sessions')
+                .update(updates)
+                .eq('id', itemId);
+
+            if (error) throw error;
+        } catch (err) {
+            console.error('Error updating item:', err);
+            // Revert would be complex here without full snapshot, for now just log
+        }
+    };
+
+    const deleteItem = async (itemId: string) => {
+        setItems(prev => prev.filter(i => i.id !== itemId));
+
+        try {
+            const { error } = await supabase
+                .from('scheduled_sessions')
+                .delete()
+                .eq('id', itemId);
+
+            if (error) throw error;
+        } catch (err) {
+            console.error('Error deleting item:', err);
+        }
+    };
+
     return {
         items,
         loading,

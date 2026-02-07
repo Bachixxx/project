@@ -9,15 +9,18 @@ interface CreateItemModalProps {
     date: Date;
     clientId: string;
     onCreate: (item: any) => Promise<void>;
-    onOpenBuilder: () => void; // New prop
+    onUpdate?: (id: string, item: any) => Promise<void>;
+    onDelete?: (id: string) => Promise<void>;
+    itemToEdit?: any;
+    onOpenBuilder: () => void;
 }
 
 type ItemType = 'session' | 'note' | 'rest' | 'metric';
 
-export function CreateItemModal({ isOpen, onClose, date, clientId, onCreate, onOpenBuilder }: CreateItemModalProps) {
-    const [type, setType] = useState<ItemType>('session');
-    const [title, setTitle] = useState('');
-    const [content, setContent] = useState('');
+export function CreateItemModal({ isOpen, onClose, date, clientId, onCreate, onUpdate, onDelete, itemToEdit, onOpenBuilder }: CreateItemModalProps) {
+    const [type, setType] = useState<ItemType>(itemToEdit?.item_type || 'session');
+    const [title, setTitle] = useState(itemToEdit?.title || '');
+    const [content, setContent] = useState(itemToEdit?.content?.text || '');
     const [loading, setLoading] = useState(false);
 
     if (!isOpen) return null;
@@ -28,22 +31,37 @@ export function CreateItemModal({ isOpen, onClose, date, clientId, onCreate, onO
 
         setLoading(true);
         try {
-            await onCreate({
+            const itemData = {
                 client_id: clientId,
                 scheduled_date: format(date, 'yyyy-MM-dd'),
                 item_type: type,
                 title: type === 'rest' ? 'Jour de repos' : title,
                 content: content ? { text: content } : {},
-                position: 0,
-                status: 'scheduled'
-            });
+                position: itemToEdit?.position || 0,
+                status: itemToEdit?.status || 'scheduled'
+            };
+
+            if (itemToEdit && onUpdate) {
+                await onUpdate(itemToEdit.id, itemData);
+            } else {
+                await onCreate(itemData);
+            }
             onClose();
-            setTitle('');
-            setContent('');
-            setType('session');
         } catch (error) {
-            console.error('Error creating item:', error);
+            console.error('Error saving item:', error);
         } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!itemToEdit || !onDelete || !window.confirm('Êtes-vous sûr de vouloir supprimer cet élément ?')) return;
+        setLoading(true);
+        try {
+            await onDelete(itemToEdit.id);
+            onClose();
+        } catch (error) {
+            console.error('Error deleting item:', error);
             setLoading(false);
         }
     };
@@ -66,7 +84,7 @@ export function CreateItemModal({ isOpen, onClose, date, clientId, onCreate, onO
                 <div className="p-6">
                     <div className="flex justify-between items-center mb-6">
                         <div>
-                            <h2 className="text-2xl font-bold text-white">Ajouter</h2>
+                            <h2 className="text-2xl font-bold text-white">{itemToEdit ? 'Modifier' : 'Ajouter'}</h2>
                             <p className="text-gray-400 text-sm flex items-center gap-1 mt-1">
                                 <Calendar className="w-4 h-4" />
                                 {format(date, 'd MMMM yyyy', { locale: fr })}
@@ -81,7 +99,7 @@ export function CreateItemModal({ isOpen, onClose, date, clientId, onCreate, onO
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-6">
-                        {/* Type Selection */}
+                        {/* Type Selection - Disable if editing? Maybe allow changing type for simple items */}
                         <div className="grid grid-cols-4 gap-2">
                             {types.map((t) => (
                                 <button
@@ -101,8 +119,8 @@ export function CreateItemModal({ isOpen, onClose, date, clientId, onCreate, onO
                             ))}
                         </div>
 
-                        {/* Builder CTA */}
-                        {type === 'session' && (
+                        {/* Builder CTA - Only show if not editing or if we want to allow converting to builder? Let's hide for now on edit to keep simple */}
+                        {!itemToEdit && type === 'session' && (
                             <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 flex items-center justify-between group cursor-pointer hover:bg-blue-500/20 transition-colors" onClick={handleOpenBuilder}>
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center">
@@ -120,7 +138,7 @@ export function CreateItemModal({ isOpen, onClose, date, clientId, onCreate, onO
                         )}
 
                         {/* Divider */}
-                        {type === 'session' && (
+                        {!itemToEdit && type === 'session' && (
                             <div className="relative flex items-center py-2">
                                 <div className="flex-grow border-t border-white/10"></div>
                                 <span className="flex-shrink-0 mx-4 text-gray-500 text-xs uppercase">Ou ajout rapide</span>
@@ -160,21 +178,33 @@ export function CreateItemModal({ isOpen, onClose, date, clientId, onCreate, onO
                             </div>
                         )}
 
-                        <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
-                            <button
-                                type="button"
-                                onClick={onClose}
-                                className="px-4 py-2 rounded-xl text-gray-300 hover:text-white hover:bg-white/5 transition-colors font-medium"
-                            >
-                                Annuler
-                            </button>
-                            <button
-                                type="submit"
-                                disabled={loading || (!title && type !== 'rest')}
-                                className="px-6 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl hover:from-blue-700 hover:to-cyan-700 shadow-lg shadow-blue-500/20 font-bold disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                {loading ? 'Création...' : (type === 'session' ? 'Créer Simple' : 'Créer')}
-                            </button>
+                        <div className="flex justify-between items-center pt-4 border-t border-white/10">
+                            {itemToEdit ? (
+                                <button
+                                    type="button"
+                                    onClick={handleDelete}
+                                    className="px-4 py-2 rounded-xl text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors font-medium text-sm"
+                                >
+                                    Supprimer
+                                </button>
+                            ) : <div></div>}
+
+                            <div className="flex gap-3">
+                                <button
+                                    type="button"
+                                    onClick={onClose}
+                                    className="px-4 py-2 rounded-xl text-gray-300 hover:text-white hover:bg-white/5 transition-colors font-medium"
+                                >
+                                    Annuler
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={loading || (!title && type !== 'rest')}
+                                    className="px-6 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl hover:from-blue-700 hover:to-cyan-700 shadow-lg shadow-blue-500/20 font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {loading ? 'Enregistrement...' : (itemToEdit ? 'Modifier' : (type === 'session' ? 'Créer Simple' : 'Créer'))}
+                                </button>
+                            </div>
                         </div>
                     </form>
                 </div>
