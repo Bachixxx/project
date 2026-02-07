@@ -22,29 +22,32 @@ export function DayColumn({ date, items, onAddItem, hasCopiedItem, onPaste, onCo
     });
 
     const isCurrentDay = isToday(date);
-    const isPast = date < new Date() && !isCurrentDay;
     const dayName = format(date, 'EEEE', { locale: fr });
-    const dayNumber = format(date, 'd MMM', { locale: fr });
 
     return (
         <div
             ref={setNodeRef}
             className={`
-        flex-shrink-0 w-72 md:w-80 border-r border-white/5 flex flex-col h-full bg-[#0f172a]
-        ${isCurrentDay ? 'bg-blue-900/10' : ''}
+        w-full min-h-[150px] bg-[#0f172a] border border-white/5 rounded-2xl flex flex-col md:flex-row overflow-hidden transition-colors
+        ${isCurrentDay ? 'bg-blue-900/10 border-blue-500/20' : ''}
       `}
         >
             {/* Header */}
             <div
                 className={`
-          flex flex-col items-center justify-center py-4 border-b border-white/5
-          ${isCurrentDay ? 'bg-blue-500/10 text-blue-400' : 'text-gray-400'}
+          flex flex-row md:flex-col items-center md:justify-center justify-between p-4 border-b md:border-b-0 md:border-r border-white/5 md:w-32 bg-black/20
+          ${isCurrentDay ? 'text-blue-400' : 'text-gray-400'}
         `}
             >
-                <span className="text-xs font-bold uppercase tracking-wider">{dayName}</span>
-                <span className={`text-xl font-medium ${isCurrentDay ? 'text-white font-bold' : 'text-gray-300'}`}>
-                    {dayNumber}
-                </span>
+                <div className="flex flex-col items-center">
+                    <span className="text-xs font-bold uppercase tracking-wider mb-1">{dayName}</span>
+                    <span className={`text-2xl font-black ${isCurrentDay ? 'text-white' : 'text-gray-300'}`}>
+                        {format(date, 'd', { locale: fr })}
+                    </span>
+                    <span className="text-xs font-medium opacity-60 uppercase">{format(date, 'MMM', { locale: fr })}</span>
+                </div>
+
+                {/* Mobile Add Button (Visible only on small screens if empty?) - Actually let's keep the main add button in content area */}
             </div>
 
             {/* Items List */}

@@ -166,11 +166,11 @@ export function CalendarGrid({ clientId }: CalendarGridProps) {
                 onDragOver={handleDragOver}
                 onDragEnd={handleDragEnd}
             >
-                <div className="flex-1 flex overflow-x-auto overflow-y-hidden custom-scrollbar snap-x snap-mandatory">
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-4">
                     {days.map((day) => {
                         const dayItems = items.filter(i => isSameDay(parseISO(i.scheduled_date), day));
                         return (
-                            <div key={day.toISOString()} className="snap-start h-full">
+                            <div key={day.toISOString()} className="w-full">
                                 <DayColumn
                                     date={day}
                                     items={dayItems}

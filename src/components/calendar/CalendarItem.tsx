@@ -24,12 +24,14 @@ export interface CalendarItemProps {
     onCopy?: (item: any) => void;
 }
 
-export function CalendarItem({ item, attributes, listeners, isOverlay, onCopy }: CalendarItemProps) {
+export function CalendarItem({ item, isOverlay, onCopy }: CalendarItemProps) {
     const {
         setNodeRef,
         transform,
         transition,
         isDragging,
+        attributes,
+        listeners,
     } = useSortable({
         id: item.id,
         data: item
