@@ -3,6 +3,7 @@ import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CalendarItem } from './CalendarItem';
 import { format, isToday } from 'date-fns';
+import { fr } from 'date-fns/locale';
 import { Plus, ClipboardPaste } from 'lucide-react';
 
 interface DayColumnProps {
@@ -15,24 +16,38 @@ interface DayColumnProps {
 }
 
 export function DayColumn({ date, items, onAddItem, hasCopiedItem, onPaste, onCopyItem }: DayColumnProps) {
-    const { setNodeRef } = useDroppable({
+    const { setNodeRef, isOver } = useDroppable({
         id: `day-${format(date, 'yyyy-MM-dd')}`,
         data: { date }
     });
 
     const isCurrentDay = isToday(date);
+    const isFirstDay = date.getDate() === 1;
+    const dateLabel = isFirstDay
+        ? format(date, 'd MMM', { locale: fr })
+        : format(date, 'd');
 
     return (
         <div
             ref={setNodeRef}
             className={`
-        w-full h-full min-h-[150px] flex flex-col transition-colors relative group
-        ${isCurrentDay ? 'bg-blue-900/5' : 'hover:bg-white/[0.02]'}
-      `}
+                w-full h-full min-h-[150px] flex flex-col transition-colors relative group
+                ${isOver ? 'bg-white/5' : ''}
+                ${isCurrentDay ? 'bg-blue-900/5' : 'hover:bg-white/[0.02]'}
+            `}
         >
-            {/* Header (Date Number) */}
-            <div className={`p-2 text-right text-xs font-bold mb-1 ${isCurrentDay ? 'text-blue-400' : 'text-gray-500'}`}>
-                {format(date, 'd')}
+            {/* Day Header - Minimalist */}
+            <div className={`
+                p-2 text-right border-b border-white/5
+                ${isCurrentDay ? 'bg-blue-500/10' : ''}
+            `}>
+                <span className={`
+                    text-sm font-medium
+                    ${isCurrentDay ? 'text-blue-400' : 'text-gray-400'}
+                    ${isFirstDay ? 'uppercase tracking-wider font-bold text-white' : ''}
+                `}>
+                    {dateLabel}
+                </span>
             </div>
 
             {/* Items List */}
@@ -66,9 +81,9 @@ export function DayColumn({ date, items, onAddItem, hasCopiedItem, onPaste, onCo
                     <button
                         onClick={() => onAddItem(date)}
                         className={`
-                w-full py-2 border border-dashed border-white/5 rounded-lg flex items-center justify-center
-                text-gray-600 hover:text-white hover:border-white/20 hover:bg-white/5 transition-all
-            `}
+                            w-full py-2 border border-dashed border-white/5 rounded-lg flex items-center justify-center
+                            text-gray-600 hover:text-white hover:border-white/20 hover:bg-white/5 transition-all
+                        `}
                     >
                         <Plus className="w-4 h-4" />
                     </button>

@@ -12,7 +12,8 @@ import {
     DragEndEvent,
 } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
-import { eachDayOfInterval, format, isSameDay, parseISO } from 'date-fns';
+import { eachDayOfInterval, format, isSameDay, parseISO, isSameWeek } from 'date-fns';
+import { fr } from 'date-fns/locale';
 import { DayColumn } from './DayColumn';
 import { CalendarItem as CalendarItemComponent } from './CalendarItem';
 import { CreateItemModal } from './CreateItemModal';
@@ -39,11 +40,15 @@ export function CalendarGrid({ clientId }: CalendarGridProps) {
     const [addingToDate, setAddingToDate] = useState<Date | null>(null);
     const [copiedItem, setCopiedItem] = useState<CalendarItem | null>(null);
 
+    // Visible Month State
+    const [visibleMonth, setVisibleMonth] = useState<string>('');
+
     // Infinite Scroll State
     const scrollRef = useRef<HTMLDivElement>(null);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const prevScrollHeightRef = useRef(0);
     const prevStartDateRef = useRef<Date | null>(null);
+    const hasScrolledToTodayRef = useRef(false);
 
     // Scroll preservation when loading past items
     useEffect(() => {
@@ -58,10 +63,52 @@ export function CalendarGrid({ clientId }: CalendarGridProps) {
         prevStartDateRef.current = startDate;
     }, [startDate]);
 
+    // Initial Scroll to Today
+    useEffect(() => {
+        if (!loading && items.length > 0 && !hasScrolledToTodayRef.current && scrollRef.current) {
+            // Find the element for today or start of this week
+            const today = new Date();
+            const todayStr = format(today, 'yyyy-MM-dd');
+            // We use data-date attribute to find the element
+            const todayEl = scrollRef.current.querySelector(`[data-date="${todayStr}"]`);
+
+            if (todayEl) {
+                // Scroll to align top of today with top of container
+                // We subtract a bit of padding if needed, or align to start
+                todayEl.scrollIntoView({ block: 'start' });
+                hasScrolledToTodayRef.current = true;
+
+                // Set initial visible month
+                setVisibleMonth(format(today, 'MMMM yyyy', { locale: fr }));
+            }
+        }
+    }, [loading, items]);
+
     const handleScroll = useCallback(async () => {
-        if (!scrollRef.current || isLoadingMore) return;
+        if (!scrollRef.current) return;
 
         const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+
+        // Update Visible Month Badge
+        // Estimate visible date based on scrollTop
+        // A better way: find the first visible day element
+        const gridContainer = scrollRef.current.querySelector('.grid-container');
+        if (gridContainer) {
+            // Let's use the date of the day at the rough "top" of the view
+            // Assuming average row height ~200px (min-h-[200px])
+            // This is an approximation.
+            const estimatedRowIndex = Math.floor(scrollTop / 200);
+            const estimatedDayIndex = estimatedRowIndex * 7;
+            const days = eachDayOfInterval({ start: startDate, end: endDate });
+
+            if (days[estimatedDayIndex]) {
+                const monthStr = format(days[estimatedDayIndex], 'MMMM yyyy', { locale: fr });
+                setVisibleMonth(monthStr.charAt(0).toUpperCase() + monthStr.slice(1));
+            }
+        }
+
+        if (isLoadingMore) return;
+
         const THRESHOLD = 300; // Trigger load when within 300px of edge
 
         // Load Past
@@ -78,7 +125,7 @@ export function CalendarGrid({ clientId }: CalendarGridProps) {
             await loadMoreFuture();
             setIsLoadingMore(false);
         }
-    }, [isLoadingMore, loadMorePast, loadMoreFuture]);
+    }, [isLoadingMore, loadMorePast, loadMoreFuture, startDate, endDate]);
 
 
     const sensors = useSensors(
@@ -93,6 +140,7 @@ export function CalendarGrid({ clientId }: CalendarGridProps) {
     );
 
     const days = eachDayOfInterval({ start: startDate, end: endDate });
+    const today = new Date();
 
     const handleDragStart = (event: DragStartEvent) => {
         setActiveId(event.active.id as string);
@@ -155,9 +203,9 @@ export function CalendarGrid({ clientId }: CalendarGridProps) {
         }
     };
 
-    if (loading) {
+    if (loading && !items.length) {
         return (
-            <div className="flex items-center justify-center p-12">
+            <div className="flex items-center justify-center p-12 h-full">
                 <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
             </div>
         );
@@ -166,9 +214,16 @@ export function CalendarGrid({ clientId }: CalendarGridProps) {
     const activeItem = activeId ? items.find(i => i.id === activeId) : null;
 
     return (
-        <div className="flex flex-col h-full bg-[#0b1121] text-white overflow-hidden">
+        <div className="flex flex-col h-full bg-[#0b1121] text-white overflow-hidden relative">
+            {/* Floating Month Badge */}
+            <div className="absolute top-16 left-1/2 transform -translate-x-1/2 z-20 pointer-events-none">
+                <div className="px-4 py-1.5 bg-black/60 backdrop-blur-md border border-white/10 rounded-full shadow-lg text-sm font-medium text-white transition-all duration-300">
+                    {visibleMonth || format(today, 'MMMM yyyy', { locale: fr })}
+                </div>
+            </div>
+
             {/* Minimal Header */}
-            <div className="flex items-center justify-between p-4 border-b border-white/5 bg-[#0f172a]">
+            <div className="flex items-center justify-between p-4 border-b border-white/5 bg-[#0f172a] z-30">
                 <div className="flex items-center gap-4">
                     <h2 className="text-xl font-bold">Planning</h2>
                     {copiedItem && (
@@ -178,9 +233,19 @@ export function CalendarGrid({ clientId }: CalendarGridProps) {
                         </div>
                     )}
                 </div>
-                {/* Scroll Indicator / Date Range Display if needed */}
                 <div className="text-sm text-gray-400">
-                    {format(startDate, 'dd MMM')} - {format(endDate, 'dd MMM')}
+                    <button
+                        onClick={() => {
+                            if (scrollRef.current) {
+                                const todayStr = format(new Date(), 'yyyy-MM-dd');
+                                const todayEl = scrollRef.current.querySelector(`[data-date="${todayStr}"]`);
+                                if (todayEl) todayEl.scrollIntoView({ block: 'start', behavior: 'smooth' });
+                            }
+                        }}
+                        className="hover:text-white transition-colors"
+                    >
+                        Aujourd'hui
+                    </button>
                 </div>
             </div>
 
@@ -205,16 +270,30 @@ export function CalendarGrid({ clientId }: CalendarGridProps) {
                     ref={scrollRef}
                     onScroll={handleScroll}
                     className="flex-1 overflow-y-auto custom-scrollbar bg-[#0b1121] relative scroll-smooth"
-                    style={{ scrollBehavior: 'auto' }} // auto for smooth preservation JS hacks, smooth for user
                 >
-                    {/* Padding top/bottom for "load more" spinners? */}
-                    {isLoadingMore && <div className="w-full h-8 flex items-center justify-center opacity-50"><Loader2 className="w-4 h-4 animate-spin" /></div>}
+                    {/* Padding top for "load more" */}
+                    {isLoadingMore && <div className="w-full h-8 flex items-center justify-center opacity-50 py-2"><Loader2 className="w-4 h-4 animate-spin" /></div>}
 
-                    <div className="grid grid-cols-7 min-h-full border-l border-white/5">
+                    <div className="grid grid-cols-7 min-h-full border-l border-white/5 grid-container">
                         {days.map((day) => {
                             const dayItems = items.filter(i => isSameDay(parseISO(i.scheduled_date), day));
+                            const isCurrentWeek = isSameWeek(day, today, { weekStartsOn: 1 });
+                            const dayStr = format(day, 'yyyy-MM-dd');
+
                             return (
-                                <div key={day.toISOString()} className="min-h-[200px] border-r border-b border-white/5">
+                                <div
+                                    key={day.toISOString()}
+                                    data-date={dayStr}
+                                    className={`
+                                        min-h-[200px] border-r border-b border-white/5 relative
+                                        ${isCurrentWeek ? 'bg-blue-900/[0.03]' : ''}
+                                    `}
+                                >
+                                    {/* Current Week Sideline Indicator (Optional, maybe on Monday) */}
+                                    {isCurrentWeek && day.getDay() === 1 && (
+                                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500/20 -ml-[1px]" />
+                                    )}
+
                                     <DayColumn
                                         date={day}
                                         items={dayItems}
@@ -228,7 +307,7 @@ export function CalendarGrid({ clientId }: CalendarGridProps) {
                         })}
                     </div>
 
-                    {isLoadingMore && <div className="w-full h-8 flex items-center justify-center opacity-50"><Loader2 className="w-4 h-4 animate-spin" /></div>}
+                    {isLoadingMore && <div className="w-full h-8 flex items-center justify-center opacity-50 py-2"><Loader2 className="w-4 h-4 animate-spin" /></div>}
                 </div>
 
                 <DragOverlay>
