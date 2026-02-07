@@ -224,6 +224,8 @@ export function useCalendar(clientId: string, initialDate: Date = new Date()) {
         fetchItems,
         moveItem,
         createItem,
+        updateItem,
+        deleteItem,
         loadMorePast,
         loadMoreFuture
     };
