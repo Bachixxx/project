@@ -53,8 +53,8 @@ export function SessionSelector({ onSelect, onClose }: SessionSelectorProps) {
 
     return (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[60] animate-fade-in">
-            <div className="glass-card w-full max-w-2xl flex flex-col max-h-[80vh] animate-slide-in relative">
-                <div className="p-6 border-b border-white/10 flex justify-between items-center bg-[#1e293b] rounded-t-2xl sticky top-0 z-10">
+            <div className="bg-[#1e293b] w-full max-w-2xl flex flex-col max-h-[80vh] rounded-2xl border border-white/10 shadow-2xl animate-slide-in relative overflow-hidden">
+                <div className="p-6 border-b border-white/10 flex justify-between items-center bg-[#1e293b]">
                     <h2 className="text-xl font-bold text-white">Choisir une séance</h2>
                     <button
                         onClick={onClose}
@@ -64,7 +64,7 @@ export function SessionSelector({ onSelect, onClose }: SessionSelectorProps) {
                     </button>
                 </div>
 
-                <div className="p-4 bg-[#1e293b] border-b border-white/5 sticky top-[88px] z-10">
+                <div className="p-4 bg-[#1e293b] border-b border-white/5">
                     <div className="relative">
                         <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 z-10" />
                         <input
@@ -72,12 +72,12 @@ export function SessionSelector({ onSelect, onClose }: SessionSelectorProps) {
                             placeholder="Rechercher une séance..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="input-field pl-10 w-full bg-[#0f172a]/50 text-white placeholder-gray-500 border-white/10 focus:border-blue-500"
+                            className="w-full px-4 pl-10 py-3 bg-[#0f172a]/50 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors"
                         />
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-3">
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-3 bg-[#1e293b]">
                     {loading ? (
                         <div className="flex justify-center py-12">
                             <div className="w-8 h-8 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin"></div>
@@ -88,7 +88,7 @@ export function SessionSelector({ onSelect, onClose }: SessionSelectorProps) {
                                 <button
                                     key={session.id}
                                     onClick={() => onSelect(session)}
-                                    className="w-full text-left p-4 rounded-xl border border-white/5 bg-white/5 hover:bg-white/10 hover:border-white/20 transition-all group flex items-center justify-between"
+                                    className="w-full text-left p-4 rounded-xl border border-white/5 bg-[#0f172a]/30 hover:bg-[#0f172a]/50 hover:border-white/10 transition-all group flex items-center justify-between"
                                 >
                                     <div>
                                         <h3 className="font-bold text-white group-hover:text-blue-400 transition-colors mb-1">
