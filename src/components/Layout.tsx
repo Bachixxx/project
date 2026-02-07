@@ -23,6 +23,7 @@ import {
   Tag,
   Sparkles, // Added for banner
   Play, // Added
+  ChevronLeft, // Added
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSubscription } from '../hooks/useSubscription';
@@ -41,6 +42,7 @@ function Layout() {
   const [isFinancesMenuOpen, setIsFinancesMenuOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLauncherOpen, setIsLauncherOpen] = useState(false); // Added
+  const [isCollapsed, setIsCollapsed] = useState(false); // Added for sidebar collapse
 
   React.useEffect(() => {
     const checkAdminStatus = async () => {
@@ -158,10 +160,18 @@ function Layout() {
 
         {/* Sidebar */}
         <aside
-          className={`fixed lg:sticky top-[calc(4rem+env(safe-area-inset-top))] w-64 h-[calc(100vh-4rem-env(safe-area-inset-top))] bg-black/40 backdrop-blur-xl border-r border-white/5 z-40 transform transition-transform duration-300 lg:transform-none ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+          className={`fixed lg:sticky top-[calc(4rem+env(safe-area-inset-top))] h-[calc(100vh-4rem-env(safe-area-inset-top))] bg-black/40 backdrop-blur-xl border-r border-white/5 z-40 transform transition-all duration-300 lg:transform-none ${isMobileMenuOpen ? 'translate-x-0 w-64' : `-translate-x-full lg:translate-x-0 ${isCollapsed ? 'lg:w-20' : 'lg:w-64'}`
             }`}
         >
-          <nav className="h-full overflow-y-auto py-8 px-4">
+          {/* Collapse Toggle Button - Desktop Only */}
+          <button
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="hidden lg:flex absolute -right-3 top-6 bg-blue-600 rounded-full p-1 text-white shadow-lg border border-white/10 hover:bg-blue-700 transition-colors z-50"
+          >
+            {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+          </button>
+
+          <nav className={`h-full overflow-y-auto py-8 ${isCollapsed ? 'px-2' : 'px-4'}`}>
             <div className="space-y-2">
               {/* LIVE SESSION BUTTON */}
               <button
@@ -169,11 +179,12 @@ function Layout() {
                   setIsMobileMenuOpen(false);
                   setIsLauncherOpen(true);
                 }}
-                className="w-full mb-6 group relative flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-xl text-white font-bold shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40 transform hover:scale-[1.02] transition-all"
+                className={`w-full mb-6 group relative flex items-center justify-center gap-2 ${isCollapsed ? 'p-3' : 'px-4 py-3'} bg-gradient-to-r from-blue-600 to-cyan-600 rounded-xl text-white font-bold shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40 transform hover:scale-[1.02] transition-all`}
+                title={isCollapsed ? "Démarrer Live" : undefined}
               >
                 <div className="absolute inset-0 bg-white/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity" />
                 <Play className="w-5 h-5 fill-current" />
-                <span className="text-base tracking-wide uppercase font-extrabold">Démarrer Live</span>
+                {!isCollapsed && <span className="text-base tracking-wide uppercase font-extrabold">Démarrer Live</span>}
               </button>
 
               <NavLink
@@ -182,26 +193,35 @@ function Layout() {
                 text={t('nav.dashboard', language)}
                 active={isActive('/dashboard')}
                 onClick={() => setIsMobileMenuOpen(false)}
+                isCollapsed={isCollapsed}
               />
 
               {/* Workout Menu (Replaces Exercises and Programs) */}
               <div className="relative">
                 <button
-                  onClick={() => setIsWorkoutMenuOpen(!isWorkoutMenuOpen)}
-                  className={`flex items-center w-full px-4 py-3 text-white rounded-lg hover:bg-white/10 transition-colors ${isActiveParent(['/exercises', '/programs', '/sessions']) ? 'bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-blue-500/30' : ''
+                  onClick={() => {
+                    if (isCollapsed) setIsCollapsed(false); // Auto-expand when clicking parent item
+                    setIsWorkoutMenuOpen(!isWorkoutMenuOpen);
+                  }}
+                  className={`flex items-center w-full ${isCollapsed ? 'justify-center px-2' : 'px-4'} py-3 text-white rounded-lg hover:bg-white/10 transition-colors ${isActiveParent(['/exercises', '/programs', '/sessions']) ? 'bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-blue-500/30' : ''
                     }`}
+                  title={isCollapsed ? "Entraînements" : undefined}
                 >
-                  <Dumbbell className="w-5 h-5 mr-3" />
-                  <span className="text-base xl:text-lg flex-1">Entraînements</span>
-                  {isWorkoutMenuOpen ? (
-                    <ChevronDown className="w-4 h-4" />
-                  ) : (
-                    <ChevronRight className="w-4 h-4" />
+                  <Dumbbell className="w-5 h-5 flex-shrink-0" />
+                  {!isCollapsed && (
+                    <>
+                      <span className="ml-3 text-base xl:text-lg flex-1 text-left">Entraînements</span>
+                      {isWorkoutMenuOpen ? (
+                        <ChevronDown className="w-4 h-4" />
+                      ) : (
+                        <ChevronRight className="w-4 h-4" />
+                      )}
+                    </>
                   )}
                 </button>
 
-                {isWorkoutMenuOpen && (
-                  <div className="pl-4 mt-1 space-y-1">
+                {isWorkoutMenuOpen && !isCollapsed && (
+                  <div className="pl-4 mt-1 space-y-1 animate-fade-in">
                     <NavLink
                       to="/exercises"
                       icon={<Dumbbell className="w-4 h-4" />}
@@ -209,6 +229,7 @@ function Layout() {
                       active={isActive('/exercises')}
                       onClick={() => setIsMobileMenuOpen(false)}
                       className="py-2"
+                      isCollapsed={false}
                     />
                     <NavLink
                       to="/sessions"
@@ -217,6 +238,7 @@ function Layout() {
                       active={isActive('/sessions')}
                       onClick={() => setIsMobileMenuOpen(false)}
                       className="py-2"
+                      isCollapsed={false}
                     />
                     <NavLink
                       to="/programs"
@@ -225,6 +247,7 @@ function Layout() {
                       active={isActive('/programs')}
                       onClick={() => setIsMobileMenuOpen(false)}
                       className="py-2"
+                      isCollapsed={false}
                     />
                   </div>
                 )}
@@ -236,6 +259,7 @@ function Layout() {
                 text={t('nav.clients', language)}
                 active={isActive('/clients')}
                 onClick={() => setIsMobileMenuOpen(false)}
+                isCollapsed={isCollapsed}
               />
               <NavLink
                 to="/calendar"
@@ -243,6 +267,7 @@ function Layout() {
                 text={t('nav.calendar', language)}
                 active={isActive('/calendar')}
                 onClick={() => setIsMobileMenuOpen(false)}
+                isCollapsed={isCollapsed}
               />
               <NavLink
                 to="/multi-coaching"
@@ -250,26 +275,35 @@ function Layout() {
                 text="Multi-Coaching"
                 active={isActive('/multi-coaching')}
                 onClick={() => setIsMobileMenuOpen(false)}
+                isCollapsed={isCollapsed}
               />
 
               {/* Finances Group */}
               <div className="relative">
                 <button
-                  onClick={() => setIsFinancesMenuOpen(!isFinancesMenuOpen)}
-                  className={`flex items-center w-full px-4 py-3 text-white rounded-lg hover:bg-white/10 transition-colors ${isActiveParent(['/payments', '/terminal', '/offers']) ? 'bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-blue-500/30' : ''
+                  onClick={() => {
+                    if (isCollapsed) setIsCollapsed(false); // Auto-expand
+                    setIsFinancesMenuOpen(!isFinancesMenuOpen);
+                  }}
+                  className={`flex items-center w-full ${isCollapsed ? 'justify-center px-2' : 'px-4'} py-3 text-white rounded-lg hover:bg-white/10 transition-colors ${isActiveParent(['/payments', '/terminal', '/offers']) ? 'bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-blue-500/30' : ''
                     }`}
+                  title={isCollapsed ? "Finances" : undefined}
                 >
-                  <DollarSign className="w-5 h-5 mr-3" />
-                  <span className="text-base xl:text-lg flex-1">Finances</span>
-                  {isFinancesMenuOpen ? (
-                    <ChevronDown className="w-4 h-4" />
-                  ) : (
-                    <ChevronRight className="w-4 h-4" />
+                  <DollarSign className="w-5 h-5 flex-shrink-0" />
+                  {!isCollapsed && (
+                    <>
+                      <span className="ml-3 text-base xl:text-lg flex-1 text-left">Finances</span>
+                      {isFinancesMenuOpen ? (
+                        <ChevronDown className="w-4 h-4" />
+                      ) : (
+                        <ChevronRight className="w-4 h-4" />
+                      )}
+                    </>
                   )}
                 </button>
 
-                {isFinancesMenuOpen && (
-                  <div className="pl-4 mt-1 space-y-1">
+                {isFinancesMenuOpen && !isCollapsed && (
+                  <div className="pl-4 mt-1 space-y-1 animate-fade-in">
                     <NavLink
                       to="/payments"
                       icon={<DollarSign className="w-4 h-4" />}
@@ -277,6 +311,7 @@ function Layout() {
                       active={isActive('/payments')}
                       onClick={() => setIsMobileMenuOpen(false)}
                       className="py-2"
+                      isCollapsed={false}
                     />
                     <NavLink
                       to="/terminal"
@@ -285,6 +320,7 @@ function Layout() {
                       active={isActive('/terminal')}
                       onClick={() => setIsMobileMenuOpen(false)}
                       className="py-2"
+                      isCollapsed={false}
                     />
                     <NavLink
                       to="/offers"
@@ -293,6 +329,7 @@ function Layout() {
                       active={isActive('/offers')}
                       onClick={() => setIsMobileMenuOpen(false)}
                       className="py-2"
+                      isCollapsed={false}
                     />
                   </div>
                 )}
@@ -304,6 +341,7 @@ function Layout() {
                 text="Mon Image de Marque"
                 active={isActive('/branding')}
                 onClick={() => setIsMobileMenuOpen(false)}
+                isCollapsed={isCollapsed}
               />
 
               {isAdmin && (
@@ -314,6 +352,7 @@ function Layout() {
                   active={isActive('/admin')}
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="bg-gradient-to-r from-red-500/20 to-orange-500/20 hover:from-red-500/30 hover:to-orange-500/30 border border-red-500/30"
+                  isCollapsed={isCollapsed}
                 />
               )}
             </div>
@@ -327,6 +366,7 @@ function Layout() {
                   active={isActive('/upgrade')}
                   className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 hover:from-yellow-500/30 hover:to-orange-500/30 border border-yellow-500/30"
                   onClick={() => setIsMobileMenuOpen(false)}
+                  isCollapsed={isCollapsed}
                 />
               </div>
             )}
@@ -393,18 +433,20 @@ interface NavLinkProps {
   active: boolean;
   className?: string;
   onClick?: () => void;
+  isCollapsed?: boolean;
 }
 
-function NavLink({ to, icon, text, active, className = '', onClick }: NavLinkProps) {
+function NavLink({ to, icon, text, active, className = '', onClick, isCollapsed = false }: NavLinkProps) {
   return (
     <Link
       to={to}
       onClick={onClick}
-      className={`flex items-center px-4 py-3 text-white rounded-lg hover:bg-white/10 transition-colors ${active ? 'bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-blue-500/30' : ''
+      title={isCollapsed ? text : undefined}
+      className={`flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-4'} py-3 text-white rounded-lg hover:bg-white/10 transition-colors ${active ? 'bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-blue-500/30' : ''
         } ${className}`}
     >
-      {icon}
-      <span className="ml-3 text-base xl:text-lg">{text}</span>
+      <div className={`${isCollapsed ? '' : 'flex-shrink-0'}`}>{icon}</div>
+      {!isCollapsed && <span className="ml-3 text-base xl:text-lg whitespace-nowrap overflow-hidden text-ellipsis">{text}</span>}
     </Link>
   );
 }
