@@ -54,7 +54,7 @@ export function SessionSelector({ onSelect, onClose }: SessionSelectorProps) {
     return (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[60] animate-fade-in">
             <div className="glass-card w-full max-w-2xl flex flex-col max-h-[80vh] animate-slide-in relative">
-                <div className="p-6 border-b border-white/10 flex justify-between items-center bg-[#0f172a]/95 rounded-t-2xl sticky top-0 z-10">
+                <div className="p-6 border-b border-white/10 flex justify-between items-center bg-[#1e293b] rounded-t-2xl sticky top-0 z-10">
                     <h2 className="text-xl font-bold text-white">Choisir une séance</h2>
                     <button
                         onClick={onClose}
@@ -64,15 +64,15 @@ export function SessionSelector({ onSelect, onClose }: SessionSelectorProps) {
                     </button>
                 </div>
 
-                <div className="p-4 bg-[#0f172a]">
+                <div className="p-4 bg-[#1e293b] border-b border-white/5 sticky top-[88px] z-10">
                     <div className="relative">
-                        <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                        <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 z-10" />
                         <input
                             type="text"
                             placeholder="Rechercher une séance..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="input-field pl-9 w-full"
+                            className="input-field pl-10 w-full bg-[#0f172a]/50 text-white placeholder-gray-500 border-white/10 focus:border-blue-500"
                         />
                     </div>
                 </div>
@@ -100,8 +100,8 @@ export function SessionSelector({ onSelect, onClose }: SessionSelectorProps) {
                                                 {session.duration_minutes} min
                                             </span>
                                             <span className={`px-1.5 py-0.5 rounded border ${session.difficulty_level === 'Débutant' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
-                                                    session.difficulty_level === 'Intermédiaire' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' :
-                                                        'bg-red-500/10 text-red-400 border-red-500/20'
+                                                session.difficulty_level === 'Intermédiaire' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' :
+                                                    'bg-red-500/10 text-red-400 border-red-500/20'
                                                 }`}>
                                                 {session.difficulty_level}
                                             </span>

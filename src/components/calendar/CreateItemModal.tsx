@@ -247,22 +247,19 @@ export function CreateItemModal({ isOpen, onClose, date, clientId, onCreate, onU
             </div >
 
             {showSessionSelector && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center">
-                    <SessionSelector
-                        onSelect={(session) => {
-                            setTitle(session.name);
-                            setSessionId(session.id);
-                            // Optional: load description into content?
-                            if (session.description) {
-                                setContent(session.description);
-                            }
-                            setShowSessionSelector(false);
-                        }}
-                        onClose={() => setShowSessionSelector(false)}
-                    />
-                </div>
-            )
-            }
+                <SessionSelector
+                    onSelect={(session) => {
+                        setTitle(session.name);
+                        setSessionId(session.id);
+                        // Optional: load description into content?
+                        if (session.description) {
+                            setContent(session.description);
+                        }
+                        setShowSessionSelector(false);
+                    }}
+                    onClose={() => setShowSessionSelector(false)}
+                />
+            )}
         </div >
     );
 }
