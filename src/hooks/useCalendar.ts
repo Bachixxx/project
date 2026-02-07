@@ -121,9 +121,13 @@ export function useCalendar(clientId: string, initialDate: Date = new Date()) {
         setItems([...items, optimisticItem as CalendarItem]);
 
         try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('User not authenticated');
+
             const { data, error } = await supabase
                 .from('scheduled_sessions')
                 .insert([{
+                    coach_id: user.id,
                     client_id: newItem.client_id,
                     scheduled_date: newItem.scheduled_date,
                     item_type: newItem.item_type,
