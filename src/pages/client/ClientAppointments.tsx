@@ -616,6 +616,24 @@ function ClientAppointments() {
     }
   };
 
+  const handleUpdateSession = async (sessionId: string, newContent: any) => {
+    try {
+      const { error } = await supabase
+        .from('scheduled_sessions')
+        .update({ content: newContent })
+        .eq('id', sessionId);
+
+      if (error) throw error;
+
+      // Refresh sessions to show updated data
+      await fetchSessions();
+
+    } catch (error) {
+      console.error('Error updating session:', error);
+      throw error; // Re-throw for modal to handle
+    }
+  };
+
   const currentSessions = activeTab === 'personal' ? personalSessions : groupSessions;
   const upcomingSessions = currentSessions.filter(s => s.start > new Date()).slice(0, 3);
 
@@ -1043,6 +1061,7 @@ function ClientAppointments() {
         <NoteModal
           note={selectedNote}
           onClose={() => setSelectedNote(null)}
+          onSave={handleUpdateSession}
         />
       )}
 
@@ -1050,6 +1069,7 @@ function ClientAppointments() {
         <MetricModal
           metric={selectedMetric}
           onClose={() => setSelectedMetric(null)}
+          onSave={handleUpdateSession}
         />
       )}
     </div >
@@ -1274,7 +1294,33 @@ const SessionModal = ({ session, exercises, loadingExercises, onClose, onRegiste
   );
 }
 
-const NoteModal = ({ note, onClose }: any) => {
+const NoteModal = ({ note, onClose, onSave }: any) => {
+  const [content, setContent] = useState<string>("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!note.content) {
+      setContent(note.notes || "");
+    } else if (typeof note.content === 'string') {
+      setContent(note.content);
+    } else {
+      setContent(note.content.text || note.content.body || note.content.content || "");
+    }
+  }, [note]);
+
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      await onSave(note.id, { text: content });
+      onClose();
+    } catch (error) {
+      console.error("Error saving note:", error);
+      alert("Erreur lors de l'enregistrement");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onClick={onClose} />
@@ -1295,14 +1341,24 @@ const NoteModal = ({ note, onClose }: any) => {
         </div>
 
         <div className="bg-white/5 rounded-xl p-4 border border-white/5 mx-auto max-h-[60vh] overflow-y-auto custom-scrollbar">
-          <p className="text-white/80 whitespace-pre-wrap leading-relaxed">
-            {typeof note.content === 'object' && note.content !== null ? (note.content.text || note.content.body || note.content.content || JSON.stringify(note.content)) : (note.content || note.notes || "Aucun contenu")}
-          </p>
+          <textarea
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            className="w-full bg-transparent border-none text-white/80 placeholder:text-white/20 focus:ring-0 resize-none min-h-[150px] leading-relaxed"
+            placeholder="Écrivez votre note ici..."
+          />
         </div>
 
-        <div className="mt-6 flex justify-end">
+        <div className="mt-6 flex justify-end gap-3">
           <button onClick={onClose} className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors">
-            Fermer
+            Annuler
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="px-4 py-2 rounded-lg bg-yellow-500 hover:bg-yellow-600 text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {saving ? 'Enregistrement...' : 'Enregistrer'}
           </button>
         </div>
       </div>
@@ -1310,7 +1366,33 @@ const NoteModal = ({ note, onClose }: any) => {
   );
 };
 
-const MetricModal = ({ metric, onClose }: any) => {
+const MetricModal = ({ metric, onClose, onSave }: any) => {
+  const [value, setValue] = useState<string>("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!metric.content) {
+      setValue(metric.notes || "");
+    } else if (typeof metric.content === 'string') {
+      setValue(metric.content);
+    } else {
+      setValue(metric.content.value || metric.content.text || "");
+    }
+  }, [metric]);
+
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      await onSave(metric.id, { value: value });
+      onClose();
+    } catch (error) {
+      console.error("Error saving metric:", error);
+      alert("Erreur lors de l'enregistrement");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onClick={onClose} />
@@ -1331,14 +1413,25 @@ const MetricModal = ({ metric, onClose }: any) => {
         </div>
 
         <div className="bg-purple-500/5 rounded-xl p-6 border border-purple-500/10 text-center">
-          <p className="text-2xl font-bold text-white/90">
-            {typeof metric.content === 'object' && metric.content !== null ? (metric.content.value || metric.content.text || JSON.stringify(metric.content)) : (metric.content || metric.notes || "-")}
-          </p>
+          <input
+            type="text"
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            className="w-full bg-transparent border-b border-purple-500/30 text-center text-2xl font-bold text-white/90 placeholder:text-white/20 focus:ring-0 focus:border-purple-500 transition-colors py-2"
+            placeholder="Ex: 75 kg"
+          />
         </div>
 
-        <div className="mt-6 flex justify-end">
+        <div className="mt-6 flex justify-end gap-3">
           <button onClick={onClose} className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors">
-            Fermer
+            Annuler
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="px-4 py-2 rounded-lg bg-purple-500 hover:bg-purple-600 text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {saving ? 'Enregistrement...' : 'Enregistrer'}
           </button>
         </div>
       </div>
