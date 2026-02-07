@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Dumbbell, StickyNote, Moon, Activity, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -22,6 +22,18 @@ export function CreateItemModal({ isOpen, onClose, date, clientId, onCreate, onU
     const [title, setTitle] = useState(itemToEdit?.title || '');
     const [content, setContent] = useState(itemToEdit?.content?.text || '');
     const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        if (itemToEdit) {
+            setType(itemToEdit.item_type || 'session');
+            setTitle(itemToEdit.title || '');
+            setContent(itemToEdit.content?.text || '');
+        } else {
+            setType('session');
+            setTitle('');
+            setContent('');
+        }
+    }, [itemToEdit]);
 
     if (!isOpen) return null;
 
