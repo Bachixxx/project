@@ -53,6 +53,8 @@ function ClientAppointments() {
   const [personalSessions, setPersonalSessions] = useState([]);
   const [groupSessions, setGroupSessions] = useState([]);
   const [selectedSession, setSelectedSession] = useState(null);
+  const [selectedNote, setSelectedNote] = useState(null);
+  const [selectedMetric, setSelectedMetric] = useState(null);
   const [sessionExercises, setSessionExercises] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [registering, setRegistering] = useState(false);
@@ -144,19 +146,27 @@ function ClientAppointments() {
       }
 
       const formattedPersonalSessions = (scheduledData || []).map(s => {
-        if (!s.session) {
-          console.warn('Session data is null for scheduled_session:', s.id);
+        let title = s.title;
+        if (!title) {
+          if (s.session?.name) title = s.session.name;
+          else if (s.item_type === 'rest') title = 'Repos';
+          else if (s.item_type === 'note') title = 'Note';
+          else if (s.item_type === 'metric') title = 'Métrique';
+          else title = 'Séance';
         }
+
         return {
           id: s.id,
-          title: s.session?.name || 'Unknown Session',
+          title: title,
           start: new Date(s.scheduled_date),
           end: new Date(new Date(s.scheduled_date).getTime() + (s.session?.duration_minutes || 60) * 60000),
           status: s.status,
           notes: s.notes,
           session: s.session,
           coach: s.coach,
-          type: 'personal'
+          type: 'personal',
+          item_type: s.item_type || 'session',
+          content: s.content
         };
       });
 
@@ -451,6 +461,23 @@ function ClientAppointments() {
 
   const handleSelectEvent = (event) => {
     console.log('Selected event:', event);
+
+    // Handle special item types
+    if (event.item_type === 'rest') {
+      return; // No action for rest days for now
+    }
+
+    if (event.item_type === 'note') {
+      setSelectedNote(event);
+      return;
+    }
+
+    if (event.item_type === 'metric') {
+      setSelectedMetric(event);
+      return;
+    }
+
+    // Default: Session/Workout logic
     console.log('Session ID to fetch exercises:', event.session?.id);
     setSelectedSession(event);
     setIsModalOpen(true);
@@ -1008,9 +1035,22 @@ function ClientAppointments() {
               }
             }}
             registering={registering}
-          />
         )
       }
+
+      {selectedNote && (
+        <NoteModal
+          note={selectedNote}
+          onClose={() => setSelectedNote(null)}
+        />
+      )}
+
+      {selectedMetric && (
+        <MetricModal
+          metric={selectedMetric}
+          onClose={() => setSelectedMetric(null)}
+        />
+      )}
     </div >
   );
 }
@@ -1232,5 +1272,77 @@ const SessionModal = ({ session, exercises, loadingExercises, onClose, onRegiste
     </div>
   );
 }
+
+const NoteModal = ({ note, onClose }: any) => {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onClick={onClose} />
+      <div className="relative bg-[#0f172a] rounded-2xl max-w-md w-full border border-white/10 shadow-2xl animate-scale-in p-6">
+        <div className="flex justify-between items-start mb-6">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium mb-3 bg-yellow-500/10 text-yellow-400 border border-yellow-500/20">
+              Note
+            </div>
+            <h2 className="text-xl font-bold text-white mb-1">{note.title}</h2>
+            <p className="text-sm text-white/50">
+              {format(note.start, 'EEEE d MMMM', { locale: fr })}
+            </p>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="bg-white/5 rounded-xl p-4 border border-white/5 mx-auto max-h-[60vh] overflow-y-auto custom-scrollbar">
+          <p className="text-white/80 whitespace-pre-wrap leading-relaxed">
+            {note.content || note.notes || "Aucun contenu"}
+          </p>
+        </div>
+
+        <div className="mt-6 flex justify-end">
+          <button onClick={onClose} className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors">
+            Fermer
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const MetricModal = ({ metric, onClose }: any) => {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onClick={onClose} />
+      <div className="relative bg-[#0f172a] rounded-2xl max-w-md w-full border border-white/10 shadow-2xl animate-scale-in p-6">
+        <div className="flex justify-between items-start mb-6">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium mb-3 bg-purple-500/10 text-purple-400 border border-purple-500/20">
+              Métrique
+            </div>
+            <h2 className="text-xl font-bold text-white mb-1">{metric.title}</h2>
+            <p className="text-sm text-white/50">
+              {format(metric.start, 'EEEE d MMMM', { locale: fr })}
+            </p>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="bg-purple-500/5 rounded-xl p-6 border border-purple-500/10 text-center">
+          <p className="text-2xl font-bold text-white/90">
+            {metric.content || metric.notes || "-"}
+          </p>
+        </div>
+
+        <div className="mt-6 flex justify-end">
+          <button onClick={onClose} className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors">
+            Fermer
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default ClientAppointments;
