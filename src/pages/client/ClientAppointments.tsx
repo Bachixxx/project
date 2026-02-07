@@ -1296,7 +1296,7 @@ const NoteModal = ({ note, onClose }: any) => {
 
         <div className="bg-white/5 rounded-xl p-4 border border-white/5 mx-auto max-h-[60vh] overflow-y-auto custom-scrollbar">
           <p className="text-white/80 whitespace-pre-wrap leading-relaxed">
-            {note.content || note.notes || "Aucun contenu"}
+            {typeof note.content === 'object' && note.content !== null ? (note.content.text || note.content.body || note.content.content || JSON.stringify(note.content)) : (note.content || note.notes || "Aucun contenu")}
           </p>
         </div>
 
@@ -1332,7 +1332,7 @@ const MetricModal = ({ metric, onClose }: any) => {
 
         <div className="bg-purple-500/5 rounded-xl p-6 border border-purple-500/10 text-center">
           <p className="text-2xl font-bold text-white/90">
-            {metric.content || metric.notes || "-"}
+            {typeof metric.content === 'object' && metric.content !== null ? (metric.content.value || metric.content.text || JSON.stringify(metric.content)) : (metric.content || metric.notes || "-")}
           </p>
         </div>
 
