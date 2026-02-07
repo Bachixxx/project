@@ -24,14 +24,13 @@ export function useCalendar(clientId: string, initialDate: Date = new Date()) {
     const [loading, setLoading] = useState(true);
     const [currentDate, setCurrentDate] = useState(initialDate);
 
-    // Generate aligned range: Start on Monday, 2 weeks back, 2 weeks forward
-    const startDate = startOfWeek(addWeeks(currentDate, -2), { weekStartsOn: 1 });
-    const endDate = endOfWeek(addWeeks(currentDate, 2), { weekStartsOn: 1 });
+    // Dynamic Loaded Range
+    const [loadedStart, setLoadedStart] = useState(() => startOfWeek(addWeeks(initialDate, -2), { weekStartsOn: 1 }));
+    const [loadedEnd, setLoadedEnd] = useState(() => endOfWeek(addWeeks(initialDate, 2), { weekStartsOn: 1 }));
 
-    // Helper to refresh data
-    const fetchItems = useCallback(async () => {
-        if (!clientId) return;
-        setLoading(true);
+    // Helper to fetch range
+    const fetchRange = async (start: Date, end: Date) => {
+        if (!clientId) return [];
 
         try {
             const { data, error } = await supabase
@@ -53,43 +52,85 @@ export function useCalendar(clientId: string, initialDate: Date = new Date()) {
           )
         `)
                 .eq('client_id', clientId)
-                .gte('scheduled_date', format(startDate, 'yyyy-MM-dd'))
-                .lte('scheduled_date', format(endDate, 'yyyy-MM-dd'))
+                .gte('scheduled_date', format(start, 'yyyy-MM-dd'))
+                .lte('scheduled_date', format(end, 'yyyy-MM-dd'))
                 .order('scheduled_date', { ascending: true })
                 .order('position', { ascending: true });
 
             if (error) throw error;
-            setItems(data as any || []);
+            return data as any || [];
         } catch (err) {
-            console.error('Error fetching calendar items:', err);
-        } finally {
-            setLoading(false);
+            console.error('Error fetching range:', err);
+            return [];
         }
-    }, [clientId, currentDate]);
+    };
 
+    // Initial Load
+    const loadInitial = useCallback(async () => {
+        setLoading(true);
+        const data = await fetchRange(loadedStart, loadedEnd);
+        setItems(data);
+        setLoading(false);
+    }, [clientId, loadedStart, loadedEnd]);
+
+    // We only run initial load once (or when clientId changes significantly), 
+    // but here we depend on loadedStart keys. 
+    // To strictly control "initial" vs "updates", we might want a ref, but simple useEffect is fine for now.
     useEffect(() => {
-        fetchItems();
-    }, [fetchItems]);
+        loadInitial();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [clientId]);
+    // Only fetch on mount/clientId change. Subsequent fetches are manual loadMore.
+
+    const loadMorePast = useCallback(async () => {
+        const newStart = addWeeks(loadedStart, -2);
+        const endOfBlock = new Date(loadedStart.getTime() - 1); // just before current start
+
+        const newItems = await fetchRange(newStart, endOfBlock);
+
+        setItems(prev => {
+            const existingIds = new Set(prev.map(i => i.id));
+            const filteredNew = newItems.filter((i: CalendarItem) => !existingIds.has(i.id));
+            return [...filteredNew, ...prev];
+        });
+        setLoadedStart(newStart);
+    }, [clientId, loadedStart]);
+
+    const loadMoreFuture = useCallback(async () => {
+        const newEnd = addWeeks(loadedEnd, 2);
+        const startOfBlock = new Date(loadedEnd.getTime() + 1); // just after current end
+
+        const newItems = await fetchRange(startOfBlock, newEnd);
+
+        setItems(prev => {
+            const existingIds = new Set(prev.map(i => i.id));
+            const filteredNew = newItems.filter((i: CalendarItem) => !existingIds.has(i.id));
+            return [...prev, ...filteredNew];
+        });
+        setLoadedEnd(newEnd);
+    }, [clientId, loadedEnd]);
+
+    // Refresh current view
+    const fetchItems = useCallback(async () => {
+        // Reloads everything in current window
+        setLoading(true);
+        const data = await fetchRange(loadedStart, loadedEnd);
+        setItems(data);
+        setLoading(false);
+    }, [clientId, loadedStart, loadedEnd]);
 
     const moveItem = async (itemId: string, newDate: Date, newPosition: number) => {
-        // Optimistic Update
         const oldItems = [...items];
         const itemToMove = items.find(i => i.id === itemId);
         if (!itemToMove) return;
 
-        // Filter out item from old position
         const otherItems = items.filter(i => i.id !== itemId);
-
-        // Create new item state
         const updatedItem = {
             ...itemToMove,
-            scheduled_date: format(newDate, 'yyyy-MM-dd'), // Time component usually stripped for day-view items
+            scheduled_date: format(newDate, 'yyyy-MM-dd'),
             position: newPosition
         };
 
-        // Re-insert into local state (simplified logic, real reorder is complex)
-        // We'll just rely on fetching or rudimentary splice for now.
-        // Ideally, we re-sort the whole day locally.
         setItems([...otherItems, updatedItem]);
 
         try {
@@ -102,12 +143,9 @@ export function useCalendar(clientId: string, initialDate: Date = new Date()) {
                 .eq('id', itemId);
 
             if (error) throw error;
-
-            // Optionally refetch to ensure consistency with DB triggers/sorts
-            // fetchItems(); 
         } catch (err) {
             console.error('Error moving item:', err);
-            setItems(oldItems); // Revert
+            setItems(oldItems);
         }
     };
 
@@ -138,11 +176,9 @@ export function useCalendar(clientId: string, initialDate: Date = new Date()) {
 
             if (error) throw error;
 
-            // Replace optimistic item with real one
             setItems(prev => prev.map(i => i.id === tempId ? (data as any) : i));
         } catch (err) {
             console.error('Error creating item:', err);
-            // Revert
             setItems(prev => prev.filter(i => i.id !== tempId));
         }
     };
@@ -150,12 +186,14 @@ export function useCalendar(clientId: string, initialDate: Date = new Date()) {
     return {
         items,
         loading,
-        startDate,
-        endDate,
+        startDate: loadedStart,
+        endDate: loadedEnd,
         currentDate,
         setCurrentDate,
         fetchItems,
         moveItem,
-        createItem
+        createItem,
+        loadMorePast,
+        loadMoreFuture
     };
 }
