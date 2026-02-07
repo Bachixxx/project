@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import { startOfMonth, endOfMonth, addDays, format, parseISO } from 'date-fns';
+import { startOfWeek, endOfWeek, addWeeks, format, parseISO } from 'date-fns';
 
 export interface CalendarItem {
     id: string;
@@ -24,12 +24,9 @@ export function useCalendar(clientId: string, initialDate: Date = new Date()) {
     const [loading, setLoading] = useState(true);
     const [currentDate, setCurrentDate] = useState(initialDate);
 
-    // Generate range of dates to display (e.g. 2 weeks before, 2 weeks after, or strictly month view)
-    // For V1 "TrueCoach Style", usually it's a continuous scroll, but let's stick to a window.
-    // We'll fetch a broad range around currentDate.
-
-    const startDate = addDays(currentDate, -7); // Start 1 week ago
-    const endDate = addDays(currentDate, 21);   // Show next 3 weeks
+    // Generate aligned range: Start on Monday, 2 weeks back, 2 weeks forward
+    const startDate = startOfWeek(addWeeks(currentDate, -2), { weekStartsOn: 1 });
+    const endDate = endOfWeek(addWeeks(currentDate, 2), { weekStartsOn: 1 });
 
     // Helper to refresh data
     const fetchItems = useCallback(async () => {

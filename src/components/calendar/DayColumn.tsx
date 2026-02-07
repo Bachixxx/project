@@ -2,8 +2,7 @@ import React from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CalendarItem } from './CalendarItem';
-import { format, isToday, isSameDay } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { format, isToday } from 'date-fns';
 import { Plus, ClipboardPaste } from 'lucide-react';
 
 interface DayColumnProps {
@@ -22,36 +21,22 @@ export function DayColumn({ date, items, onAddItem, hasCopiedItem, onPaste, onCo
     });
 
     const isCurrentDay = isToday(date);
-    const dayName = format(date, 'EEEE', { locale: fr });
 
     return (
         <div
             ref={setNodeRef}
             className={`
-        w-full min-h-[150px] bg-[#0f172a] border border-white/5 rounded-2xl flex flex-col md:flex-row overflow-hidden transition-colors
-        ${isCurrentDay ? 'bg-blue-900/10 border-blue-500/20' : ''}
+        w-full h-full min-h-[150px] flex flex-col transition-colors relative group
+        ${isCurrentDay ? 'bg-blue-900/5' : 'hover:bg-white/[0.02]'}
       `}
         >
-            {/* Header */}
-            <div
-                className={`
-          flex flex-row md:flex-col items-center md:justify-center justify-between p-4 border-b md:border-b-0 md:border-r border-white/5 md:w-32 bg-black/20
-          ${isCurrentDay ? 'text-blue-400' : 'text-gray-400'}
-        `}
-            >
-                <div className="flex flex-col items-center">
-                    <span className="text-xs font-bold uppercase tracking-wider mb-1">{dayName}</span>
-                    <span className={`text-2xl font-black ${isCurrentDay ? 'text-white' : 'text-gray-300'}`}>
-                        {format(date, 'd', { locale: fr })}
-                    </span>
-                    <span className="text-xs font-medium opacity-60 uppercase">{format(date, 'MMM', { locale: fr })}</span>
-                </div>
-
-                {/* Mobile Add Button (Visible only on small screens if empty?) - Actually let's keep the main add button in content area */}
+            {/* Header (Date Number) */}
+            <div className={`p-2 text-right text-xs font-bold mb-1 ${isCurrentDay ? 'text-blue-400' : 'text-gray-500'}`}>
+                {format(date, 'd')}
             </div>
 
             {/* Items List */}
-            <div className="flex-1 overflow-y-auto p-3 custom-scrollbar">
+            <div className="flex-1 px-2 pb-2 space-y-2">
                 <SortableContext
                     id={`sortable-day-${format(date, 'yyyy-MM-dd')}`}
                     items={items.map(item => item.id)}
@@ -67,27 +52,25 @@ export function DayColumn({ date, items, onAddItem, hasCopiedItem, onPaste, onCo
                 </SortableContext>
 
                 {/* Actions */}
-                <div className="flex flex-col gap-2 mt-2">
+                <div className="flex flex-col gap-2 pt-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     {hasCopiedItem && onPaste && (
                         <button
                             onClick={() => onPaste(date)}
-                            className="w-full py-2 border border-dashed border-blue-500/30 bg-blue-500/5 hover:bg-blue-500/10 rounded-xl flex items-center justify-center text-blue-400 gap-2 transition-all"
+                            className="w-full py-1 border border-dashed border-blue-500/30 bg-blue-500/5 hover:bg-blue-500/10 rounded-lg flex items-center justify-center text-blue-400 gap-1 transition-all"
                         >
-                            <ClipboardPaste className="w-4 h-4" />
-                            <span className="text-sm font-medium">Coller</span>
+                            <ClipboardPaste className="w-3 h-3" />
+                            <span className="text-xs font-medium">Coller</span>
                         </button>
                     )}
 
                     <button
                         onClick={() => onAddItem(date)}
                         className={`
-                w-full py-3 border-2 border-dashed border-white/5 rounded-xl flex items-center justify-center
-                text-gray-500 hover:text-white hover:border-white/20 hover:bg-white/5 transition-all
-                ${items.length === 0 ? 'h-32' : ''}
-                group
+                w-full py-2 border border-dashed border-white/5 rounded-lg flex items-center justify-center
+                text-gray-600 hover:text-white hover:border-white/20 hover:bg-white/5 transition-all
             `}
                     >
-                        <Plus className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                        <Plus className="w-4 h-4" />
                     </button>
                 </div>
             </div>

@@ -158,6 +158,15 @@ export function CalendarGrid({ clientId }: CalendarGridProps) {
                 </div>
             </div>
 
+            {/* Day Headers */}
+            <div className="grid grid-cols-7 border-b border-white/10 bg-[#0f172a] flex-shrink-0">
+                {['Lun', 'Mar', 'Mer', ' Jeu', 'Ven', 'Sam', 'Dim'].map((day) => (
+                    <div key={day} className="py-3 text-center text-sm font-medium text-gray-400 uppercase tracking-wider">
+                        {day}
+                    </div>
+                ))}
+            </div>
+
             {/* Grid Container */}
             <DndContext
                 sensors={sensors}
@@ -166,22 +175,24 @@ export function CalendarGrid({ clientId }: CalendarGridProps) {
                 onDragOver={handleDragOver}
                 onDragEnd={handleDragEnd}
             >
-                <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-4">
-                    {days.map((day) => {
-                        const dayItems = items.filter(i => isSameDay(parseISO(i.scheduled_date), day));
-                        return (
-                            <div key={day.toISOString()} className="w-full">
-                                <DayColumn
-                                    date={day}
-                                    items={dayItems}
-                                    onAddItem={(d) => setAddingToDate(d)}
-                                    hasCopiedItem={!!copiedItem}
-                                    onPaste={handlePasteItem}
-                                    onCopyItem={handleCopyItem}
-                                />
-                            </div>
-                        );
-                    })}
+                <div className="flex-1 overflow-y-auto custom-scrollbar bg-[#0b1121]">
+                    <div className="grid grid-cols-7 min-h-full border-l border-white/5">
+                        {days.map((day) => {
+                            const dayItems = items.filter(i => isSameDay(parseISO(i.scheduled_date), day));
+                            return (
+                                <div key={day.toISOString()} className="min-h-[200px] border-r border-b border-white/5">
+                                    <DayColumn
+                                        date={day}
+                                        items={dayItems}
+                                        onAddItem={(d) => setAddingToDate(d)}
+                                        hasCopiedItem={!!copiedItem}
+                                        onPaste={handlePasteItem}
+                                        onCopyItem={handleCopyItem}
+                                    />
+                                </div>
+                            );
+                        })}
+                    </div>
                 </div>
 
                 <DragOverlay>
