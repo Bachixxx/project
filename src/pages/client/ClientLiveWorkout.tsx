@@ -551,7 +551,6 @@ function ClientLiveWorkout() {
           .from('scheduled_sessions')
           .update({
             status: 'completed',
-            status: 'completed',
             completed_at: new Date().toISOString(),
             notes: notes,
             actual_duration_seconds: elapsedTime
