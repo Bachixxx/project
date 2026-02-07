@@ -17,6 +17,7 @@ export interface CalendarItem {
         duration_minutes: number;
         difficulty_level?: string;
     } | null;
+    session_id?: string | null;
 }
 
 export function useCalendar(clientId: string, initialDate: Date = new Date()) {
@@ -169,7 +170,8 @@ export function useCalendar(clientId: string, initialDate: Date = new Date()) {
                     title: newItem.title,
                     content: newItem.content,
                     position: newItem.position,
-                    status: newItem.status
+                    status: newItem.status,
+                    session_id: newItem.session_id
                 }])
                 .select()
                 .single();

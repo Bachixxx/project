@@ -238,9 +238,14 @@ export function CalendarGrid({ clientId }: CalendarGridProps) {
     const handleSaveWorkout = async (workoutData: any) => {
         if (!builderDate) return;
 
+        // Check if workoutData has a specific scheduled_date (with time)
+        const dateToUse = workoutData.scheduled_date
+            ? (workoutData.scheduled_date instanceof Date ? workoutData.scheduled_date.toISOString() : workoutData.scheduled_date)
+            : format(builderDate, 'yyyy-MM-dd');
+
         await createItem({
             client_id: clientId,
-            scheduled_date: format(builderDate, 'yyyy-MM-dd'),
+            scheduled_date: dateToUse,
             item_type: 'session',
             title: workoutData.title,
             content: workoutData.content || {}, // ensure content is passed

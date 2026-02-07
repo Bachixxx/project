@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { X, Dumbbell, StickyNote, Moon, Activity, Calendar } from 'lucide-react';
+import { X, Dumbbell, StickyNote, Moon, Activity, Calendar, BookOpen } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { SessionSelector } from '../library/SessionSelector';
 
 interface CreateItemModalProps {
     isOpen: boolean;
@@ -21,6 +22,8 @@ export function CreateItemModal({ isOpen, onClose, date, clientId, onCreate, onU
     const [type, setType] = useState<ItemType>(itemToEdit?.item_type || 'session');
     const [title, setTitle] = useState(itemToEdit?.title || '');
     const [content, setContent] = useState(itemToEdit?.content?.text || '');
+    const [sessionId, setSessionId] = useState<string | null>(itemToEdit?.session?.id || null);
+    const [showSessionSelector, setShowSessionSelector] = useState(false);
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
@@ -28,10 +31,12 @@ export function CreateItemModal({ isOpen, onClose, date, clientId, onCreate, onU
             setType(itemToEdit.item_type || 'session');
             setTitle(itemToEdit.title || '');
             setContent(itemToEdit.content?.text || '');
+            setSessionId(itemToEdit.session?.id || null);
         } else {
             setType('session');
             setTitle('');
             setContent('');
+            setSessionId(null);
         }
     }, [itemToEdit]);
 
@@ -50,7 +55,8 @@ export function CreateItemModal({ isOpen, onClose, date, clientId, onCreate, onU
                 title: type === 'rest' ? 'Jour de repos' : title,
                 content: content ? { text: content } : {},
                 position: itemToEdit?.position || 0,
-                status: itemToEdit?.status || 'scheduled'
+                status: itemToEdit?.status || 'scheduled',
+                session_id: sessionId
             };
 
             if (itemToEdit && onUpdate) {
@@ -149,6 +155,24 @@ export function CreateItemModal({ isOpen, onClose, date, clientId, onCreate, onU
                             </div>
                         )}
 
+                        {/* Import from Library Button */}
+                        {!itemToEdit && type === 'session' && (
+                            <div className="bg-purple-500/10 border border-purple-500/20 rounded-xl p-4 flex items-center justify-between group cursor-pointer hover:bg-purple-500/20 transition-colors mt-2" onClick={() => setShowSessionSelector(true)}>
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center">
+                                        <BookOpen className="w-5 h-5" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-white text-sm">Importer de la bibliothèque</h3>
+                                        <p className="text-xs text-purple-200">Choisir un template existant</p>
+                                    </div>
+                                </div>
+                                <div className="px-3 py-1.5 bg-purple-500 text-white text-xs font-bold rounded-lg shadow-lg shadow-purple-500/20">
+                                    Choisir
+                                </div>
+                            </div>
+                        )}
+
                         {/* Divider */}
                         {!itemToEdit && type === 'session' && (
                             <div className="relative flex items-center py-2">
@@ -220,7 +244,25 @@ export function CreateItemModal({ isOpen, onClose, date, clientId, onCreate, onU
                         </div>
                     </form>
                 </div>
-            </div>
-        </div>
+            </div >
+
+            {showSessionSelector && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center">
+                    <SessionSelector
+                        onSelect={(session) => {
+                            setTitle(session.name);
+                            setSessionId(session.id);
+                            // Optional: load description into content?
+                            if (session.description) {
+                                setContent(session.description);
+                            }
+                            setShowSessionSelector(false);
+                        }}
+                        onClose={() => setShowSessionSelector(false)}
+                    />
+                </div>
+            )
+            }
+        </div >
     );
 }

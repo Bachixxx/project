@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Save, Dumbbell, GripVertical, Trash2 } from 'lucide-react';
+import { X, Plus, Save, Dumbbell, GripVertical, Trash2, Clock } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -130,6 +130,7 @@ export function WorkoutBuilderDrawer({ isOpen, onClose, onSave, onDelete, initia
     // Hooks & State
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
+    const [time, setTime] = useState('');
 
     // Use Custom Hook for Logic
     const {
@@ -149,6 +150,13 @@ export function WorkoutBuilderDrawer({ isOpen, onClose, onSave, onDelete, initia
         if (isOpen && initialData) {
             setTitle(initialData.title || '');
             setDescription(initialData.content?.description || '');
+            // Extract time from scheduled_date if it has time component
+            if (initialData.scheduled_date && initialData.scheduled_date.includes('T')) {
+                const dateObj = new Date(initialData.scheduled_date);
+                setTime(dateObj.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }));
+            } else {
+                setTime('');
+            }
 
             // Parse modules back to BuilderExercise
             if (initialData.content?.modules) {
@@ -169,6 +177,7 @@ export function WorkoutBuilderDrawer({ isOpen, onClose, onSave, onDelete, initia
             // Reset if opening new
             setTitle('');
             setDescription('');
+            setTime('');
             reset();
         }
     }, [isOpen, initialData, reset, setExercises]);
@@ -200,10 +209,20 @@ export function WorkoutBuilderDrawer({ isOpen, onClose, onSave, onDelete, initia
         if (!title && exercises.length === 0) return;
         setIsSaving(true);
         try {
+            // format date + time
+            let scheduledDate = initialDate;
+            if (time) {
+                const [hours, minutes] = time.split(':').map(Number);
+                const newDate = new Date(initialDate);
+                newDate.setHours(hours, minutes);
+                scheduledDate = newDate;
+            }
+
             // Construct the final object
             const workoutData = {
                 title: title || 'Séance personnalisée',
                 description,
+                scheduled_date: scheduledDate, // Pass full date object
                 type: 'session',
                 content: {
                     modules: exercises.map(ex => ({
@@ -274,8 +293,16 @@ export function WorkoutBuilderDrawer({ isOpen, onClose, onSave, onDelete, initia
                             className="bg-transparent text-xl font-bold text-white placeholder-gray-500 focus:outline-none w-full"
                             autoFocus
                         />
-                        <div className="text-sm text-gray-400 mt-1">
-                            {initialDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                        <div className="text-sm text-gray-400 mt-1 flex items-center gap-2">
+                            <span>{initialDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
+                            <span>•</span>
+                            <Clock className="w-3 h-3" />
+                            <input
+                                type="time"
+                                value={time}
+                                onChange={(e) => setTime(e.target.value)}
+                                className="bg-transparent border-b border-gray-700 focus:border-blue-500 outline-none w-20 text-center"
+                            />
                         </div>
                     </div>
                     <div className="flex items-center gap-2">

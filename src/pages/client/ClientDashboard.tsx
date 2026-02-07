@@ -204,6 +204,7 @@ function ClientDashboard() {
           scheduled_date,
           status,
           notes,
+          title,
           session:sessions (
             id,
             name,
@@ -212,7 +213,7 @@ function ClientDashboard() {
         `)
         .eq('client_id', client?.id)
         .eq('status', 'scheduled')
-        .gte('scheduled_date', new Date().toISOString())
+        .gte('scheduled_date', new Date(new Date().setHours(0, 0, 0, 0)).toISOString())
         .order('scheduled_date', { ascending: true })
         .limit(5);
 
@@ -314,7 +315,7 @@ function ClientDashboard() {
               type: 'scheduled',
               id: next.id,
               data: next,
-              title: next.session?.name || "Session planifiée",
+              title: next.title || next.session?.name || "Session planifiée",
               subtitle: sessionDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }),
               link: isReadyCurrent ? `/client/live-workout/${next.id}` : `/client/appointments`
             });
