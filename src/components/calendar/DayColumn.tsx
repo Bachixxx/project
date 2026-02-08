@@ -38,15 +38,20 @@ export function DayColumn({ date, items, onAddItem, hasCopiedItem, onPaste, onCo
                 ${isCurrentDay ? 'bg-blue-900/5' : 'hover:bg-white/[0.02]'}
             `}
         >
-            {/* Day Header - Minimalist */}
+            {/* Day Header - Responsive */}
             <div className={`
-                p-2 text-right border-b border-white/5
+                p-3 border-b border-white/5 flex justify-between items-center
                 ${isCurrentDay ? 'bg-blue-500/10' : ''}
             `}>
+                {/* Mobile Header (Full Day) */}
+                <span className={`md:hidden text-sm font-medium capitalize ${isCurrentDay ? 'text-blue-400' : 'text-white'}`}>
+                    {format(date, 'EEEE d MMMM', { locale: fr })}
+                </span>
+
+                {/* Desktop Header (Minimal) */}
                 <span className={`
-                    text-sm font-medium
+                    hidden md:block text-sm font-medium ml-auto
                     ${isCurrentDay ? 'text-blue-400' : 'text-gray-400'}
-                    ${isFirstDay ? 'uppercase tracking-wider font-bold text-white' : ''}
                 `}>
                     {dateLabel}
                 </span>

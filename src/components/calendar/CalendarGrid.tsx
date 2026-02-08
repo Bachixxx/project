@@ -304,7 +304,7 @@ export function CalendarGrid({ clientId }: CalendarGridProps) {
             </div>
 
             {/* Sticky Day Headers */}
-            <div className="grid grid-cols-7 border-b border-white/10 bg-[#0f172a] flex-shrink-0 z-10 shadow-sm">
+            <div className="hidden md:grid grid-cols-7 border-b border-white/10 bg-[#0f172a] flex-shrink-0 z-10 shadow-sm">
                 {['Lun', 'Mar', 'Mer', ' Jeu', 'Ven', 'Sam', 'Dim'].map((day) => (
                     <div key={day} className="py-3 text-center text-sm font-medium text-gray-400 uppercase tracking-wider">
                         {day}
@@ -328,7 +328,7 @@ export function CalendarGrid({ clientId }: CalendarGridProps) {
                     {/* Padding top for "load more" */}
                     {isLoadingMore && <div className="w-full h-8 flex items-center justify-center opacity-50 py-2"><Loader2 className="w-4 h-4 animate-spin" /></div>}
 
-                    <div className="grid grid-cols-7 min-h-full border-l border-white/5 grid-container">
+                    <div className="grid grid-cols-1 md:grid-cols-7 min-h-full border-l border-white/5 grid-container">
                         {days.map((day) => {
                             const dayItems = items.filter(i => isSameDay(parseISO(i.scheduled_date), day));
                             const isCurrentWeek = isSameWeek(day, today, { weekStartsOn: 1 });
@@ -339,7 +339,8 @@ export function CalendarGrid({ clientId }: CalendarGridProps) {
                                     key={day.toISOString()}
                                     data-date={dayStr}
                                     className={`
-                                        min-h-[200px] border-r border-b border-white/5 relative
+                                        min-h-[200px] border-b border-white/5 relative
+                                        md:border-r md:border-b-0
                                         ${isCurrentWeek ? 'bg-blue-900/[0.03]' : ''}
                                     `}
                                 >
