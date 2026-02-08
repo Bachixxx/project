@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ChevronLeft, Plus, Calendar as CalendarIcon, BarChart, Activity, TrendingUp, X, Clock, ChevronRight } from 'lucide-react';
+import { ChevronLeft, Plus, Calendar as CalendarIcon, BarChart, Activity, TrendingUp, X, Clock, ChevronRight, Unlock } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 // import { t } from '../i18n';
@@ -666,6 +666,7 @@ function AssignProgramModal({ clientId, onClose, onAssign }: AssignProgramModalP
   const [loading, setLoading] = useState(true);
   const [selectedProgram, setSelectedProgram] = useState<string>('');
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
+  const [schedulingType, setSchedulingType] = useState<'self_paced' | 'coach_led'>('self_paced');
   const { user } = useAuth();
 
   useEffect(() => {
@@ -710,6 +711,7 @@ function AssignProgramModal({ clientId, onClose, onAssign }: AssignProgramModalP
           end_date: endDate.toISOString().split('T')[0],
           progress: 0,
           status: 'active',
+          scheduling_type: schedulingType,
         }]);
 
       if (error) throw error;
@@ -763,6 +765,52 @@ function AssignProgramModal({ clientId, onClose, onAssign }: AssignProgramModalP
                 required
                 className="w-full rounded-xl bg-white/5 border border-white/10 text-white p-3 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
               />
+            </div>
+
+            {/* Scheduling Type Selection */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-3">
+                Mode de planification
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setSchedulingType('self_paced')}
+                  className={`p-3 rounded-lg border text-left transition-all ${schedulingType === 'self_paced'
+                    ? 'bg-blue-500/20 border-blue-500/50 ring-1 ring-blue-500/50'
+                    : 'bg-white/5 border-white/10 hover:bg-white/10'
+                    }`}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <Unlock className={`w-4 h-4 ${schedulingType === 'self_paced' ? 'text-blue-400' : 'text-gray-400'}`} />
+                    <span className={`font-medium ${schedulingType === 'self_paced' ? 'text-white' : 'text-gray-300'}`}>
+                      Autonomie
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    Le client gère son planning.
+                  </p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setSchedulingType('coach_led')}
+                  className={`p-3 rounded-lg border text-left transition-all ${schedulingType === 'coach_led'
+                    ? 'bg-purple-500/20 border-purple-500/50 ring-1 ring-purple-500/50'
+                    : 'bg-white/5 border-white/10 hover:bg-white/10'
+                    }`}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <CalendarIcon className={`w-4 h-4 ${schedulingType === 'coach_led' ? 'text-purple-400' : 'text-gray-400'}`} />
+                    <span className={`font-medium ${schedulingType === 'coach_led' ? 'text-white' : 'text-gray-300'}`}>
+                      Planifié
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    Vous définissez les dates.
+                  </p>
+                </button>
+              </div>
             </div>
 
             <div className="flex justify-end gap-3 pt-4 border-t border-white/10">

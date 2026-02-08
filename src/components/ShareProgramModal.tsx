@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { X, Search, Users, Calendar, Check, AlertTriangle } from 'lucide-react';
+import {
+    X, Search, Users, Calendar, Check, AlertTriangle,
+    CheckSquare, Square, UserPlus, Clock, Unlock
+} from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -27,6 +30,7 @@ export function ShareProgramModal({ program, onClose, onSuccess }: ShareProgramM
     const [selectedClients, setSelectedClients] = useState<string[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
+    const [schedulingType, setSchedulingType] = useState<'self_paced' | 'coach_led'>('self_paced');
     const [loading, setLoading] = useState(false);
     const [fetchingClients, setFetchingClients] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -93,6 +97,7 @@ export function ShareProgramModal({ program, onClose, onSuccess }: ShareProgramM
                 end_date: endDate.toISOString().split('T')[0],
                 progress: 0,
                 status: 'active',
+                scheduling_type: schedulingType, // Add the new field
             }));
 
             const { error } = await supabase
@@ -231,6 +236,52 @@ export function ShareProgramModal({ program, onClose, onSuccess }: ShareProgramM
                                     })}
                                 </div>
                             )}
+                        </div>
+                    </div>
+
+                    {/* Scheduling Type Selection */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-3">
+                            Mode de planification
+                        </label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <button
+                                type="button"
+                                onClick={() => setSchedulingType('self_paced')}
+                                className={`p-3 rounded-lg border text-left transition-all ${schedulingType === 'self_paced'
+                                        ? 'bg-blue-500/20 border-blue-500/50 ring-1 ring-blue-500/50'
+                                        : 'bg-white/5 border-white/10 hover:bg-white/10'
+                                    } `}
+                            >
+                                <div className="flex items-center gap-2 mb-1">
+                                    <Unlock className={`w-4 h-4 ${schedulingType === 'self_paced' ? 'text-blue-400' : 'text-gray-400'}`} />
+                                    <span className={`font-medium ${schedulingType === 'self_paced' ? 'text-white' : 'text-gray-300'}`}>
+                                        Autonomie
+                                    </span>
+                                </div>
+                                <p className="text-xs text-gray-500">
+                                    Le client gère son propre emploi du temps et avance à son rythme via le bouton "Séance suivante".
+                                </p>
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => setSchedulingType('coach_led')}
+                                className={`p-3 rounded-lg border text-left transition-all ${schedulingType === 'coach_led'
+                                        ? 'bg-purple-500/20 border-purple-500/50 ring-1 ring-purple-500/50'
+                                        : 'bg-white/5 border-white/10 hover:bg-white/10'
+                                    } `}
+                            >
+                                <div className="flex items-center gap-2 mb-1">
+                                    <Calendar className={`w-4 h-4 ${schedulingType === 'coach_led' ? 'text-purple-400' : 'text-gray-400'}`} />
+                                    <span className={`font-medium ${schedulingType === 'coach_led' ? 'text-white' : 'text-gray-300'}`}>
+                                        Planifié / Encadré
+                                    </span>
+                                </div>
+                                <p className="text-xs text-gray-500">
+                                    Vous définissez les dates des séances dans le calendrier. Le client voit uniquement ce qui est planifié.
+                                </p>
+                            </button>
                         </div>
                     </div>
                 </div>

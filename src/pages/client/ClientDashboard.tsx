@@ -82,7 +82,8 @@ function ClientDashboard() {
             )
           ),
           start_date,
-          status
+          status,
+          scheduling_type
         `)
         .eq('client_id', client?.id)
         .eq('status', 'active');
@@ -343,29 +344,39 @@ function ClientDashboard() {
 
         // Safety check: ensure program relation exists
         if (prog && prog.program) {
-          const programSessions = prog.program.program_sessions?.sort((a: any, b: any) => a.order_index - b.order_index) || [];
+          // If scheduling_type is 'coach_led', we ONLY show scheduled sessions.
+          // Unless we want to show a "Wait for coach" card.
+          // But for now, let's just HIDE the "Next Session" card if it's coach_led.
+          const isCoachLed = prog.scheduling_type === 'coach_led';
 
-          if (programSessions.length > 0) {
-            // Count how many sessions from this program have been completed
-            const programStartDate = new Date(prog.start_date || new Date());
-            const sessionsCompletedCount = workoutSessions.filter((ws: any) =>
-              ws.date && new Date(ws.date) >= programStartDate
-            ).length;
+          if (!isCoachLed) {
+            const programSessions = prog.program.program_sessions?.sort((a: any, b: any) => a.order_index - b.order_index) || [];
 
-            const nextSessionIndex = Math.min(sessionsCompletedCount, programSessions.length - 1);
-            const safeIndex = Math.max(0, nextSessionIndex);
-            const nextSession = programSessions[safeIndex];
+            if (programSessions.length > 0) {
+              // Count how many sessions from this program have been completed
+              const programStartDate = new Date(prog.start_date || new Date());
+              const sessionsCompletedCount = workoutSessions.filter((ws: any) =>
+                ws.date && new Date(ws.date) >= programStartDate
+              ).length;
 
-            if (nextSession) {
-              actions.push({
-                type: 'program',
-                id: prog.id,
-                data: prog,
-                title: nextSession.session?.name || "Prochaine séance",
-                subtitle: `${prog.program.name} • Séance ${safeIndex + 1}`,
-                link: `/client/workout/${prog.id}`
-              });
+              const nextSessionIndex = Math.min(sessionsCompletedCount, programSessions.length - 1);
+              const safeIndex = Math.max(0, nextSessionIndex);
+              const nextSession = programSessions[safeIndex];
+
+              if (nextSession) {
+                actions.push({
+                  type: 'program',
+                  id: prog.id,
+                  data: prog,
+                  title: nextSession.session?.name || "Prochaine séance",
+                  subtitle: `${prog.program.name} • Séance ${safeIndex + 1}`,
+                  link: `/client/workout/${prog.id}`
+                });
+              }
             }
+          } else {
+            // Coach Led: If no regular scheduled session was found (actions is empty),
+            // arguably we could show a "Consult Calendar" card.
           }
         }
       }
@@ -375,13 +386,26 @@ function ClientDashboard() {
 
     // Fallback: No active content
     if (actions.length === 0) {
-      actions.push({
-        type: 'empty',
-        id: 'empty',
-        title: "Aucun programme actif",
-        subtitle: "Demandez un programme à votre coach",
-        link: "/client/workouts"
-      });
+      // Check if we have an active coach-led program
+      const hasCoachLedProgram = clientPrograms.some(p => p.status === 'active' && p.scheduling_type === 'coach_led');
+
+      if (hasCoachLedProgram) {
+        actions.push({
+          type: 'empty',
+          id: 'waiting_schedule',
+          title: "Programmation en attente",
+          subtitle: "Votre coach n'a pas encore planifié vos prochaines séances.",
+          link: "/client/appointments"
+        });
+      } else {
+        actions.push({
+          type: 'empty',
+          id: 'empty',
+          title: "Aucun programme actif",
+          subtitle: "Demandez un programme à votre coach",
+          link: "/client/workouts"
+        });
+      }
     }
 
     return actions;
