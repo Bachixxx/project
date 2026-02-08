@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Trash2, Edit2, GripVertical, Repeat, Clock, Dumbbell, Zap, Save, BookOpen, Download } from 'lucide-react';
+import { Plus, Trash2, Edit2, GripVertical, Repeat, Clock, Dumbbell, Zap, Save, BookOpen } from 'lucide-react';
 import { ResponsiveModal } from './ResponsiveModal';
 import {
     DndContext,
@@ -166,6 +166,7 @@ export function BlockManager({
 }: BlockManagerProps) {
     const [activeId, setActiveId] = useState<string | null>(null);
     const [editingBlock, setEditingBlock] = useState<SessionBlock | null>(null);
+    const [editingExercise, setEditingExercise] = useState<{ exercise: SessionExercise, blockId: string | null } | null>(null);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showLibraryModal, setShowLibraryModal] = useState(false);
     const { user } = useAuth();
@@ -211,13 +212,13 @@ export function BlockManager({
     const handleImportBlock = (template: SessionBlock) => {
         const newBlock: SessionBlock = {
             ...template,
-            id: `block-${Date.now()}`, // New ID
+            id: `block-${Date.now()}`,
             order_index: blocks.length,
-            is_template: false, // It's an instance now
+            is_template: false,
             exercises: template.exercises.map(ex => ({
                 ...ex,
-                id: `ex-${Date.now()}-${Math.random()}`, // New Exercise IDs
-                group_id: `block-${Date.now()}` // Will be mapped correctly on save
+                id: `ex-${Date.now()}-${Math.random()}`,
+                group_id: `block-${Date.now()}`
             }))
         };
         onBlocksChange([...blocks, newBlock]);
@@ -229,7 +230,6 @@ export function BlockManager({
         if (!window.confirm(`Voulez-vous enregistrer le bloc "${block.name}" comme modèle ?`)) return;
 
         try {
-            // 1. Create Template Group
             const { data: groupData, error: groupError } = await supabase
                 .from('exercise_groups')
                 .insert([{
@@ -246,7 +246,6 @@ export function BlockManager({
 
             if (groupError) throw groupError;
 
-            // 2. Add Exercises
             if (block.exercises.length > 0) {
                 const exercisesPayload = block.exercises.map((ex, idx) => ({
                     group_id: groupData.id,
@@ -255,7 +254,8 @@ export function BlockManager({
                     reps: ex.reps,
                     weight: ex.weight,
                     rest_time: ex.rest_time,
-                    order_index: idx
+                    order_index: idx,
+                    calories: ex.calories // Added missing field
                 }));
 
                 const { error: exError } = await supabase
@@ -266,9 +266,9 @@ export function BlockManager({
             }
 
             alert('Modèle enregistré avec succès !');
-        } catch (err) {
+        } catch (err: any) {
             console.error('Error saving template:', err);
-            alert('Erreur lors de l\'enregistrement du modèle.');
+            alert(`Erreur lors de l'enregistrement du modèle: ${err.message || 'Erreur inconnue'}`);
         }
     };
 
@@ -286,6 +286,47 @@ export function BlockManager({
             onStandaloneExercisesChange([...standaloneExercises, ...freedExercises]);
         }
         onBlocksChange(blocks.filter(b => b.id !== blockId));
+    };
+
+    const handleUpdateExercise = (updatedExercise: SessionExercise) => {
+        if (!editingExercise) return;
+
+        if (editingExercise.blockId) {
+            // Update inside a block
+            const updatedBlocks = blocks.map(b => {
+                if (b.id === editingExercise.blockId) {
+                    return {
+                        ...b,
+                        exercises: b.exercises.map(ex => ex.id === updatedExercise.id ? updatedExercise : ex)
+                    };
+                }
+                return b;
+            });
+            onBlocksChange(updatedBlocks);
+        } else {
+            // Update standalone
+            const updatedStandalone = standaloneExercises.map(ex => ex.id === updatedExercise.id ? updatedExercise : ex);
+            onStandaloneExercisesChange(updatedStandalone);
+        }
+        setEditingExercise(null);
+    };
+
+    const handleDeleteExercise = (exerciseId: string, blockId: string | null) => {
+        if (blockId) {
+            const updatedBlocks = blocks.map(b => {
+                if (b.id === blockId) {
+                    return {
+                        ...b,
+                        exercises: b.exercises.filter(ex => ex.id !== exerciseId)
+                    };
+                }
+                return b;
+            });
+            onBlocksChange(updatedBlocks);
+        } else {
+            const updatedStandalone = standaloneExercises.filter(ex => ex.id !== exerciseId);
+            onStandaloneExercisesChange(updatedStandalone);
+        }
     };
 
     return (
@@ -344,14 +385,25 @@ export function BlockManager({
                                                 </div>
                                             ) : (
                                                 block.exercises.map((ex, idx) => (
-                                                    <div key={ex.id || idx} className="p-3 bg-black/20 rounded-lg flex justify-between items-center text-sm text-gray-300 border border-white/5">
+                                                    <div key={ex.id || idx} className="p-3 bg-black/20 rounded-lg flex justify-between items-center text-sm text-gray-300 border border-white/5 group/ex">
                                                         <div className="flex items-center gap-3">
                                                             {/* TODO: Drag Handle for exercises */}
                                                             <span>{ex.exercise.name}</span>
                                                         </div>
                                                         <div className="flex items-center gap-4">
-                                                            <span className="text-xs text-gray-500">{ex.sets} x {ex.reps}</span>
-                                                            {/* TODO: Delete exercise button */}
+                                                            <div className="flex items-center gap-2 text-xs text-gray-500">
+                                                                <span>{ex.sets} x {ex.reps}</span>
+                                                                {ex.weight > 0 && <span>• {ex.weight}kg</span>}
+                                                            </div>
+                                                            <div className="flex gap-1 opacity-0 group-hover/ex:opacity-100 transition-opacity">
+                                                                <button
+                                                                    onClick={() => setEditingExercise({ exercise: ex, blockId: block.id })}
+                                                                    className="p-1.5 text-blue-400 hover:bg-blue-500/10 rounded transition-colors"
+                                                                >
+                                                                    <Edit2 className="w-3.5 h-3.5" />
+                                                                </button>
+                                                                {/* Using existing delete flow but reusing handler for consistency if we wanted */}
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 ))
@@ -396,15 +448,20 @@ export function BlockManager({
                                         </div>
                                     </div>
                                 </div>
-                                <button
-                                    onClick={() => {
-                                        const newExercises = standaloneExercises.filter(e => e.id !== ex.id);
-                                        onStandaloneExercisesChange(newExercises);
-                                    }}
-                                    className="p-2 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
-                                >
-                                    <Trash2 className="w-4 h-4" />
-                                </button>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => setEditingExercise({ exercise: ex, blockId: null })}
+                                        className="p-2 text-gray-500 hover:text-white hover:bg-white/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                                    >
+                                        <Edit2 className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                        onClick={() => handleDeleteExercise(ex.id, null)}
+                                        className="p-2 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                </div>
                             </div>
                         ))}
                     </div>
@@ -449,6 +506,14 @@ export function BlockManager({
                 <BlockLibraryModal
                     onClose={() => setShowLibraryModal(false)}
                     onSelect={handleImportBlock}
+                />
+            )}
+
+            {editingExercise && (
+                <ExerciseEditModal
+                    exercise={editingExercise.exercise}
+                    onClose={() => setEditingExercise(null)}
+                    onSave={handleUpdateExercise}
                 />
             )}
         </div>
@@ -546,6 +611,128 @@ function BlockModal({ block, onClose, onSave }: any) {
                 <div className="flex justify-end gap-4 pt-4">
                     <button type="button" onClick={onClose} className="text-gray-400 hover:text-white transition-colors">Annuler</button>
                     <button type="submit" className="primary-button">{block ? 'Sauvegarder' : 'Ajouter le bloc'}</button>
+                </div>
+            </form>
+        </ResponsiveModal>
+    );
+}
+
+function ExerciseEditModal({ exercise, onClose, onSave }: { exercise: SessionExercise, onClose: () => void, onSave: (ex: SessionExercise) => void }) {
+    const [sets, setSets] = useState(exercise.sets);
+    const [reps, setReps] = useState(exercise.reps);
+    const [weight, setWeight] = useState(exercise.weight || 0);
+    const [restTime, setRestTime] = useState(exercise.rest_time || 60);
+    const [durationSeconds, setDurationSeconds] = useState(exercise.duration_seconds || 0);
+    const [distanceMeters, setDistanceMeters] = useState(exercise.distance_meters || 0);
+    const [calories, setCalories] = useState(exercise.calories || 0);
+    const [instructions, setInstructions] = useState(exercise.instructions || '');
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        onSave({
+            ...exercise,
+            sets,
+            reps,
+            weight,
+            rest_time: restTime,
+            duration_seconds: durationSeconds,
+            distance_meters: distanceMeters,
+            calories,
+            instructions
+        });
+    };
+
+    return (
+        <ResponsiveModal isOpen={true} onClose={onClose} title={`Modifier ${exercise.exercise.name}`}>
+            <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">Séries</label>
+                        <input
+                            type="number"
+                            min="1"
+                            value={sets}
+                            onChange={(e) => setSets(parseInt(e.target.value) || 0)}
+                            className="input-field"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">Répétitions</label>
+                        <input
+                            type="number"
+                            min="0"
+                            value={reps}
+                            onChange={(e) => setReps(parseInt(e.target.value) || 0)}
+                            className="input-field"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">Poids (kg)</label>
+                        <input
+                            type="number"
+                            min="0"
+                            step="0.5"
+                            value={weight}
+                            onChange={(e) => setWeight(parseFloat(e.target.value) || 0)}
+                            className="input-field"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">Repos (sec)</label>
+                        <input
+                            type="number"
+                            min="0"
+                            step="5"
+                            value={restTime}
+                            onChange={(e) => setRestTime(parseInt(e.target.value) || 0)}
+                            className="input-field"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">Durée (sec)</label>
+                        <input
+                            type="number"
+                            min="0"
+                            value={durationSeconds}
+                            onChange={(e) => setDurationSeconds(parseInt(e.target.value) || 0)}
+                            className="input-field"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">Distance (m)</label>
+                        <input
+                            type="number"
+                            min="0"
+                            value={distanceMeters}
+                            onChange={(e) => setDistanceMeters(parseInt(e.target.value) || 0)}
+                            className="input-field"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">Calories</label>
+                        <input
+                            type="number"
+                            min="0"
+                            value={calories}
+                            onChange={(e) => setCalories(parseInt(e.target.value) || 0)}
+                            className="input-field"
+                        />
+                    </div>
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Instructions</label>
+                    <textarea
+                        value={instructions}
+                        onChange={(e) => setInstructions(e.target.value)}
+                        className="input-field min-h-[80px]"
+                        placeholder="Instructions particulières..."
+                    />
+                </div>
+
+                <div className="flex justify-end gap-4 pt-4">
+                    <button type="button" onClick={onClose} className="text-gray-400 hover:text-white transition-colors">Annuler</button>
+                    <button type="submit" className="primary-button">Valider</button>
                 </div>
             </form>
         </ResponsiveModal>
