@@ -140,7 +140,76 @@ function MultiClientCoaching() {
     }
   };
 
-  // ... (fetchSessionExercises and fetchOrCreateRegistration unchanged)
+  const fetchSessionExercises = async (sessionId: string): Promise<SessionExercise[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('session_exercises')
+        .select(`
+          id,
+          sets,
+          reps,
+          rest_time,
+          instructions,
+          order_index,
+          exercise:exercises (
+            id,
+            name,
+            description,
+            category,
+            equipment
+          )
+        `)
+        .eq('session_id', sessionId)
+        .order('order_index', { ascending: true });
+
+      if (error) throw error;
+
+      // Fix for TS detecting array instead of object for single relation
+      const formattedData = data?.map((item: any) => ({
+        ...item,
+        exercise: Array.isArray(item.exercise) ? item.exercise[0] : item.exercise
+      }));
+
+      return (formattedData as SessionExercise[]) || [];
+    } catch (error) {
+      console.error('Error fetching session exercises:', error);
+      return [];
+    }
+  };
+
+  const fetchOrCreateRegistration = async (scheduledSessionId: string, clientId: string): Promise<SessionRegistration | null> => {
+    try {
+      const { data: existing, error: fetchError } = await supabase
+        .from('session_registrations')
+        .select('id, completed_exercises, notes')
+        .eq('scheduled_session_id', scheduledSessionId)
+        .maybeSingle();
+
+      if (fetchError) throw fetchError;
+
+      if (existing) {
+        return existing;
+      }
+
+      const { data: newReg, error: createError } = await supabase
+        .from('session_registrations')
+        .insert([{
+          scheduled_session_id: scheduledSessionId,
+          client_id: clientId,
+          coach_id: user?.id,
+          completed_exercises: {},
+          notes: '',
+        }])
+        .select('id, completed_exercises, notes')
+        .single();
+
+      if (createError) throw createError;
+      return newReg;
+    } catch (error) {
+      console.error('Error fetching/creating registration:', error);
+      return null;
+    }
+  };
 
   const initiateAddClient = async (client: Client) => {
     // 1. Check for scheduled session today
