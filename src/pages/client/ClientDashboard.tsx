@@ -87,7 +87,10 @@ function ClientDashboard() {
         .eq('client_id', client?.id)
         .eq('status', 'active');
 
-      if (programsError) throw programsError;
+      if (programsError) {
+        console.error('Error fetching client_programs:', JSON.stringify(programsError));
+        throw programsError;
+      }
       const fetchedPrograms = programsData || [];
       setClientPrograms(fetchedPrograms);
 
@@ -106,7 +109,10 @@ function ClientDashboard() {
         .eq('status', 'completed')
         .order('completed_at', { ascending: false });
 
-      if (sessionsError) throw sessionsError;
+      if (sessionsError) {
+        console.error('Error fetching completed sessions:', JSON.stringify(sessionsError));
+        throw sessionsError;
+      }
 
       // Map scheduled_sessions to the format expected by the dashboard
       const sessions = (sessionsData || []).map(s => {
@@ -217,7 +223,10 @@ function ClientDashboard() {
         .order('scheduled_date', { ascending: true })
         .limit(5);
 
-      if (scheduledSessionsError) throw scheduledSessionsError;
+      if (scheduledSessionsError) {
+        console.error('Error fetching scheduled sessions:', JSON.stringify(scheduledSessionsError));
+        throw scheduledSessionsError;
+      }
 
       // Fetch upcoming appointments registrations (Group Sessions or Direct 1-on-1 Appointments)
       const { data: appointmentRegistrations, error: appointmentError } = await supabase
@@ -235,7 +244,10 @@ function ClientDashboard() {
         .eq('client_id', client?.id)
         .eq('status', 'registered'); // Only confirmed registrations
 
-      if (appointmentError) throw appointmentError;
+      if (appointmentError) {
+        console.error('Error fetching appointments:', JSON.stringify(appointmentError));
+        throw appointmentError;
+      }
 
       // Filter appointments that are in the future
       const now = new Date();
@@ -277,6 +289,7 @@ function ClientDashboard() {
 
     } catch (error) {
       console.error('Error fetching client data:', error);
+      console.error('Full error object:', JSON.stringify(error, null, 2));
     } finally {
       setLoading(false);
     }

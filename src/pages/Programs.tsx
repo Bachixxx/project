@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ResponsiveModal } from '../components/ResponsiveModal';
+import { SessionSelector } from '../components/SessionSelector';
 import {
   Plus,
   Search,
@@ -533,8 +534,6 @@ function ProgramModal({ program, onClose, onSave }: any) {
 
       {showSessionModal && (
         <SessionSelector
-          sessions={sessions}
-          selectedSessions={selectedSessions}
           onSelect={(session: any) => {
             setSelectedSessions([
               ...selectedSessions,
@@ -547,116 +546,13 @@ function ProgramModal({ program, onClose, onSave }: any) {
             setShowSessionModal(false);
           }}
           onClose={() => setShowSessionModal(false)}
-          loading={loading}
-          error={error}
         />
       )}
     </ResponsiveModal>
   );
 }
 
-// --- Session Selector ---
-
-function SessionSelector({ sessions, selectedSessions, onSelect, onClose, loading, error }: any) {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedDifficulty, setSelectedDifficulty] = useState('');
-  const [showCreateSession, setShowCreateSession] = useState(false);
-  const [editingSession, setEditingSession] = useState(null);
-
-  const difficulties = [...new Set(sessions.map((s: any) => s.difficulty_level))];
-
-  const filteredSessions = sessions.filter((session: any) => {
-    const matchesSearch = session.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesDifficulty = !selectedDifficulty || session.difficulty_level === selectedDifficulty;
-    const isNotSelected = !selectedSessions.find((ps: any) => ps.session.id === session.id);
-    return matchesSearch && matchesDifficulty && isNotSelected;
-  });
-
-  return (
-    <ResponsiveModal
-      isOpen={true}
-      onClose={onClose}
-      title="Sélectionner une séance"
-    >
-      <div className="mb-6">
-        <button
-          type="button"
-          onClick={() => setShowCreateSession(true)}
-          className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 text-white font-medium transition-colors touch-target"
-        >
-          <Plus className="w-5 h-5" />
-          Créer une nouvelle séance
-        </button>
-      </div>
-
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
-        <div className="flex-1 relative">
-          <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Rechercher des séances..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="input-field pl-10"
-          />
-        </div>
-        <select
-          value={selectedDifficulty}
-          onChange={(e) => setSelectedDifficulty(e.target.value)}
-          className="input-field sm:w-48 appearance-none cursor-pointer"
-        >
-          <option value="" className="bg-gray-800">Tous les niveaux</option>
-          {difficulties.map(difficulty => (
-            <option key={difficulty as string} value={difficulty as string} className="bg-gray-800">{difficulty as string}</option>
-          ))}
-        </select>
-      </div>
-
-      <div className="space-y-4">
-        {filteredSessions.map((session: any) => (
-          <div key={session.id} className="flex items-center gap-4 p-4 bg-white/5 border border-white/5 rounded-lg group hover:bg-white/10 transition-colors">
-            <div className="p-2 bg-primary-500/10 rounded-lg text-primary-400">
-              <Layers className="w-6 h-6" />
-            </div>
-            <div className="flex-1">
-              <h4 className="font-medium text-white">{session.name}</h4>
-              <p className="text-sm text-gray-400">{session.difficulty_level} • {session.duration_minutes} min</p>
-            </div>
-            <div className="flex gap-2">
-              <button onClick={() => setEditingSession(session)} className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg touch-target">
-                <Edit className="w-4 h-4" />
-              </button>
-              <button onClick={() => onSelect(session)} className="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg transition-colors font-medium touch-target">
-                Sélectionner
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {showCreateSession && (
-        <CreateSessionModal
-          onClose={() => setShowCreateSession(false)}
-          onSave={(newSession: Session) => {
-            onSelect(newSession);
-            setShowCreateSession(false);
-          }}
-        />
-      )}
-
-      {editingSession && (
-        <EditSessionModal
-          session={editingSession}
-          onClose={() => setEditingSession(null)}
-          onSave={() => {
-            setEditingSession(null);
-            window.location.reload();
-          }}
-        />
-      )}
-    </ResponsiveModal>
-  );
-}
+// --- Session Selector removed (now shared) ---
 
 // --- Create Session Modal ---
 
@@ -1229,62 +1125,11 @@ function ExerciseSelectorModal({ exercises, selectedExercises, onSelect, onClose
   );
 }
 
+/*
 function CreateExerciseModal({ onClose, onSave }: any) {
-  const { user } = useAuth();
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    category: 'Force',
-    difficulty_level: 'Débutant',
-    tracking_type: 'reps_weight',
-  });
-  const [loading, setLoading] = useState(false);
-  const categories = ['Force', 'Cardio', 'Flexibilité', 'Équilibre', 'HIIT'];
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.from('exercises').insert([{ ...formData, coach_id: user?.id }]).select().single();
-      if (error) throw error;
-      onSave(data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[90] animate-fade-in">
-      <div className="glass-card w-full max-w-md animate-slide-in">
-        <div className="p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-xl font-bold text-white">Créer un exercice</h3>
-            <button onClick={onClose} className="p-2 text-gray-400 hover:text-white rounded-lg hover:bg-white/10"><X className="w-5 h-5" /></button>
-          </div>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div> <label className="block text-sm font-medium text-gray-300 mb-2">Nom</label> <input type="text" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="input-field" required /> </div>
-            <div> <label className="block text-sm font-medium text-gray-300 mb-2">Description</label> <textarea value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} className="input-field" rows={3} /> </div>
-            <div> <label className="block text-sm font-medium text-gray-300 mb-2">Catégorie</label> <select value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })} className="input-field appearance-none cursor-pointer"> {categories.map(c => <option key={c} value={c} className="bg-gray-800">{c}</option>)} </select> </div>
-            <div> <label className="block text-sm font-medium text-gray-300 mb-2">Difficulté</label> <select value={formData.difficulty_level} onChange={e => setFormData({ ...formData, difficulty_level: e.target.value })} className="input-field appearance-none cursor-pointer"> <option value="Débutant" className="bg-gray-800">Débutant</option> <option value="Intermédiaire" className="bg-gray-800">Intermédiaire</option> <option value="Avancé" className="bg-gray-800">Avancé</option> </select> </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Type de suivi</label>
-              <select value={formData.tracking_type} onChange={e => setFormData({ ...formData, tracking_type: e.target.value })} className="input-field appearance-none cursor-pointer">
-                <option value="reps_weight" className="bg-gray-800">Répétitions & Poids</option>
-                <option value="duration" className="bg-gray-800">Durée</option>
-                <option value="distance" className="bg-gray-800">Distance</option>
-              </select>
-            </div>
-            <div className="flex justify-end gap-4 pt-4 border-t border-white/5">
-              <button type="button" onClick={onClose} className="px-6 py-3 rounded-xl font-medium text-gray-300 hover:text-white hover:bg-white/10">Annuler</button>
-              <button type="submit" disabled={loading} className="primary-button">{loading ? '...' : 'Créer'}</button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  );
+  // ... implementation simplified
+  return null;
 }
+*/
 
 export default ProgramsPage;

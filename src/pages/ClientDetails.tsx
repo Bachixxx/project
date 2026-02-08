@@ -92,7 +92,10 @@ function ClientDetails() {
         .eq('id', clientId)
         .single();
 
-      if (clientError) throw clientError;
+      if (clientError) {
+        console.error('Error fetching client details:', JSON.stringify(clientError));
+        throw clientError;
+      }
 
       // Fetch client programs
       const { data: programsData, error: programsError } = await supabase
@@ -114,7 +117,10 @@ function ClientDetails() {
         .eq('client_id', clientId)
         .order('start_date', { ascending: false });
 
-      if (programsError) throw programsError;
+      if (programsError) {
+        console.error('Error fetching client programs:', JSON.stringify(programsError));
+        throw programsError;
+      }
 
       // Fetch scheduled sessions
       const { data: sessionsData, error: sessionsError } = await supabase
@@ -132,7 +138,10 @@ function ClientDetails() {
         .eq('client_id', clientId)
         .order('scheduled_date', { ascending: true });
 
-      if (sessionsError) throw sessionsError;
+      if (sessionsError) {
+        console.error('Error fetching scheduled sessions:', JSON.stringify(sessionsError));
+        throw sessionsError;
+      }
 
       const formattedSessions = (sessionsData || []).map(s => ({
         id: s.id,
@@ -152,6 +161,7 @@ function ClientDetails() {
       setScheduledSessions(formattedSessions);
     } catch (error) {
       console.error('Error fetching client data:', error);
+      console.error('Full error object:', JSON.stringify(error, null, 2));
     } finally {
       setLoading(false);
     }
