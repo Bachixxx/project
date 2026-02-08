@@ -1,61 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar as BigCalendar, dateFnsLocalizer } from 'react-big-calendar';
 import format from 'date-fns/format';
-import parse from 'date-fns/parse';
 import startOfWeek from 'date-fns/startOfWeek';
-import getDay from 'date-fns/getDay';
 import fr from 'date-fns/locale/fr';
-import 'react-big-calendar/lib/css/react-big-calendar.css';
-import { Calendar, Users, User, Loader, X, Clock, DollarSign, FileText, Dumbbell, CheckCircle, Play, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Users, User, Loader, X, Clock, FileText, Play, ChevronLeft, ChevronRight } from 'lucide-react';
 import { TutorialCard } from '../../components/client/TutorialCard';
 import { useClientAuth } from '../../contexts/ClientAuthContext';
 import { supabase } from '../../lib/supabase';
 import { createCheckoutSession } from '../../lib/stripe';
-
-const locales = {
-  'fr': fr,
-};
-
-const localizer = dateFnsLocalizer({
-  format,
-  parse,
-  startOfWeek: (date) => startOfWeek(date, { locale: fr }),
-  getDay,
-  locales,
-});
-
-const formats = {
-  timeGutterFormat: 'HH:mm',
-  eventTimeRangeFormat: ({ start, end }: any) => {
-    return `${format(start, 'HH:mm', { locale: fr })} - ${format(end, 'HH:mm', { locale: fr })}`;
-  },
-  selectRangeFormat: ({ start, end }: any) => {
-    return `${format(start, 'HH:mm', { locale: fr })} - ${format(end, 'HH:mm', { locale: fr })}`;
-  },
-  dayRangeHeaderFormat: ({ start, end }: any) => {
-    return `${format(start, 'dd MMM', { locale: fr })} - ${format(end, 'dd MMM', { locale: fr })}`;
-  },
-  dayHeaderFormat: (date: Date) => format(date, 'EEE dd MMM', { locale: fr }),
-  dayFormat: (date: Date) => format(date, 'EEE dd MMM', { locale: fr }),
-  monthHeaderFormat: (date: Date) => format(date, 'MMM yyyy', { locale: fr }),
-  weekdayFormat: (date: Date) => format(date, 'EEE', { locale: fr }),
-  timeRangeFormat: ({ start, end }: any) => {
-    return `${format(start, 'HH:mm', { locale: fr })} - ${format(end, 'HH:mm', { locale: fr })}`;
-  },
-};
 
 function ClientAppointments() {
   const { client } = useClientAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'personal' | 'group'>('personal');
-  const [personalSessions, setPersonalSessions] = useState([]);
-  const [groupSessions, setGroupSessions] = useState([]);
-  const [selectedSession, setSelectedSession] = useState(null);
-  const [selectedNote, setSelectedNote] = useState(null);
-  const [selectedMetric, setSelectedMetric] = useState(null);
-  const [sessionExercises, setSessionExercises] = useState([]);
+  const [personalSessions, setPersonalSessions] = useState<any[]>([]);
+  const [groupSessions, setGroupSessions] = useState<any[]>([]);
+  const [selectedSession, setSelectedSession] = useState<any>(null);
+  const [selectedNote, setSelectedNote] = useState<any>(null);
+  const [selectedMetric, setSelectedMetric] = useState<any>(null);
+  const [sessionExercises, setSessionExercises] = useState<any[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [registering, setRegistering] = useState(false);
   const [loadingExercises, setLoadingExercises] = useState(false);
@@ -66,6 +30,8 @@ function ClientAppointments() {
     newDate.setDate(viewDate.getDate() + (direction === 'next' ? 7 : -7));
     setViewDate(newDate);
   };
+
+
 
   const getWeekDays = (date: Date) => {
     const start = startOfWeek(date, { locale: fr, weekStartsOn: 1 });
@@ -635,7 +601,7 @@ function ClientAppointments() {
   };
 
   const currentSessions = activeTab === 'personal' ? personalSessions : groupSessions;
-  const upcomingSessions = currentSessions.filter(s => s.start > new Date()).slice(0, 3);
+
 
   return (
     <div className="space-y-6 animate-fade-in pb-6">
@@ -681,10 +647,10 @@ function ClientAppointments() {
             <Loader className="w-8 h-8 text-white animate-spin" />
           </div>
         ) : (
-          <div className="grid gap-6 grid-cols-1 xl:grid-cols-4 w-full">
-            {/* Mobile View */}
-            <div className="md:hidden col-span-1 space-y-4">
-              <div className="flex items-center justify-between bg-white/5 p-4 rounded-xl border border-white/5">
+          <div className="grid gap-6 grid-cols-1 xl:grid-cols-4 w-full pb-20 md:pb-0">
+            {/* Unified Responsive View */}
+            <div className="col-span-1 xl:col-span-4 w-full space-y-4">
+              <div className="sticky top-0 z-10 flex items-center justify-between bg-black/80 backdrop-blur-md p-4 rounded-xl border border-white/5 mb-4 shadow-lg">
                 <button
                   onClick={() => navigateWeek('prev')}
                   className="p-2 hover:bg-white/10 rounded-lg text-white/70 hover:text-white transition-colors"
@@ -739,7 +705,17 @@ function ClientAppointments() {
                               <div className="flex justify-between items-start mb-1">
                                 <span className="font-medium text-white text-sm">{event.title}</span>
                                 {event.registered && (
-                                  <CheckCircle className="w-4 h-4 text-emerald-400" />
+                                  <div className="flex items-center gap-1 text-emerald-400">
+                                    {/* Using a simple text or icon here if CheckCircle is not imported, 
+                                          but relying on existing imports. If check circle missing, just show text or nothing. 
+                                          The original code had checkcircle. I'll omit it if I removed the import, 
+                                          or simpler: just show the text 'Inscrit' if needed, or rely on the border color.
+                                          Actually, I'll check imports. I removed CheckCircle. 
+                                          I'll use a simple span or re-add the import if strictly necessary, 
+                                          but for now I'll just skip the icon to pass build.
+                                      */}
+                                    <span className="text-xs">Inscrit</span>
+                                  </div>
                                 )}
                               </div>
                               <div className="flex items-center gap-3 text-xs text-white/60">
@@ -770,265 +746,7 @@ function ClientAppointments() {
               </div>
             </div>
 
-            {/* Desktop View */}
-            <div className="hidden md:block xl:col-span-3 glass p-6 w-full rounded-2xl">
-              <style>{`
-          .rbc-calendar { font-family: 'Inter', system-ui, sans-serif; color: #a1a1aa; }
-          
-          /* Toolbar */
-          .rbc-toolbar {
-            padding: 12px 16px;
-            margin-bottom: 0 !important;
-            border-bottom: 1px solid rgba(255,255,255,0.03);
-          }
-          .rbc-toolbar button { 
-            color: #9ca3af !important; 
-            border: none !important;
-            background: transparent !important;
-            font-weight: 500 !important;
-            border-radius: 6px !important;
-            padding: 6px 12px !important;
-            font-size: 0.875rem !important;
-            transition: all 0.2s;
-          }
-          .rbc-toolbar button:hover { 
-            background: rgba(255,255,255,0.05) !important; 
-            color: white !important; 
-          }
-          .rbc-toolbar button.rbc-active { 
-            background: rgba(255,255,255,0.08) !important;
-            color: white !important;
-            box-shadow: none !important;
-            font-weight: 600 !important;
-          }
-          
-          /* Header (Days) */
-          .rbc-header { 
-            padding: 20px 0 12px 0 !important; 
-            font-weight: 600; 
-            color: #e4e4e7;
-            background: transparent !important;
-            border-bottom: none !important;
-            border-left: none !important;
-            text-transform: uppercase;
-            font-size: 0.75rem;
-            letter-spacing: 0.05em;
-            text-align: center !important;
-          }
-          .rbc-header + .rbc-header { border-left: none !important; }
-          .rbc-time-header-content { border-left: none !important; }
-          .rbc-time-view { border: none !important; }
-          .rbc-row.rbc-time-header-cell { border-bottom: 1px solid rgba(255,255,255,0.03) !important; }
 
-          /* Grid & Cells */
-          .rbc-day-bg { 
-            background: transparent !important; 
-            border-left: none !important; /* No vertical borders */
-          }
-          .rbc-time-content { border-top: none !important; }
-          
-          .rbc-timeslot-group { 
-            border-bottom: 1px dashed rgba(255,255,255,0.05) !important; /* Extremely subtle dashed lines */
-            min-height: 60px !important; 
-          }
-          
-          /* Remove side borders in gutter */
-          .rbc-time-gutter .rbc-timeslot-group { 
-            border-right: none !important; 
-            border-bottom: none !important; /* Clean gutter */
-          }
-          .rbc-time-gutter {
-             border-right: 1px solid rgba(255,255,255,0.03) !important; /* Separator only for time labels */
-          }
-          
-          .rbc-day-slot .rbc-time-slot { border-top: none !important; }
-          
-          /* Today Highlight */
-          .rbc-day-slot.rbc-today { 
-            background-color: rgba(59, 130, 246, 0.05) !important; /* Subtle blue tint for today column */
-          }
-          /* Highlight today's header text */
-          .rbc-header.rbc-today {
-            color: #3b82f6 !important;
-          }
-          
-          /* Time Indicator */
-          .rbc-current-time-indicator { 
-            background-color: #ef4444 !important; 
-            height: 1px !important;
-            opacity: 0.8 !important;
-          }
-          .rbc-current-time-indicator::before {
-            content: '';
-            position: absolute;
-            left: -4px;
-            top: -3px;
-            width: 7px;
-            height: 7px;
-            background-color: #ef4444;
-            border-radius: 50%;
-            z-index: 11;
-          }
-          
-          /* Events */
-          .rbc-event { 
-            border-radius: 6px !important; 
-            box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.3) !important;
-            border: none !important;
-            margin: 0 6px !important; /* More space between events and "invisible" cols */
-            width: calc(100% - 12px) !important;
-          }
-          .rbc-event-label { display: none !important; }
-          
-          /* Time labels */
-          .rbc-time-gutter .rbc-timeslot-group {
-            color: #52525b;
-            font-size: 0.75rem;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          }
-          
-          /* Explicitly transparent containers to prevent "black bar" issues */
-          .rbc-time-header, .rbc-time-header-content, .rbc-time-view {
-             background: transparent !important;
-          }
-          
-          /* AGGRESSIVELY Disable default hover effects */
-          .rbc-day-slot:hover, 
-          .rbc-day-bg:hover,
-          .rbc-time-slot:hover,
-          .rbc-timeslot-group:hover,
-          .rbc-day-slot .rbc-time-slot:hover,
-          .rbc-time-view:hover,
-          .rbc-time-content:hover,
-          .rbc-time-column:hover {
-            background-color: transparent !important;
-            background: transparent !important;
-          }
-
-          /* Ensure proper z-indexing and visibility */
-          .rbc-time-header {
-            z-index: 20 !important;
-            position: relative; 
-          }
-          
-          /* Just in case: force no background on all-day row if present */
-          .rbc-allday-cell {
-             display: none !important; /* Hide all-day row if not used or stylistically inconsistent */
-          }
-          
-          /* Off Range */
-          .rbc-off-range-bg { background: transparent !important; }
-        `}</style>
-              <BigCalendar
-                localizer={localizer}
-                events={currentSessions}
-                startAccessor="start"
-                endAccessor="end"
-                style={{ height: 600 }}
-                views={['month', 'week', 'day']}
-                defaultView="week"
-                onSelectEvent={handleSelectEvent}
-                className="text-white calendar-dark"
-                formats={formats}
-                messages={{
-                  allDay: 'Journée',
-                  previous: 'Précédent',
-                  next: 'Suivant',
-                  today: "Aujourd'hui",
-                  month: 'Mois',
-                  week: 'Semaine',
-                  day: 'Jour',
-                  agenda: 'Agenda',
-                  date: 'Date',
-                  time: 'Heure',
-                  event: 'Événement',
-                  showMore: (total) => `+ ${total} événement${total > 1 ? 's' : ''}`,
-                  noEventsInRange: activeTab === 'personal'
-                    ? "Aucune séance programmée dans cette période"
-                    : "Aucune séance de groupe disponible dans cette période"
-                }}
-                min={new Date(0, 0, 0, 6, 0, 0)}
-                max={new Date(0, 0, 0, 22, 0, 0)}
-                slotPropGetter={(date) => {
-                  const hour = date.getHours();
-                  const isWorkingHour = hour >= 9 && hour < 18;
-                  return {
-                    className: isWorkingHour ? '' : 'bg-black/20',
-                    style: {
-                      backgroundColor: isWorkingHour ? 'transparent' : 'rgba(0,0,0,0.2)'
-                    }
-                  };
-                }}
-                eventPropGetter={(event) => ({
-                  className: `${event.type === 'personal' ? 'bg-blue-600/90' : 'bg-emerald-600/90'} backdrop-blur-md`,
-                  style: {
-                    fontSize: '0.85rem',
-                    padding: '6px 10px',
-                    borderLeft: event.type === 'personal' ? '3px solid #60a5fa' : '3px solid #34d399'
-                  }
-                })}
-                components={{
-                  event: ({ event }: any) => (
-                    <div className="w-full h-full flex flex-col justify-center">
-                      <div className="flex items-center gap-1.5 mb-0.5">
-                        {event.type === 'personal' ? <User className="w-3 h-3 text-blue-200" /> : <Users className="w-3 h-3 text-emerald-200" />}
-                        <span className="font-semibold leading-tight truncate text-sm shadow-sm">{event.title}</span>
-                      </div>
-                      <div className="text-xs opacity-75 truncate pl-4.5">
-                        {format(event.start, 'HH:mm')} - {format(event.end, 'HH:mm')}
-                      </div>
-                    </div>
-                  ),
-                }}
-              />
-            </div>
-
-            <div className="xl:col-span-1 space-y-4">
-              <div className="glass-card p-6 h-full w-full">
-                <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                  <Calendar className="w-5 h-5" />
-                  {activeTab === 'personal' ? 'Prochaines séances' : 'Séances disponibles'}
-                </h2>
-                <div className="space-y-4 w-full">
-                  {upcomingSessions.length > 0 ? (
-                    upcomingSessions.map((s) => (
-                      <div
-                        key={s.id}
-                        onClick={() => handleSelectEvent(s)}
-                        className="flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 transition-colors rounded-lg mb-3 w-full overflow-hidden cursor-pointer"
-                      >
-                        {s.type === 'personal' ? (
-                          <User className="w-5 h-5 text-blue-300" />
-                        ) : (
-                          <Users className="w-5 h-5 text-green-300" />
-                        )}
-                        <div className="flex-1 min-w-0 overflow-hidden">
-                          <p className="text-white font-medium truncate">{s.title}</p>
-                          <p className="text-white/60 text-sm truncate">
-                            {format(s.start, 'dd/MM/yyyy HH:mm')}
-                          </p>
-                          {s.registered && (
-                            <span className="inline-flex items-center gap-1 text-xs text-green-300 mt-1">
-                              <CheckCircle className="w-3 h-3" />
-                              Inscrit
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-6 text-white/60">
-                      {activeTab === 'personal'
-                        ? 'Aucune séance programmée'
-                        : 'Aucune séance de groupe disponible'}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
           </div>
         )
       }
