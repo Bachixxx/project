@@ -23,7 +23,44 @@ interface ScheduledSession {
   };
 }
 
-// ... (other interfaces unchanged)
+interface SessionExercise {
+  id: string;
+  sets: number;
+  reps: number;
+  rest_time: number;
+  instructions: string;
+  order_index: number;
+  exercise: {
+    id: string;
+    name: string;
+    description: string;
+    category: string;
+    equipment: string[];
+  };
+}
+
+interface SessionRegistration {
+  id: string;
+  completed_exercises: Record<string, {
+    sets: Array<{
+      reps: number;
+      weight: number;
+      completed: boolean;
+    }>;
+  }>;
+  notes: string;
+}
+
+interface ClientPanel {
+  id: string;
+  client: Client;
+  scheduledSession: ScheduledSession | null;
+  exercises: SessionExercise[];
+  registration: SessionRegistration | null;
+  isExpanded: boolean;
+  currentExerciseId: string | null;
+  restTimer: number | null;
+}
 
 function MultiClientCoaching() {
   const { user } = useAuth();
@@ -141,7 +178,7 @@ function MultiClientCoaching() {
             coach_id: user?.id,
             session_id: sessionData.session.id,
             scheduled_date: new Date().toISOString(),
-            status: 'in_progress',
+            status: 'scheduled',
             item_type: 'session'
           })
           .select(`
@@ -191,7 +228,7 @@ function MultiClientCoaching() {
             coach_id: user?.id,
             session_id: freeSession.id,
             scheduled_date: new Date().toISOString(),
-            status: 'in_progress'
+            status: 'scheduled'
           })
           .select(`
                 id,
