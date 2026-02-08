@@ -65,7 +65,8 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
   const [loading, setLoading] = useState(false);
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [existingSessions, setExistingSessions] = useState<ExistingSession[]>([]);
-  const [sessionMode, setSessionMode] = useState<'new' | 'existing' | null>(null);
+  const [activeProgramSessions, setActiveProgramSessions] = useState<any[]>([]);
+  const [sessionMode, setSessionMode] = useState<'new' | 'existing' | 'program' | null>(null);
   const [selectedSessionId, setSelectedSessionId] = useState<string>('');
   const [step, setStep] = useState(0);
   const [workoutItems, setWorkoutItems] = useState<WorkoutItem[]>([]);
@@ -100,6 +101,9 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
   useEffect(() => {
     fetchExercises();
     fetchExistingSessions();
+    if (clientId) {
+      fetchActiveProgramSessions();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -142,6 +146,214 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
       setExistingSessions(data || []);
     } catch (error) {
       console.error('Error fetching sessions:', error);
+    }
+  };
+
+  const fetchActiveProgramSessions = async () => {
+    try {
+      // 1. Get active program for client
+      const { data: programData, error: programError } = await supabase
+        .from('client_programs')
+        .select(`
+          program:programs (
+            id,
+            name,
+            program_sessions (
+              id,
+              order_index,
+              session:sessions (
+                id,
+                name,
+                description,
+                duration_minutes
+              )
+            )
+          )
+        `)
+        .eq('client_id', clientId)
+        .eq('status', 'active')
+        .single();
+
+      if (programError && programError.code !== 'PGRST116') { // Ignore no rows found
+        console.error('Error fetching active program:', programError);
+      }
+
+      const program = Array.isArray(programData?.program) ? programData.program[0] : programData?.program;
+
+      if (program?.program_sessions) {
+        // Sort by order_index
+        const sessions = program.program_sessions.sort((a: any, b: any) => a.order_index - b.order_index);
+        setActiveProgramSessions(sessions);
+      }
+    } catch (error) {
+      console.error('Error fetching program sessions:', error);
+    }
+  };
+
+  const handleSelectProgramSession = async (programSession: any) => {
+    try {
+      setLoading(true);
+      const sessionId = programSession.session.id;
+
+      // Fetch full session details including exercises
+      const { data: sessionData, error: sessionError } = await supabase
+        .from('sessions')
+        .select(`
+          id,
+          name,
+          description,
+          duration_minutes,
+          session_exercises (
+            id,
+            exercise_id,
+            sets,
+            reps,
+            weight,
+            rest_time,
+            order_index,
+            group_id,
+            tracking_type,
+            duration_seconds,
+            distance_meters,
+            calories,
+            exercise:exercises (
+              id,
+              name,
+              category,
+              tracking_type,
+               track_reps,
+               track_weight,
+               track_duration,
+               track_distance,
+               track_calories
+            )
+          )
+        `)
+        .eq('id', sessionId)
+        .single();
+
+      if (sessionError) throw sessionError;
+
+      // Populate form data
+      setFormData(prev => ({
+        ...prev,
+        name: sessionData.name, // Use original name or maybe "Copy of..."? User can edit.
+        description: sessionData.description || '',
+        duration_minutes: sessionData.duration_minutes || 60
+      }));
+
+      // Populate workout items
+      const newWorkoutItems: WorkoutItem[] = [];
+      const sessionExercises = sessionData.session_exercises || [];
+
+      // Sort by order_index
+      sessionExercises.sort((a: any, b: any) => a.order_index - b.order_index);
+
+      // We need to handle groups vs standalone exercises if existing logic supports it.
+      // For simplicity, let's treat them as flat or grouped if group_id exists.
+      // NOTE: Current logic in this file supports groups via `ExerciseGroup`.
+      // We need to reconstruct groups.
+
+      const groupMap = new Map<string, ExerciseGroup>();
+      // Helper to convert DB exercise to SelectedExercise
+      const toSelectedExercise = (se: any): SelectedExercise => ({
+        exercise_id: se.exercise_id,
+        sets: se.sets,
+        reps: se.reps,
+        weight: se.weight,
+        rest_time: se.rest_time,
+        tracking_type: se.exercise?.tracking_type || se.tracking_type, // Fallback
+        duration_seconds: se.duration_seconds,
+        distance_meters: se.distance_meters,
+        calories: se.calories
+      });
+
+      for (const se of sessionExercises) {
+        if (se.group_id) {
+          // It's part of a group. 
+          // We need to fetch group details? OR we can just create a group on the fly.
+          // Ideally we should have fetched `exercise_groups` too if we want group names/reps.
+          // However, let's look at `session_exercises` query above. We didn't join `exercise_groups`.
+
+          // Fetch group details if not already fetched? Or just group primarily by ID.
+          let group = groupMap.get(se.group_id);
+          if (!group) {
+            // We need to fetch the group info. 
+            // To avoid N+1, let's do a separate fetch for groups of this session before this loop?
+            // Or lazily fetch.
+            // Given complexity, let's fetch groups first.
+          }
+        }
+      }
+
+      // RE-PLAN: Let's fetch groups for the session first to get names/repetitions.
+      const { data: groupsData } = await supabase
+        .from('exercise_groups')
+        .select('*')
+        .eq('session_id', sessionId);
+
+      const groupsById = new Map(groupsData?.map(g => [g.id, g]));
+
+      sessionExercises.forEach((se: any) => {
+        if (se.group_id && groupsById.has(se.group_id)) {
+          const groupInfo = groupsById.get(se.group_id);
+          let groupItem = newWorkoutItems.find(item => item.type === 'group' && item.data.id === se.group_id);
+
+          if (!groupItem) {
+            // Create group item
+            groupItem = {
+              type: 'group',
+              data: {
+                id: se.group_id, // Keep ID for grouping, but maybe change for new session?
+                // Actually, we should probably generate a NEW temp ID to detach from DB group
+                // But wait, we are iterating. If we use DB ID, we can group.
+                // We will replace ID with temp ID at the end to ensure it's treated as new.
+                name: groupInfo.name,
+                repetitions: groupInfo.repetitions,
+                exercises: []
+              }
+            };
+            newWorkoutItems.push(groupItem);
+          }
+
+          (groupItem.data as ExerciseGroup).exercises.push(toSelectedExercise(se));
+
+        } else {
+          // Standalone
+          newWorkoutItems.push({
+            type: 'exercise',
+            data: toSelectedExercise(se)
+          });
+        }
+      });
+
+      // Clean up Group IDs to be temp IDs
+      newWorkoutItems.forEach(item => {
+        if (item.type === 'group') {
+          item.data.id = `temp-${Date.now()}-${Math.random()}`;
+          // Also clear group_id in exercises inside just in case
+          item.data.exercises.forEach(ex => delete ex.group_id);
+        }
+      });
+
+      setWorkoutItems(newWorkoutItems);
+
+      // Use 'new' mode logic for editing/saving, but prefilled
+      // Actually, if we use 'new' mode, the "Step 0" logic checks for mode.
+      // We added 'program' mode.
+      // If we keep 'program' mode, we need to handle it in rendering Steps 2 & 3.
+      // OR we just switch mode to 'new' after selection?
+      // If we switch to 'new', the UI will think we are creating a fresh one.
+      // That's actually perfect. We are creating a NEW session based on a template.
+      setSessionMode('new');
+      setStep(1); // Go to Details step (Step 1 for 'new' mode is Details)
+      // Wait, 'new' Step 1 is Details. 'existing' Step 1 is Selection.
+      // If I set 'new', I go to Step 1 (Details). Perfect.
+
+    } catch (error) {
+      console.error('Error loading program session:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -547,7 +759,7 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
         <div className="p-6 border-b border-white/10">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold text-white">
-              {step === 0 ? 'Planifier une séance' : sessionMode === 'existing' ? 'Utiliser une séance existante' : 'Créer et planifier une séance'}
+              {step === 0 ? 'Planifier une séance' : sessionMode === 'existing' ? 'Utiliser une séance existante' : sessionMode === 'program' ? 'Choisir une séance du programme' : 'Créer et planifier une séance'}
             </h2>
             <button
               onClick={onClose}
@@ -598,7 +810,8 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
           onSubmit={handleSubmit}
           onKeyDown={(e) => {
             const finalStep = sessionMode === 'existing' ? 1 : 3;
-            if (e.key === 'Enter' && step !== finalStep) {
+            // If program mode (Step 1 is selection), we don't have a "Next" per se, we click items.
+            if (e.key === 'Enter' && step !== finalStep && sessionMode !== 'program') {
               e.preventDefault();
               if (canGoNext()) {
                 setStep(step + 1);
@@ -613,7 +826,27 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
                 <p className="text-center text-gray-400 mb-6">
                   Choisissez comment vous souhaitez créer cette séance
                 </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className={`grid grid-cols-1 ${activeProgramSessions.length > 0 ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-4`}>
+                  {activeProgramSessions.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSessionMode('program');
+                        setStep(1);
+                      }}
+                      className="p-6 rounded-2xl border-2 border-white/10 hover:border-purple-500 hover:bg-purple-500/10 transition-all group bg-white/5"
+                    >
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="w-16 h-16 rounded-full bg-purple-500/20 group-hover:bg-purple-500/30 flex items-center justify-center transition-colors">
+                          <Layers className="w-8 h-8 text-purple-400" />
+                        </div>
+                        <h3 className="text-lg font-bold text-white">Programme Actif</h3>
+                        <p className="text-sm text-gray-400 text-center">
+                          Utiliser une séance du programme en cours ({activeProgramSessions.length} disp.)
+                        </p>
+                      </div>
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => {
@@ -655,6 +888,54 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
                     </div>
                   </button>
                 </div>
+              </div>
+            )}
+
+
+
+            {step === 1 && sessionMode === 'program' && (
+              <div className="space-y-4 max-w-2xl mx-auto">
+                <div className="text-center mb-6">
+                  <h3 className="text-xl font-bold text-white">Sélectionner une séance du programme</h3>
+                  <p className="text-gray-400">Ces séances servent de modèles et resteront disponibles.</p>
+                </div>
+                <div className="space-y-3">
+                  {activeProgramSessions.map((ps) => (
+                    <button
+                      key={ps.id}
+                      type="button"
+                      onClick={() => handleSelectProgramSession(ps)}
+                      className="w-full p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-purple-500/10 hover:border-purple-500 transition-all text-left flex items-center justify-between group"
+                    >
+                      <div>
+                        <span className="text-xs font-bold text-purple-400 uppercase tracking-wider mb-1 block">
+                          Séance {ps.order_index + 1}
+                        </span>
+                        <h4 className="font-bold text-white text-lg group-hover:text-purple-300 transition-colors">
+                          {ps.session?.name || 'Sans titre'}
+                        </h4>
+                        {ps.session?.description && (
+                          <p className="text-sm text-gray-400 mt-1">{ps.session.description}</p>
+                        )}
+                      </div>
+                      <div className="flex items-center text-gray-500 gap-2">
+                        <Clock className="w-4 h-4" />
+                        <span>{ps.session?.duration_minutes || 60} min</span>
+                        <ChevronRight className="w-5 h-5 text-gray-600 group-hover:text-purple-400 ml-2" />
+                      </div>
+                    </button>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStep(0);
+                    setSessionMode(null);
+                  }}
+                  className="w-full py-3 text-gray-400 hover:text-white transition-colors mt-4"
+                >
+                  Retour
+                </button>
               </div>
             )}
 
