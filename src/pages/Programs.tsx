@@ -11,8 +11,10 @@ import {
   AlertTriangle,
   Layers,
   Clock,
-  Target
+  Target,
+  Users
 } from 'lucide-react';
+import { ShareProgramModal } from '../components/ShareProgramModal';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { t } from '../i18n';
@@ -28,9 +30,16 @@ interface SessionExercise {
     name: string;
     category: string;
     difficulty_level: string;
+    // New Tracking Booleans
+    track_weight: boolean;
+    track_reps: boolean;
+    track_duration: boolean;
+    track_distance: boolean;
+    track_calories: boolean;
   };
   sets: number;
   reps: number;
+  weight: number;
   rest_time: number;
   order_index: number;
   instructions?: string;
@@ -38,6 +47,7 @@ interface SessionExercise {
   tracking_type?: 'reps_weight' | 'duration' | 'distance';
   duration_seconds?: number;
   distance_meters?: number;
+  calories?: number;
 }
 
 interface ExerciseGroup {
@@ -83,6 +93,8 @@ function ProgramsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProgram, setSelectedProgram] = useState<Program | null>(null);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [programToShare, setProgramToShare] = useState<Program | null>(null);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -232,6 +244,16 @@ function ProgramsPage() {
                     <Edit className="w-4 h-4" />
                   </button>
                   <button
+                    onClick={() => {
+                      setProgramToShare(program);
+                      setIsShareModalOpen(true);
+                    }}
+                    className="p-2 text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors"
+                    title="Partager le programme"
+                  >
+                    <Users className="w-4 h-4" />
+                  </button>
+                  <button
                     onClick={async () => {
                       if (window.confirm('Êtes-vous sûr de vouloir supprimer ce programme ?')) {
                         try {
@@ -334,6 +356,19 @@ function ProgramsPage() {
                 alert('Vous avez atteint la limite de 5 programmes pour le plan gratuit. Passez à la version Pro pour créer des programmes illimités.');
               }
             }
+          }}
+        />
+      )}
+
+      {isShareModalOpen && programToShare && (
+        <ShareProgramModal
+          program={programToShare}
+          onClose={() => {
+            setIsShareModalOpen(false);
+            setProgramToShare(null);
+          }}
+          onSuccess={() => {
+            alert('Programme partagé avec succès !');
           }}
         />
       )}
@@ -586,7 +621,7 @@ function CreateSessionModal({ onClose, onSave }: any) {
     try {
       const { data, error } = await supabase
         .from('exercises')
-        .select('id, name, category, difficulty_level, tracking_type')
+        .select('id, name, category, difficulty_level, tracking_type, track_weight, track_reps, track_duration, track_distance, track_calories')
         .or(`coach_id.eq.${user?.id},coach_id.is.null`)
         .order('name');
 
@@ -635,6 +670,7 @@ function CreateSessionModal({ onClose, onSave }: any) {
       exercise,
       sets: 3,
       reps: 10,
+      weight: 0,
       rest_time: 60,
       order_index: selectedExercises.length,
       instructions: '',
@@ -647,6 +683,7 @@ function CreateSessionModal({ onClose, onSave }: any) {
       })(),
       duration_seconds: 60,
       distance_meters: 1000,
+      calories: 0,
     };
 
     if (activeGroupId) {
@@ -1008,7 +1045,24 @@ function EditSessionModal({ session, onClose, onSave }: any) {
           exercises={exercises}
           selectedExercises={selectedExercises}
           onSelect={(ex: any) => {
-            setSelectedExercises([...selectedExercises, { id: `temp-${Date.now()}`, exercise: ex, sets: 3, reps: 10, rest_time: 60, order_index: selectedExercises.length }]);
+            setSelectedExercises([...selectedExercises, {
+              id: `temp-${Date.now()}`,
+              exercise: {
+                ...ex,
+                // Ensure booleans are present (defaulting if DB returns null/undefined)
+                track_weight: ex.track_weight ?? (ex.tracking_type === 'reps_weight'),
+                track_reps: ex.track_reps ?? (ex.tracking_type === 'reps_weight'),
+                track_duration: ex.track_duration ?? (ex.tracking_type === 'duration'),
+                track_distance: ex.track_distance ?? (ex.tracking_type === 'distance'),
+                track_calories: ex.track_calories ?? false,
+              },
+              sets: 3,
+              reps: 10,
+              weight: 0,
+              rest_time: 60,
+              order_index: selectedExercises.length,
+              calories: 0
+            }]);
             setShowExerciseSelector(false);
           }}
           onClose={() => setShowExerciseSelector(false)}
@@ -1125,11 +1179,169 @@ function ExerciseSelectorModal({ exercises, selectedExercises, onSelect, onClose
   );
 }
 
-/*
 function CreateExerciseModal({ onClose, onSave }: any) {
-  // ... implementation simplified
-  return null;
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    category: 'Mouvements Polyarticulaires',
+    difficulty_level: 'Débutant',
+    tracking_type: 'reps_weight',
+    track_weight: true,
+    track_reps: true,
+    track_duration: false,
+    track_distance: false,
+    track_calories: false,
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Logic for tracking_type to maintain backward compatibility
+      let tracking_type = 'reps_weight';
+      if (formData.track_duration && !formData.track_weight && !formData.track_reps) tracking_type = 'duration';
+      if (formData.track_distance) tracking_type = 'distance';
+
+      const { data, error } = await supabase
+        .from('exercises')
+        .insert([{
+          ...formData,
+          tracking_type,
+          coach_id: user?.id,
+          is_public: false
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+      onSave(data);
+      onClose();
+    } catch (error) {
+      console.error('Error creating exercise:', error);
+      setError('Erreur lors de la création de l\'exercice');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const footer = (
+    <div className="flex justify-end gap-3 w-full">
+      <button
+        type="button"
+        onClick={onClose}
+        className="px-4 py-2 text-gray-300 hover:text-white transition-colors"
+      >
+        Annuler
+      </button>
+      <button
+        type="submit"
+        onClick={handleSubmit}
+        disabled={loading}
+        className="primary-button"
+      >
+        {loading ? 'Création...' : 'Créer'}
+      </button>
+    </div>
+  );
+
+  return (
+    <ResponsiveModal
+      isOpen={true}
+      onClose={onClose}
+      title="Créer un nouvel exercice"
+      footer={footer}
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {error && <div className="text-red-400 text-sm mb-4">{error}</div>}
+
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-1">Nom</label>
+          <input
+            type="text"
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            className="input-field w-full"
+            required
+            autoFocus
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">Catégorie</label>
+            <select
+              value={formData.category}
+              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+              className="input-field w-full appearance-none cursor-pointer"
+            >
+              <option value="Mouvements Polyarticulaires">Polyarticulaire</option>
+              <option value="Isolation / Musculation">Isolation</option>
+              <option value="Cardio / Endurance">Cardio</option>
+              <option value="Mobilité / Échauffement">Mobilité</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">Difficulté</label>
+            <select
+              value={formData.difficulty_level}
+              onChange={(e) => setFormData({ ...formData, difficulty_level: e.target.value })}
+              className="input-field w-full appearance-none cursor-pointer"
+            >
+              <option value="Débutant">Débutant</option>
+              <option value="Intermédiaire">Intermédiaire</option>
+              <option value="Avancé">Avancé</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">Métriques à suivre</label>
+          <div className="grid grid-cols-2 gap-2">
+            <label className="flex items-center gap-2 p-3 bg-white/5 rounded-lg cursor-pointer hover:bg-white/10">
+              <input
+                type="checkbox"
+                checked={formData.track_weight}
+                onChange={(e) => setFormData({ ...formData, track_weight: e.target.checked })}
+                className="rounded border-gray-600 bg-gray-700 text-primary-500"
+              />
+              <span className="text-sm text-gray-300">Poids</span>
+            </label>
+            <label className="flex items-center gap-2 p-3 bg-white/5 rounded-lg cursor-pointer hover:bg-white/10">
+              <input
+                type="checkbox"
+                checked={formData.track_reps}
+                onChange={(e) => setFormData({ ...formData, track_reps: e.target.checked })}
+                className="rounded border-gray-600 bg-gray-700 text-primary-500"
+              />
+              <span className="text-sm text-gray-300">Répétitions</span>
+            </label>
+            <label className="flex items-center gap-2 p-3 bg-white/5 rounded-lg cursor-pointer hover:bg-white/10">
+              <input
+                type="checkbox"
+                checked={formData.track_duration}
+                onChange={(e) => setFormData({ ...formData, track_duration: e.target.checked })}
+                className="rounded border-gray-600 bg-gray-700 text-primary-500"
+              />
+              <span className="text-sm text-gray-300">Durée</span>
+            </label>
+            <label className="flex items-center gap-2 p-3 bg-white/5 rounded-lg cursor-pointer hover:bg-white/10">
+              <input
+                type="checkbox"
+                checked={formData.track_distance}
+                onChange={(e) => setFormData({ ...formData, track_distance: e.target.checked })}
+                className="rounded border-gray-600 bg-gray-700 text-primary-500"
+              />
+              <span className="text-sm text-gray-300">Distance</span>
+            </label>
+          </div>
+        </div>
+      </form>
+    </ResponsiveModal>
+  );
 }
-*/
 
 export default ProgramsPage;
