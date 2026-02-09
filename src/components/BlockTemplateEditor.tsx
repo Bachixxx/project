@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     DndContext,
     closestCenter,
@@ -15,9 +15,11 @@ import {
     verticalListSortingStrategy
 } from '@dnd-kit/sortable';
 import { Plus, Dumbbell, Clock, Zap, Repeat, Save } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 import { ResponsiveModal } from './ResponsiveModal';
 import { SessionBlock, SessionExercise } from './BlockManager';
-import { ExercisePicker } from './ExercisePicker';
+import { ExerciseSelector } from './library/ExerciseSelector';
 import { ExerciseEditModal } from './ExerciseEditModal';
 import { SortableExercise } from './SortableExercise';
 
@@ -28,14 +30,19 @@ interface BlockTemplateEditorProps {
 }
 
 export function BlockTemplateEditor({ template, onClose, onSave }: BlockTemplateEditorProps) {
+    const { user } = useAuth();
     // Block Metadata State
     const [name, setName] = useState(template?.name || '');
     const [type, setType] = useState<'regular' | 'circuit' | 'amrap' | 'interval'>(template?.type || 'regular');
     const [rounds, setRounds] = useState(template?.rounds || 3);
-    const [durationMinutes, setDurationMinutes] = useState(template?.duration_seconds ? template.duration_seconds / 60 : 10);
+    const [durationMinutes, setDurationMinutes] = useState(template?.duration_seconds ? Math.floor(template.duration_seconds / 60) : 10);
 
     // Exercises State
     const [exercises, setExercises] = useState<SessionExercise[]>(template?.exercises || []);
+
+    // Library Exercises State
+    const [libraryExercises, setLibraryExercises] = useState<any[]>([]);
+    const [loadingLibrary, setLoadingLibrary] = useState(false);
 
     // UI State
     const [activeId, setActiveId] = useState<string | null>(null);
@@ -46,6 +53,30 @@ export function BlockTemplateEditor({ template, onClose, onSave }: BlockTemplate
         useSensor(PointerSensor),
         useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
     );
+
+    useEffect(() => {
+        if (showExercisePicker && libraryExercises.length === 0) {
+            fetchLibraryExercises();
+        }
+    }, [showExercisePicker]);
+
+    const fetchLibraryExercises = async () => {
+        try {
+            setLoadingLibrary(true);
+            const { data, error } = await supabase
+                .from('exercises')
+                .select('*')
+                .or(`coach_id.eq.${user?.id},coach_id.is.null`)
+                .order('name');
+
+            if (error) throw error;
+            setLibraryExercises(data || []);
+        } catch (error) {
+            console.error('Error fetching exercises:', error);
+        } finally {
+            setLoadingLibrary(false);
+        }
+    };
 
     const handleDragStart = (event: any) => {
         setActiveId(event.active.id);
@@ -65,15 +96,15 @@ export function BlockTemplateEditor({ template, onClose, onSave }: BlockTemplate
         setActiveId(null);
     };
 
-    const handleAddExercises = (newExercises: any[]) => {
-        const formatExercises: SessionExercise[] = newExercises.map(ex => ({
+    const handleAddExercises = (selectedExercises: any[]) => {
+        const formatExercises: SessionExercise[] = selectedExercises.map(ex => ({
             id: `ex-${Date.now()}-${Math.random()}`,
             exercise: ex,
             sets: 3,
             reps: 10,
             weight: 0,
             rest_time: 60,
-            order_index: exercises.length, // Will be updated on save/reorder
+            order_index: exercises.length,
             group_id: template?.id || null
         }));
         setExercises([...exercises, ...formatExercises]);
@@ -95,7 +126,7 @@ export function BlockTemplateEditor({ template, onClose, onSave }: BlockTemplate
             name: name || (type === 'circuit' ? 'Circuit' : type === 'amrap' ? 'AMRAP' : type === 'interval' ? 'Intervalle' : 'Bloc Standard'),
             type,
             rounds: type === 'circuit' ? rounds : 1,
-            duration_seconds: (type === 'amrap' || type === 'interval') ? durationMinutes * 60 : null,
+            duration_seconds: (type === 'amrap' || type === 'interval') ? durationMinutes * 60 : undefined,
             order_index: 0,
             exercises: exercises.map((ex, idx) => ({ ...ex, order_index: idx })),
             is_template: true
@@ -132,8 +163,8 @@ export function BlockTemplateEditor({ template, onClose, onSave }: BlockTemplate
                                 key={t.id}
                                 onClick={() => setType(t.id as any)}
                                 className={`p-2 rounded-lg border text-center transition-all flex flex-col items-center gap-1 ${type === t.id
-                                        ? `border-${t.color}-500 bg-${t.color}-500/10 text-white`
-                                        : 'border-white/5 bg-white/5 text-gray-400 hover:bg-white/10'
+                                    ? `border-${t.color}-500 bg-${t.color}-500/10 text-white`
+                                    : 'border-white/5 bg-white/5 text-gray-400 hover:bg-white/10'
                                     }`}
                             >
                                 <t.icon className="w-4 h-4" />
@@ -222,10 +253,11 @@ export function BlockTemplateEditor({ template, onClose, onSave }: BlockTemplate
             </div>
 
             {showExercisePicker && (
-                <ExercisePicker
-                    isOpen={true}
+                <ExerciseSelector
+                    exercises={libraryExercises}
                     onClose={() => setShowExercisePicker(false)}
                     onSelect={handleAddExercises}
+                    loading={loadingLibrary}
                     multiSelect={true}
                 />
             )}
