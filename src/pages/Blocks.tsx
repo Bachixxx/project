@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { SessionBlock } from '../components/BlockManager';
 import { BlockModal } from '../components/BlockModal';
+import { BlockTemplateEditor } from '../components/BlockTemplateEditor';
 
 export default function Blocks() {
     const [templates, setTemplates] = useState<SessionBlock[]>([]);
@@ -83,11 +84,13 @@ export default function Blocks() {
         }
     };
 
-    const handleSaveBlock = async (blockData: any) => {
+    const handleSaveBlock = async (blockData: SessionBlock) => {
         try {
-            if (editingTemplate) {
-                // Update existing template
-                const { error } = await supabase
+            let groupId = editingTemplate?.id;
+
+            if (groupId) {
+                // Update existing template metadata
+                const { error: groupError } = await supabase
                     .from('exercise_groups')
                     .update({
                         name: blockData.name,
@@ -95,12 +98,21 @@ export default function Blocks() {
                         repetitions: blockData.rounds,
                         duration_seconds: blockData.duration_seconds
                     })
-                    .eq('id', editingTemplate.id);
+                    .eq('id', groupId);
 
-                if (error) throw error;
+                if (groupError) throw groupError;
+
+                // Delete existing exercises for this template (simplest strategy)
+                const { error: deleteError } = await supabase
+                    .from('session_exercises')
+                    .delete()
+                    .eq('group_id', groupId);
+
+                if (deleteError) throw deleteError;
+
             } else {
                 // Create new template
-                const { error } = await supabase
+                const { data: newGroup, error: groupError } = await supabase
                     .from('exercise_groups')
                     .insert([{
                         name: blockData.name,
@@ -114,7 +126,31 @@ export default function Blocks() {
                     .select()
                     .single();
 
-                if (error) throw error;
+                if (groupError) throw groupError;
+                groupId = newGroup.id;
+            }
+
+            // Insert exercises
+            if (blockData.exercises.length > 0 && groupId) {
+                const exercisesPayload = blockData.exercises.map((ex, idx) => ({
+                    group_id: groupId,
+                    exercise_id: ex.exercise.id,
+                    sets: ex.sets,
+                    reps: ex.reps,
+                    weight: ex.weight,
+                    rest_time: ex.rest_time,
+                    order_index: idx,
+                    calories: ex.calories,
+                    duration_seconds: ex.duration_seconds,
+                    distance_meters: ex.distance_meters,
+                    instructions: ex.instructions
+                }));
+
+                const { error: exError } = await supabase
+                    .from('session_exercises')
+                    .insert(exercisesPayload);
+
+                if (exError) throw exError;
             }
 
             fetchTemplates();
@@ -269,8 +305,8 @@ export default function Blocks() {
             </div>
 
             {isModalOpen && (
-                <BlockModal
-                    block={editingTemplate}
+                <BlockTemplateEditor
+                    template={editingTemplate}
                     onClose={() => {
                         setIsModalOpen(false);
                         setEditingTemplate(null);
