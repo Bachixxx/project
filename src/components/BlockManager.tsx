@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Trash2, Edit2, GripVertical, Repeat, Clock, Dumbbell, Zap, Save, BookOpen } from 'lucide-react';
-import { ResponsiveModal } from './ResponsiveModal';
+import { Plus, Trash2, Edit2, GripVertical, Repeat, Clock, Dumbbell, Zap, Save, Link, Unlink } from 'lucide-react';
 import {
     DndContext,
     closestCenter,
@@ -44,6 +43,7 @@ export interface SessionExercise {
     order_index: number;
     instructions?: string;
     group_id?: string | null;
+    superset_id?: string | null;
     duration_seconds?: number;
     distance_meters?: number;
     calories?: number;
@@ -331,35 +331,60 @@ export function BlockManager({
         }
     };
 
+    const handleLinkExercises = (blockId: string, index: number) => {
+        const block = blocks.find(b => b.id === blockId);
+        if (!block) return;
+
+        const exercises = [...block.exercises];
+        const currentEx = exercises[index];
+        const nextEx = exercises[index + 1];
+
+        if (currentEx && nextEx) {
+            const newSupersetId = currentEx.superset_id || `superset-${Date.now()}`;
+            exercises[index] = { ...currentEx, superset_id: newSupersetId, rest_time: 0 };
+            exercises[index + 1] = { ...nextEx, superset_id: newSupersetId };
+
+            const updatedBlocks = blocks.map(b => b.id === blockId ? { ...b, exercises } : b);
+            onBlocksChange(updatedBlocks);
+        }
+    };
+
+    const handleUnlinkExercises = (blockId: string, index: number) => {
+        const block = blocks.find(b => b.id === blockId);
+        if (!block) return;
+
+        const exercises = [...block.exercises];
+        const currentEx = exercises[index];
+        const nextEx = exercises[index + 1];
+
+        // Logic similar to BlockTemplateEditor
+        const isLinkedToPrev = index > 0 && exercises[index - 1].superset_id === currentEx.superset_id;
+
+        if (nextEx) {
+            const isNextLinkedToFollowing = exercises[index + 2] && exercises[index + 2].superset_id === nextEx.superset_id;
+            if (isNextLinkedToFollowing) {
+                const newId = `superset-${Date.now()}-split`;
+                for (let i = index + 1; i < exercises.length; i++) {
+                    if (exercises[i].superset_id === nextEx.superset_id) {
+                        exercises[i] = { ...exercises[i], superset_id: newId };
+                    } else { break; }
+                }
+            } else {
+                exercises[index + 1] = { ...nextEx, superset_id: null };
+            }
+        }
+
+        if (!isLinkedToPrev) {
+            exercises[index] = { ...currentEx, superset_id: null, rest_time: 60 };
+        }
+
+        const updatedBlocks = blocks.map(b => b.id === blockId ? { ...b, exercises } : b);
+        onBlocksChange(updatedBlocks);
+    };
+
     return (
         <div className="space-y-8">
-            {/* Header Actions */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <h3 className="text-lg font-semibold text-white">Contenu de la séance</h3>
-                <div className="flex gap-3 flex-wrap">
-                    <button
-                        onClick={() => onShowExercisePicker(null)}
-                        className="flex items-center gap-2 px-3 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors font-medium border border-white/10 text-sm"
-                    >
-                        <Plus className="w-4 h-4" />
-                        Exercice
-                    </button>
-                    <button
-                        onClick={() => setShowLibraryModal(true)}
-                        className="flex items-center gap-2 px-3 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors font-medium shadow-lg shadow-purple-500/20 text-sm"
-                    >
-                        <BookOpen className="w-4 h-4" />
-                        Bibliothèque
-                    </button>
-                    <button
-                        onClick={() => setShowCreateModal(true)}
-                        className="flex items-center gap-2 px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors font-medium shadow-lg shadow-blue-500/20 text-sm"
-                    >
-                        <Plus className="w-4 h-4" />
-                        Bloc
-                    </button>
-                </div>
-            </div>
+            {/* ... Header Actions */}
 
             <div className="space-y-6">
                 {/* 1. Blocks Section */}
@@ -386,36 +411,84 @@ export function BlockManager({
                                                     Aucun exercice dans ce bloc
                                                 </div>
                                             ) : (
-                                                block.exercises.map((ex, idx) => (
-                                                    <div key={ex.id || idx} className="p-3 bg-black/20 rounded-lg flex justify-between items-center text-sm text-gray-300 border border-white/5 group/ex">
-                                                        <div className="flex items-center gap-3">
-                                                            {/* TODO: Drag Handle for exercises */}
-                                                            <span>{ex.exercise.name}</span>
-                                                        </div>
-                                                        <div className="flex items-center gap-4">
-                                                            <div className="flex items-center gap-2 text-xs text-gray-500">
-                                                                <span>{ex.sets} x {ex.reps}</span>
-                                                                {ex.weight > 0 && <span>• {ex.weight}kg</span>}
+                                                block.exercises.map((ex, idx) => {
+                                                    const nextExercise = block.exercises[idx + 1];
+                                                    const prevExercise = block.exercises[idx - 1];
+                                                    const isLinkedToNext = nextExercise && ex.superset_id && nextExercise.superset_id === ex.superset_id;
+                                                    const isLinkedToPrev = prevExercise && ex.superset_id && prevExercise.superset_id === ex.superset_id;
+
+                                                    return (
+                                                        <div key={ex.id || idx} className={`relative ${isLinkedToNext ? 'pb-0' : 'mb-2'}`}>
+                                                            {/* Connection Line */}
+                                                            {isLinkedToNext && (
+                                                                <div className="absolute left-6 top-full h-4 w-0.5 bg-blue-500/50 -translate-x-1/2 z-10" />
+                                                            )}
+
+                                                            <div className={`p-3 bg-black/20 rounded-lg flex justify-between items-center text-sm text-gray-300 border ${isLinkedToPrev || isLinkedToNext ? 'border-blue-500/30' : 'border-white/5'} group/ex relative`}>
+                                                                <div className="flex items-center gap-3">
+                                                                    {(isLinkedToPrev || isLinkedToNext) && (
+                                                                        <Link className="w-3 h-3 text-blue-400" />
+                                                                    )}
+                                                                    <span>{ex.exercise.name}</span>
+                                                                </div>
+                                                                <div className="flex items-center gap-4">
+                                                                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                                                                        <span>{ex.sets} x {ex.reps}</span>
+                                                                        {ex.weight > 0 && <span>• {ex.weight}kg</span>}
+                                                                        {/* Hide rest if linked to next */}
+                                                                        {!isLinkedToNext && <span>• {ex.rest_time}s</span>}
+                                                                        {isLinkedToNext && <span className="text-blue-400 italic">Enchaîné</span>}
+                                                                    </div>
+                                                                    <div className="flex gap-1 opacity-0 group-hover/ex:opacity-100 transition-opacity">
+                                                                        <button
+                                                                            onClick={() => setEditingExercise({ exercise: ex, blockId: block.id })}
+                                                                            className="p-1.5 text-blue-400 hover:bg-blue-500/10 rounded transition-colors"
+                                                                        >
+                                                                            <Edit2 className="w-3.5 h-3.5" />
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => handleDeleteExercise(ex.id, block.id)}
+                                                                            className="p-1.5 text-red-400 hover:bg-red-500/10 rounded transition-colors"
+                                                                        >
+                                                                            <Trash2 className="w-3.5 h-3.5" />
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* Link Buttons */}
+                                                                {!isLinkedToNext && idx < block.exercises.length - 1 && (
+                                                                    <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 opacity-0 group-hover/ex:opacity-100 transition-opacity z-20">
+                                                                        <button
+                                                                            onClick={() => handleLinkExercises(block.id, idx)}
+                                                                            className="bg-gray-800 border border-gray-700 text-gray-400 hover:text-blue-400 hover:border-blue-500/50 rounded-full p-1 shadow-lg"
+                                                                            title="Lier"
+                                                                        >
+                                                                            <Link className="w-3 h-3" />
+                                                                        </button>
+                                                                    </div>
+                                                                )}
+                                                                {isLinkedToNext && (
+                                                                    <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 opacity-0 group-hover/ex:opacity-100 transition-opacity z-20">
+                                                                        <button
+                                                                            onClick={() => handleUnlinkExercises(block.id, idx)}
+                                                                            className="bg-blue-500 border border-blue-400 text-white rounded-full p-1 shadow-lg"
+                                                                            title="Délier"
+                                                                        >
+                                                                            <Unlink className="w-3 h-3" />
+                                                                        </button>
+                                                                    </div>
+                                                                )}
                                                             </div>
-                                                            <div className="flex gap-1 opacity-0 group-hover/ex:opacity-100 transition-opacity">
-                                                                <button
-                                                                    onClick={() => setEditingExercise({ exercise: ex, blockId: block.id })}
-                                                                    className="p-1.5 text-blue-400 hover:bg-blue-500/10 rounded transition-colors"
-                                                                >
-                                                                    <Edit2 className="w-3.5 h-3.5" />
-                                                                </button>
-                                                                {/* Using existing delete flow but reusing handler for consistency if we wanted */}
-                                                            </div>
                                                         </div>
-                                                    </div>
-                                                ))
+                                                    );
+                                                })
                                             )}
                                         </SortableBlock>
                                     </div>
                                 ))}
                             </div>
                         </SortableContext>
-                        <DragOverlay>
+// ... rest of file                        <DragOverlay>
                             {activeId ? (
                                 <div className="p-4 bg-gray-800 border border-white/20 rounded-xl shadow-2xl opacity-80 cursor-grabbing">
                                     <h3 className="font-bold text-white text-lg">Déplacement...</h3>

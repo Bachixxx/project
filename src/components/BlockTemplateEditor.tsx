@@ -224,14 +224,67 @@ export function BlockTemplateEditor({ template, onClose, onSave }: BlockTemplate
                     >
                         <SortableContext items={exercises.map(e => e.id)} strategy={verticalListSortingStrategy}>
                             <div className="space-y-2">
-                                {exercises.map((ex) => (
-                                    <SortableExercise
-                                        key={ex.id}
-                                        exercise={ex}
-                                        onChange={handleUpdateExercise}
-                                        onRemove={handleRemoveExercise}
-                                    />
-                                ))}
+                                {exercises.map((ex, idx) => {
+                                    const nextExercise = exercises[idx + 1];
+                                    const prevExercise = exercises[idx - 1];
+
+                                    const isLinkedToNext = nextExercise && ex.superset_id && nextExercise.superset_id === ex.superset_id;
+                                    const isLinkedToPrev = prevExercise && ex.superset_id && prevExercise.superset_id === ex.superset_id;
+
+                                    return (
+                                        <SortableExercise
+                                            key={ex.id}
+                                            exercise={ex}
+                                            isLinkedToNext={!!isLinkedToNext}
+                                            isLinkedToPrev={!!isLinkedToPrev}
+                                            onLink={() => {
+                                                if (nextExercise) {
+                                                    const newSupersetId = ex.superset_id || `superset-${Date.now()}`;
+                                                    const updatedExercises = [...exercises];
+                                                    updatedExercises[idx] = { ...ex, superset_id: newSupersetId, rest_time: 0 };
+                                                    updatedExercises[idx + 1] = { ...nextExercise, superset_id: newSupersetId };
+                                                    setExercises(updatedExercises);
+                                                }
+                                            }}
+                                            onUnlink={() => {
+                                                const updatedExercises = [...exercises];
+                                                // Check for next exercise and if it continues a chain
+                                                const nextEx = updatedExercises[idx + 1];
+                                                if (nextEx) {
+                                                    // Check if B is linked to C
+                                                    const isNextLinkedToFollowing = exercises[idx + 2] && exercises[idx + 2].superset_id === nextEx.superset_id;
+
+                                                    if (isNextLinkedToFollowing) {
+                                                        // B starts a new superset
+                                                        const newIdForRemaining = `superset-${Date.now()}-split`;
+                                                        // Recursively update B and all following with same ID to new ID
+                                                        for (let i = idx + 1; i < updatedExercises.length; i++) {
+                                                            if (updatedExercises[i].superset_id === nextEx.superset_id) {
+                                                                updatedExercises[i] = { ...updatedExercises[i], superset_id: newIdForRemaining };
+                                                            } else {
+                                                                break;
+                                                            }
+                                                        }
+                                                    } else {
+                                                        // B becomes standalone
+                                                        updatedExercises[idx + 1] = { ...nextEx, superset_id: null };
+                                                    }
+                                                }
+
+                                                // Handle Current Exercise
+                                                // If it is NOT linked to previous, it becomes standalone
+                                                if (!isLinkedToPrev) {
+                                                    updatedExercises[idx] = { ...ex, superset_id: null, rest_time: 60 };
+                                                }
+                                                // If it IS linked to previous, it stays part of the previous group (no change to current)
+
+                                                setExercises(updatedExercises);
+                                            }}
+                                            onChange={handleUpdateExercise}
+                                            onRemove={handleRemoveExercise}
+                                        />
+                                    );
+                                })}
                                 {exercises.length === 0 && (
                                     <div className="text-center py-8 border border-dashed border-white/10 rounded-lg text-gray-500 text-sm">
                                         Aucun exercice ajouté
