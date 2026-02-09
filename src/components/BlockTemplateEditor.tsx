@@ -142,7 +142,12 @@ export function BlockTemplateEditor({ template, onClose, onSave }: BlockTemplate
     ];
 
     return (
-        <ResponsiveModal isOpen={true} onClose={onClose} title={template ? "Modifier le modèle" : "Créer un modèle"}>
+        <ResponsiveModal
+            isOpen={true}
+            onClose={onClose}
+            title={template ? "Modifier le modèle" : "Créer un modèle"}
+            maxWidth="max-w-4xl" // Wider modal for inline editing
+        >
             <div className="space-y-6 max-h-[80vh] overflow-y-auto pr-2 custom-scrollbar">
                 {/* Block Metadata */}
                 <div className="grid grid-cols-2 gap-4">
