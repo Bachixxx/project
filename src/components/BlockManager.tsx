@@ -22,6 +22,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { BlockLibraryModal } from './BlockLibraryModal';
 import { BlockModal } from './BlockModal';
 import { ExerciseEditModal } from './ExerciseEditModal';
+import { SortableExercise } from './SortableExercise';
+import { useDroppable } from '@dnd-kit/core';
 
 export interface SessionExercise {
     id: string;
@@ -69,7 +71,7 @@ interface BlockManagerProps {
 }
 
 // --- Sortable Item Wrapper ---
-function SortableBlock({ block, children, onRemove, onEdit, onAddExercise, onSaveTemplate }: any) {
+function SortableBlock({ block, children, onRemove, onEdit, onAddExercise, onSaveTemplate, onExplode, isDraggingOverlay }: any) {
     const {
         attributes,
         listeners,
@@ -78,6 +80,11 @@ function SortableBlock({ block, children, onRemove, onEdit, onAddExercise, onSav
         transition,
         isDragging
     } = useSortable({ id: block.id, data: { type: 'Block', block } });
+
+    const { setNodeRef: setDroppableRef } = useDroppable({
+        id: block.id,
+        data: { type: 'Container', block }
+    });
 
     const style = {
         transform: CSS.Translate.toString(transform),
@@ -140,6 +147,10 @@ function SortableBlock({ block, children, onRemove, onEdit, onAddExercise, onSav
                     <button onClick={onSaveTemplate} className="p-2 text-purple-400 hover:bg-purple-500/10 rounded-lg transition-colors" title="Enregistrer comme modèle">
                         <Save className="w-4 h-4" />
                     </button>
+                    {/* Explode Button */}
+                    <button onClick={onExplode} className="p-2 text-orange-400 hover:bg-orange-500/10 rounded-lg transition-colors" title="Dégrouper (vers exercices libres)">
+                        <Unlink className="w-4 h-4" />
+                    </button>
                     <button onClick={() => onAddExercise(block.id)} className="p-2 text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors" title="Ajouter un exercice">
                         <Plus className="w-4 h-4" />
                     </button>
@@ -151,8 +162,11 @@ function SortableBlock({ block, children, onRemove, onEdit, onAddExercise, onSav
                     </button>
                 </div>
             </div>
-            <div className="p-4 space-y-2">
-                {children}
+            {/* Exercises Container - Droppable */}
+            <div ref={setDroppableRef} className="p-4 space-y-2 min-h-[60px]">
+                <SortableContext items={block.exercises.map((e: any) => e.id)} strategy={verticalListSortingStrategy}>
+                    {children}
+                </SortableContext>
             </div>
         </div>
     );
@@ -172,6 +186,10 @@ export function BlockManager({
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showLibraryModal, setShowLibraryModal] = useState(false);
     const { user } = useAuth();
+    const { setNodeRef: setStandaloneRef } = useDroppable({
+        id: 'standalone-container',
+        data: { type: 'Container', id: 'standalone-container' }
+    });
 
     const sensors = useSensors(
         useSensor(PointerSensor),
@@ -182,19 +200,141 @@ export function BlockManager({
         setActiveId(event.active.id);
     };
 
-    const handleDragEnd = (event: any) => {
+    const findContainer = (id: string, currentBlocks: SessionBlock[], currentStandalone: SessionExercise[]) => {
+        if (id === 'standalone-container') return 'standalone-container';
+        if (currentBlocks.find(b => b.id === id)) return id; // It's a block
+
+        // Find which block contains the exercise
+        const block = currentBlocks.find(b => b.exercises.find(e => e.id === id));
+        if (block) return block.id;
+
+        // Check standalone
+        if (currentStandalone.find(e => e.id === id)) return 'standalone-container';
+
+        return null;
+    };
+
+    const handleDragOver = (event: any) => {
         const { active, over } = event;
+        if (!over || !active) return;
 
-        if (active.id !== over?.id) {
-            const oldIndex = blocks.findIndex((b) => b.id === active.id);
-            const newIndex = blocks.findIndex((b) => b.id === over.id);
+        const activeType = active.data.current?.type;
+        const overType = over.data.current?.type;
 
-            if (oldIndex !== -1 && newIndex !== -1) {
-                onBlocksChange(arrayMove(blocks, oldIndex, newIndex));
-            }
+        // Only handle Exercise drag here (Block drag is simple reorder in DragEnd)
+        if (activeType !== 'Exercise') return;
+
+        const activeId = active.id;
+        const overId = over.id;
+
+        // Find containers
+        const activeContainer = findContainer(activeId, blocks, standaloneExercises);
+        const overContainer = findContainer(overId, blocks, standaloneExercises);
+
+        if (!activeContainer || !overContainer || activeContainer === overContainer) {
+            return;
         }
 
+        // Moving between containers
+        // Scenario 1: Block -> Standalone
+        if (activeContainer !== 'standalone-container' && overContainer === 'standalone-container') {
+            const sourceBlock = blocks.find(b => b.id === activeContainer);
+            const exercise = sourceBlock?.exercises.find(e => e.id === activeId);
+
+            if (sourceBlock && exercise) {
+                const newExercise = { ...exercise, group_id: null, superset_id: null }; // Reset links when moving to standalone? Or keep? Reset for now to avoid complexity
+
+                const newBlocks = blocks.map(b =>
+                    b.id === activeContainer
+                        ? { ...b, exercises: b.exercises.filter(e => e.id !== activeId) }
+                        : b
+                );
+                onBlocksChange(newBlocks);
+                onStandaloneExercisesChange([...standaloneExercises, newExercise]);
+            }
+        }
+        // Scenario 2: Standalone -> Block
+        else if (activeContainer === 'standalone-container' && overContainer !== 'standalone-container') {
+            const exercise = standaloneExercises.find(e => e.id === activeId);
+            if (exercise) {
+                const newExercise = { ...exercise, group_id: overContainer };
+
+                const newBlocks = blocks.map(b =>
+                    b.id === overContainer
+                        ? { ...b, exercises: [...b.exercises, newExercise] }
+                        : b
+                );
+                onBlocksChange(newBlocks);
+                onStandaloneExercisesChange(standaloneExercises.filter(e => e.id !== activeId));
+            }
+        }
+        // Scenario 3: Block -> Block
+        else if (activeContainer !== 'standalone-container' && overContainer !== 'standalone-container') {
+            const sourceBlock = blocks.find(b => b.id === activeContainer);
+            const exercise = sourceBlock?.exercises.find(e => e.id === activeId);
+
+            if (sourceBlock && exercise) {
+                const newExercise = { ...exercise, group_id: overContainer, superset_id: null };
+
+                const newBlocks = blocks.map(b => {
+                    if (b.id === activeContainer) {
+                        return { ...b, exercises: b.exercises.filter(e => e.id !== activeId) };
+                    }
+                    if (b.id === overContainer) {
+                        return { ...b, exercises: [...b.exercises, newExercise] };
+                    }
+                    return b;
+                });
+                onBlocksChange(newBlocks);
+            }
+        }
+    };
+
+    const handleDragEnd = (event: any) => {
+        const { active, over } = event;
+        const activeType = active.data.current?.type;
+
         setActiveId(null);
+
+        if (!over) return;
+
+        if (activeType === 'Block') {
+            if (active.id !== over.id) {
+                const oldIndex = blocks.findIndex((b) => b.id === active.id);
+                const newIndex = blocks.findIndex((b) => b.id === over.id);
+                if (oldIndex !== -1 && newIndex !== -1) {
+                    onBlocksChange(arrayMove(blocks, oldIndex, newIndex));
+                }
+            }
+        } else if (activeType === 'Exercise') {
+            const activeContainer = findContainer(active.id, blocks, standaloneExercises);
+            const overContainer = findContainer(over.id, blocks, standaloneExercises);
+
+            if (activeContainer && overContainer && activeContainer === overContainer) {
+                // Reorder within same container
+                if (activeContainer === 'standalone-container') {
+                    const oldIndex = standaloneExercises.findIndex(e => e.id === active.id);
+                    const newIndex = standaloneExercises.findIndex(e => e.id === over.id);
+                    if (oldIndex !== -1 && newIndex !== -1) {
+                        onStandaloneExercisesChange(arrayMove(standaloneExercises, oldIndex, newIndex));
+                    }
+                } else {
+                    // Inside a block
+                    const blockIndex = blocks.findIndex(b => b.id === activeContainer);
+                    if (blockIndex !== -1) {
+                        const block = blocks[blockIndex];
+                        const oldIndex = block.exercises.findIndex(e => e.id === active.id);
+                        const newIndex = block.exercises.findIndex(e => e.id === over.id);
+                        if (oldIndex !== -1 && newIndex !== -1) {
+                            const newExercises = arrayMove(block.exercises, oldIndex, newIndex);
+                            const newBlocks = [...blocks];
+                            newBlocks[blockIndex] = { ...block, exercises: newExercises };
+                            onBlocksChange(newBlocks);
+                        }
+                    }
+                }
+            }
+        }
     };
 
     const handleCreateBlock = (blockData: any) => {
@@ -283,8 +423,19 @@ export function BlockManager({
 
     const handleDeleteBlock = (blockId: string) => {
         const block = blocks.find(b => b.id === blockId);
+        // Ask confirmation? No, direct delete as per previous logic.
+        // But if we delete, we lose exercises unless we use "Explode"
+        onBlocksChange(blocks.filter(b => b.id !== blockId));
+    };
+
+    const handleExplodeBlock = (blockId: string) => {
+        const block = blocks.find(b => b.id === blockId);
         if (block && block.exercises.length > 0) {
-            const freedExercises = block.exercises.map(ex => ({ ...ex, group_id: null }));
+            const freedExercises = block.exercises.map(ex => ({
+                ...ex,
+                group_id: null
+                // We keep superset_id to allow linking in standalone! 
+            }));
             onStandaloneExercisesChange([...standaloneExercises, ...freedExercises]);
         }
         onBlocksChange(blocks.filter(b => b.id !== blockId));
@@ -331,33 +482,20 @@ export function BlockManager({
         }
     };
 
-    const handleLinkExercises = (blockId: string, index: number) => {
-        const block = blocks.find(b => b.id === blockId);
-        if (!block) return;
+    const handleUnlinkExercises = (blockId: string | null, index: number) => {
+        let exercises: SessionExercise[];
 
-        const exercises = [...block.exercises];
-        const currentEx = exercises[index];
-        const nextEx = exercises[index + 1];
-
-        if (currentEx && nextEx) {
-            const newSupersetId = currentEx.superset_id || `superset-${Date.now()}`;
-            exercises[index] = { ...currentEx, superset_id: newSupersetId, rest_time: 0 };
-            exercises[index + 1] = { ...nextEx, superset_id: newSupersetId };
-
-            const updatedBlocks = blocks.map(b => b.id === blockId ? { ...b, exercises } : b);
-            onBlocksChange(updatedBlocks);
+        if (blockId) {
+            const block = blocks.find(b => b.id === blockId);
+            if (!block) return;
+            exercises = [...block.exercises];
+        } else {
+            exercises = [...standaloneExercises];
         }
-    };
 
-    const handleUnlinkExercises = (blockId: string, index: number) => {
-        const block = blocks.find(b => b.id === blockId);
-        if (!block) return;
-
-        const exercises = [...block.exercises];
         const currentEx = exercises[index];
         const nextEx = exercises[index + 1];
 
-        // Logic similar to BlockTemplateEditor
         const isLinkedToPrev = index > 0 && exercises[index - 1].superset_id === currentEx.superset_id;
 
         if (nextEx) {
@@ -378,8 +516,40 @@ export function BlockManager({
             exercises[index] = { ...currentEx, superset_id: null, rest_time: 60 };
         }
 
-        const updatedBlocks = blocks.map(b => b.id === blockId ? { ...b, exercises } : b);
-        onBlocksChange(updatedBlocks);
+        if (blockId) {
+            const updatedBlocks = blocks.map(b => b.id === blockId ? { ...b, exercises } : b);
+            onBlocksChange(updatedBlocks);
+        } else {
+            onStandaloneExercisesChange(exercises);
+        }
+    };
+
+    const handleLinkExercises = (blockId: string | null, index: number) => {
+        let exercises: SessionExercise[];
+
+        if (blockId) {
+            const block = blocks.find(b => b.id === blockId);
+            if (!block) return;
+            exercises = [...block.exercises];
+        } else {
+            exercises = [...standaloneExercises];
+        }
+
+        const currentEx = exercises[index];
+        const nextEx = exercises[index + 1];
+
+        if (currentEx && nextEx) {
+            const newSupersetId = currentEx.superset_id || `superset-${Date.now()}`;
+            exercises[index] = { ...currentEx, superset_id: newSupersetId, rest_time: 0 };
+            exercises[index + 1] = { ...nextEx, superset_id: newSupersetId };
+
+            if (blockId) {
+                const updatedBlocks = blocks.map(b => b.id === blockId ? { ...b, exercises } : b);
+                onBlocksChange(updatedBlocks);
+            } else {
+                onStandaloneExercisesChange(exercises);
+            }
+        }
     };
 
     return (
@@ -408,28 +578,31 @@ export function BlockManager({
             )}
 
             <div className="space-y-6">
-                {/* 1. Blocks Section */}
-                {blocks.length > 0 && (
+                {(blocks.length > 0 || standaloneExercises.length > 0) ? (
                     <DndContext
                         sensors={sensors}
                         collisionDetection={closestCenter}
                         onDragStart={handleDragStart}
+                        onDragOver={handleDragOver}
                         onDragEnd={handleDragEnd}
                     >
-                        <SortableContext items={blocks.map(b => b.id)} strategy={verticalListSortingStrategy}>
-                            <div className="space-y-4">
-                                {blocks.map((block) => (
-                                    <div key={block.id} className="relative group">
+                        {/* 1. Blocks Section */}
+                        {blocks.length > 0 && (
+                            <SortableContext items={blocks.map(b => b.id)} strategy={verticalListSortingStrategy}>
+                                <div className="space-y-4">
+                                    {blocks.map((block) => (
                                         <SortableBlock
+                                            key={block.id}
                                             block={block}
                                             onRemove={handleDeleteBlock}
                                             onEdit={setEditingBlock}
                                             onAddExercise={onShowExercisePicker}
                                             onSaveTemplate={() => handleSaveTemplate(block)}
+                                            onExplode={() => handleExplodeBlock(block.id)}
                                         >
                                             {block.exercises.length === 0 ? (
-                                                <div className="text-center py-6 border border-dashed border-white/10 rounded-lg text-gray-500 text-xs">
-                                                    Aucun exercice dans ce bloc
+                                                <div className="text-center py-6 border border-dashed border-white/10 rounded-lg text-gray-500 text-xs text-white">
+                                                    Aucun exercice (Glissez-en ici)
                                                 </div>
                                             ) : (
                                                 block.exercises.map((ex, idx) => {
@@ -439,77 +612,75 @@ export function BlockManager({
                                                     const isLinkedToPrev = prevExercise && ex.superset_id && prevExercise.superset_id === ex.superset_id;
 
                                                     return (
-                                                        <div key={ex.id || idx} className={`relative ${isLinkedToNext ? 'pb-0' : 'mb-2'}`}>
-                                                            {/* Connection Line */}
-                                                            {isLinkedToNext && (
-                                                                <div className="absolute left-6 top-full h-4 w-0.5 bg-blue-500/50 -translate-x-1/2 z-10" />
-                                                            )}
-
-                                                            <div className={`p-3 bg-black/20 rounded-lg flex justify-between items-center text-sm text-gray-300 border ${isLinkedToPrev || isLinkedToNext ? 'border-blue-500/30' : 'border-white/5'} group/ex relative`}>
-                                                                <div className="flex items-center gap-3">
-                                                                    {(isLinkedToPrev || isLinkedToNext) && (
-                                                                        <Link className="w-3 h-3 text-blue-400" />
-                                                                    )}
-                                                                    <span>{ex.exercise.name}</span>
-                                                                </div>
-                                                                <div className="flex items-center gap-4">
-                                                                    <div className="flex items-center gap-2 text-xs text-gray-500">
-                                                                        <span>{ex.sets} x {ex.reps}</span>
-                                                                        {ex.weight > 0 && <span>• {ex.weight}kg</span>}
-                                                                        {/* Hide rest if linked to next */}
-                                                                        {!isLinkedToNext && <span>• {ex.rest_time}s</span>}
-                                                                        {isLinkedToNext && <span className="text-blue-400 italic">Enchaîné</span>}
-                                                                    </div>
-                                                                    <div className="flex gap-1 opacity-0 group-hover/ex:opacity-100 transition-opacity">
-                                                                        <button
-                                                                            onClick={() => setEditingExercise({ exercise: ex, blockId: block.id })}
-                                                                            className="p-1.5 text-blue-400 hover:bg-blue-500/10 rounded transition-colors"
-                                                                        >
-                                                                            <Edit2 className="w-3.5 h-3.5" />
-                                                                        </button>
-                                                                        <button
-                                                                            onClick={() => handleDeleteExercise(ex.id, block.id)}
-                                                                            className="p-1.5 text-red-400 hover:bg-red-500/10 rounded transition-colors"
-                                                                        >
-                                                                            <Trash2 className="w-3.5 h-3.5" />
-                                                                        </button>
-                                                                    </div>
-                                                                </div>
-
-                                                                {/* Link Buttons */}
-                                                                {!isLinkedToNext && idx < block.exercises.length - 1 && (
-                                                                    <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 opacity-0 group-hover/ex:opacity-100 transition-opacity z-20">
-                                                                        <button
-                                                                            onClick={() => handleLinkExercises(block.id, idx)}
-                                                                            className="bg-gray-800 border border-gray-700 text-gray-400 hover:text-blue-400 hover:border-blue-500/50 rounded-full p-1 shadow-lg"
-                                                                            title="Lier"
-                                                                        >
-                                                                            <Link className="w-3 h-3" />
-                                                                        </button>
-                                                                    </div>
-                                                                )}
-                                                                {isLinkedToNext && (
-                                                                    <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 opacity-0 group-hover/ex:opacity-100 transition-opacity z-20">
-                                                                        <button
-                                                                            onClick={() => handleUnlinkExercises(block.id, idx)}
-                                                                            className="bg-blue-500 border border-blue-400 text-white rounded-full p-1 shadow-lg"
-                                                                            title="Délier"
-                                                                        >
-                                                                            <Unlink className="w-3 h-3" />
-                                                                        </button>
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        </div>
+                                                        <SortableExercise
+                                                            key={ex.id}
+                                                            exercise={ex}
+                                                            isLinkedToNext={isLinkedToNext}
+                                                            isLinkedToPrev={isLinkedToPrev}
+                                                            onLink={() => handleLinkExercises(block.id, idx)}
+                                                            onUnlink={() => handleUnlinkExercises(block.id, idx)}
+                                                            onChange={(updated) => {
+                                                                const newExs = [...block.exercises];
+                                                                newExs[idx] = updated;
+                                                                const newBlocks = blocks.map(b => b.id === block.id ? { ...b, exercises: newExs } : b);
+                                                                onBlocksChange(newBlocks);
+                                                            }}
+                                                            onRemove={() => handleDeleteExercise(ex.id, block.id)}
+                                                        />
                                                     );
                                                 })
                                             )}
                                         </SortableBlock>
+                                    ))}
+                                </div>
+                            </SortableContext>
+                        )}
+
+                        {/* 2. Standalone Exercises Section */}
+                        <div ref={setStandaloneRef} className={`transition-colors rounded-xl ${blocks.length > 0 ? 'mt-8 p-4 bg-white/5 border border-white/10 min-h-[100px]' : ''}`}>
+                            {(blocks.length > 0) && (
+                                <div className="flex items-center gap-2 mb-4">
+                                    <h4 className="text-sm font-medium text-gray-400 uppercase tracking-wider">Exercices libres</h4>
+                                    <div className="h-px bg-white/10 flex-1" />
+                                </div>
+                            )}
+
+                            <SortableContext items={standaloneExercises.map(e => e.id)} strategy={verticalListSortingStrategy}>
+                                {standaloneExercises.length === 0 && blocks.length > 0 ? (
+                                    <div className="text-center py-8 text-gray-500 text-sm border border-dashed border-white/10 rounded-lg">
+                                        Glissez des exercices ici pour les rendre libres
                                     </div>
-                                ))}
-                            </div>
-                        </SortableContext>
-// ... rest of file                        <DragOverlay>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {standaloneExercises.map((ex, idx) => {
+                                            const nextExercise = standaloneExercises[idx + 1];
+                                            const prevExercise = standaloneExercises[idx - 1];
+                                            const isLinkedToNext = nextExercise && ex.superset_id && nextExercise.superset_id === ex.superset_id;
+                                            const isLinkedToPrev = prevExercise && ex.superset_id && prevExercise.superset_id === ex.superset_id;
+
+                                            return (
+                                                <SortableExercise
+                                                    key={ex.id}
+                                                    exercise={ex}
+                                                    isLinkedToNext={isLinkedToNext}
+                                                    isLinkedToPrev={isLinkedToPrev}
+                                                    onLink={() => handleLinkExercises(null, idx)}
+                                                    onUnlink={() => handleUnlinkExercises(null, idx)}
+                                                    onChange={(updated) => {
+                                                        const newExs = [...standaloneExercises];
+                                                        newExs[idx] = updated;
+                                                        onStandaloneExercisesChange(newExs);
+                                                    }}
+                                                    onRemove={() => handleDeleteExercise(ex.id, null)}
+                                                />
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </SortableContext>
+                        </div>
+
+                        <DragOverlay>
                             {activeId ? (
                                 <div className="p-4 bg-gray-800 border border-white/20 rounded-xl shadow-2xl opacity-80 cursor-grabbing">
                                     <h3 className="font-bold text-white text-lg">Déplacement...</h3>
@@ -517,54 +688,8 @@ export function BlockManager({
                             ) : null}
                         </DragOverlay>
                     </DndContext>
-                )}
-
-                {/* 2. Standalone Exercises Section */}
-                {standaloneExercises.length > 0 && (
-                    <div className="space-y-3">
-                        {blocks.length > 0 && <h4 className="text-sm font-medium text-gray-400 uppercase tracking-wider">Exercices libres</h4>}
-                        {standaloneExercises.map((ex, idx) => (
-                            <div key={ex.id || idx} className="p-4 bg-white/5 border border-white/10 rounded-xl flex justify-between items-center group">
-                                <div className="flex items-center gap-4">
-                                    <div className="p-2 bg-white/5 rounded-lg text-gray-400">
-                                        <Dumbbell className="w-5 h-5" />
-                                    </div>
-                                    <div>
-                                        <h4 className="font-medium text-white">{ex.exercise.name}</h4>
-                                        <div className="flex items-center gap-3 text-xs text-gray-400 mt-1">
-                                            <span>{ex.sets} séries</span>
-                                            <span>•</span>
-                                            <span>{ex.reps} reps</span>
-                                            {ex.weight > 0 && (
-                                                <>
-                                                    <span>•</span>
-                                                    <span>{ex.weight} kg</span>
-                                                </>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="flex gap-2">
-                                    <button
-                                        onClick={() => setEditingExercise({ exercise: ex, blockId: null })}
-                                        className="p-2 text-gray-500 hover:text-white hover:bg-white/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
-                                    >
-                                        <Edit2 className="w-4 h-4" />
-                                    </button>
-                                    <button
-                                        onClick={() => handleDeleteExercise(ex.id, null)}
-                                        className="p-2 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
-
-                {/* Empty State */}
-                {blocks.length === 0 && standaloneExercises.length === 0 && (
+                ) : (
+                    /* Empty State - Only if truly empty */
                     <div className="text-center py-12 border-2 border-dashed border-white/10 rounded-xl">
                         <Dumbbell className="w-12 h-12 text-gray-600 mx-auto mb-4" />
                         <h3 className="text-lg font-medium text-white mb-2">La séance est vide</h3>
@@ -594,31 +719,36 @@ export function BlockManager({
                     </div>
                 )}
             </div>
+    {/* Modals */ }
+{
+    (showCreateModal || editingBlock) && (
+        <BlockModal
+            block={editingBlock}
+            onClose={() => { setShowCreateModal(false); setEditingBlock(null); }}
+            onSave={editingBlock ? handleUpdateBlock : handleCreateBlock}
+        />
+    )
+}
 
-            {/* Modals */}
-            {(showCreateModal || editingBlock) && (
-                <BlockModal
-                    block={editingBlock}
-                    onClose={() => { setShowCreateModal(false); setEditingBlock(null); }}
-                    onSave={editingBlock ? handleUpdateBlock : handleCreateBlock}
-                />
-            )}
+{
+    showLibraryModal && (
+        <BlockLibraryModal
+            onClose={() => setShowLibraryModal(false)}
+            onSelect={handleImportBlock}
+        />
+    )
+}
 
-            {showLibraryModal && (
-                <BlockLibraryModal
-                    onClose={() => setShowLibraryModal(false)}
-                    onSelect={handleImportBlock}
-                />
-            )}
-
-            {editingExercise && (
-                <ExerciseEditModal
-                    exercise={editingExercise.exercise}
-                    onClose={() => setEditingExercise(null)}
-                    onSave={handleUpdateExercise}
-                />
-            )}
-        </div>
+{
+    editingExercise && (
+        <ExerciseEditModal
+            exercise={editingExercise.exercise}
+            onClose={() => setEditingExercise(null)}
+            onSave={handleUpdateExercise}
+        />
+    )
+}
+        </div >
     );
 }
 
