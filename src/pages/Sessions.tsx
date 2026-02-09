@@ -516,7 +516,7 @@ function SessionModal({ session, onClose, onSave }: any) {
       isOpen={true}
       onClose={onClose}
       title={session ? 'Modifier la séance' : 'Créer une séance'}
-      maxWidth="max-w-7xl"
+      maxWidth="!max-w-[95vw] !h-[90vh] !max-h-[90vh]"
       footer={
         <div className="flex justify-end gap-4 w-full">
           <button type="button" onClick={onClose} className="text-gray-400 hover:text-white transition-colors">Annuler</button>
@@ -531,7 +531,7 @@ function SessionModal({ session, onClose, onSave }: any) {
         </div>
       }
     >
-      <div className="flex flex-col lg:flex-row h-[75vh] gap-6">
+      <div className="flex flex-col lg:flex-row h-full gap-6">
         {/* Sidebar: Metadata */}
         <div className="w-full lg:w-1/3 space-y-6 overflow-y-auto custom-scrollbar p-1">
           <div>

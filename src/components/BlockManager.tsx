@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Plus, Trash2, Edit2, GripVertical, Repeat, Clock, Dumbbell, Zap, Save, Link, Unlink } from 'lucide-react';
+import { useState } from 'react';
+import { Plus, Trash2, Edit2, GripVertical, Repeat, Clock, Dumbbell, Zap, Save, Unlink } from 'lucide-react';
 import {
     DndContext,
     closestCenter,
@@ -71,7 +71,7 @@ interface BlockManagerProps {
 }
 
 // --- Sortable Item Wrapper ---
-function SortableBlock({ block, children, onRemove, onEdit, onAddExercise, onSaveTemplate, onExplode, isDraggingOverlay }: any) {
+function SortableBlock({ block, children, onRemove, onEdit, onAddExercise, onSaveTemplate, onExplode }: any) {
     const {
         attributes,
         listeners,
@@ -219,7 +219,7 @@ export function BlockManager({
         if (!over || !active) return;
 
         const activeType = active.data.current?.type;
-        const overType = over.data.current?.type;
+
 
         // Only handle Exercise drag here (Block drag is simple reorder in DragEnd)
         if (activeType !== 'Exercise') return;
@@ -422,7 +422,7 @@ export function BlockManager({
     };
 
     const handleDeleteBlock = (blockId: string) => {
-        const block = blocks.find(b => b.id === blockId);
+
         // Ask confirmation? No, direct delete as per previous logic.
         // But if we delete, we lose exercises unless we use "Explode"
         onBlocksChange(blocks.filter(b => b.id !== blockId));
@@ -560,6 +560,13 @@ export function BlockManager({
                     <h3 className="text-lg font-medium text-white">Structure de la séance</h3>
                     <div className="flex gap-3">
                         <button
+                            onClick={() => onShowExercisePicker(null)}
+                            className="px-3 py-1.5 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white rounded-lg transition-colors text-sm font-medium flex items-center gap-2 border border-white/10"
+                        >
+                            <Plus className="w-4 h-4" />
+                            Ajouter un exercice
+                        </button>
+                        <button
                             onClick={() => setShowLibraryModal(true)}
                             className="px-3 py-1.5 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white rounded-lg transition-colors text-sm font-medium flex items-center gap-2 border border-white/10"
                         >
@@ -608,8 +615,8 @@ export function BlockManager({
                                                 block.exercises.map((ex, idx) => {
                                                     const nextExercise = block.exercises[idx + 1];
                                                     const prevExercise = block.exercises[idx - 1];
-                                                    const isLinkedToNext = nextExercise && ex.superset_id && nextExercise.superset_id === ex.superset_id;
-                                                    const isLinkedToPrev = prevExercise && ex.superset_id && prevExercise.superset_id === ex.superset_id;
+                                                    const isLinkedToNext = Boolean(nextExercise && ex.superset_id && nextExercise.superset_id === ex.superset_id);
+                                                    const isLinkedToPrev = Boolean(prevExercise && ex.superset_id && prevExercise.superset_id === ex.superset_id);
 
                                                     return (
                                                         <SortableExercise
@@ -642,6 +649,13 @@ export function BlockManager({
                                 <div className="flex items-center gap-2 mb-4">
                                     <h4 className="text-sm font-medium text-gray-400 uppercase tracking-wider">Exercices libres</h4>
                                     <div className="h-px bg-white/10 flex-1" />
+                                    <button
+                                        onClick={() => onShowExercisePicker(null)}
+                                        className="p-1 text-gray-400 hover:text-white hover:bg-white/10 rounded transition-colors"
+                                        title="Ajouter un exercice libre"
+                                    >
+                                        <Plus className="w-4 h-4" />
+                                    </button>
                                 </div>
                             )}
 
@@ -655,8 +669,8 @@ export function BlockManager({
                                         {standaloneExercises.map((ex, idx) => {
                                             const nextExercise = standaloneExercises[idx + 1];
                                             const prevExercise = standaloneExercises[idx - 1];
-                                            const isLinkedToNext = nextExercise && ex.superset_id && nextExercise.superset_id === ex.superset_id;
-                                            const isLinkedToPrev = prevExercise && ex.superset_id && prevExercise.superset_id === ex.superset_id;
+                                            const isLinkedToNext = Boolean(nextExercise && ex.superset_id && nextExercise.superset_id === ex.superset_id);
+                                            const isLinkedToPrev = Boolean(prevExercise && ex.superset_id && prevExercise.superset_id === ex.superset_id);
 
                                             return (
                                                 <SortableExercise
@@ -719,35 +733,35 @@ export function BlockManager({
                     </div>
                 )}
             </div>
-    {/* Modals */ }
-{
-    (showCreateModal || editingBlock) && (
-        <BlockModal
-            block={editingBlock}
-            onClose={() => { setShowCreateModal(false); setEditingBlock(null); }}
-            onSave={editingBlock ? handleUpdateBlock : handleCreateBlock}
-        />
-    )
-}
+            {/* Modals */}
+            {
+                (showCreateModal || editingBlock) && (
+                    <BlockModal
+                        block={editingBlock}
+                        onClose={() => { setShowCreateModal(false); setEditingBlock(null); }}
+                        onSave={editingBlock ? handleUpdateBlock : handleCreateBlock}
+                    />
+                )
+            }
 
-{
-    showLibraryModal && (
-        <BlockLibraryModal
-            onClose={() => setShowLibraryModal(false)}
-            onSelect={handleImportBlock}
-        />
-    )
-}
+            {
+                showLibraryModal && (
+                    <BlockLibraryModal
+                        onClose={() => setShowLibraryModal(false)}
+                        onSelect={handleImportBlock}
+                    />
+                )
+            }
 
-{
-    editingExercise && (
-        <ExerciseEditModal
-            exercise={editingExercise.exercise}
-            onClose={() => setEditingExercise(null)}
-            onSave={handleUpdateExercise}
-        />
-    )
-}
+            {
+                editingExercise && (
+                    <ExerciseEditModal
+                        exercise={editingExercise.exercise}
+                        onClose={() => setEditingExercise(null)}
+                        onSave={handleUpdateExercise}
+                    />
+                )
+            }
         </div >
     );
 }
