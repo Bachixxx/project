@@ -223,7 +223,7 @@ export function BlockTemplateEditor({ template, onClose, onSave }: BlockTemplate
                                     <SortableExercise
                                         key={ex.id}
                                         exercise={ex}
-                                        onEdit={setEditingExercise}
+                                        onChange={handleUpdateExercise}
                                         onRemove={handleRemoveExercise}
                                     />
                                 ))}
