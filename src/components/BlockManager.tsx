@@ -384,7 +384,28 @@ export function BlockManager({
 
     return (
         <div className="space-y-8">
-            {/* ... Header Actions */}
+            {/* Header Actions */}
+            {(blocks.length > 0 || standaloneExercises.length > 0) && (
+                <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-medium text-white">Structure de la séance</h3>
+                    <div className="flex gap-3">
+                        <button
+                            onClick={() => setShowLibraryModal(true)}
+                            className="px-3 py-1.5 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white rounded-lg transition-colors text-sm font-medium flex items-center gap-2 border border-white/10"
+                        >
+                            <Dumbbell className="w-4 h-4" />
+                            Bibliothèque
+                        </button>
+                        <button
+                            onClick={() => setShowCreateModal(true)}
+                            className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors text-sm font-medium flex items-center gap-2"
+                        >
+                            <Plus className="w-4 h-4" />
+                            Ajouter un bloc
+                        </button>
+                    </div>
+                </div>
+            )}
 
             <div className="space-y-6">
                 {/* 1. Blocks Section */}
@@ -562,6 +583,12 @@ export function BlockManager({
                                 className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors text-sm font-medium"
                             >
                                 Ajouter un bloc
+                            </button>
+                            <button
+                                onClick={() => setShowLibraryModal(true)}
+                                className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg transition-colors text-sm font-medium border border-white/10"
+                            >
+                                Importer depuis la bibliothèque
                             </button>
                         </div>
                     </div>
