@@ -24,6 +24,7 @@ import {
   Sparkles, // Added for banner
   Play, // Added
   ChevronLeft, // Added
+  Box, // Added
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSubscription } from '../hooks/useSubscription';
@@ -203,7 +204,7 @@ function Layout() {
                     if (isCollapsed) setIsCollapsed(false); // Auto-expand when clicking parent item
                     setIsWorkoutMenuOpen(!isWorkoutMenuOpen);
                   }}
-                  className={`flex items-center w-full ${isCollapsed ? 'justify-center px-2' : 'px-4'} py-3 text-white rounded-lg hover:bg-white/10 transition-colors ${isActiveParent(['/exercises', '/programs', '/sessions']) ? 'bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-blue-500/30' : ''
+                  className={`flex items-center w-full ${isCollapsed ? 'justify-center px-2' : 'px-4'} py-3 text-white rounded-lg hover:bg-white/10 transition-colors ${isActiveParent(['/exercises', '/blocks', '/programs', '/sessions']) ? 'bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-blue-500/30' : ''
                     }`}
                   title={isCollapsed ? "Entraînements" : undefined}
                 >
@@ -227,6 +228,14 @@ function Layout() {
                       icon={<Dumbbell className="w-4 h-4" />}
                       text="Exercices"
                       active={isActive('/exercises')}
+                      className="py-2"
+                      isCollapsed={false}
+                    />
+                    <NavLink
+                      to="/blocks"
+                      icon={<Box className="w-4 h-4" />}
+                      text="Blocs"
+                      active={isActive('/blocks')}
                       onClick={() => setIsMobileMenuOpen(false)}
                       className="py-2"
                       isCollapsed={false}

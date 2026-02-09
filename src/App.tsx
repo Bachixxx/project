@@ -45,6 +45,7 @@ const UpdatePassword = lazy(() => import('./pages/UpdatePassword'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Exercises = lazy(() => import('./pages/Exercises'));
 const Sessions = lazy(() => import('./pages/Sessions'));
+const Blocks = lazy(() => import('./pages/Blocks'));
 const Programs = lazy(() => import('./pages/Programs'));
 const Clients = lazy(() => import('./pages/Clients'));
 const ClientDetails = lazy(() => import('./pages/ClientDetails'));
@@ -179,6 +180,14 @@ function App() {
                                 element={
                                   <PrivateRoute>
                                     <Sessions />
+                                  </PrivateRoute>
+                                }
+                              />
+                              <Route
+                                path="/blocks"
+                                element={
+                                  <PrivateRoute>
+                                    <Blocks />
                                   </PrivateRoute>
                                 }
                               />
