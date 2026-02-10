@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Award, Target, ArrowUpRight, Activity, Calendar, Plus, X, Dumbbell } from 'lucide-react';
+import { Award, Target, ArrowUpRight, Activity, Calendar, Plus, X, Dumbbell, Search } from 'lucide-react';
 import { useClientAuth } from '../../contexts/ClientAuthContext';
 import { supabase } from '../../lib/supabase';
 import { TutorialCard } from '../../components/client/TutorialCard';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Drawer } from 'vaul';
 
 interface WorkoutLog {
   id: string;
@@ -41,6 +43,11 @@ function ClientProgress() {
   // UI State
   const [selectedExercises, setSelectedExercises] = useState<string[]>([]);
   const [isSelectorOpen, setIsSelectorOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredExercises = exercises.filter(ex =>
+    ex.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   useEffect(() => {
     if (client) {
@@ -247,14 +254,27 @@ function ClientProgress() {
   const goals = calculateGoalProgress();
 
   return (
-    <div className="min-h-screen bg-[#0f172a] text-white font-sans p-4 pb-24 md:p-8">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen bg-[#0f172a] text-white font-sans p-4 pb-24 md:p-8 overflow-hidden relative">
       {/* Gradients */}
       <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[100px]" />
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-[100px]" />
+        <motion.div
+          animate={{ scale: [1, 1.2, 1], rotate: [0, 90, 0], opacity: [0.1, 0.2, 0.1] }}
+          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+          className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[100px]"
+        />
+        <motion.div
+          animate={{ scale: [1, 1.3, 1], rotate: [0, -90, 0], opacity: [0.1, 0.3, 0.1] }}
+          transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+          className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-[100px]"
+        />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto space-y-8">
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.2 }}
+        className="relative z-10 max-w-7xl mx-auto space-y-8"
+      >
 
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 animate-slide-in">
@@ -291,59 +311,94 @@ function ClientProgress() {
 
             {/* Controls Bar */}
             <div className="flex flex-wrap items-center gap-3">
-              <div className="relative">
-                <button
-                  onClick={() => setIsSelectorOpen(!isSelectorOpen)}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-colors shadow-lg shadow-blue-500/20"
-                >
-                  <Plus className="w-4 h-4" />
-                  Ajouter un graphique
-                </button>
+              <Drawer.Root open={isSelectorOpen} onOpenChange={setIsSelectorOpen} shouldScaleBackground>
+                <Drawer.Trigger asChild>
+                  <button
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-colors shadow-lg shadow-blue-500/20"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Ajouter un graphique
+                  </button>
+                </Drawer.Trigger>
+                <Drawer.Portal>
+                  <Drawer.Overlay className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50" />
+                  <Drawer.Content className="bg-[#1e293b] flex flex-col rounded-t-[10px] h-[85vh] mt-24 fixed bottom-0 left-0 right-0 z-[60] border-t border-white/10 outline-none">
+                    <div className="p-4 bg-[#1e293b] rounded-t-[10px] flex-1">
+                      <div aria-hidden className="mx-auto w-12 h-1.5 flex-shrink-0 rounded-full bg-gray-600 mb-8" />
+                      <div className="max-w-md mx-auto h-full flex flex-col">
+                        <Drawer.Title className="text-2xl font-bold text-white mb-4">Sélectionner un exercice</Drawer.Title>
 
-                {isSelectorOpen && (
-                  <>
-                    <div className="fixed inset-0 z-10" onClick={() => setIsSelectorOpen(false)} />
-                    <div className="absolute top-full left-0 mt-2 w-64 bg-[#1e293b] border border-white/10 rounded-xl shadow-xl z-20 max-h-60 overflow-y-auto">
-                      <div className="p-2 space-y-1">
-                        {exercises.map(exercise => {
-                          const isSelected = selectedExercises.includes(exercise.id);
-                          return (
-                            <button
-                              key={exercise.id}
-                              onClick={() => toggleExercise(exercise.id)}
-                              className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${isSelected
-                                ? 'bg-blue-500/20 text-blue-400'
-                                : 'text-gray-300 hover:bg-white/5'
-                                }`}
-                            >
-                              <div className="flex items-center justify-between">
-                                <span>{exercise.name}</span>
-                                {isSelected && <Activity className="w-3 h-3" />}
-                              </div>
-                            </button>
-                          );
-                        })}
+                        <div className="relative mb-6">
+                          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                          <input
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            placeholder="Rechercher un exercice..."
+                            className="w-full pl-12 pr-4 py-3 bg-black/20 border border-white/10 rounded-xl text-white outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+                          {filteredExercises.map(exercise => {
+                            const isSelected = selectedExercises.includes(exercise.id);
+                            return (
+                              <button
+                                key={exercise.id}
+                                onClick={() => toggleExercise(exercise.id)}
+                                className={`w-full text-left p-4 rounded-xl border transition-all flex items-center justify-between group ${isSelected
+                                  ? 'bg-blue-500/10 border-blue-500/50'
+                                  : 'bg-white/5 border-white/5 hover:bg-white/10'
+                                  }`}
+                              >
+                                <div>
+                                  <h4 className={`font-bold ${isSelected ? 'text-blue-400' : 'text-white'}`}>{exercise.name}</h4>
+                                  <span className="text-xs text-gray-500">
+                                    {exercise.track_weight && "Poids • "}{exercise.track_reps && "Reps • "}{exercise.track_distance && "Distance"}
+                                  </span>
+                                </div>
+                                <div className={`w-6 h-6 rounded-full border flex items-center justify-center transition-colors ${isSelected
+                                  ? 'bg-blue-500 border-blue-500 text-white'
+                                  : 'border-gray-500 text-transparent group-hover:border-gray-400'
+                                  }`}>
+                                  <Activity className="w-3 h-3" />
+                                </div>
+                              </button>
+                            );
+                          })}
+                          {filteredExercises.length === 0 && (
+                            <p className="text-center text-gray-500 py-8">Aucun exercice trouvé.</p>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </>
-                )}
-              </div>
+                  </Drawer.Content>
+                </Drawer.Portal>
+              </Drawer.Root>
 
               <div className="h-8 w-px bg-white/10 mx-2 hidden md:block" />
 
               <div className="flex flex-wrap gap-2">
-                {selectedExercises.map(id => {
-                  const ex = exercises.find(e => e.id === id);
-                  if (!ex) return null;
-                  return (
-                    <div key={id} className="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-sm text-gray-300">
-                      <span>{ex.name}</span>
-                      <button onClick={() => toggleExercise(id)} className="p-0.5 hover:text-white hover:bg-white/10 rounded-full transition-colors">
-                        <X className="w-3 h-3" />
-                      </button>
-                    </div>
-                  )
-                })}
+                <AnimatePresence>
+                  {selectedExercises.map(id => {
+                    const ex = exercises.find(e => e.id === id);
+                    if (!ex) return null;
+                    return (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        key={id}
+                        className="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-sm text-gray-300"
+                      >
+                        <span>{ex.name}</span>
+                        <button onClick={() => toggleExercise(id)} className="p-0.5 hover:text-white hover:bg-white/10 rounded-full transition-colors">
+                          <X className="w-3 h-3" />
+                        </button>
+                      </motion.div>
+                    )
+                  })}
+                </AnimatePresence>
               </div>
             </div>
 
@@ -424,8 +479,8 @@ function ClientProgress() {
 
           </div>
         )}
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
 
