@@ -24,7 +24,9 @@
     "@stripe/stripe-js": "^3.0.7",
     "@supabase/supabase-js": "^2.39.7",
     "canvas-confetti": "^1.9.4",
+    "clsx": "^2.1.1",
     "date-fns": "^3.3.1",
+    "framer-motion": "^12.34.0",
     "jspdf": "^3.0.1",
     "jspdf-autotable": "^5.0.2",
     "lucide-react": "^0.344.0",
@@ -37,7 +39,9 @@
     "react-router-dom": "^6.22.2",
     "react-tooltip": "^5.28.1",
     "recharts": "^2.12.2",
-    "uuid": "^13.0.0"
+    "tailwind-merge": "^3.4.0",
+    "uuid": "^13.0.0",
+    "vaul": "^1.1.2"
   },
   "devDependencies": {
     "@capacitor/assets": "^3.0.5",

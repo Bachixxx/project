@@ -1,21 +1,22 @@
 import { useState, useEffect } from 'react';
-import { Clock, Dumbbell, Target, ChevronRight, PlayCircle, Trophy, Activity, Search, CalendarDays, History } from 'lucide-react';
+import { Clock, Dumbbell, Target, ChevronRight, PlayCircle, Trophy, Search } from 'lucide-react';
 import { TutorialCard } from '../../components/client/TutorialCard';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useClientAuth } from '../../contexts/ClientAuthContext';
 import { supabase } from '../../lib/supabase';
-import { format, isToday, isTomorrow, parseISO } from 'date-fns';
-import { fr } from 'date-fns/locale';
+
+import { WorkoutFilterChips } from '../../components/client/workout/WorkoutFilterChips';
 
 function ClientWorkouts() {
   const { client: authClient } = useClientAuth();
-  const navigate = useNavigate();
+  // const navigate = useNavigate(); // Unused now
   const client = authClient as any;
   const [loading, setLoading] = useState(true);
   const [clientPrograms, setClientPrograms] = useState<any[]>([]);
-  const [recentHistory, setRecentHistory] = useState<any[]>([]);
-  const [nextSession, setNextSession] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [activeFilter, setActiveFilter] = useState('Tous');
+
+  const filters = ['Tous', 'Actifs', 'Terminés', 'Débutant', 'Avancé'];
 
   useEffect(() => {
     if (client) {
@@ -92,70 +93,7 @@ function ClientWorkouts() {
       }).filter(Boolean);
       setClientPrograms(formattedPrograms);
 
-      // 2. Fetch Recent History (Completed Sessions)
-      const { data: historyData } = await supabase
-        .from('scheduled_sessions')
-        .select(`
-          id,
-          completed_at,
-          session:sessions (name, duration_minutes)
-        `)
-        .eq('client_id', client?.id)
-        .eq('status', 'completed')
-        .order('completed_at', { ascending: false })
-        .limit(3);
-
-      setRecentHistory(historyData || []);
-
-      // 3. Fetch Next Session (Pending Scheduled Sessions OR Appointments)
-      // A. Scheduled Sessions (Program)
-      const { data: pendingSessions } = await supabase
-        .from('scheduled_sessions')
-        .select(`
-          id,
-          scheduled_date,
-          session:sessions (name, duration_minutes)
-        `)
-        .eq('client_id', client?.id)
-        .neq('status', 'completed')
-        .gte('scheduled_date', new Date().toISOString().split('T')[0])
-        .order('scheduled_date', { ascending: true })
-        .limit(1);
-
-      // B. Appointments
-      const { data: upcomingAppointments } = await supabase
-        .from('appointments')
-        .select(`
-          id,
-          start_time,
-          title
-        `)
-        .eq('client_id', client?.id)
-        .eq('status', 'confirmed')
-        .gte('start_time', new Date().toISOString())
-        .order('start_time', { ascending: true })
-        .limit(1);
-
-      // Determine which is sooner
-      let nextItem = null;
-      const progSession = pendingSessions?.[0];
-      const appt = upcomingAppointments?.[0];
-
-      if (progSession && appt) {
-        // Compare dates
-        if (new Date(progSession.scheduled_date) < new Date(appt.start_time)) {
-          nextItem = { type: 'program_session', data: progSession, date: progSession.scheduled_date };
-        } else {
-          nextItem = { type: 'appointment', data: appt, date: appt.start_time };
-        }
-      } else if (progSession) {
-        nextItem = { type: 'program_session', data: progSession, date: progSession.scheduled_date };
-      } else if (appt) {
-        nextItem = { type: 'appointment', data: appt, date: appt.start_time };
-      }
-
-      setNextSession(nextItem);
-
+      setClientPrograms(formattedPrograms);
     } catch (error) {
       console.error('Error fetching training data:', error);
     } finally {
@@ -163,10 +101,20 @@ function ClientWorkouts() {
     }
   };
 
-  const filteredPrograms = clientPrograms.filter(program =>
-    program.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    program.coachName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredPrograms = clientPrograms.filter(program => {
+    const matchesSearch = program.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      program.coachName.toLowerCase().includes(searchTerm.toLowerCase());
+
+    if (!matchesSearch) return false;
+
+    if (activeFilter === 'Tous') return true;
+    if (activeFilter === 'Actifs') return program.status === 'active';
+    if (activeFilter === 'Terminés') return program.status === 'completed';
+    if (activeFilter === 'Débutant') return program.difficulty === 'beginner';
+    if (activeFilter === 'Avancé') return program.difficulty === 'advanced';
+
+    return true;
+  });
 
   const getDifficultyColor = (level: string) => {
     switch (level) {
@@ -183,17 +131,6 @@ function ClientWorkouts() {
       case 'intermediate': return 'Intermédiaire';
       case 'advanced': return 'Avancé';
       default: return level;
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    try {
-      const date = parseISO(dateString);
-      if (isToday(date)) return "Aujourd'hui";
-      if (isTomorrow(date)) return "Demain";
-      return format(date, 'd MMMM', { locale: fr });
-    } catch (e) {
-      return dateString;
     }
   };
 
@@ -228,84 +165,13 @@ function ClientWorkouts() {
           </Link>
         </div>
 
-        {/* 1. NEXT SESSION (Prochaine Séance) */}
-        <div className="animate-fade-in delay-100">
-          <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-            <CalendarDays className="w-5 h-5 text-blue-400" />
-            Prochaine Séance
-          </h2>
-
-          {nextSession ? (
-            <div
-              onClick={() => {
-                if (nextSession.type === 'appointment') {
-                  navigate(`/client/live-workout/appointment/${nextSession.data.id}`);
-                } else {
-                  navigate(`/client/live-workout/${nextSession.data.id}`);
-                }
-              }}
-              className="glass-card p-6 rounded-2xl border border-blue-500/30 bg-gradient-to-r from-blue-500/10 to-transparent cursor-pointer hover:border-blue-500/50 transition-all group"
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="px-2 py-0.5 rounded bg-blue-500 text-white text-xs font-bold uppercase tracking-wider">
-                      {formatDate(nextSession.date)}
-                    </span>
-                    {nextSession.type === 'appointment' && (
-                      <span className="px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 text-xs font-bold uppercase tracking-wider border border-purple-500/30">
-                        Rendez-vous
-                      </span>
-                    )}
-                  </div>
-                  <h3 className="text-2xl font-bold text-white mb-1 group-hover:text-blue-400 transition-colors">
-                    {nextSession.type === 'appointment' ? nextSession.data.title : nextSession.data.session?.name}
-                  </h3>
-                  <p className="text-gray-400 flex items-center gap-2">
-                    <Clock className="w-4 h-4" />
-                    {nextSession.type === 'appointment' ? '60 min' : `${nextSession.data.session?.duration_minutes || '?'} min`}
-                  </p>
-                </div>
-                <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center shadow-lg shadow-blue-500/40 group-hover:scale-110 transition-transform">
-                  <PlayCircle className="w-6 h-6 text-white" />
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="glass-card p-6 rounded-2xl border border-white/10 flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-white mb-1">Aucune séance prévue</h3>
-                <p className="text-gray-400 text-sm">Profitez du repos ou découvrez un nouveau programme.</p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* 2. RECENT HISTORY (Historique Récent) */}
-        {recentHistory.length > 0 && (
-          <div className="animate-fade-in delay-200">
-            <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-              <History className="w-5 h-5 text-cyan-400" />
-              Historique Récent
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {recentHistory.map((item) => (
-                <div key={item.id} className="glass-card p-4 rounded-xl border border-white/5 bg-white/5 flex items-center justify-between">
-                  <div>
-                    <p className="text-xs text-gray-500 mb-1">{formatDate(item.completed_at || '')}</p>
-                    <p className="font-semibold text-white">{item.session?.name}</p>
-                  </div>
-                  <div className="text-green-400">
-                    <Activity className="w-5 h-5" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* 3. MY PROGRAMS (Mes Programmes) */}
         <div className="space-y-6 animate-fade-in delay-300">
+
+          <WorkoutFilterChips
+            filters={filters}
+            activeFilter={activeFilter}
+            onSelect={setActiveFilter}
+          />
           <TutorialCard
             tutorialId="workouts_intro"
             title="Hub Entraînement 🏋️‍♂️"
