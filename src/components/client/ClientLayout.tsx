@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Dumbbell, Calendar, TrendingUp,
@@ -8,6 +8,7 @@ import { useClientAuth } from '../../contexts/ClientAuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import ClientBottomNav from './ClientBottomNav';
 import PageTransition from '../PageTransition';
+import { DashboardSkeleton } from './skeletons/DashboardSkeleton';
 
 function ClientLayout() {
   const location = useLocation();
@@ -159,7 +160,9 @@ function ClientLayout() {
                  For full exit animations with Router, we usually need useLocation key on Routes. 
                  Since we are inside Layout, we can use a key'd wrapper. */}
             <PageTransition>
-              <Outlet />
+              <Suspense fallback={<DashboardSkeleton />}>
+                <Outlet />
+              </Suspense>
             </PageTransition>
           </React.Fragment>
         </main>
