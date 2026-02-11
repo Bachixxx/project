@@ -31,7 +31,7 @@ export function useClientDashboardData() {
             // 1. Fetch Client Profile (for XP/Level if stored there)
             const { data: clientData, error: clientError } = await supabase
                 .from('clients')
-                .select('full_name') // level, xp, streak columns do not exist yet
+                .select('full_name, xp, level, current_streak')
                 .eq('id', client.id)
                 .single();
 
@@ -123,9 +123,9 @@ export function useClientDashboardData() {
             const stats = {
                 workoutsCompleted: totalWorkouts || 0,
                 totalDuration: 0, // Hard to sum without aggregation
-                streak: 0, // clientData.current_streak || 0,
-                level: 1, // clientData.level || 1,
-                xp: 0 // clientData.xp || 0
+                streak: clientData.current_streak || 0,
+                level: clientData.level || 1,
+                xp: clientData.xp || 0
             };
 
             setData({
