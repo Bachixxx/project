@@ -4,15 +4,13 @@ import { StatsOverview } from '../../components/client/dashboard/StatsOverview';
 import { NextSessionCard } from '../../components/client/dashboard/NextSessionCard';
 import { QuickActionsGrid } from '../../components/client/dashboard/QuickActionsGrid';
 
+import { DashboardSkeleton } from '../../components/client/skeletons/DashboardSkeleton';
+
 function ClientDashboard() {
   const { data, loading, error } = useClientDashboardData();
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-[#0f172a] flex items-center justify-center">
-        <div className="w-16 h-16 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin"></div>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   if (error || !data) {

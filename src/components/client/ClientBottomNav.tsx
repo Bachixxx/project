@@ -27,7 +27,7 @@ function ClientBottomNav() {
                         <Link
                             key={item.path}
                             to={item.path}
-                            className={`flex flex-col items-center gap-1 p-2 transition-colors duration-200 ${active ? 'text-primary-400' : 'text-gray-400 hover:text-gray-200'
+                            className={`flex flex-col items-center gap-1 p-2 transition-all duration-200 active:scale-90 ${active ? 'text-primary-400' : 'text-gray-400 hover:text-gray-200'
                                 }`}
                         >
                             <item.icon className={`w-6 h-6 ${active ? 'fill-current/10' : ''}`} />

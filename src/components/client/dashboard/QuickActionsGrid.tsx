@@ -45,7 +45,7 @@ export function QuickActionsGrid() {
                 <button
                     key={index}
                     onClick={() => navigate(action.route)}
-                    className="flex items-center p-4 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/5 transition-colors group"
+                    className="flex items-center p-4 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/5 transition-all active:scale-95 group"
                 >
                     <div className={`p-3 rounded-xl ${action.color}/20 mr-4 group-hover:scale-110 transition-transform`}>
                         <action.icon className={`w-6 h-6 ${action.textColor}`} />

@@ -7,6 +7,7 @@ import {
 import { useClientAuth } from '../../contexts/ClientAuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import ClientBottomNav from './ClientBottomNav';
+import PageTransition from '../PageTransition';
 
 function ClientLayout() {
   const location = useLocation();
@@ -152,14 +153,31 @@ function ClientLayout() {
 
         {/* Main Content */}
         <main className="flex-1 w-full p-0 lg:p-8 overflow-x-hidden">
-          <Outlet />
+          <React.Fragment key={location.pathname}> {/* Force re-render for animation */}
+            {/* Note: AnimatePresence needs to be handled at a higher level or around specific routes for exit animations to work perfectly with Outlet, 
+                 but wrapping the content here gives us the enter animation which is the most important for "feel". 
+                 For full exit animations with Router, we usually need useLocation key on Routes. 
+                 Since we are inside Layout, we can use a key'd wrapper. */}
+            <PageTransition>
+              <Outlet />
+            </PageTransition>
+          </React.Fragment>
         </main>
       </div>
     </div>
   );
 }
 
-function NavLink({ to, icon, text, active, className = '', onClick }) {
+interface NavLinkProps {
+  to: string;
+  icon: React.ReactNode;
+  text: string;
+  active: boolean;
+  className?: string;
+  onClick: () => void;
+}
+
+function NavLink({ to, icon, text, active, className = '', onClick }: NavLinkProps) {
   return (
     <Link
       to={to}
