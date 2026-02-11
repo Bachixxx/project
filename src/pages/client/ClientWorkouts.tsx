@@ -286,17 +286,10 @@ function ClientWorkouts() {
                       <div className="flex gap-4 pt-2">
                         <Link
                           to={`/client/workout/${program.id}`}
-                          className="flex-1 bg-white/5 hover:bg-white/10 text-white py-3 rounded-xl font-bold text-center border border-white/10 transition-colors flex items-center justify-center gap-2"
-                        >
-                          <Trophy className="w-5 h-5 text-gray-400" />
-                          <span>Détails</span>
-                        </Link>
-                        <Link
-                          to={`/client/appointments`}
-                          className="flex-1 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white py-3 rounded-xl font-bold text-center shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2"
+                          className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white py-3 rounded-xl font-bold text-center shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2"
                         >
                           <PlayCircle className="w-5 h-5" />
-                          <span>Reprendre</span>
+                          <span>Voir le programme</span>
                         </Link>
                       </div>
                     </div>
