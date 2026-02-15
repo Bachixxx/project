@@ -626,7 +626,7 @@ function ClientAppointments() {
           ]}
           activeTab={activeTab}
           onTabChange={(id) => setActiveTab(id as any)}
-          className="!sticky-none !top-auto !bg-transparent !border-none !p-0 !m-0 !mb-0"
+          variant="embedded"
         />
       </PageHero>
 

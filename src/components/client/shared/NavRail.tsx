@@ -14,10 +14,14 @@ interface NavRailProps {
     className?: string;
 }
 
-export function NavRail({ tabs, activeTab, onTabChange, className = '' }: NavRailProps) {
+export function NavRail({ tabs, activeTab, onTabChange, className = '', variant = 'sticky' }: NavRailProps & { variant?: 'sticky' | 'embedded' }) {
+    const containerStyles = variant === 'sticky'
+        ? 'sticky top-0 z-30 pt-4 pb-4 -mt-4 bg-[#0f172a]/95 backdrop-blur-xl border-b border-white/5 mb-8'
+        : 'relative bg-transparent p-0 m-0';
+
     return (
-        <div className={`sticky top-0 z-30 pt-4 pb-4 -mt-4 bg-[#0f172a]/95 backdrop-blur-xl border-b border-white/5 mb-8 ${className}`}>
-            <div className="flex items-center justify-center gap-2 overflow-x-auto no-scrollbar px-4">
+        <div className={`${containerStyles} ${className}`}>
+            <div className={`flex items-center justify-center gap-2 overflow-x-auto no-scrollbar ${variant === 'sticky' ? 'px-4' : ''}`}>
                 {tabs.map((tab) => {
                     const isActive = activeTab === tab.id;
                     const Icon = tab.icon;
