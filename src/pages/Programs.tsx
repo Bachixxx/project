@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { ResponsiveModal } from '../components/ResponsiveModal';
 import { SessionSelector } from '../components/SessionSelector';
 import {
@@ -13,92 +13,21 @@ import {
   Users
 } from 'lucide-react';
 import { ShareProgramModal } from '../components/ShareProgramModal';
-import { supabase } from '../lib/supabase';
-import { useAuth } from '../contexts/AuthContext';
+
 import { useSubscription } from '../hooks/useSubscription';
-
-// --- Interfaces ---
-
-
-
-
-
-interface Session {
-  id: string;
-  name: string;
-  description: string;
-  duration_minutes: number;
-  difficulty_level: string;
-}
-
-interface ProgramSession {
-  id: string;
-  session: Session;
-  order_index: number;
-}
-
-interface Program {
-  id: string;
-  name: string;
-  description: string;
-  duration_weeks: number;
-  difficulty_level: string;
-  price: number;
-  is_public: boolean;
-  program_sessions: ProgramSession[];
-}
+import { useCoachPrograms, Program, ProgramSession } from '../hooks/useCoachPrograms';
 
 // --- Main Page Component ---
 
 function ProgramsPage() {
   const { subscriptionInfo } = useSubscription();
-  const [programs, setPrograms] = useState<Program[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { programs, isLoading: loading, error: queryError, saveProgram, deleteProgram } = useCoachPrograms();
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProgram, setSelectedProgram] = useState<Program | null>(null);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [programToShare, setProgramToShare] = useState<Program | null>(null);
-  const { user } = useAuth();
-
-  useEffect(() => {
-    if (user) {
-      fetchPrograms();
-    }
-  }, [user]);
-
-  const fetchPrograms = async () => {
-    try {
-      setError(null);
-      const { data, error } = await supabase
-        .from('programs')
-        .select(`
-          *,
-          program_sessions (
-            id,
-            session:sessions (
-              id,
-              name,
-              description,
-              duration_minutes,
-              difficulty_level
-            ),
-            order_index
-          )
-        `)
-        .eq('coach_id', user?.id)
-        .order('name');
-
-      if (error) throw error;
-      setPrograms(data || []);
-    } catch (error) {
-      console.error('Error fetching programs:', error);
-      setError('Failed to load programs. Please try again later.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [opError, setOpError] = useState<string | null>(null);
 
   const canCreateProgram = subscriptionInfo?.type === 'paid' || (programs?.length || 0) < 5;
 
@@ -106,6 +35,8 @@ function ProgramsPage() {
     program.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     program.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const error = opError || (queryError ? 'Failed to load programs' : null);
 
   return (
     <div className="p-6 max-w-[2000px] mx-auto space-y-8 animate-fade-in">
@@ -194,7 +125,6 @@ function ProgramsPage() {
                       <Target className="w-3 h-3 mr-1" />
                       {program.difficulty_level}
                     </span>
-
                   </div>
                 </div>
 
@@ -222,19 +152,10 @@ function ProgramsPage() {
                     onClick={async () => {
                       if (window.confirm('Êtes-vous sûr de vouloir supprimer ce programme ?')) {
                         try {
-                          const { error } = await supabase
-                            .from('programs')
-                            .delete()
-                            .eq('id', program.id);
-
-                          if (!error) {
-                            fetchPrograms();
-                          } else {
-                            throw error;
-                          }
+                          await deleteProgram.mutateAsync(program.id);
                         } catch (error) {
                           console.error('Error deleting program:', error);
-                          setError('Failed to delete program. Please try again.');
+                          setOpError('Failed to delete program. Please try again.');
                         }
                       }
                     }}
@@ -256,8 +177,6 @@ function ProgramsPage() {
                     <span className="font-semibold text-white">{program.program_sessions?.length || 0}</span>
                   </div>
                 </div>
-
-
               </div>
 
               <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-primary-500 to-accent-500 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -272,51 +191,16 @@ function ProgramsPage() {
           onClose={() => setIsModalOpen(false)}
           onSave={async (programData: any, selectedSessions: any[]) => {
             try {
-              let programId;
-
-              if (selectedProgram) {
-                const { error } = await supabase
-                  .from('programs')
-                  .update(programData)
-                  .eq('id', selectedProgram.id);
-
-                if (error) throw error;
-                programId = selectedProgram.id;
-
-                await supabase
-                  .from('program_sessions')
-                  .delete()
-                  .eq('program_id', programId);
-              } else {
-                const { data, error } = await supabase
-                  .from('programs')
-                  .insert([{ ...programData, coach_id: user?.id }])
-                  .select()
-                  .single();
-
-                if (error) throw error;
-                programId = data.id;
-              }
-
-              if (selectedSessions.length > 0) {
-                const programSessions = selectedSessions.map((session, index) => ({
-                  program_id: programId,
-                  session_id: session.session.id,
-                  order_index: index,
-                }));
-
-                const { error: sessionError } = await supabase
-                  .from('program_sessions')
-                  .insert(programSessions);
-
-                if (sessionError) throw sessionError;
-              }
-
-              fetchPrograms();
+              setOpError(null);
+              await saveProgram.mutateAsync({
+                programData,
+                selectedSessions,
+                programId: selectedProgram?.id
+              });
               setIsModalOpen(false);
             } catch (error: any) {
               console.error('Error saving program:', error);
-              setError('Failed to save program. Please try again.');
+              setOpError('Failed to save program. Please try again.');
               if (error.message && error.message.includes('Free plan is limited')) {
                 alert('Vous avez atteint la limite de 5 programmes pour le plan gratuit. Passez à la version Pro pour créer des programmes illimités.');
               }
@@ -357,8 +241,6 @@ function ProgramModal({ program, onClose, onSave }: any) {
   );
   const [showSessionModal, setShowSessionModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-
 
 
   const handleChange = (e: any) => {
@@ -437,8 +319,6 @@ function ProgramModal({ program, onClose, onSave }: any) {
             className="input-field"
           />
         </div>
-
-
 
         <div>
           <div className="flex justify-between items-center mb-4">
@@ -527,6 +407,5 @@ function ProgramModal({ program, onClose, onSave }: any) {
     </ResponsiveModal>
   );
 }
-
 
 export default ProgramsPage;

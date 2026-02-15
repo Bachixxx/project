@@ -1,13 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  BarChart2,
   Users,
   Calendar as CalendarIcon,
   DollarSign,
-  TrendingUp,
   Activity,
-  Target,
   ArrowUpRight,
   ArrowDownRight,
   MoreHorizontal,
@@ -23,49 +20,29 @@ import {
   Tooltip,
   ResponsiveContainer
 } from 'recharts';
-import { supabase } from '../lib/supabase';
-import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { t } from '../i18n';
 import { RiskRadarWidget } from '../components/dashboard/RiskRadarWidget';
 import { LivePulseWidget } from '../components/dashboard/LivePulseWidget';
+import { useCoachDashboard } from '../hooks/useCoachDashboard';
 
 function Dashboard() {
   const { language } = useLanguage();
-  const { user } = useAuth();
-  const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({
-    totalClients: 0,
-    activePrograms: 0,
-    upcomingSessions: 0,
-    monthlyRevenue: 0,
-    monthlyGrowth: 0,
-    newClientsThisMonth: 0,
-    avgProgramCompletion: 0,
-  });
-  const [recentActivities, setRecentActivities] = useState<any[]>([]);
-  const [clientProgress, setClientProgress] = useState<any[]>([]);
+  const { data, isLoading: loading } = useCoachDashboard();
+
   const [revenueData, setRevenueData] = useState<{ name: string, value: number }[]>([]);
   const [timeRange, setTimeRange] = useState<'6months' | 'year'>('6months');
-  const [allPayments, setAllPayments] = useState<any[]>([]);
-  const [upcomingAppointments, setUpcomingAppointments] = useState<any[]>([]);
-  const [coachCode, setCoachCode] = useState<string | null>(null);
 
   useEffect(() => {
-    if (user) {
-      fetchDashboardData();
-    }
-  }, [user]);
-
-  useEffect(() => {
-    if (allPayments.length > 0) {
+    if (data?.allPayments) {
       processChartData();
     }
-  }, [timeRange, allPayments, language]);
+  }, [timeRange, data?.allPayments, language]);
 
   const processChartData = () => {
     const now = new Date();
     const chartData = [];
+    const allPayments = data?.allPayments || [];
 
     if (timeRange === '6months') {
       // Last 6 months logic
@@ -75,11 +52,11 @@ function Dashboard() {
         const monthEnd = new Date(d.getFullYear(), d.getMonth() + 1, 1);
 
         const monthRevenue = allPayments
-          .filter(p => {
+          .filter((p: any) => {
             const payDate = new Date(p.payment_date);
             return payDate >= monthStart && payDate < monthEnd;
           })
-          .reduce((sum, p) => sum + p.amount, 0);
+          .reduce((sum: number, p: any) => sum + p.amount, 0);
 
         const monthName = d.toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US', { month: 'short' });
         const formattedName = monthName.charAt(0).toUpperCase() + monthName.slice(1);
@@ -100,11 +77,11 @@ function Dashboard() {
         const monthEnd = new Date(d.getFullYear(), d.getMonth() + 1, 1);
 
         const monthRevenue = allPayments
-          .filter(p => {
+          .filter((p: any) => {
             const payDate = new Date(p.payment_date);
             return payDate >= monthStart && payDate < monthEnd;
           })
-          .reduce((sum, p) => sum + p.amount, 0);
+          .reduce((sum: number, p: any) => sum + p.amount, 0);
 
         const monthName = d.toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US', { month: 'short' });
         const formattedName = monthName.charAt(0).toUpperCase() + monthName.slice(1);
@@ -118,212 +95,6 @@ function Dashboard() {
     setRevenueData(chartData);
   };
 
-  const fetchDashboardData = async () => {
-    try {
-      // Get total clients
-      const { count: totalClients } = await supabase
-        .from('clients')
-        .select('*', { count: 'exact', head: true })
-        .eq('coach_id', user?.id);
-
-      // Get coach profile (for code)
-      const { data: coachProfile } = await supabase
-        .from('coaches')
-        .select('coach_code')
-        .eq('id', user?.id)
-        .single();
-
-      if (coachProfile) {
-        setCoachCode(coachProfile.coach_code);
-      }
-
-      // Get active programs
-      const { count: activePrograms } = await supabase
-        .from('client_programs')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'active');
-
-      // Get upcoming sessions (next 7 days)
-      const nextWeek = new Date();
-      nextWeek.setDate(nextWeek.getDate() + 7);
-
-      const { data: upcomingSessionsData, count: upcomingSessionsCount } = await supabase
-        .from('appointments')
-        .select(`
-          id,
-          title,
-          start,
-          duration,
-          client:clients(full_name),
-          type
-        `, { count: 'exact' })
-        .eq('coach_id', user?.id)
-        .gte('start', new Date().toISOString())
-        .lte('start', nextWeek.toISOString())
-        .eq('status', 'scheduled')
-        .order('start', { ascending: true })
-        .limit(5);
-
-      if (upcomingSessionsData) {
-        setUpcomingAppointments(upcomingSessionsData);
-      }
-
-      const upcomingSessions = upcomingSessionsCount; // Keep variable name for stats update below
-
-      // Calculate monthly revenue and growth
-      const now = new Date();
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-
-      // Get new clients this month
-      const { count: newClientsThisMonth } = await supabase
-        .from('clients')
-        .select('*', { count: 'exact', head: true })
-        .eq('coach_id', user?.id)
-        .gte('created_at', startOfMonth.toISOString());
-
-      // Get avg program completion
-      const { data: activeProgramsProgress } = await supabase
-        .from('client_programs')
-        .select('progress')
-        .eq('status', 'active');
-
-      const avgProgramCompletion = activeProgramsProgress?.length
-        ? Math.round(activeProgramsProgress.reduce((acc, curr) => acc + (curr.progress || 0), 0) / activeProgramsProgress.length)
-        : 0;
-
-      const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-
-      // Fetch payments - Get everything from start of year or 6 months ago, whichever is earlier
-      const startOfYear = new Date(now.getFullYear(), 0, 1);
-      const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
-      const fetchStartDate = startOfYear < sixMonthsAgo ? startOfYear : sixMonthsAgo;
-
-      const { data: payments } = await supabase
-        .from('payments')
-        .select('amount, payment_date')
-        .eq('status', 'paid')
-        .gte('payment_date', fetchStartDate.toISOString());
-
-      if (payments) {
-        setAllPayments(payments);
-      }
-
-      const currentMonthRevenue = payments
-        ?.filter(p => new Date(p.payment_date) >= startOfMonth)
-        .reduce((sum, p) => sum + p.amount, 0) || 0;
-
-      const lastMonthRevenue = payments
-        ?.filter(p => {
-          const d = new Date(p.payment_date);
-          return d >= lastMonthDate && d < startOfMonth;
-        })
-        .reduce((sum, p) => sum + p.amount, 0) || 0;
-
-      const monthlyGrowth = lastMonthRevenue
-        ? ((currentMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100
-        : 0;
-
-      // Get recent activities (Programs, Workouts, Payments)
-      const { data: recentPrograms } = await supabase
-        .from('client_programs')
-        .select(`
-          id,
-          start_date,
-          client:clients(full_name),
-          program:programs(name)
-        `)
-        .order('start_date', { ascending: false })
-        .limit(5);
-
-      const { data: recentWorkouts } = await supabase
-        .from('workout_sessions')
-        .select(`
-          id,
-          date,
-          client_program:client_programs(
-            client:clients(full_name),
-            program:programs(name)
-          )
-        `)
-        .order('date', { ascending: false })
-        .limit(5);
-
-      const { data: recentPayments } = await supabase
-        .from('payments')
-        .select(`
-          id,
-          amount,
-          payment_date,
-          client:clients(full_name)
-        `)
-        .eq('status', 'paid')
-        .order('payment_date', { ascending: false })
-        .limit(5);
-
-      // Merge and sort activities
-      const activities = [
-        ...(recentPrograms?.map((p: any) => ({
-          id: `prog-${p.id}`,
-          type: 'program_start',
-          date: new Date(p.start_date),
-          clientName: Array.isArray(p.client) ? p.client[0]?.full_name : p.client?.full_name, // Supabase often returns single object for FKs, but if it was array, we'd handle it.
-          // If TS complains about array, we cast p to any.
-          detail: p.program?.name,
-          rawDate: p.start_date
-        })) || []),
-        ...(recentWorkouts?.map((w: any) => ({
-          id: `workout-${w.id}`,
-          type: 'workout_complete',
-          date: new Date(w.date),
-          clientName: Array.isArray(w.client_program?.client) ? w.client_program?.client[0]?.full_name : w.client_program?.client?.full_name,
-          detail: w.client_program?.program?.name,
-          rawDate: w.date
-        })) || []),
-        ...(recentPayments?.map((p: any) => ({
-          id: `pay-${p.id}`,
-          type: 'payment',
-          date: new Date(p.payment_date),
-          clientName: Array.isArray(p.client) ? p.client[0]?.full_name : p.client?.full_name,
-          detail: `${p.amount} CHF`,
-          rawDate: p.payment_date
-        })) || [])
-      ].sort((a, b) => b.date.getTime() - a.date.getTime())
-        .slice(0, 5);
-
-      // Get client progress
-      const { data: clientProgressData } = await supabase
-        .from('client_programs')
-        .select(`
-          id,
-          progress,
-          client:clients(full_name),
-          program:programs(name)
-        `)
-        .eq('status', 'active')
-        .order('progress', { ascending: false })
-        .limit(4);
-
-      setStats({
-        totalClients: totalClients || 0,
-        activePrograms: activePrograms || 0,
-        upcomingSessions: upcomingSessions || 0,
-        monthlyRevenue: currentMonthRevenue,
-        monthlyGrowth,
-        newClientsThisMonth: newClientsThisMonth || 0,
-        avgProgramCompletion,
-      });
-
-      setRecentActivities(activities);
-      setClientProgress(clientProgressData || []);
-      // Revenue data is set by useEffect via processChartData
-
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -331,6 +102,21 @@ function Dashboard() {
       </div>
     );
   }
+
+  const stats = data?.stats || {
+    totalClients: 0,
+    activePrograms: 0,
+    upcomingSessions: 0,
+    monthlyRevenue: 0,
+    monthlyGrowth: 0,
+    newClientsThisMonth: 0,
+    avgProgramCompletion: 0,
+  };
+
+  const coachCode = data?.coachCode;
+  const recentActivities = data?.recentActivities || [];
+  const clientProgress = data?.clientProgress || [];
+  const upcomingAppointments = data?.upcomingAppointments || [];
 
   return (
     <div className="p-6 max-w-[2000px] mx-auto space-y-8 animate-fade-in">
@@ -567,7 +353,7 @@ function Dashboard() {
               </button>
             </div>
             <div className="space-y-6">
-              {recentActivities.map((activity: any, index) => (
+              {recentActivities.map((activity: any) => (
                 <div key={activity.id} className="relative pl-6 pb-6 last:pb-0 border-l border-white/10 last:border-0">
                   <div className={`absolute left-[-5px] top-0 w-2.5 h-2.5 rounded-full ring-4 ring-gray-900 ${activity.type === 'payment' ? 'bg-emerald-500' :
                     activity.type === 'workout_complete' ? 'bg-purple-500' :
@@ -599,7 +385,7 @@ function Dashboard() {
                   Aucune séance prévue
                 </div>
               ) : (
-                upcomingAppointments.map((session) => {
+                upcomingAppointments.map((session: any) => {
                   const startDate = new Date(session.start);
                   return (
                     <div key={session.id} className="group p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors border border-white/5 hover:border-white/10 cursor-pointer">
@@ -638,7 +424,7 @@ interface StatCardProps {
   isMoney?: boolean;
 }
 
-function StatCard({ title, value, subValue, icon: Icon, color, trend, isMoney }: StatCardProps) {
+function StatCard({ title, value, subValue, icon: Icon, color, trend }: StatCardProps) {
   const colors = {
     blue: 'from-blue-500 to-cyan-500',
     purple: 'from-purple-500 to-pink-500',
