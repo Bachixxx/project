@@ -137,7 +137,7 @@ export function useClientDashboard() {
                     .from('body_scans')
                     .select('date, weight')
                     .eq('client_id', client.id)
-                    .neq('weight', null)
+                    .not('weight', 'is', null)
                     .order('date', { ascending: false })
                     .limit(1)
                     .maybeSingle()
