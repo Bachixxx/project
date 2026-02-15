@@ -17,10 +17,14 @@ export default function ClientDashboard() {
   }
 
   // Handle error or empty data state more gracefully if needed
-  if (error || !data) {
+  if (error || !data || !data.client) {
     return (
-      <div className="min-h-screen bg-[#0f172a] flex items-center justify-center text-white">
-        <p>Erreur de chargement des données. Veuillez réessayer.</p>
+      <div className="min-h-screen bg-[#0f172a] flex items-center justify-center text-white p-4 text-center">
+        <div>
+          <p className="text-xl font-bold mb-2">Profil introuvable</p>
+          <p className="text-gray-400">Votre compte client n'est pas encore complètement configuré.</p>
+          {/* Optionally add a button to logout or contact support */}
+        </div>
       </div>
     );
   }

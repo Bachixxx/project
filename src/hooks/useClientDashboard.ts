@@ -41,10 +41,16 @@ export function useClientDashboard() {
                 .from('clients')
                 .select('*')
                 .eq('email', user.email)
-                .single();
+                .maybeSingle();
 
             if (clientError) throw clientError;
-            if (!client) throw new Error('Client profile not found');
+
+            // If no client profile is found, return null or a specific flag
+            // This prevents the 406 error and allows the UI to handle "Account not fully set up"
+            if (!client) {
+                console.warn('Client profile not found for user:', user.email);
+                return null as any; // or handle this state in the UI components
+            }
 
             // 2. Parallel Fetching
             const nextWeek = new Date();
