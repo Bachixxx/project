@@ -104,31 +104,45 @@ export function useClientDashboardData() {
                 return d.toLocaleDateString('fr-CA');
             });
 
+            // 5. Fetch Completed Scheduled Sessions (for robustness)
+            const { data: completedSessions } = await supabase
+                .from('scheduled_sessions')
+                .select('id, completed_at')
+                .eq('client_id', client.id)
+                .eq('status', 'completed')
+                .gte('completed_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
+
             const { data: weeklyLogs } = await supabase
                 .from('workout_logs')
                 .select('completed_at, scheduled_session_id, appointment_id')
                 .eq('client_id', client.id)
-                .gte('completed_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()); // Fetch last 7 days roughly
+                .gte('completed_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
 
             const weeklyActivity = last7Days.map(dateStr => {
-                // Filter logs for this day using local date comparison
-                const dayLogs = weeklyLogs?.filter(log => {
-                    const logLocal = new Date(log.completed_at).toLocaleDateString('fr-CA');
-                    return logLocal === dateStr;
-                }) || [];
-
-                // Count unique sessions
                 const uniqueSessions = new Set();
-                dayLogs.forEach(log => {
-                    if (log.scheduled_session_id) uniqueSessions.add(`sched_${log.scheduled_session_id}`);
-                    else if (log.appointment_id) uniqueSessions.add(`app_${log.appointment_id}`);
-                    else uniqueSessions.add(`log_${new Date(log.completed_at).getTime()}`); // Fallback
+
+                // 1. Process Logs
+                weeklyLogs?.forEach(log => {
+                    const logLocal = new Date(log.completed_at).toLocaleDateString('fr-CA');
+                    if (logLocal === dateStr) {
+                        if (log.scheduled_session_id) uniqueSessions.add(`sched_${log.scheduled_session_id}`);
+                        else if (log.appointment_id) uniqueSessions.add(`app_${log.appointment_id}`);
+                        else uniqueSessions.add(`log_${new Date(log.completed_at).getTime()}`); // Fallback
+                    }
+                });
+
+                // 2. Process Completed Sessions (Merged to ensure we catch sessions with no logs)
+                completedSessions?.forEach(session => {
+                    const sessionLocal = new Date(session.completed_at).toLocaleDateString('fr-CA');
+                    if (sessionLocal === dateStr) {
+                        uniqueSessions.add(`sched_${session.id}`);
+                    }
                 });
 
                 return { date: dateStr, count: uniqueSessions.size };
             });
 
-            // 5. Fetch Latest Weight
+            // 6. Fetch Latest Weight
             const { data: latestScan } = await supabase
                 .from('body_scans')
                 .select('weight')
