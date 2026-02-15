@@ -363,23 +363,25 @@ function App() {
                                   </ClientPrivateRoute>
                                 }
                               />
-                              <Route
-                                path="/client/live-workout/appointment/:appointmentId"
-                                element={
-                                  <ClientPrivateRoute>
-                                    <ClientLiveWorkout />
-                                  </ClientPrivateRoute>
-                                }
-                              />
-                              <Route
-                                path="/client/live-workout/:scheduledSessionId"
-                                element={
-                                  <ClientPrivateRoute>
-                                    <ClientLiveWorkout />
-                                  </ClientPrivateRoute>
-                                }
-                              />
                             </Route>
+
+                            {/* Client Live Workout Routes (Standalone) */}
+                            <Route
+                              path="/client/live-workout/appointment/:appointmentId"
+                              element={
+                                <ClientPrivateRoute>
+                                  <ClientLiveWorkout />
+                                </ClientPrivateRoute>
+                              }
+                            />
+                            <Route
+                              path="/client/live-workout/:scheduledSessionId"
+                              element={
+                                <ClientPrivateRoute>
+                                  <ClientLiveWorkout />
+                                </ClientPrivateRoute>
+                              }
+                            />
                           </Routes>
                         </NativeRedirect>
                       </Suspense>

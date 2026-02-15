@@ -571,6 +571,7 @@ function ClientLiveWorkout() {
   const handleNextExercise = () => {
     if (currentExerciseIndex < exercises.length - 1) {
       setCurrentExerciseIndex(prev => prev + 1);
+      setActiveSetIndex(0);
       setRestTimer(null);
       setActiveTimer(null);
     }
@@ -579,6 +580,7 @@ function ClientLiveWorkout() {
   const handlePreviousExercise = () => {
     if (currentExerciseIndex > 0) {
       setCurrentExerciseIndex(prev => prev - 1);
+      setActiveSetIndex(0);
       setRestTimer(null);
       setActiveTimer(null);
     }
@@ -673,7 +675,7 @@ function ClientLiveWorkout() {
   const activeSet = completedExercises[currentExercise?.id]?.sets[activeSetIndex];
 
   return (
-    <div className="fixed inset-0 bg-[#09090b] text-white font-sans flex flex-col overflow-hidden">
+    <div className="fixed inset-0 bg-[#09090b] text-white font-sans flex flex-col overflow-hidden z-50">
       {/* Background Gradients */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
         <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[128px]" />
@@ -882,16 +884,29 @@ function ClientLiveWorkout() {
               {/* Validate Button */}
               {!activeTimer && (
                 <button
-                  onClick={() => handleCompleteSet(activeSetIndex)}
+                  onClick={() => {
+                    const isLastExercise = currentExerciseIndex === exercises.length - 1;
+                    const isLastSet = activeSetIndex === (currentExercise.sets || 0) - 1;
+
+                    if (isLastExercise && isLastSet && activeSet.completed) {
+                      handleCompleteWorkout();
+                    } else {
+                      handleCompleteSet(activeSetIndex);
+                    }
+                  }}
                   className={`
                       w-full py-5 rounded-2xl font-black text-lg uppercase tracking-wider shadow-lg transition-all transform active:scale-95
-                      ${activeSet.completed
-                      ? 'bg-green-500 text-white shadow-green-500/20 hover:bg-green-400'
-                      : 'bg-white text-black hover:bg-gray-100'
+                      ${(currentExerciseIndex === exercises.length - 1 && activeSetIndex === (currentExercise.sets || 0) - 1 && activeSet.completed)
+                      ? 'bg-blue-600 text-white shadow-blue-500/20 hover:bg-blue-500'
+                      : activeSet.completed
+                        ? 'bg-green-500 text-white shadow-green-500/20 hover:bg-green-400'
+                        : 'bg-white text-black hover:bg-gray-100'
                     }
                     `}
                 >
-                  {activeSet.completed ? 'Validé' : 'Valider la série'}
+                  {(currentExerciseIndex === exercises.length - 1 && activeSetIndex === (currentExercise.sets || 0) - 1 && activeSet.completed)
+                    ? 'Terminer la séance'
+                    : activeSet.completed ? 'Validé' : 'Valider la série'}
                 </button>
               )}
 
