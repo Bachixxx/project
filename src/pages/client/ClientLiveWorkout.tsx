@@ -147,49 +147,61 @@ function ClientLiveWorkout() {
   }, [loading, sessionData, isGlobalPaused]);
 
   const handleStartTimer = (setIndex: number, duration: number) => {
-    if (activeTimer && activeTimer.setIndex === setIndex) {
-      setActiveTimer(prev => prev ? { ...prev, isRunning: true } : null);
-    } else {
-      setActiveTimer({
-        setIndex,
-        timeLeft: duration,
-        totalTime: duration,
-        isRunning: true,
-        isPreStart: true,
-        preStartTimeLeft: 5
-      });
-    }
-  };
+    const startRestTimer = (duration: number) => {
+      // For AMRAP/Circuit, we typically skip rest or have very short transition
+      // If the group type is AMRAP or Circuit, we might want to override the rest time
+      const isFlowMode = currentExercise?.group?.type === 'amrap' || currentExercise?.group?.type === 'circuit';
 
-  const handlePauseTimer = () => {
-    setActiveTimer(prev => prev ? { ...prev, isRunning: false } : null);
-  };
+      // If we want to ENFORCE no rest in AMRAP, check here:
+      if (isFlowMode) {
+        // Immediate transition
+        handleAutoAdvance();
+        return;
+      }
 
-  const handleResetTimer = () => {
-    if (activeTimer) {
-      setActiveTimer({
-        ...activeTimer,
-        timeLeft: activeTimer.totalTime,
-        isRunning: false,
-        isPreStart: true,
-        preStartTimeLeft: 5
-      });
-    }
-  };
+      if (activeTimer && activeTimer.setIndex === activeSetIndex) {
+        setActiveTimer(prev => prev ? { ...prev, isRunning: true } : null);
+      } else {
+        setActiveTimer({
+          setIndex: activeSetIndex,
+          timeLeft: duration,
+          totalTime: duration,
+          isRunning: true,
+          isPreStart: true,
+          preStartTimeLeft: 5
+        });
+      }
+    };
 
-  const handleStopTimer = () => {
-    setActiveTimer(null);
-  };
+    const handlePauseTimer = () => {
+      setActiveTimer(prev => prev ? { ...prev, isRunning: false } : null);
+    };
 
-  const fetchSessionData = async () => {
-    try {
-      setLoading(true);
-      let targetSessionId;
+    const handleResetTimer = () => {
+      if (activeTimer) {
+        setActiveTimer({
+          ...activeTimer,
+          timeLeft: activeTimer.totalTime,
+          isRunning: false,
+          isPreStart: true,
+          preStartTimeLeft: 5
+        });
+      }
+    };
 
-      if (scheduledSessionId) {
-        const { data: scheduledSessionsData, error } = await supabase
-          .from('scheduled_sessions')
-          .select(`
+    const handleStopTimer = () => {
+      setActiveTimer(null);
+    };
+
+    const fetchSessionData = async () => {
+      try {
+        setLoading(true);
+        let targetSessionId;
+
+        if (scheduledSessionId) {
+          const { data: scheduledSessionsData, error } = await supabase
+            .from('scheduled_sessions')
+            .select(`
             *,
             session:sessions!inner (
               id,
@@ -199,939 +211,939 @@ function ClientLiveWorkout() {
               difficulty_level
             )
           `)
-          .eq('id', scheduledSessionId)
-          .eq('client_id', client.id)
-          .limit(1);
+            .eq('id', scheduledSessionId)
+            .eq('client_id', client.id)
+            .limit(1);
 
-        if (error) throw error;
-        const scheduledSession = scheduledSessionsData?.[0];
+          if (error) throw error;
+          const scheduledSession = scheduledSessionsData?.[0];
 
-        if (!scheduledSession) throw new Error('Séance introuvable');
+          if (!scheduledSession) throw new Error('Séance introuvable');
 
-        setSessionData(scheduledSession);
-        targetSessionId = scheduledSession.session.id;
+          setSessionData(scheduledSession);
+          targetSessionId = scheduledSession.session.id;
 
-      } else if (appointmentId) {
-        console.log('Fetching appointment flow for ID:', appointmentId);
+        } else if (appointmentId) {
+          console.log('Fetching appointment flow for ID:', appointmentId);
 
-        // 1. Verify Registration
-        const { data: registration, error: regError } = await supabase
-          .from('appointment_registrations')
-          .select('*')
-          .eq('appointment_id', appointmentId)
-          .eq('client_id', client.id)
-          .limit(1)
-          .maybeSingle();
+          // 1. Verify Registration
+          const { data: registration, error: regError } = await supabase
+            .from('appointment_registrations')
+            .select('*')
+            .eq('appointment_id', appointmentId)
+            .eq('client_id', client.id)
+            .limit(1)
+            .maybeSingle();
 
-        if (regError) {
-          console.error('Registration fetch error:', regError);
-          throw regError;
-        }
-        if (!registration) {
-          console.error('Registration not found for client:', client.id, 'appointment:', appointmentId);
-          throw new Error('Vous n\'êtes pas inscrit à cette séance');
-        }
+          if (regError) {
+            console.error('Registration fetch error:', regError);
+            throw regError;
+          }
+          if (!registration) {
+            console.error('Registration not found for client:', client.id, 'appointment:', appointmentId);
+            throw new Error('Vous n\'êtes pas inscrit à cette séance');
+          }
 
-        // 2. Fetch Appointment (Simple)
-        const { data: appointment, error: appError } = await supabase
-          .from('appointments')
-          .select('*')
-          .eq('id', appointmentId)
-          .limit(1)
-          .maybeSingle();
+          // 2. Fetch Appointment (Simple)
+          const { data: appointment, error: appError } = await supabase
+            .from('appointments')
+            .select('*')
+            .eq('id', appointmentId)
+            .limit(1)
+            .maybeSingle();
 
-        if (appError) {
-          console.error('Appointment fetch error:', appError);
-          throw appError;
-        }
-        if (!appointment) {
-          console.error('Appointment NOT found (possibly RLS blocking):', appointmentId);
-          throw new Error('Séance introuvable (Accès refusé au rendez-vous)');
-        }
+          if (appError) {
+            console.error('Appointment fetch error:', appError);
+            throw appError;
+          }
+          if (!appointment) {
+            console.error('Appointment NOT found (possibly RLS blocking):', appointmentId);
+            throw new Error('Séance introuvable (Accès refusé au rendez-vous)');
+          }
 
-        console.log('Appointment found:', appointment);
+          console.log('Appointment found:', appointment);
 
-        // 3. Fetch Session content
-        if (!appointment.session_id) {
-          throw new Error('Cette séance n\'a pas de contenu associé (session_id manquant)');
-        }
+          // 3. Fetch Session content
+          if (!appointment.session_id) {
+            throw new Error('Cette séance n\'a pas de contenu associé (session_id manquant)');
+          }
 
-        const { data: sessionDataObj, error: sessionError } = await supabase
-          .from('sessions')
-          .select('id, name, description, duration_minutes, difficulty_level')
-          .eq('id', appointment.session_id)
-          .limit(1)
-          .maybeSingle();
+          const { data: sessionDataObj, error: sessionError } = await supabase
+            .from('sessions')
+            .select('id, name, description, duration_minutes, difficulty_level')
+            .eq('id', appointment.session_id)
+            .limit(1)
+            .maybeSingle();
 
-        if (sessionError) {
-          console.error('Session fetch error:', sessionError);
-          throw sessionError;
-        }
-        if (!sessionDataObj) throw new Error('Contenu de la séance introuvable (Session deleted?)');
+          if (sessionError) {
+            console.error('Session fetch error:', sessionError);
+            throw sessionError;
+          }
+          if (!sessionDataObj) throw new Error('Contenu de la séance introuvable (Session deleted?)');
 
-        // 10-minute window check
-        const now = new Date();
-        const start = new Date(appointment.start);
-        const diffMs = start.getTime() - now.getTime();
-        const tenMinutesMs = 10 * 60 * 1000;
+          // 10-minute window check
+          const now = new Date();
+          const start = new Date(appointment.start);
+          const diffMs = start.getTime() - now.getTime();
+          const tenMinutesMs = 10 * 60 * 1000;
 
-        if (diffMs > tenMinutesMs) {
-          setLoading(false);
+          if (diffMs > tenMinutesMs) {
+            setLoading(false);
+            setSessionData({
+              isTooEarly: true,
+              start: appointment.start,
+              title: appointment.title
+            });
+            return;
+          }
+
           setSessionData({
-            isTooEarly: true,
-            start: appointment.start,
-            title: appointment.title
+            session: sessionDataObj,
+            scheduled_date: appointment.start,
+            notes: null
           });
-          return;
+          targetSessionId = sessionDataObj.id;
         }
 
-        setSessionData({
-          session: sessionDataObj,
-          scheduled_date: appointment.start,
-          notes: null
+        if (!targetSessionId) throw new Error('Session ID not found');
+
+        // Use RPC for safe data fetching
+        const { data: exercisesData, error: exercisesError } = await supabase
+          .rpc('get_client_session_exercises', {
+            p_session_id: targetSessionId
+          });
+
+        if (exercisesError) throw exercisesError;
+
+        const exerciseList = (exercisesData || []).map((se: any) => ({
+          id: se.exercise_id,
+          name: se.exercise_name,
+          description: se.exercise_description,
+          sets: se.sets,
+          reps: se.reps,
+          rest_time: se.rest_time,
+          instructions: se.instructions,
+          order_index: se.order_index,
+          tracking_type: se.tracking_type,
+          track_reps: se.track_reps,
+          track_weight: se.track_weight,
+          track_duration: se.track_duration,
+          track_distance: se.track_distance,
+          video_url: se.video_url,
+          duration_seconds: se.duration_seconds,
+          distance_meters: se.distance_meters,
+          group: se.group_id ? {
+            id: se.group_id,
+            type: se.group_type,
+            name: se.group_name,
+            duration_seconds: se.group_duration,
+            repetitions: se.group_repetitions
+          } : null
+        }));
+
+        setExercises(exerciseList);
+        console.log('LIVE WORKOUT EXERCISES DETAILS:', JSON.stringify(exerciseList, null, 2)); // FULL DEBUG LOG
+
+        // --- STATE RESTORATION & GHOST MODE LOGIC ---
+
+        // 1. Fetch CURRENT session logs (Reload Protection) - Priority 1
+        let currentLogsQuery = supabase.from('workout_logs').select('*');
+        if (scheduledSessionId) {
+          currentLogsQuery = currentLogsQuery.eq('scheduled_session_id', scheduledSessionId);
+        } else if (appointmentId) {
+          currentLogsQuery = currentLogsQuery.eq('appointment_id', appointmentId);
+        }
+        const { data: currentLogs, error: currentLogsError } = await currentLogsQuery;
+        if (currentLogsError) console.error("Error fetching current logs:", currentLogsError);
+
+        // 2. Fetch HISTORICAL logs (Ghost Mode) - Priority 2
+        // We need to fetch the LAST time these exercises were performed.
+        // Strategy: Fetch all logs for these exercises for this client, ordered by date desc, limit ?
+        // Optimization: It's hard to get "last row per group" efficiently in one simple query without RPC or complex SQL.
+        // Simpler approach: Fetch the last 50 logs for these exercises (should cover recent history).
+        const exerciseIds = exerciseList.map(e => e.id);
+
+        let historicalLogs: any[] = [];
+        if (exerciseIds.length > 0) {
+          const { data: history, error: historyError } = await supabase
+            .from('workout_logs')
+            .select('*')
+            .eq('client_id', client.id)
+            .in('exercise_id', exerciseIds)
+            .order('completed_at', { ascending: false })
+            .limit(100); // Fetch enough recent logs to find the last session for each exercise
+
+          if (!historyError && history) {
+            historicalLogs = history;
+          }
+        }
+
+        const initialCompleted: Record<string, any> = {};
+        exerciseList.forEach(ex => {
+          // Find the most recent log for this exercise that is NOT from the current session
+          // (We might have current logs in 'history' if we don't filter them out, so be careful).
+          // Actually, checking against currentLogs IDs or date might be needed if user is re-doing a session quickly.
+          // Simple heuristic: The first log in 'historicalLogs' for this exercise is the candidate. 
+          // If it belongs to THIS session (check ID?), skip to next.
+
+          const lastLogCandidate = historicalLogs.find(l => {
+            // If we have current session IDs, exclude them
+            if (scheduledSessionId && l.scheduled_session_id === scheduledSessionId) return false;
+            if (appointmentId && l.appointment_id === appointmentId) return false;
+            return l.exercise_id === ex.id;
+          });
+
+          // If we found a last session, we want to try to match set-for-set? or just copy the last set's weight?
+          // Let's try to match set numbers. If I did 3 sets last time, I want my 3 sets this time to match those 3 sets.
+          // So we need ALL logs from that "last session".
+          // Find the `completed_at` (or session_id) of that candidate log.
+          let lastSessionLogs: any[] = [];
+          if (lastLogCandidate) {
+            // Identify the session of that log
+            if (lastLogCandidate.scheduled_session_id) {
+              lastSessionLogs = historicalLogs.filter(l => l.scheduled_session_id === lastLogCandidate.scheduled_session_id);
+            } else if (lastLogCandidate.appointment_id) {
+              lastSessionLogs = historicalLogs.filter(l => l.appointment_id === lastLogCandidate.appointment_id);
+            } else {
+              // Ad-hoc log grouping by approx time? or just stick to the candidate single log?
+              // Let's just use the candidate as a fallback for all sets if we can't group perfectly.
+              // Better: Filter by date string/hour if no session ID.
+            }
+          }
+
+
+          initialCompleted[ex.id] = {
+            sets: Array(ex.sets).fill(null).map((_, idx) => {
+              // 1. Try Current Log (Restoration)
+              const currentLog = currentLogs?.find(l => l.exercise_id === ex.id && l.set_number === idx + 1);
+
+              if (currentLog) {
+                return {
+                  reps: currentLog.reps,
+                  weight: currentLog.weight,
+                  duration_seconds: currentLog.duration_seconds,
+                  distance_meters: currentLog.distance_meters,
+                  completed: true
+                };
+              }
+
+              // 2. Ghost Mode (Pre-fill)
+              // Find matching set number in last session
+              const historyLog = lastSessionLogs.find(l => l.exercise_id === ex.id && l.set_number === idx + 1) || lastLogCandidate;
+
+              if (historyLog) {
+                return {
+                  reps: historyLog.reps,
+                  weight: historyLog.weight,
+                  duration_seconds: historyLog.duration_seconds,
+                  distance_meters: historyLog.distance_meters,
+                  completed: false,
+                  isGhost: true
+                };
+              }
+
+              // 3. Default (Template)
+              return {
+                reps: ex.reps,
+                weight: 0,
+                duration_seconds: ex.duration_seconds,
+                distance_meters: ex.distance_meters,
+                completed: false
+              };
+            })
+          };
         });
-        targetSessionId = sessionDataObj.id;
+        setCompletedExercises(initialCompleted);
+
+      } catch (error: any) {
+        console.error('Error fetching session:', error);
+        alert(`Erreur: ${error.message || 'Erreur lors du chargement de la séance'}`);
+        // navigate('/client/appointments'); // Stay on page to see error, or redirect? Redirect acts as a "hard crash" for user.
+        navigate('/client/appointments');
+      } finally {
+        setLoading(false);
       }
+    };
 
-      if (!targetSessionId) throw new Error('Session ID not found');
+    const currentExercise = exercises[currentExerciseIndex];
 
-      // Use RPC for safe data fetching
-      const { data: exercisesData, error: exercisesError } = await supabase
-        .rpc('get_client_session_exercises', {
-          p_session_id: targetSessionId
-        });
+    const handleCompleteSet = async (setIndex: number) => {
+      if (!currentExercise) return;
 
-      if (exercisesError) throw exercisesError;
+      const currentSet = completedExercises[currentExercise.id]?.sets[setIndex];
+      if (!currentSet) return;
 
-      const exerciseList = (exercisesData || []).map((se: any) => ({
-        id: se.exercise_id,
-        name: se.exercise_name,
-        description: se.exercise_description,
-        sets: se.sets,
-        reps: se.reps,
-        rest_time: se.rest_time,
-        instructions: se.instructions,
-        order_index: se.order_index,
-        tracking_type: se.tracking_type,
-        track_reps: se.track_reps,
-        track_weight: se.track_weight,
-        track_duration: se.track_duration,
-        track_distance: se.track_distance,
-        video_url: se.video_url,
-        duration_seconds: se.duration_seconds,
-        distance_meters: se.distance_meters,
-        group: se.group_id ? {
-          id: se.group_id,
-          type: se.group_type,
-          name: se.group_name,
-          duration_seconds: se.group_duration,
-          repetitions: se.group_repetitions
-        } : null
+      const newCompletedState = !currentSet.completed;
+
+      // Optimistic UI update
+      setCompletedExercises(prev => ({
+        ...prev,
+        [currentExercise.id]: {
+          ...prev[currentExercise.id],
+          sets: prev[currentExercise.id].sets.map((set, idx) =>
+            idx === setIndex ? { ...set, completed: newCompletedState } : set
+          )
+        }
       }));
 
-      setExercises(exerciseList);
-      console.log('LIVE WORKOUT EXERCISES DETAILS:', JSON.stringify(exerciseList, null, 2)); // FULL DEBUG LOG
+      if (newCompletedState) {
+        try {
+          const logData: any = {
+            client_id: client.id,
+            exercise_id: currentExercise.id,
+            set_number: setIndex + 1,
+            reps: currentSet.reps,
+            weight: currentSet.weight,
+            duration_seconds: currentSet.duration_seconds,
+            distance_meters: currentSet.distance_meters,
+            completed_at: new Date().toISOString()
+          };
 
-      // --- STATE RESTORATION & GHOST MODE LOGIC ---
-
-      // 1. Fetch CURRENT session logs (Reload Protection) - Priority 1
-      let currentLogsQuery = supabase.from('workout_logs').select('*');
-      if (scheduledSessionId) {
-        currentLogsQuery = currentLogsQuery.eq('scheduled_session_id', scheduledSessionId);
-      } else if (appointmentId) {
-        currentLogsQuery = currentLogsQuery.eq('appointment_id', appointmentId);
-      }
-      const { data: currentLogs, error: currentLogsError } = await currentLogsQuery;
-      if (currentLogsError) console.error("Error fetching current logs:", currentLogsError);
-
-      // 2. Fetch HISTORICAL logs (Ghost Mode) - Priority 2
-      // We need to fetch the LAST time these exercises were performed.
-      // Strategy: Fetch all logs for these exercises for this client, ordered by date desc, limit ?
-      // Optimization: It's hard to get "last row per group" efficiently in one simple query without RPC or complex SQL.
-      // Simpler approach: Fetch the last 50 logs for these exercises (should cover recent history).
-      const exerciseIds = exerciseList.map(e => e.id);
-
-      let historicalLogs: any[] = [];
-      if (exerciseIds.length > 0) {
-        const { data: history, error: historyError } = await supabase
-          .from('workout_logs')
-          .select('*')
-          .eq('client_id', client.id)
-          .in('exercise_id', exerciseIds)
-          .order('completed_at', { ascending: false })
-          .limit(100); // Fetch enough recent logs to find the last session for each exercise
-
-        if (!historyError && history) {
-          historicalLogs = history;
-        }
-      }
-
-      const initialCompleted: Record<string, any> = {};
-      exerciseList.forEach(ex => {
-        // Find the most recent log for this exercise that is NOT from the current session
-        // (We might have current logs in 'history' if we don't filter them out, so be careful).
-        // Actually, checking against currentLogs IDs or date might be needed if user is re-doing a session quickly.
-        // Simple heuristic: The first log in 'historicalLogs' for this exercise is the candidate. 
-        // If it belongs to THIS session (check ID?), skip to next.
-
-        const lastLogCandidate = historicalLogs.find(l => {
-          // If we have current session IDs, exclude them
-          if (scheduledSessionId && l.scheduled_session_id === scheduledSessionId) return false;
-          if (appointmentId && l.appointment_id === appointmentId) return false;
-          return l.exercise_id === ex.id;
-        });
-
-        // If we found a last session, we want to try to match set-for-set? or just copy the last set's weight?
-        // Let's try to match set numbers. If I did 3 sets last time, I want my 3 sets this time to match those 3 sets.
-        // So we need ALL logs from that "last session".
-        // Find the `completed_at` (or session_id) of that candidate log.
-        let lastSessionLogs: any[] = [];
-        if (lastLogCandidate) {
-          // Identify the session of that log
-          if (lastLogCandidate.scheduled_session_id) {
-            lastSessionLogs = historicalLogs.filter(l => l.scheduled_session_id === lastLogCandidate.scheduled_session_id);
-          } else if (lastLogCandidate.appointment_id) {
-            lastSessionLogs = historicalLogs.filter(l => l.appointment_id === lastLogCandidate.appointment_id);
-          } else {
-            // Ad-hoc log grouping by approx time? or just stick to the candidate single log?
-            // Let's just use the candidate as a fallback for all sets if we can't group perfectly.
-            // Better: Filter by date string/hour if no session ID.
+          let conflictTarget = '';
+          if (scheduledSessionId) {
+            logData.scheduled_session_id = scheduledSessionId;
+            conflictTarget = 'scheduled_session_id,exercise_id,set_number';
+          } else if (appointmentId) {
+            logData.appointment_id = appointmentId;
+            // We created a constraint for this: idx_workout_logs_appointment_unique
+            // BUT supbase-js onConflict expects column names.
+            // The constraint is on (appointment_id, exercise_id, set_number).
+            conflictTarget = 'appointment_id,exercise_id,set_number';
           }
+
+          const { error } = await supabase
+            .from('workout_logs')
+            .upsert(logData, {
+              onConflict: conflictTarget
+            });
+
+          if (error) console.error('Error logging workout:', error);
+        } catch (err) {
+          console.error('Error logging workout:', err);
         }
 
+        // Logic to auto-advance or show rest
+        // Prioritize Rest Time if it exists
+        if (currentExercise.rest_time > 0) {
+          // For circuits, rest usually happens after the last exercise of the round.
+          // But if user set rest on intermediate exercises, we honor it.
+          // If circuit:
+          //   - Intermediate ex: rest > 0 -> Show timer -> next ex
+          //   - Last ex: rest > 0 -> Show timer -> first ex (next round)
 
-        initialCompleted[ex.id] = {
-          sets: Array(ex.sets).fill(null).map((_, idx) => {
-            // 1. Try Current Log (Restoration)
-            const currentLog = currentLogs?.find(l => l.exercise_id === ex.id && l.set_number === idx + 1);
+          // Only show rest if we are NOT at the very end of the workout (unless we want a cooldown?)
+          // And for standard sets, we don't rest after the LAST set of the exercise usually.
+          // For circuits, we DO rest after the last exercise of the round (before next round).
 
-            if (currentLog) {
-              return {
-                reps: currentLog.reps,
-                weight: currentLog.weight,
-                duration_seconds: currentLog.duration_seconds,
-                distance_meters: currentLog.distance_meters,
-                completed: true
-              };
-            }
+          const groupType = currentExercise.group?.type;
+          const isCircuit = groupType === 'circuit';
+          const isInterval = groupType === 'interval';
+          const isAmrap = groupType === 'amrap';
+          const isLastSet = setIndex === currentExercise.sets - 1;
 
-            // 2. Ghost Mode (Pre-fill)
-            // Find matching set number in last session
-            const historyLog = lastSessionLogs.find(l => l.exercise_id === ex.id && l.set_number === idx + 1) || lastLogCandidate;
-
-            if (historyLog) {
-              return {
-                reps: historyLog.reps,
-                weight: historyLog.weight,
-                duration_seconds: historyLog.duration_seconds,
-                distance_meters: historyLog.distance_meters,
-                completed: false,
-                isGhost: true
-              };
-            }
-
-            // 3. Default (Template)
-            return {
-              reps: ex.reps,
-              weight: 0,
-              duration_seconds: ex.duration_seconds,
-              distance_meters: ex.distance_meters,
-              completed: false
-            };
-          })
-        };
-      });
-      setCompletedExercises(initialCompleted);
-
-    } catch (error: any) {
-      console.error('Error fetching session:', error);
-      alert(`Erreur: ${error.message || 'Erreur lors du chargement de la séance'}`);
-      // navigate('/client/appointments'); // Stay on page to see error, or redirect? Redirect acts as a "hard crash" for user.
-      navigate('/client/appointments');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const currentExercise = exercises[currentExerciseIndex];
-
-  const handleCompleteSet = async (setIndex: number) => {
-    if (!currentExercise) return;
-
-    const currentSet = completedExercises[currentExercise.id]?.sets[setIndex];
-    if (!currentSet) return;
-
-    const newCompletedState = !currentSet.completed;
-
-    // Optimistic UI update
-    setCompletedExercises(prev => ({
-      ...prev,
-      [currentExercise.id]: {
-        ...prev[currentExercise.id],
-        sets: prev[currentExercise.id].sets.map((set, idx) =>
-          idx === setIndex ? { ...set, completed: newCompletedState } : set
-        )
-      }
-    }));
-
-    if (newCompletedState) {
-      try {
-        const logData: any = {
-          client_id: client.id,
-          exercise_id: currentExercise.id,
-          set_number: setIndex + 1,
-          reps: currentSet.reps,
-          weight: currentSet.weight,
-          duration_seconds: currentSet.duration_seconds,
-          distance_meters: currentSet.distance_meters,
-          completed_at: new Date().toISOString()
-        };
-
-        let conflictTarget = '';
-        if (scheduledSessionId) {
-          logData.scheduled_session_id = scheduledSessionId;
-          conflictTarget = 'scheduled_session_id,exercise_id,set_number';
-        } else if (appointmentId) {
-          logData.appointment_id = appointmentId;
-          // We created a constraint for this: idx_workout_logs_appointment_unique
-          // BUT supbase-js onConflict expects column names.
-          // The constraint is on (appointment_id, exercise_id, set_number).
-          conflictTarget = 'appointment_id,exercise_id,set_number';
-        }
-
-        const { error } = await supabase
-          .from('workout_logs')
-          .upsert(logData, {
-            onConflict: conflictTarget
-          });
-
-        if (error) console.error('Error logging workout:', error);
-      } catch (err) {
-        console.error('Error logging workout:', err);
-      }
-
-      // Logic to auto-advance or show rest
-      // Prioritize Rest Time if it exists
-      if (currentExercise.rest_time > 0) {
-        // For circuits, rest usually happens after the last exercise of the round.
-        // But if user set rest on intermediate exercises, we honor it.
-        // If circuit:
-        //   - Intermediate ex: rest > 0 -> Show timer -> next ex
-        //   - Last ex: rest > 0 -> Show timer -> first ex (next round)
-
-        // Only show rest if we are NOT at the very end of the workout (unless we want a cooldown?)
-        // And for standard sets, we don't rest after the LAST set of the exercise usually.
-        // For circuits, we DO rest after the last exercise of the round (before next round).
-
-        const groupType = currentExercise.group?.type;
-        const isCircuit = groupType === 'circuit';
-        const isInterval = groupType === 'interval';
-        const isAmrap = groupType === 'amrap';
-        const isLastSet = setIndex === currentExercise.sets - 1;
-
-        if (isCircuit || isInterval || isAmrap) {
-          setRestTimer(currentExercise.rest_time);
-        } else {
-          // Standard
-          if (!isLastSet) {
+          if (isCircuit || isInterval || isAmrap) {
             setRestTimer(currentExercise.rest_time);
           } else {
-            // Last set of standard exercise -> No rest, just finish/next
-            handleAutoAdvance();
+            // Standard
+            if (!isLastSet) {
+              setRestTimer(currentExercise.rest_time);
+            } else {
+              // Last set of standard exercise -> No rest, just finish/next
+              handleAutoAdvance();
+            }
           }
-        }
-      } else {
-        // No rest time, immediately advance
-        handleAutoAdvance();
-      }
-
-
-    } else {
-      try {
-        const matchQuery: any = {
-          exercise_id: currentExercise.id,
-          set_number: setIndex + 1
-        };
-        if (scheduledSessionId) matchQuery.scheduled_session_id = scheduledSessionId;
-        else if (appointmentId) matchQuery.appointment_id = appointmentId;
-
-        await supabase
-          .from('workout_logs')
-          .delete()
-          .match(matchQuery);
-      } catch (err) {
-        console.error('Error removing workout log:', err);
-      }
-    }
-  };
-
-  const handleUpdateSet = (setIndex: number, field: 'reps' | 'weight' | 'duration_seconds' | 'distance_meters', value: number) => {
-    if (!currentExercise) return;
-
-    setCompletedExercises(prev => ({
-      ...prev,
-      [currentExercise.id]: {
-        ...prev[currentExercise.id],
-        sets: prev[currentExercise.id].sets.map((set, idx) =>
-          idx === setIndex ? { ...set, [field]: value } : set
-        )
-      }
-    }));
-  };
-
-  const handleAutoAdvance = () => {
-    setRestTimer(null);
-
-    const groupType = currentExercise.group?.type;
-    const isCircuit = groupType === 'circuit';
-    const isAmrap = groupType === 'amrap';
-    const isInterval = groupType === 'interval';
-
-    if (isCircuit || isAmrap || isInterval) {
-      if (!currentExercise.group) return;
-
-      const currentGroupId = currentExercise.group.id;
-      // Find all exercises in this group
-      const groupExercises = exercises
-        .map((e, idx) => ({ ...e, originalIndex: idx }))
-        .filter(e => e.group?.id === currentGroupId);
-
-      // Current position within the group
-      const currentGroupIndex = groupExercises.findIndex(e => e.id === currentExercise.id);
-
-      if (currentGroupIndex === -1) return; // Should not happen
-
-      // Scenario 1: Next exercise in the same round (set)
-      if (currentGroupIndex < groupExercises.length - 1) {
-        const nextExerciseInGroup = groupExercises[currentGroupIndex + 1];
-        setCurrentExerciseIndex(nextExerciseInGroup.originalIndex);
-        // activeSetIndex will be updated by useEffect based on completion status
-      }
-      // Scenario 2: End of round
-      else {
-        // We are at the last exercise of the group
-
-        // FOR AMRAP: Always loop back to start until timer ends (user stops manually or block timer kills it)
-        if (isAmrap) {
-          const firstExerciseInGroup = groupExercises[0];
-          setCurrentExerciseIndex(firstExerciseInGroup.originalIndex);
-          // We might want to auto-increment a "Round Counter" here if we were tracking rounds globally?
-          // For now, simple navigation.
-          return;
-        }
-
-        // FOR CIRCUIT / INTERVAL: Check fixed rounds
-        // Use group.repetitions if available, otherwise fallback to currentExercise.sets
-        const totalRounds = currentExercise.group.repetitions || currentExercise.sets;
-
-        if (activeSetIndex < totalRounds - 1) {
-          // Move to FIRST exercise of the group for the NEXT round
-          const firstExerciseInGroup = groupExercises[0];
-          setCurrentExerciseIndex(firstExerciseInGroup.originalIndex);
-          // activeSetIndex will be updated by useEffect
         } else {
-          // Scenario 3: Block Complete
-          // Loop done. Move to next exercise outside the group
-          const lastExerciseInGroup = groupExercises[groupExercises.length - 1];
-          const nextExerciseIndex = lastExerciseInGroup.originalIndex + 1;
+          // No rest time, immediately advance
+          handleAutoAdvance();
+        }
 
-          if (nextExerciseIndex < exercises.length) {
-            setCurrentExerciseIndex(nextExerciseIndex);
-          } else {
-            // Workout Complete
-            handleCompleteWorkout();
-          }
+
+      } else {
+        try {
+          const matchQuery: any = {
+            exercise_id: currentExercise.id,
+            set_number: setIndex + 1
+          };
+          if (scheduledSessionId) matchQuery.scheduled_session_id = scheduledSessionId;
+          else if (appointmentId) matchQuery.appointment_id = appointmentId;
+
+          await supabase
+            .from('workout_logs')
+            .delete()
+            .match(matchQuery);
+        } catch (err) {
+          console.error('Error removing workout log:', err);
         }
       }
-    } else {
-      // Standard Logic
-      if (activeSetIndex < currentExercise.sets - 1) {
-        setActiveSetIndex(prev => prev + 1);
+    };
+
+    const handleUpdateSet = (setIndex: number, field: 'reps' | 'weight' | 'duration_seconds' | 'distance_meters', value: number) => {
+      if (!currentExercise) return;
+
+      setCompletedExercises(prev => ({
+        ...prev,
+        [currentExercise.id]: {
+          ...prev[currentExercise.id],
+          sets: prev[currentExercise.id].sets.map((set, idx) =>
+            idx === setIndex ? { ...set, [field]: value } : set
+          )
+        }
+      }));
+    };
+
+    const handleAutoAdvance = () => {
+      setRestTimer(null);
+
+      const groupType = currentExercise.group?.type;
+      const isCircuit = groupType === 'circuit';
+      const isAmrap = groupType === 'amrap';
+      const isInterval = groupType === 'interval';
+
+      if (isCircuit || isAmrap || isInterval) {
+        if (!currentExercise.group) return;
+
+        const currentGroupId = currentExercise.group.id;
+        // Find all exercises in this group
+        const groupExercises = exercises
+          .map((e, idx) => ({ ...e, originalIndex: idx }))
+          .filter(e => e.group?.id === currentGroupId);
+
+        // Current position within the group
+        const currentGroupIndex = groupExercises.findIndex(e => e.id === currentExercise.id);
+
+        if (currentGroupIndex === -1) return; // Should not happen
+
+        // Scenario 1: Next exercise in the same round (set)
+        if (currentGroupIndex < groupExercises.length - 1) {
+          const nextExerciseInGroup = groupExercises[currentGroupIndex + 1];
+          setCurrentExerciseIndex(nextExerciseInGroup.originalIndex);
+          // activeSetIndex will be updated by useEffect based on completion status
+        }
+        // Scenario 2: End of round
+        else {
+          // We are at the last exercise of the group
+
+          // FOR AMRAP: Always loop back to start until timer ends (user stops manually or block timer kills it)
+          if (isAmrap) {
+            const firstExerciseInGroup = groupExercises[0];
+            setCurrentExerciseIndex(firstExerciseInGroup.originalIndex);
+            // We might want to auto-increment a "Round Counter" here if we were tracking rounds globally?
+            // For now, simple navigation.
+            return;
+          }
+
+          // FOR CIRCUIT / INTERVAL: Check fixed rounds
+          // Use group.repetitions if available, otherwise fallback to currentExercise.sets
+          const totalRounds = currentExercise.group.repetitions || currentExercise.sets;
+
+          if (activeSetIndex < totalRounds - 1) {
+            // Move to FIRST exercise of the group for the NEXT round
+            const firstExerciseInGroup = groupExercises[0];
+            setCurrentExerciseIndex(firstExerciseInGroup.originalIndex);
+            // activeSetIndex will be updated by useEffect
+          } else {
+            // Scenario 3: Block Complete
+            // Loop done. Move to next exercise outside the group
+            const lastExerciseInGroup = groupExercises[groupExercises.length - 1];
+            const nextExerciseIndex = lastExerciseInGroup.originalIndex + 1;
+
+            if (nextExerciseIndex < exercises.length) {
+              setCurrentExerciseIndex(nextExerciseIndex);
+            } else {
+              // Workout Complete
+              handleCompleteWorkout();
+            }
+          }
+        }
       } else {
-        // Exercise Complete -> Next Exercise
-        handleNextExercise();
+        // Standard Logic
+        if (activeSetIndex < currentExercise.sets - 1) {
+          setActiveSetIndex(prev => prev + 1);
+        } else {
+          // Exercise Complete -> Next Exercise
+          handleNextExercise();
+        }
       }
-    }
-  };
+    };
 
-  const handleNextExercise = () => {
-    if (currentExerciseIndex < exercises.length - 1) {
-      setCurrentExerciseIndex(prev => prev + 1);
-      setActiveSetIndex(0);
-      setRestTimer(null);
-      setActiveTimer(null);
-    }
-  };
-
-  const handlePreviousExercise = () => {
-    if (currentExerciseIndex > 0) {
-      setCurrentExerciseIndex(prev => prev - 1);
-      setActiveSetIndex(0);
-      setRestTimer(null);
-      setActiveTimer(null);
-    }
-  };
-
-  const handleCompleteWorkout = async () => {
-    try {
-      if (scheduledSessionId) {
-        const { error } = await supabase
-          .from('scheduled_sessions')
-          .update({
-            status: 'completed',
-            completed_at: new Date().toISOString(),
-            notes: notes,
-            actual_duration_seconds: elapsedTime
-          })
-          .eq('id', scheduledSessionId);
-        if (error) throw error;
+    const handleNextExercise = () => {
+      if (currentExerciseIndex < exercises.length - 1) {
+        setCurrentExerciseIndex(prev => prev + 1);
+        setActiveSetIndex(0);
+        setRestTimer(null);
+        setActiveTimer(null);
       }
-      // For appointments, we don't have a specific 'completed' status per client on the appointment itself.
-      // We rely on logs. Maybe update registration?
-      navigate('/client/appointments');
-    } catch (error) {
-      console.error('Error completing workout:', error);
-      alert('Erreur lors de la sauvegarde de l\'entraînement');
+    };
+
+    const handlePreviousExercise = () => {
+      if (currentExerciseIndex > 0) {
+        setCurrentExerciseIndex(prev => prev - 1);
+        setActiveSetIndex(0);
+        setRestTimer(null);
+        setActiveTimer(null);
+      }
+    };
+
+    const handleCompleteWorkout = async () => {
+      try {
+        if (scheduledSessionId) {
+          const { error } = await supabase
+            .from('scheduled_sessions')
+            .update({
+              status: 'completed',
+              completed_at: new Date().toISOString(),
+              notes: notes,
+              actual_duration_seconds: elapsedTime
+            })
+            .eq('id', scheduledSessionId);
+          if (error) throw error;
+        }
+        // For appointments, we don't have a specific 'completed' status per client on the appointment itself.
+        // We rely on logs. Maybe update registration?
+        navigate('/client/appointments');
+      } catch (error) {
+        console.error('Error completing workout:', error);
+        alert('Erreur lors de la sauvegarde de l\'entraînement');
+      }
+    };
+
+
+
+    if (loading) {
+      return (
+        <div className="min-h-screen bg-[#09090b] flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        </div>
+      );
     }
-  };
 
+    if (sessionData?.isTooEarly) {
+      return (
+        <div className="min-h-screen bg-[#09090b] flex flex-col items-center justify-center p-6 text-center animate-fade-in relative overflow-hidden">
+          {/* Background Gradients */}
+          <div className="absolute top-[-20%] right-[-20%] w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[128px]" />
+          <div className="absolute bottom-[-20%] left-[-20%] w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[128px]" />
 
+          <div className="relative z-10 max-w-md w-full bg-[#1e293b]/50 backdrop-blur-xl border border-white/5 p-8 rounded-3xl shadow-2xl">
+            <div className="w-20 h-20 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-blue-500/20">
+              <Timer className="w-10 h-10 text-blue-400" />
+            </div>
 
-  if (loading) {
+            <h1 className="text-2xl font-bold text-white mb-2">{sessionData.title}</h1>
+            <p className="text-gray-400 mb-8">
+              La séance n'a pas encore commencé. L'accès sera débloqué 10 minutes avant le début du cours.
+            </p>
+
+            <div className="bg-black/40 rounded-xl p-4 mb-8 border border-white/5">
+              <p className="text-sm text-gray-500 uppercase tracking-widest font-bold mb-1">Début du cours</p>
+              <p className="text-3xl font-black text-white tabular-nums">
+                {new Date(sessionData.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </p>
+              <p className="text-sm text-gray-500 mt-1">
+                {new Date(sessionData.start).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}
+              </p>
+            </div>
+
+            <button
+              onClick={() => navigate('/client/appointments')}
+              className="w-full py-3 bg-white/5 hover:bg-white/10 rounded-xl text-white font-medium transition-colors border border-white/5"
+            >
+              Retour au planning
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    if (!sessionData || exercises.length === 0) {
+      return (
+        <div className="min-h-screen bg-[#09090b] flex flex-col items-center justify-center p-4">
+          <div className="text-white text-xl mb-4">Aucun exercice trouvé</div>
+          <button
+            onClick={() => navigate('/client/appointments')}
+            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white"
+          >
+            Retour
+          </button>
+        </div>
+      );
+    }
+
+    // --- FOCUS MODE RENDER ---
+    const activeSet = completedExercises[currentExercise?.id]?.sets[activeSetIndex];
+
     return (
-      <div className="min-h-screen bg-[#09090b] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-      </div>
-    );
-  }
-
-  if (sessionData?.isTooEarly) {
-    return (
-      <div className="min-h-screen bg-[#09090b] flex flex-col items-center justify-center p-6 text-center animate-fade-in relative overflow-hidden">
+      <div className="fixed inset-0 bg-[#09090b] text-white font-sans flex flex-col overflow-hidden z-50">
         {/* Background Gradients */}
-        <div className="absolute top-[-20%] right-[-20%] w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[128px]" />
-        <div className="absolute bottom-[-20%] left-[-20%] w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[128px]" />
-
-        <div className="relative z-10 max-w-md w-full bg-[#1e293b]/50 backdrop-blur-xl border border-white/5 p-8 rounded-3xl shadow-2xl">
-          <div className="w-20 h-20 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-blue-500/20">
-            <Timer className="w-10 h-10 text-blue-400" />
-          </div>
-
-          <h1 className="text-2xl font-bold text-white mb-2">{sessionData.title}</h1>
-          <p className="text-gray-400 mb-8">
-            La séance n'a pas encore commencé. L'accès sera débloqué 10 minutes avant le début du cours.
-          </p>
-
-          <div className="bg-black/40 rounded-xl p-4 mb-8 border border-white/5">
-            <p className="text-sm text-gray-500 uppercase tracking-widest font-bold mb-1">Début du cours</p>
-            <p className="text-3xl font-black text-white tabular-nums">
-              {new Date(sessionData.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-            </p>
-            <p className="text-sm text-gray-500 mt-1">
-              {new Date(sessionData.start).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}
-            </p>
-          </div>
-
-          <button
-            onClick={() => navigate('/client/appointments')}
-            className="w-full py-3 bg-white/5 hover:bg-white/10 rounded-xl text-white font-medium transition-colors border border-white/5"
-          >
-            Retour au planning
-          </button>
+        <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+          <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[128px]" />
+          <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[128px]" />
         </div>
-      </div>
-    );
-  }
 
-  if (!sessionData || exercises.length === 0) {
-    return (
-      <div className="min-h-screen bg-[#09090b] flex flex-col items-center justify-center p-4">
-        <div className="text-white text-xl mb-4">Aucun exercice trouvé</div>
-        <button
-          onClick={() => navigate('/client/appointments')}
-          className="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white"
-        >
-          Retour
-        </button>
-      </div>
-    );
-  }
+        {/* Main Content Area */}
+        <div className="flex-1 flex flex-col relative z-10 p-4 pb-24 pt-[calc(env(safe-area-inset-top)+1rem)] overflow-y-auto no-scrollbar">
+          {/* Header - Compact */}
+          <div className="flex items-center justify-between mb-4 shrink-0">
+            <button
+              onClick={() => navigate('/client/appointments')}
+              className="w-10 h-10 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 transition-colors"
+            >
+              <ChevronLeft className="w-5 h-5 text-gray-300" />
+            </button>
 
-  // --- FOCUS MODE RENDER ---
-  const activeSet = completedExercises[currentExercise?.id]?.sets[activeSetIndex];
-
-  return (
-    <div className="fixed inset-0 bg-[#09090b] text-white font-sans flex flex-col overflow-hidden z-50">
-      {/* Background Gradients */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-        <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[128px]" />
-        <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[128px]" />
-      </div>
-
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col relative z-10 p-4 pb-24 pt-[calc(env(safe-area-inset-top)+1rem)] overflow-y-auto no-scrollbar">
-        {/* Header - Compact */}
-        <div className="flex items-center justify-between mb-4 shrink-0">
-          <button
-            onClick={() => navigate('/client/appointments')}
-            className="w-10 h-10 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 transition-colors"
-          >
-            <ChevronLeft className="w-5 h-5 text-gray-300" />
-          </button>
-
-          {/* BLOCK HEADER INDICATORS */}
-          {currentExercise?.group && (
-            <div className="mb-2 flex items-center gap-2 justify-center">
-              <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${currentExercise.group.type === 'circuit' ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' :
-                currentExercise.group.type === 'amrap' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' :
-                  currentExercise.group.type === 'interval' ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30' :
-                    'bg-gray-800 text-gray-400'
-                }`}>
-                {currentExercise.group.name || currentExercise.group.type}
-              </span>
-              {(currentExercise.group.type === 'circuit' || currentExercise.group.type === 'interval') && (
-                <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-white/5 text-white/60 border border-white/10">
-                  Tour {activeSetIndex + 1}/{currentExercise.group.repetitions || currentExercise.sets}
+            {/* BLOCK HEADER INDICATORS */}
+            {currentExercise?.group && (
+              <div className="mb-2 flex items-center gap-2 justify-center">
+                <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${currentExercise.group.type === 'circuit' ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' :
+                  currentExercise.group.type === 'amrap' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' :
+                    currentExercise.group.type === 'interval' ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30' :
+                      'bg-gray-800 text-gray-400'
+                  }`}>
+                  {currentExercise.group.name || currentExercise.group.type}
                 </span>
-              )}
-            </div>
-          )}
+                {(currentExercise.group.type === 'circuit' || currentExercise.group.type === 'interval') && (
+                  <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-white/5 text-white/60 border border-white/10">
+                    Tour {activeSetIndex + 1}/{currentExercise.group.repetitions || currentExercise.sets}
+                  </span>
+                )}
+              </div>
+            )}
 
-          <div className="flex-1 min-w-0 mx-4 text-center">
-            <h1 className="text-sm font-bold opacity-70 truncate uppercase tracking-widest text-cyan-400">
-              {currentExerciseIndex + 1}/{exercises.length} - {sessionData.session?.name}
-            </h1>
-            <p className="text-xl font-black text-white truncate leading-none mt-1">
-              {currentExercise.name}
-            </p>
+            <div className="flex-1 min-w-0 mx-4 text-center">
+              <h1 className="text-sm font-bold opacity-70 truncate uppercase tracking-widest text-cyan-400">
+                {currentExerciseIndex + 1}/{exercises.length} - {sessionData.session?.name}
+              </h1>
+              <p className="text-xl font-black text-white truncate leading-none mt-1">
+                {currentExercise.name}
+              </p>
+            </div>
           </div>
-        </div>
 
-        {/* BLOCK TIMER (AMRAP / INTERVAL) */}
-        {currentExercise?.group?.duration_seconds && (currentExercise.group.type === 'amrap' || currentExercise.group.type === 'interval') && (
-          <div className="mb-4 bg-orange-500/10 border border-orange-500/20 rounded-xl p-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-orange-500/20 rounded-lg text-orange-400">
-                <Timer className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="text-orange-200 font-bold text-sm uppercase tracking-wider">{currentExercise.group.type === 'amrap' ? 'AMRAP' : 'Intervalle'} Timer</h3>
-                <p className="text-orange-400/60 text-xs">Temps restant</p>
+          {/* BLOCK TIMER (AMRAP / INTERVAL) */}
+          {currentExercise?.group?.duration_seconds && (currentExercise.group.type === 'amrap' || currentExercise.group.type === 'interval') && (
+            <div className="mb-4 bg-orange-500/10 border border-orange-500/20 rounded-xl p-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-orange-500/20 rounded-lg text-orange-400">
+                  <Timer className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-orange-200 font-bold text-sm uppercase tracking-wider">{currentExercise.group.type === 'amrap' ? 'AMRAP' : 'Intervalle'} Timer</h3>
+                  <p className="text-orange-400/60 text-xs">Temps restant</p>
 
+                </div>
               </div>
-            </div>
-            <div className="text-2xl font-black text-white tabular-nums">
-              {/* 
+              <div className="text-2xl font-black text-white tabular-nums">
+                {/* 
                      TODO: We need a REAL countdown state for this block. 
                      For now showing static duration or we need to implement a block timer hook.
                      Let's use a simple placeholder or hook it up to a new state if needed.
                      For MVP of this fix, let's just show the total duration or "En cours".
                      Actually, user wants it to work.
                  */}
-              {Math.floor(currentExercise.group.duration_seconds / 60)}:{(currentExercise.group.duration_seconds % 60).toString().padStart(2, '0')}
-            </div>
-          </div>
-        )
-        }
-
-        <div className="w-10 h-10" />
-
-        {/* Video Player Integration */}
-        {
-          currentExercise.video_url && (
-            <div className="mb-6 rounded-xl overflow-hidden shadow-lg bg-black aspect-video relative">
-              <iframe
-                src={currentExercise.video_url.includes('youtube.com') || currentExercise.video_url.includes('youtu.be')
-                  ? currentExercise.video_url.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')
-                  : currentExercise.video_url}
-                title={currentExercise.name}
-                className="w-full h-full object-cover"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
+                {Math.floor(currentExercise.group.duration_seconds / 60)}:{(currentExercise.group.duration_seconds % 60).toString().padStart(2, '0')}
+              </div>
             </div>
           )
-        }
+          }
 
-        {/* Set Navigation Bar (Hidden for AMRAP & Circuit) */}
-        {
-          currentExercise && currentExercise.group?.type !== 'amrap' && currentExercise.group?.type !== 'circuit' && (
-            <div className="flex items-center justify-center gap-2 mb-6 shrink-0 overflow-x-auto py-2 no-scrollbar">
-              {completedExercises[currentExercise.id]?.sets.map((s, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setActiveSetIndex(idx)}
-                  className={`
+          <div className="w-10 h-10" />
+
+          {/* Video Player Integration */}
+          {
+            currentExercise.video_url && (
+              <div className="mb-6 rounded-xl overflow-hidden shadow-lg bg-black aspect-video relative">
+                <iframe
+                  src={currentExercise.video_url.includes('youtube.com') || currentExercise.video_url.includes('youtu.be')
+                    ? currentExercise.video_url.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')
+                    : currentExercise.video_url}
+                  title={currentExercise.name}
+                  className="w-full h-full object-cover"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
+            )
+          }
+
+          {/* Set Navigation Bar (Hidden for AMRAP & Circuit) */}
+          {
+            currentExercise && currentExercise.group?.type !== 'amrap' && currentExercise.group?.type !== 'circuit' && (
+              <div className="flex items-center justify-center gap-2 mb-6 shrink-0 overflow-x-auto py-2 no-scrollbar">
+                {completedExercises[currentExercise.id]?.sets.map((s, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setActiveSetIndex(idx)}
+                    className={`
                   w-8 h-8 rounded-full text-xs font-bold transition-all flex items-center justify-center
                   ${idx === activeSetIndex
-                      ? 'bg-blue-500 text-white scale-110 shadow-lg shadow-blue-500/30'
-                      : s.completed
-                        ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                        : 'bg-white/5 text-gray-500 border border-white/5'
-                    }
+                        ? 'bg-blue-500 text-white scale-110 shadow-lg shadow-blue-500/30'
+                        : s.completed
+                          ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                          : 'bg-white/5 text-gray-500 border border-white/5'
+                      }
                 `}
-                >
-                  {idx + 1}
-                </button>
-              ))}
-            </div>
-          )
-        }
-
-        {/* Timer Card Overlay (If Resting) */}
-        {
-          restTimer !== null && restTimer > 0 && (
-            <div className="absolute inset-4 z-50 flex items-center justify-center bg-[#09090b]/90 backdrop-blur-xl rounded-3xl border border-blue-500/20 animate-in fade-in zoom-in duration-300">
-              <div className="text-center w-full max-w-sm">
-                <div className="w-24 h-24 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-blue-500/20 animate-pulse">
-                  <Timer className="w-10 h-10 text-cyan-400" />
-                </div>
-                <div className="text-6xl font-black text-white mb-2 tabular-nums tracking-tighter">{restTimer}</div>
-                <p className="text-cyan-200/70 text-sm font-medium uppercase tracking-wide mb-8">Repos - Soufflez un peu</p>
-                <button
-                  onClick={handleAutoAdvance}
-                  className="w-full py-4 bg-white hover:bg-gray-100 rounded-xl text-black font-bold text-lg transition-all"
-                >
-                  Reprendre maintenant
-                </button>
+                  >
+                    {idx + 1}
+                  </button>
+                ))}
               </div>
-            </div>
-          )
-        }
+            )
+          }
 
-        {/* Focus Mode - Active Set Card */}
-        {
-          currentExercise && activeSet && (
-            <div className="flex-1 flex flex-col justify-center max-w-md mx-auto w-full min-h-[50vh]">
-              <div className={`
+          {/* Timer Card Overlay (If Resting) */}
+          {
+            restTimer !== null && restTimer > 0 && (
+              <div className="absolute inset-4 z-50 flex items-center justify-center bg-[#09090b]/90 backdrop-blur-xl rounded-3xl border border-blue-500/20 animate-in fade-in zoom-in duration-300">
+                <div className="text-center w-full max-w-sm">
+                  <div className="w-24 h-24 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-blue-500/20 animate-pulse">
+                    <Timer className="w-10 h-10 text-cyan-400" />
+                  </div>
+                  <div className="text-6xl font-black text-white mb-2 tabular-nums tracking-tighter">{restTimer}</div>
+                  <p className="text-cyan-200/70 text-sm font-medium uppercase tracking-wide mb-8">Repos - Soufflez un peu</p>
+                  <button
+                    onClick={handleAutoAdvance}
+                    className="w-full py-4 bg-white hover:bg-gray-100 rounded-xl text-black font-bold text-lg transition-all"
+                  >
+                    Reprendre maintenant
+                  </button>
+                </div>
+              </div>
+            )
+          }
+
+          {/* Focus Mode - Active Set Card */}
+          {
+            currentExercise && activeSet && (
+              <div className="flex-1 flex flex-col justify-center max-w-md mx-auto w-full min-h-[50vh]">
+                <div className={`
               bg-[#1e293b]/60 border backdrop-blur-xl rounded-[2rem] p-6 shadow-2xl flex flex-col gap-6 relative overflow-hidden transition-all duration-500
               ${activeSet.completed
-                  ? 'border-green-500/30 shadow-[0_0_50px_rgba(34,197,94,0.15)]'
-                  : 'border-white/10'
-                }
+                    ? 'border-green-500/30 shadow-[0_0_50px_rgba(34,197,94,0.15)]'
+                    : 'border-white/10'
+                  }
             `}>
-                {/* Status Indicator */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="px-3 py-1 bg-white/10 rounded-lg text-sm font-bold uppercase tracking-wider text-blue-400">
-                      {(currentExercise.group?.type === 'circuit' || currentExercise.group?.type === 'amrap' || currentExercise.group?.type === 'interval')
-                        ? `Tour ${activeSetIndex + 1}`
-                        : `Série ${activeSetIndex + 1}`}
-                    </span>
-                    {activeSet.isGhost && (
-                      <span className="px-3 py-1 bg-white/5 rounded-lg text-sm font-bold uppercase tracking-wider text-gray-400">
-                        Historique
+                  {/* Status Indicator */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="px-3 py-1 bg-white/10 rounded-lg text-sm font-bold uppercase tracking-wider text-blue-400">
+                        {(currentExercise.group?.type === 'circuit' || currentExercise.group?.type === 'amrap' || currentExercise.group?.type === 'interval')
+                          ? `Tour ${activeSetIndex + 1}`
+                          : `Série ${activeSetIndex + 1}`}
                       </span>
+                      {activeSet.isGhost && (
+                        <span className="px-3 py-1 bg-white/5 rounded-lg text-sm font-bold uppercase tracking-wider text-gray-400">
+                          Historique
+                        </span>
+                      )}
+                    </div>
+                    {activeSet.completed && (
+                      <div className="flex items-center gap-1 text-green-400 text-sm font-bold uppercase tracking-wide animate-in fade-in slide-in-from-right-2">
+                        <CheckCircle className="w-4 h-4" />
+                        Validé
+                      </div>
                     )}
                   </div>
-                  {activeSet.completed && (
-                    <div className="flex items-center gap-1 text-green-400 text-sm font-bold uppercase tracking-wide animate-in fade-in slide-in-from-right-2">
-                      <CheckCircle className="w-4 h-4" />
-                      Validé
-                    </div>
-                  )}
-                </div>
 
-                {/* Controls */}
-                <div className="space-y-6">
-                  {/* Timer/Duration Control if needed */}
-                  {activeTimer && activeTimer.setIndex === activeSetIndex ? (
-                    <div className={`rounded-2xl p-6 border text-center animate-fade-in relative overflow-hidden h-48 flex flex-col items-center justify-center ${activeTimer.isPreStart
-                      ? 'bg-red-600/20 border-red-500/30'
-                      : 'bg-blue-600/20 border-blue-500/30'
-                      }`}>
-                      <div className={`text-6xl font-black tabular-nums tracking-tighter mb-4 ${activeTimer.isPreStart ? 'text-red-500' : 'text-white'}`}>
-                        {activeTimer.isPreStart
-                          ? activeTimer.preStartTimeLeft
-                          : `${Math.floor(activeTimer.timeLeft / 60)}:${(activeTimer.timeLeft % 60).toString().padStart(2, '0')}`
-                        }
+                  {/* Controls */}
+                  <div className="space-y-6">
+                    {/* Timer/Duration Control if needed */}
+                    {activeTimer && activeTimer.setIndex === activeSetIndex ? (
+                      <div className={`rounded-2xl p-6 border text-center animate-fade-in relative overflow-hidden h-48 flex flex-col items-center justify-center ${activeTimer.isPreStart
+                        ? 'bg-red-600/20 border-red-500/30'
+                        : 'bg-blue-600/20 border-blue-500/30'
+                        }`}>
+                        <div className={`text-6xl font-black tabular-nums tracking-tighter mb-4 ${activeTimer.isPreStart ? 'text-red-500' : 'text-white'}`}>
+                          {activeTimer.isPreStart
+                            ? activeTimer.preStartTimeLeft
+                            : `${Math.floor(activeTimer.timeLeft / 60)}:${(activeTimer.timeLeft % 60).toString().padStart(2, '0')}`
+                          }
+                        </div>
+                        <div className="flex gap-4">
+                          <button onClick={handlePauseTimer} className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center">
+                            {activeTimer.isRunning ? <Pause className="fill-white" /> : <Play className="fill-white" />}
+                          </button>
+                          <button onClick={handleResetTimer} className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center">
+                            <RotateCcw />
+                          </button>
+                          <button onClick={handleStopTimer} className="w-12 h-12 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center">
+                            <X />
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex gap-4">
-                        <button onClick={handlePauseTimer} className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center">
-                          {activeTimer.isRunning ? <Pause className="fill-white" /> : <Play className="fill-white" />}
-                        </button>
-                        <button onClick={handleResetTimer} className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center">
-                          <RotateCcw />
-                        </button>
-                        <button onClick={handleStopTimer} className="w-12 h-12 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center">
-                          <X />
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      {/* Primary Controls */}
-                      <div className="grid grid-cols-1 gap-4">
-                        {/* Weight Control */}
-                        {(currentExercise.tracking_type === 'reps_weight' || currentExercise.track_weight) && (
-                          <div>
-                            <label className="text-gray-500 text-xs font-bold uppercase mb-2 block text-center">Charge (kg)</label>
-                            <div className="flex items-center justify-between bg-black/20 rounded-2xl p-2 border border-white/5">
-                              <button
-                                onClick={() => handleUpdateSet(activeSetIndex, 'weight', Math.max(0, activeSet.weight - 2.5))}
-                                className="w-16 h-16 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 transition-colors active:scale-90"
-                              >
-                                <Minus className="w-6 h-6 text-gray-300" />
-                              </button>
-                              <input
-                                type="number"
-                                value={activeSet.weight}
-                                onChange={(e) => handleUpdateSet(activeSetIndex, 'weight', parseFloat(e.target.value) || 0)}
-                                className="w-full bg-transparent text-center text-4xl font-black text-white focus:outline-none"
-                              />
-                              <button
-                                onClick={() => handleUpdateSet(activeSetIndex, 'weight', activeSet.weight + 2.5)}
-                                className="w-16 h-16 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 transition-colors active:scale-90"
-                              >
-                                <Plus className="w-6 h-6 text-gray-300" />
+                    ) : (
+                      <>
+                        {/* Primary Controls */}
+                        <div className="grid grid-cols-1 gap-4">
+                          {/* Weight Control */}
+                          {(currentExercise.tracking_type === 'reps_weight' || currentExercise.track_weight) && (
+                            <div>
+                              <label className="text-gray-500 text-xs font-bold uppercase mb-2 block text-center">Charge (kg)</label>
+                              <div className="flex items-center justify-between bg-black/20 rounded-2xl p-2 border border-white/5">
+                                <button
+                                  onClick={() => handleUpdateSet(activeSetIndex, 'weight', Math.max(0, activeSet.weight - 2.5))}
+                                  className="w-16 h-16 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 transition-colors active:scale-90"
+                                >
+                                  <Minus className="w-6 h-6 text-gray-300" />
+                                </button>
+                                <input
+                                  type="number"
+                                  value={activeSet.weight}
+                                  onChange={(e) => handleUpdateSet(activeSetIndex, 'weight', parseFloat(e.target.value) || 0)}
+                                  className="w-full bg-transparent text-center text-4xl font-black text-white focus:outline-none"
+                                />
+                                <button
+                                  onClick={() => handleUpdateSet(activeSetIndex, 'weight', activeSet.weight + 2.5)}
+                                  className="w-16 h-16 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 transition-colors active:scale-90"
+                                >
+                                  <Plus className="w-6 h-6 text-gray-300" />
+                                </button>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Reps Control */}
+                          {(currentExercise.tracking_type === 'reps_weight' || currentExercise.track_reps) && (
+                            <div>
+                              <label className="text-gray-500 text-xs font-bold uppercase mb-2 block text-center">Répétitions</label>
+                              <div className="flex items-center justify-between bg-black/20 rounded-2xl p-2 border border-white/5">
+                                <button
+                                  onClick={() => handleUpdateSet(activeSetIndex, 'reps', Math.max(0, activeSet.reps - 1))}
+                                  className="w-16 h-16 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 transition-colors active:scale-90"
+                                >
+                                  <Minus className="w-6 h-6 text-gray-300" />
+                                </button>
+                                <input
+                                  type="number"
+                                  value={activeSet.reps}
+                                  onChange={(e) => handleUpdateSet(activeSetIndex, 'reps', parseFloat(e.target.value) || 0)}
+                                  className="w-full bg-transparent text-center text-4xl font-black text-white focus:outline-none"
+                                />
+                                <button
+                                  onClick={() => handleUpdateSet(activeSetIndex, 'reps', activeSet.reps + 1)}
+                                  className="w-16 h-16 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 transition-colors active:scale-90"
+                                >
+                                  <Plus className="w-6 h-6 text-gray-300" />
+                                </button>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Duration/Distance Logic (Simplified for brevity, similar structure) */}
+                          {(currentExercise.tracking_type === 'duration' || currentExercise.track_duration) && (
+                            <div>
+                              <button onClick={() => handleStartTimer(activeSetIndex, activeSet.duration_seconds || 60)} className="w-full h-16 bg-blue-600 rounded-xl flex items-center justify-center gap-2 font-bold mb-4">
+                                <Play className="fill-white" /> Lancer Chrono ({activeSet.duration_seconds}s)
                               </button>
                             </div>
-                          </div>
-                        )}
+                          )}
 
-                        {/* Reps Control */}
-                        {(currentExercise.tracking_type === 'reps_weight' || currentExercise.track_reps) && (
-                          <div>
-                            <label className="text-gray-500 text-xs font-bold uppercase mb-2 block text-center">Répétitions</label>
-                            <div className="flex items-center justify-between bg-black/20 rounded-2xl p-2 border border-white/5">
-                              <button
-                                onClick={() => handleUpdateSet(activeSetIndex, 'reps', Math.max(0, activeSet.reps - 1))}
-                                className="w-16 h-16 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 transition-colors active:scale-90"
-                              >
-                                <Minus className="w-6 h-6 text-gray-300" />
-                              </button>
-                              <input
-                                type="number"
-                                value={activeSet.reps}
-                                onChange={(e) => handleUpdateSet(activeSetIndex, 'reps', parseFloat(e.target.value) || 0)}
-                                className="w-full bg-transparent text-center text-4xl font-black text-white focus:outline-none"
-                              />
-                              <button
-                                onClick={() => handleUpdateSet(activeSetIndex, 'reps', activeSet.reps + 1)}
-                                className="w-16 h-16 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 transition-colors active:scale-90"
-                              >
-                                <Plus className="w-6 h-6 text-gray-300" />
-                              </button>
-                            </div>
-                          </div>
-                        )}
+                        </div>
+                      </>
+                    )}
+                  </div>
 
-                        {/* Duration/Distance Logic (Simplified for brevity, similar structure) */}
-                        {(currentExercise.tracking_type === 'duration' || currentExercise.track_duration) && (
-                          <div>
-                            <button onClick={() => handleStartTimer(activeSetIndex, activeSet.duration_seconds || 60)} className="w-full h-16 bg-blue-600 rounded-xl flex items-center justify-center gap-2 font-bold mb-4">
-                              <Play className="fill-white" /> Lancer Chrono ({activeSet.duration_seconds}s)
-                            </button>
-                          </div>
-                        )}
+                  {/* Validate Button */}
+                  {!activeTimer && (
+                    <div className="space-y-4">
+                      <button
+                        onClick={() => {
+                          const isLastExercise = currentExerciseIndex === exercises.length - 1;
+                          const isLastSet = activeSetIndex === (currentExercise.sets || 0) - 1;
+                          const isAmrap = currentExercise.group?.type === 'amrap';
 
-                      </div>
-                    </>
-                  )}
-                </div>
-
-                {/* Validate Button */}
-                {!activeTimer && (
-                  <div className="space-y-4">
-                    <button
-                      onClick={() => {
-                        const isLastExercise = currentExerciseIndex === exercises.length - 1;
-                        const isLastSet = activeSetIndex === (currentExercise.sets || 0) - 1;
-                        const isAmrap = currentExercise.group?.type === 'amrap';
-
-                        if (isLastExercise && isLastSet && !isAmrap && activeSet.completed) {
-                          handleCompleteWorkout();
-                        } else {
-                          // For AMRAP/Circuit, completing a set should often just move to next
-                          handleCompleteSet(activeSetIndex);
-                        }
-                      }}
-                      className={`
+                          if (isLastExercise && isLastSet && !isAmrap && activeSet.completed) {
+                            handleCompleteWorkout();
+                          } else {
+                            // For AMRAP/Circuit, completing a set should often just move to next
+                            handleCompleteSet(activeSetIndex);
+                          }
+                        }}
+                        className={`
                             w-full py-5 rounded-2xl font-black text-lg uppercase tracking-wider shadow-lg transition-all transform active:scale-95 flex items-center justify-center gap-2
                             ${(currentExerciseIndex === exercises.length - 1 && activeSetIndex === (currentExercise.sets || 0) - 1 && activeSet.completed && currentExercise.group?.type !== 'amrap' && currentExercise.group?.type !== 'circuit')
-                          ? 'bg-blue-600 text-white shadow-blue-500/20 hover:bg-blue-500'
-                          : activeSet.completed
-                            ? 'bg-green-500 text-white shadow-green-500/20 hover:bg-green-400'
-                            : currentExercise.group?.type === 'amrap' || currentExercise.group?.type === 'circuit'
-                              ? 'bg-blue-600 text-white shadow-blue-500/20 hover:bg-blue-500' // Always blue for Flow Mode
-                              : 'bg-white text-black hover:bg-gray-100'
-                        }
+                            ? 'bg-blue-600 text-white shadow-blue-500/20 hover:bg-blue-500'
+                            : activeSet.completed
+                              ? 'bg-green-500 text-white shadow-green-500/20 hover:bg-green-400'
+                              : currentExercise.group?.type === 'amrap' || currentExercise.group?.type === 'circuit'
+                                ? 'bg-blue-600 text-white shadow-blue-500/20 hover:bg-blue-500' // Always blue for Flow Mode
+                                : 'bg-white text-black hover:bg-gray-100'
+                          }
                           `}
-                    >
-                      {(currentExerciseIndex === exercises.length - 1 && activeSetIndex === (currentExercise.sets || 0) - 1 && activeSet.completed && currentExercise.group?.type !== 'amrap' && currentExercise.group?.type !== 'circuit')
-                        ? 'Terminer la séance'
-                        : (currentExercise.group?.type === 'amrap' || currentExercise.group?.type === 'circuit')
-                          ? (
-                            <>
-                              <span>{activeSet.completed ? 'Suivant' : 'Valider & Suivant'}</span>
-                              <ArrowRight className="w-5 h-5" />
-                            </>
-                          )
-                          : activeSet.completed ? 'Validé' : 'Valider la série'}
-                    </button>
+                      >
+                        {(currentExerciseIndex === exercises.length - 1 && activeSetIndex === (currentExercise.sets || 0) - 1 && activeSet.completed && currentExercise.group?.type !== 'amrap' && currentExercise.group?.type !== 'circuit')
+                          ? 'Terminer la séance'
+                          : (currentExercise.group?.type === 'amrap' || currentExercise.group?.type === 'circuit')
+                            ? (
+                              <>
+                                <span>{activeSet.completed ? 'Suivant' : 'Valider & Suivant'}</span>
+                                <ArrowRight className="w-5 h-5" />
+                              </>
+                            )
+                            : activeSet.completed ? 'Validé' : 'Valider la série'}
+                      </button>
 
-                    {/* NEXT EXERCISE PREVIEW (Flow Mode) */}
-                    {(currentExercise.group?.type === 'amrap' || currentExercise.group?.type === 'circuit') && (
-                      <div className="flex items-center justify-center gap-2 opacity-50 text-sm font-medium">
-                        <span className="uppercase tracking-wider text-xs">À suivre :</span>
-                        <span className="text-white">
-                          {(() => {
-                            // Calculate next exercise logic similar to handleAutoAdvance
-                            // Simplified: usually just next index or loop back
-                            const groupExercises = exercises.filter(e => e.group?.id === currentExercise.group?.id);
-                            const currentGroupIndex = groupExercises.findIndex(e => e.id === currentExercise.id);
+                      {/* NEXT EXERCISE PREVIEW (Flow Mode) */}
+                      {(currentExercise.group?.type === 'amrap' || currentExercise.group?.type === 'circuit') && (
+                        <div className="flex items-center justify-center gap-2 opacity-50 text-sm font-medium">
+                          <span className="uppercase tracking-wider text-xs">À suivre :</span>
+                          <span className="text-white">
+                            {(() => {
+                              // Calculate next exercise logic similar to handleAutoAdvance
+                              // Simplified: usually just next index or loop back
+                              const groupExercises = exercises.filter(e => e.group?.id === currentExercise.group?.id);
+                              const currentGroupIndex = groupExercises.findIndex(e => e.id === currentExercise.id);
 
-                            if (currentGroupIndex < groupExercises.length - 1) {
-                              return groupExercises[currentGroupIndex + 1].name;
-                            } else {
-                              // Loops back to start
-                              return groupExercises[0].name;
-                            }
-                          })()}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                )}
+                              if (currentGroupIndex < groupExercises.length - 1) {
+                                return groupExercises[currentGroupIndex + 1].name;
+                              } else {
+                                // Loops back to start
+                                return groupExercises[0].name;
+                              }
+                            })()}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
+                </div>
               </div>
-            </div>
-          )
-        }
-      </div >
-
-      <LiveSessionControls
-        isActive={!isGlobalPaused}
-        isResting={!!restTimer}
-        restTimeRemaining={restTimer || 0}
-        totalDuration={elapsedTime}
-        onToggleTimer={() => setIsGlobalPaused(!isGlobalPaused)}
-        onNext={() => {
-          if (restTimer) {
-            setRestTimer(null);
-            if (activeSetIndex < (currentExercise?.sets || 0) - 1) {
-              setActiveSetIndex(prev => prev + 1);
-            }
-          } else {
-            handleAutoAdvance();
+            )
           }
-        }}
-        onPrevious={currentExerciseIndex > 0 ? handlePreviousExercise : undefined}
-        onFinish={handleCompleteWorkout}
-        isLastExercise={currentExerciseIndex === exercises.length - 1}
-      />
+        </div >
 
-      {/* DEBUG OVERLAY - TO BE REMOVED */}
-      <div className="fixed top-20 left-4 bg-black/80 text-white p-2 text-xs z-50 pointer-events-none border border-red-500">
-        <p>DEBUG V3</p>
-        <p>Ex: {currentExercise?.name}</p>
-        <p>Group ID: {currentExercise?.group?.id || 'None'}</p>
-        <p>Group Data: {currentExercise?.group ? 'LOADED' : 'NULL'}</p>
-        <p>Type: {currentExercise?.group?.type || 'N/A'}</p>
-      </div>
+        <LiveSessionControls
+          isActive={!isGlobalPaused}
+          isResting={!!restTimer}
+          restTimeRemaining={restTimer || 0}
+          totalDuration={elapsedTime}
+          onToggleTimer={() => setIsGlobalPaused(!isGlobalPaused)}
+          onNext={() => {
+            if (restTimer) {
+              setRestTimer(null);
+              if (activeSetIndex < (currentExercise?.sets || 0) - 1) {
+                setActiveSetIndex(prev => prev + 1);
+              }
+            } else {
+              handleAutoAdvance();
+            }
+          }}
+          onPrevious={currentExerciseIndex > 0 ? handlePreviousExercise : undefined}
+          onFinish={handleCompleteWorkout}
+          isLastExercise={currentExerciseIndex === exercises.length - 1}
+        />
 
-    </div >
-  );
-}
+        {/* DEBUG OVERLAY - TO BE REMOVED */}
+        <div className="fixed top-20 left-4 bg-black/80 text-white p-2 text-xs z-50 pointer-events-none border border-red-500">
+          <p>DEBUG V3</p>
+          <p>Ex: {currentExercise?.name}</p>
+          <p>Group ID: {currentExercise?.group?.id || 'None'}</p>
+          <p>Group Data: {currentExercise?.group ? 'LOADED' : 'NULL'}</p>
+          <p>Type: {currentExercise?.group?.type || 'N/A'}</p>
+        </div>
 
-export default ClientLiveWorkout;
+      </div >
+    );
+  }
+
+  export default ClientLiveWorkout;
