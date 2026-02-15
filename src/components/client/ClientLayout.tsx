@@ -29,12 +29,16 @@ function ClientLayout() {
 
   const isActive = (path: string) => location.pathname === path;
 
-  const isDashboard = location.pathname === '/client/dashboard';
+  // Pages that have their own immersive hero header and don't need the default top nav
+  const immersivePages = ['/client/dashboard', '/client/workouts', '/client/profile'];
+  const isImmersivePage = immersivePages.includes(location.pathname) ||
+    location.pathname.startsWith('/client/workouts/') || // For detailed views if they become immersive
+    location.pathname.includes('?tab='); // Handle query params if needed, though pathname usually excludes them
 
   return (
     <div className="min-h-screen bg-[#0f172a] text-gray-100">
-      {/* Top Navigation Bar - Hidden on Dashboard */}
-      {!isDashboard && (
+      {/* Top Navigation Bar - Hidden on Immersive Pages */}
+      {!isImmersivePage && (
         <nav className="bg-white/10 backdrop-blur-lg shadow-xl fixed w-full z-50 pt-[env(safe-area-inset-top)]">
           <div className="max-w-9xl mx-auto px-4">
             <div className="flex justify-between h-16">
@@ -99,7 +103,7 @@ function ClientLayout() {
         </nav>
       )}
 
-      <div className={`flex w-full pb-20 lg:pb-0 ${isDashboard ? 'pt-0' : 'pt-[calc(4rem+env(safe-area-inset-top))]'}`}>
+      <div className={`flex w-full pb-20 lg:pb-0 ${isImmersivePage ? 'pt-0' : 'pt-[calc(4rem+env(safe-area-inset-top))]'}`}>
         {/* Mobile Sidebar */}
         <div
           className={`fixed inset-0 bg-black/70 backdrop-blur-sm z-40 lg:hidden transition-opacity duration-300 ${isMobileMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
