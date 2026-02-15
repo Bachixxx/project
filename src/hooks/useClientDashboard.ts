@@ -20,6 +20,8 @@ export interface ClientDashboardData {
         totalWorkouts: number;
         streakDays: number;
         totalVolume: number;
+        level: number;
+        xp: number;
     };
 }
 
@@ -129,8 +131,10 @@ export function useClientDashboard() {
 
             const stats = {
                 totalWorkouts: allWorkoutsRes.count || allWorkoutsRes.data?.length || 0,
-                streakDays: calculateStreak(allWorkoutsRes.data || []),
-                totalVolume: workoutsRes.data?.reduce((acc, curr) => acc + (curr.volume_load || 0), 0) || 0
+                streakDays: client.current_streak || calculateStreak(allWorkoutsRes.data || []), // Use DB streak, fallback to calc
+                totalVolume: workoutsRes.data?.reduce((acc, curr) => acc + (curr.volume_load || 0), 0) || 0,
+                level: client.level || 1,
+                xp: client.xp || 0
             };
 
             return {
