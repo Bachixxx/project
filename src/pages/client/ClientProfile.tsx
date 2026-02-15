@@ -284,7 +284,7 @@ function ClientProfile() {
       >
 
         {/* Premium Profile Hero */}
-        <div className="relative w-full pb-20 mb-4">
+        <div className="relative w-full pb-20 mb-24">
           {/* Banner with Gradient */}
           <div className="h-[280px] w-full relative overflow-hidden rounded-b-[3rem] shadow-2xl shadow-black/50">
             <div className="absolute inset-0 bg-gradient-to-b from-blue-900/40 via-[#0f172a]/60 to-[#0f172a] z-10" />
