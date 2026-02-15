@@ -11,11 +11,12 @@ interface NavRailProps {
     tabs: TabItem[];
     activeTab: string;
     onTabChange: (id: string) => void;
+    className?: string;
 }
 
-export function NavRail({ tabs, activeTab, onTabChange }: NavRailProps) {
+export function NavRail({ tabs, activeTab, onTabChange, className = '' }: NavRailProps) {
     return (
-        <div className="sticky top-0 z-30 pt-4 pb-4 -mt-4 bg-[#0f172a]/95 backdrop-blur-xl border-b border-white/5 mb-8">
+        <div className={`sticky top-0 z-30 pt-4 pb-4 -mt-4 bg-[#0f172a]/95 backdrop-blur-xl border-b border-white/5 mb-8 ${className}`}>
             <div className="flex items-center justify-center gap-2 overflow-x-auto no-scrollbar px-4">
                 {tabs.map((tab) => {
                     const isActive = activeTab === tab.id;
