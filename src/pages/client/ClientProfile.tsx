@@ -3,7 +3,7 @@ import { User, Mail, Phone, Calendar, Weight, Ruler, Edit, Save, X, Shield, Sett
 import { TutorialCard } from '../../components/client/TutorialCard';
 import { useClientAuth } from '../../contexts/ClientAuthContext';
 import { supabase } from '../../lib/supabase';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Drawer } from 'vaul';
 
@@ -18,10 +18,13 @@ declare global {
 function ClientProfile() {
   const { client, signOut, refreshClient } = useClientAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab') as 'profile' | 'settings' || 'profile';
+
   const [clientDetails, setClientDetails] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
-  const [activeTab, setActiveTab] = useState<'profile' | 'settings'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'settings'>(initialTab);
   const [formData, setFormData] = useState({
     phone: '',
     height: '',

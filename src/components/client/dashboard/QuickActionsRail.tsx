@@ -46,7 +46,7 @@ export function QuickActionsRail() {
             label: 'Réglages',
             icon: <Settings className="w-5 h-5 text-white" />,
             color: 'bg-gray-700',
-            action: () => navigate('/client/settings')
+            action: () => navigate('/client/profile?tab=settings')
         }
     ];
 
