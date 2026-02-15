@@ -10,6 +10,7 @@ interface PageHeroProps {
     headerContent?: ReactNode; // For buttons/actions in the top right or bottom of hero
     showBackButton?: boolean;
     children?: ReactNode; // For additional content inside the hero (like chips)
+    className?: string; // For custom styling overrides
 }
 
 export function PageHero({
@@ -18,12 +19,13 @@ export function PageHero({
     backgroundImage,
     headerContent,
     showBackButton = false,
-    children
+    children,
+    className = ''
 }: PageHeroProps) {
     const navigate = useNavigate();
 
     return (
-        <div className="relative w-full h-[35vh] min-h-[300px] flex flex-col justify-end pb-8 px-6 overflow-hidden mb-6 rounded-b-[3rem] shadow-2xl shadow-black/50">
+        <div className={`relative w-full h-[35vh] min-h-[300px] flex flex-col justify-end pb-8 px-6 overflow-hidden mb-6 rounded-b-[3rem] shadow-2xl shadow-black/50 ${className}`}>
             {/* Dynamic Background */}
             <div className="absolute inset-0 z-0">
                 <div className="absolute inset-0 bg-gradient-to-b from-blue-900/20 via-[#0f172a]/60 to-[#0f172a]" />

@@ -150,6 +150,7 @@ function ClientWorkouts() {
         title="Entraînement"
         subtitle="Votre hub central pour toutes vos activités sportives."
         backgroundImage="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=2070&auto=format&fit=crop"
+        className="pb-0"
         headerContent={
           <Link to="/marketplace" className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg shadow-blue-500/30 transition-all text-sm font-bold uppercase tracking-wide group">
             <span>Catalogue</span>
