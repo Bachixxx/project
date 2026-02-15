@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { User, Mail, Phone, Calendar, Weight, Ruler, Edit, Save, X, Shield, Settings, Bell, LogOut, Camera, ChevronRight } from 'lucide-react';
+import { User, Mail, Phone, Calendar, Weight, Ruler, Edit, Save, X, Shield, Settings, Bell, LogOut, ChevronRight } from 'lucide-react';
 import { TutorialCard } from '../../components/client/TutorialCard';
 import { useClientAuth } from '../../contexts/ClientAuthContext';
 import { supabase } from '../../lib/supabase';
+import { NavRail } from '../../components/client/shared/NavRail';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Drawer } from 'vaul';
@@ -260,7 +261,7 @@ function ClientProfile() {
   }
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen bg-[#0f172a] text-white font-sans p-4 pb-24 md:p-8 overflow-hidden relative">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen bg-[#0f172a] text-white font-sans pb-24 relative">
       {/* Gradients */}
       <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
         <motion.div
@@ -279,103 +280,82 @@ function ClientProfile() {
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.2 }}
-        className="relative z-10 max-w-4xl mx-auto space-y-8"
+        className="relative z-10 max-w-5xl mx-auto px-4"
       >
 
-        {/* Header Section */}
-        <div className="flex flex-col md:flex-row items-center gap-8 glass p-8 rounded-3xl border border-white/10 relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-4 opacity-50">
-            <svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="100" cy="100" r="80" stroke="url(#paint0_linear)" strokeWidth="40" strokeOpacity="0.1" />
-              <defs>
-                <linearGradient id="paint0_linear" x1="100" y1="20" x2="100" y2="180" gradientUnits="userSpaceOnUse">
-                  <stop stopColor="white" />
-                  <stop offset="1" stopColor="white" stopOpacity="0" />
-                </linearGradient>
-              </defs>
-            </svg>
-          </div>
+        {/* Premium Profile Hero */}
+        <div className="relative w-full pb-20 mb-4">
+          {/* Banner with Gradient */}
+          <div className="h-[280px] w-full relative overflow-hidden rounded-b-[3rem] shadow-2xl shadow-black/50">
+            <div className="absolute inset-0 bg-gradient-to-b from-blue-900/40 via-[#0f172a]/60 to-[#0f172a] z-10" />
+            <img
+              src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=2070&auto=format&fit=crop"
+              alt="Profile Cover"
+              className="w-full h-full object-cover opacity-60"
+            />
 
-          <div className="relative">
-            <div className="w-28 h-28 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 p-1 shadow-2xl shadow-blue-500/20">
-              <div className="w-full h-full rounded-full bg-[#0f172a] flex items-center justify-center overflow-hidden relative group cursor-pointer">
-                {clientDetails?.avatar_url ? (
-                  <img src={clientDetails.avatar_url} alt="Profile" className="w-full h-full object-cover" />
-                ) : (
-                  <User className="w-12 h-12 text-white/50" />
-                )}
-                <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Camera className="w-8 h-8 text-white" />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="text-center md:text-left flex-1 min-w-0">
-            <h1 className="text-3xl font-bold text-white mb-2">{clientDetails?.full_name || t('profile.guest')}</h1>
-            <div className="flex flex-col md:flex-row items-center gap-4 text-gray-400 text-sm">
-              <div className="flex items-center gap-2 bg-white/5 px-3 py-1 rounded-full border border-white/5">
-                <Mail className="w-4 h-4" />
-                <span>{clientDetails?.email}</span>
-              </div>
-              {clientDetails?.phone && (
-                <div className="flex items-center gap-2 bg-white/5 px-3 py-1 rounded-full border border-white/5">
-                  <Phone className="w-4 h-4" />
-                  <span>{clientDetails.phone}</span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="flex gap-2">
-            {!isEditing && activeTab === 'profile' && (
+            {/* Header Actions */}
+            <div className="absolute top-0 right-0 p-6 pt-[calc(env(safe-area-inset-top)+1rem)] z-20 flex gap-2">
               <button
-                onClick={() => setIsEditing(true)}
-                className="p-3 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-all border border-white/10"
-                title={t('profile.edit')}
+                onClick={handleSignOut}
+                className="p-3 bg-white/10 hover:bg-red-500/20 text-white hover:text-red-400 rounded-full backdrop-blur-md transition-all"
+                title={t('profile.logout')}
               >
-                <Edit className="w-5 h-5" />
+                <LogOut className="w-5 h-5" />
               </button>
-            )}
-            <button
-              onClick={handleSignOut}
-              className="p-3 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl transition-all border border-red-500/20"
-              title={t('profile.logout')}
-            >
-              <LogOut className="w-5 h-5" />
-            </button>
+            </div>
+          </div>
+
+          {/* Floating Avatar & Info */}
+          <div className="absolute -bottom-10 left-0 w-full flex flex-col items-center z-20 px-4">
+            <div className="relative mb-4">
+              <div className="w-32 h-32 rounded-full p-1.5 bg-[#0f172a] shadow-2xl shadow-blue-500/20">
+                <div className="w-full h-full rounded-full bg-gray-800 flex items-center justify-center overflow-hidden relative group">
+                  {clientDetails?.avatar_url ? (
+                    <img src={clientDetails.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                  ) : (
+                    <User className="w-12 h-12 text-gray-400" />
+                  )}
+                  {!isEditing && (
+                    <button
+                      onClick={() => setIsEditing(true)}
+                      className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                    >
+                      <Edit className="w-8 h-8 text-white" />
+                    </button>
+                  )}
+                </div>
+              </div>
+              {/* Status Badge */}
+              <div className="absolute bottom-2 right-2 w-6 h-6 bg-green-500 border-4 border-[#0f172a] rounded-full"></div>
+            </div>
+
+            <div className="text-center">
+              <h1 className="text-3xl font-black text-white mb-1 tracking-tight">{clientDetails?.full_name || t('profile.guest')}</h1>
+              <p className="text-blue-400 font-medium text-sm flex items-center justify-center gap-2">
+                <Mail className="w-3 h-3" /> {clientDetails?.email}
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* Navigation Tabs */}
-        <div className="flex p-1 bg-white/5 rounded-xl border border-white/10 w-fit mx-auto md:mx-0">
-          <button
-            onClick={() => setActiveTab('profile')}
-            className={`px-6 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${activeTab === 'profile'
-              ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50'
-              : 'text-gray-400 hover:text-white hover:bg-white/5'
-              }`}
-          >
-            <User className="w-4 h-4" />
-            {t('profile.title')}
-          </button>
-          <button
-            onClick={() => setActiveTab('settings')}
-            className={`px-6 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${activeTab === 'settings'
-              ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50'
-              : 'text-gray-400 hover:text-white hover:bg-white/5'
-              }`}
-          >
-            <Settings className="w-4 h-4" />
-            {t('profile.settings')}
-          </button>
+        {/* Sticky Nav Rail */}
+        <div className="-mx-4 md:-mx-8 mb-8 sticky top-0 z-40">
+          <NavRail
+            tabs={[
+              { id: 'profile', label: t('profile.title'), icon: User },
+              { id: 'settings', label: t('profile.settings'), icon: Settings }
+            ]}
+            activeTab={activeTab}
+            onTabChange={(id: string) => setActiveTab(id as 'profile' | 'settings')}
+          />
         </div>
 
         <TutorialCard
           tutorialId="profile_intro"
           title="Votre Espace Personnel 👤"
           message="Mettez à jour vos informations, gérez votre abonnement et retrouvez les documents partagés par votre coach."
-          className="mb-6"
+          className="mb-8"
         />
 
         {/* Content Area */}
