@@ -295,68 +295,37 @@ function ClientLiveWorkout() {
 
       if (!targetSessionId) throw new Error('Session ID not found');
 
-      // Now fetch the session exercises separately
+      // Use RPC for safe data fetching
       const { data: exercisesData, error: exercisesError } = await supabase
-        .from('session_exercises')
-        .select(`
-          id,
-          sets,
-          reps,
-          rest_time,
-          instructions,
-          order_index,
-          exercise:exercises!inner (
-            id,
-            name,
-            description,
-            category,
-            equipment,
-            tracking_type,
-            track_reps,
-            track_weight,
-            track_duration,
-            track_distance,
-            video_url
-          ),
-          group_id,
-          exercise_group:group_id (
-            id,
-            type,
-            name,
-            duration_seconds,
-            repetitions
-          ),
-          duration_seconds,
-          distance_meters
-        `)
-        .eq('session_id', targetSessionId)
-        .order('order_index', { ascending: true });
+        .rpc('get_client_session_exercises', {
+          p_session_id: targetSessionId
+        });
 
       if (exercisesError) throw exercisesError;
 
       const exerciseList = (exercisesData || []).map((se: any) => ({
-        id: se.exercise.id,
-        name: se.exercise.name,
-        description: se.exercise.description,
+        id: se.exercise_id,
+        name: se.exercise_name,
+        description: se.exercise_description,
         sets: se.sets,
         reps: se.reps,
         rest_time: se.rest_time,
         instructions: se.instructions,
         order_index: se.order_index,
-        tracking_type: se.exercise.tracking_type,
-        track_reps: se.exercise.track_reps,
-        track_weight: se.exercise.track_weight,
-        track_duration: se.exercise.track_duration,
-        track_distance: se.exercise.track_distance,
-        video_url: se.exercise.video_url,
+        tracking_type: se.tracking_type,
+        track_reps: se.track_reps,
+        track_weight: se.track_weight,
+        track_duration: se.track_duration,
+        track_distance: se.track_distance,
+        video_url: se.video_url,
         duration_seconds: se.duration_seconds,
         distance_meters: se.distance_meters,
-        group: se.exercise_group ? {
-          id: se.exercise_group.id,
-          type: se.exercise_group.type,
-          name: se.exercise_group.name,
-          duration_seconds: se.exercise_group.duration_seconds,
-          repetitions: se.exercise_group.repetitions
+        group: se.group_id ? {
+          id: se.group_id,
+          type: se.group_type,
+          name: se.group_name,
+          duration_seconds: se.group_duration,
+          repetitions: se.group_repetitions
         } : null
       }));
 
