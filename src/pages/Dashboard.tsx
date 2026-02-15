@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
+  BarChart2,
   Users,
   Calendar as CalendarIcon,
   DollarSign,
+  TrendingUp,
   Activity,
+  Target,
   ArrowUpRight,
   ArrowDownRight,
   MoreHorizontal,
@@ -20,6 +23,8 @@ import {
   Tooltip,
   ResponsiveContainer
 } from 'recharts';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { t } from '../i18n';
 import { RiskRadarWidget } from '../components/dashboard/RiskRadarWidget';
@@ -28,21 +33,45 @@ import { useCoachDashboard } from '../hooks/useCoachDashboard';
 
 function Dashboard() {
   const { language } = useLanguage();
-  const { data, isLoading: loading } = useCoachDashboard();
+  const { user } = useAuth();
 
-  const [revenueData, setRevenueData] = useState<{ name: string, value: number }[]>([]);
+  // Use the new hook for data fetching
+  const {
+    data,
+    isLoading: loading,
+    error
+  } = useCoachDashboard();
+
   const [timeRange, setTimeRange] = useState<'6months' | 'year'>('6months');
+  const [revenueData, setRevenueData] = useState<{ name: string, value: number }[]>([]);
 
+  // Derived state from hook data
+  const stats = data?.stats || {
+    totalClients: 0,
+    activePrograms: 0,
+    upcomingSessions: 0,
+    monthlyRevenue: 0,
+    monthlyGrowth: 0,
+    newClientsThisMonth: 0,
+    avgProgramCompletion: 0,
+  };
+
+  const recentActivities = data?.recentActivities || [];
+  const clientProgress = data?.clientProgress || [];
+  const upcomingAppointments = data?.upcomingAppointments || [];
+  const coachCode = data?.coachCode || null;
+  const allPayments = data?.payments || [];
+
+  // Manual chart processing using the data from hook
   useEffect(() => {
-    if (data?.allPayments) {
+    if (allPayments.length > 0) {
       processChartData();
     }
-  }, [timeRange, data?.allPayments, language]);
+  }, [timeRange, allPayments, language]);
 
   const processChartData = () => {
     const now = new Date();
     const chartData = [];
-    const allPayments = data?.allPayments || [];
 
     if (timeRange === '6months') {
       // Last 6 months logic
@@ -102,21 +131,6 @@ function Dashboard() {
       </div>
     );
   }
-
-  const stats = data?.stats || {
-    totalClients: 0,
-    activePrograms: 0,
-    upcomingSessions: 0,
-    monthlyRevenue: 0,
-    monthlyGrowth: 0,
-    newClientsThisMonth: 0,
-    avgProgramCompletion: 0,
-  };
-
-  const coachCode = data?.coachCode;
-  const recentActivities = data?.recentActivities || [];
-  const clientProgress = data?.clientProgress || [];
-  const upcomingAppointments = data?.upcomingAppointments || [];
 
   return (
     <div className="p-6 max-w-[2000px] mx-auto space-y-8 animate-fade-in">
@@ -310,10 +324,10 @@ function Dashboard() {
                       <td className="py-4">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center text-xs font-bold text-white">
-                            {item.client.full_name.charAt(0)}
+                            {item.client.full_name?.charAt(0) || '?'}
                           </div>
                           <span className="font-medium text-white group-hover:text-primary-400 transition-colors">
-                            {item.client.full_name}
+                            {item.client.full_name || 'Inconnu'}
                           </span>
                         </div>
                       </td>
@@ -353,7 +367,7 @@ function Dashboard() {
               </button>
             </div>
             <div className="space-y-6">
-              {recentActivities.map((activity: any) => (
+              {recentActivities.map((activity: any, index: number) => (
                 <div key={activity.id} className="relative pl-6 pb-6 last:pb-0 border-l border-white/10 last:border-0">
                   <div className={`absolute left-[-5px] top-0 w-2.5 h-2.5 rounded-full ring-4 ring-gray-900 ${activity.type === 'payment' ? 'bg-emerald-500' :
                     activity.type === 'workout_complete' ? 'bg-purple-500' :
@@ -368,7 +382,7 @@ function Dashboard() {
                     </p>
                     <span className="text-xs text-gray-500 flex items-center gap-1">
                       <Clock className="w-3 h-3" />
-                      {activity.date.toLocaleDateString()}
+                      {new Date(activity.date).toLocaleDateString()}
                     </span>
                   </div>
                 </div>
@@ -424,7 +438,7 @@ interface StatCardProps {
   isMoney?: boolean;
 }
 
-function StatCard({ title, value, subValue, icon: Icon, color, trend }: StatCardProps) {
+function StatCard({ title, value, subValue, icon: Icon, color, trend, isMoney }: StatCardProps) {
   const colors = {
     blue: 'from-blue-500 to-cyan-500',
     purple: 'from-purple-500 to-pink-500',
