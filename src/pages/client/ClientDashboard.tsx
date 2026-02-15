@@ -47,7 +47,7 @@ function ClientDashboard() {
         </div>
 
         {/* 4. Weekly Activity (Existing Widget) */}
-        <div className="px-4">
+        <div className="px-6">
           <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3 px-1">Cette Semaine</h3>
           <div className="bg-white/5 border border-white/5 rounded-3xl p-6">
             <div className="h-32 flex items-end justify-between px-2">

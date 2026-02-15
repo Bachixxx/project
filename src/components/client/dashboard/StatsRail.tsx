@@ -49,7 +49,7 @@ export function StatsRail({ level, xp, streak, weight }: StatsRailProps) {
     ];
 
     return (
-        <div className="w-full overflow-x-auto no-scrollbar pb-4 pt-2 -mx-4 px-4 snap-x snap-mandatory flex gap-3">
+        <div className="w-full overflow-x-auto no-scrollbar pb-4 pt-2 px-6 snap-x snap-mandatory flex gap-3">
             {stats.map((stat, i) => (
                 <motion.div
                     key={stat.id}

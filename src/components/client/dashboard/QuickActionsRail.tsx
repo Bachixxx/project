@@ -52,8 +52,8 @@ export function QuickActionsRail() {
 
     return (
         <div>
-            <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3 px-1">Accès Rapide</h3>
-            <div className="w-full overflow-x-auto no-scrollbar pb-2 -mx-4 px-4 flex gap-4">
+            <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3 px-6">Accès Rapide</h3>
+            <div className="w-full overflow-x-auto no-scrollbar pb-2 px-6 flex gap-4">
                 {actions.map((action, i) => (
                     <motion.button
                         key={action.id}
