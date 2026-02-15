@@ -3,6 +3,7 @@ import { DashboardHero } from '../../components/client/dashboard/DashboardHero';
 import { StatsRail } from '../../components/client/dashboard/StatsRail';
 import { QuickActionsRail } from '../../components/client/dashboard/QuickActionsRail';
 import { useTheme } from '../../contexts/ThemeContext';
+import { supabase } from '../../lib/supabase';
 
 export default function ClientDashboard() {
   const { data, isLoading: loading, error } = useClientDashboard();
@@ -22,8 +23,34 @@ export default function ClientDashboard() {
       <div className="min-h-screen bg-[#0f172a] flex items-center justify-center text-white p-4 text-center">
         <div>
           <p className="text-xl font-bold mb-2">Profil introuvable</p>
-          <p className="text-gray-400">Votre compte client n'est pas encore complètement configuré.</p>
-          {/* Optionally add a button to logout or contact support */}
+          <p className="text-gray-400 mb-6">Votre compte client n'est pas encore complètement configuré.</p>
+
+          <button
+            onClick={async () => {
+              try {
+                // Try to self-repair by creating a client profile
+                const { error: createError } = await supabase
+                  .from('clients')
+                  .insert([{
+                    auth_id: (await supabase.auth.getUser()).data.user?.id,
+                    email: (await supabase.auth.getUser()).data.user?.email,
+                    full_name: (await supabase.auth.getUser()).data.user?.user_metadata?.full_name || 'Nouveau Client',
+                    status: 'active'
+                  }]);
+
+                if (createError) throw createError;
+
+                // Force reload to pick up new profile
+                window.location.reload();
+              } catch (err) {
+                console.error("Failed to create profile:", err);
+                alert("Impossible de créer le profil automatiquement. Veuillez contacter le support.");
+              }
+            }}
+            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-xl font-bold transition-colors"
+          >
+            Créer mon profil maintenant
+          </button>
         </div>
       </div>
     );
