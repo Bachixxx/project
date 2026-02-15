@@ -63,7 +63,14 @@ export function useCoachPrograms() {
                 .order('name');
 
             if (error) throw error;
-            return data as Program[];
+
+            // Sanitize data: Filter out program_sessions with null sessions (e.g. deleted sessions)
+            const safeData = (data as any[]).map(program => ({
+                ...program,
+                program_sessions: program.program_sessions?.filter((ps: any) => ps.session !== null) || []
+            }));
+
+            return safeData as Program[];
         },
         enabled: !!user,
     });
@@ -72,11 +79,14 @@ export function useCoachPrograms() {
         mutationFn: async ({ programData, selectedSessions, programId }: SaveProgramParams) => {
             let finalProgramId = programId;
 
+            // Remove program_sessions and other non-column fields from programData
+            const { program_sessions, ...cleanProgramData } = programData as any;
+
             // 1. Create or Update Program
             if (programId) {
                 const { error } = await supabase
                     .from('programs')
-                    .update(programData)
+                    .update(cleanProgramData)
                     .eq('id', programId);
                 if (error) throw error;
 
@@ -88,7 +98,7 @@ export function useCoachPrograms() {
             } else {
                 const { data, error } = await supabase
                     .from('programs')
-                    .insert([{ ...programData, coach_id: user?.id }])
+                    .insert([{ ...cleanProgramData, coach_id: user?.id }])
                     .select()
                     .single();
                 if (error) throw error;

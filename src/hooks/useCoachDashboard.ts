@@ -42,6 +42,72 @@ export function useCoachDashboard() {
             if (!user?.id) throw new Error('User not authenticated');
 
             // 1. Parallel Fetching for independent data
+            let results;
+            try {
+                results = await Promise.all([
+                    // Total Clients
+                    supabase.from('clients').select('*', { count: 'exact', head: true }).eq('coach_id', user.id),
+                    // Coach Profile (Code)
+                    supabase.from('coaches').select('coach_code').eq('id', user.id).maybeSingle(),
+                    // Active Programs Count
+                    supabase.from('client_programs').select('*', { count: 'exact', head: true }).eq('status', 'active'),
+                    // Upcoming Sessions (Next 7 days)
+                    supabase
+                        .from('appointments')
+                        .select(`id, title, start, duration, client:clients(full_name), type`, { count: 'exact' })
+                        .eq('coach_id', user.id)
+                        .gte('start', new Date().toISOString())
+                        .lte('start', new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString())
+                        .eq('status', 'scheduled')
+                        .order('start', { ascending: true })
+                        .limit(5),
+                    // New Clients This Month
+                    supabase
+                        .from('clients')
+                        .select('*', { count: 'exact', head: true })
+                        .eq('coach_id', user.id)
+                        .gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()),
+                    // Active Programs Progress (for Avg)
+                    supabase.from('client_programs').select('progress').eq('status', 'active'),
+                    // Payments (All for charts)
+                    supabase
+                        .from('payments')
+                        .select('amount, payment_date')
+                        .eq('status', 'paid')
+                        .gte('payment_date', new Date(new Date().getFullYear(), new Date().getMonth() - 5, 1).toISOString()), // Get last 6 months minimum
+                    // Recent Programs
+                    supabase
+                        .from('client_programs')
+                        .select(`id, start_date, client:clients(full_name), program:programs(name)`)
+                        .order('start_date', { ascending: false })
+                        .limit(5),
+                    // Recent Workouts
+                    supabase
+                        .from('workout_sessions')
+                        .select(`id, date, client_program:client_programs(client:clients(full_name), program:programs(name))`)
+                        .order('date', { ascending: false })
+                        .limit(5),
+                    // Recent Payments
+                    supabase
+                        .from('payments')
+                        .select(`id, amount, payment_date, client:clients(full_name)`)
+                        .eq('status', 'paid')
+                        .order('payment_date', { ascending: false })
+                        .limit(5),
+                    // Client Progress List
+                    supabase
+                        .from('client_programs')
+                        .select(`id, progress, client:clients(full_name), program:programs(name)`)
+                        .eq('status', 'active')
+                        .order('progress', { ascending: false })
+                        .limit(4)
+                ]);
+            } catch (err) {
+                console.error('Error fetching dashboard data:', err);
+                throw err;
+            }
+
+            // Destructure results after the await
             const [
                 clientsRes,
                 coachProfileRes,
@@ -54,64 +120,7 @@ export function useCoachDashboard() {
                 recentWorkoutsRes,
                 recentPaymentsRes,
                 clientProgressRes
-            ] = await Promise.all([
-                // Total Clients
-                supabase.from('clients').select('*', { count: 'exact', head: true }).eq('coach_id', user.id),
-                // Coach Profile (Code)
-                supabase.from('coaches').select('coach_code').eq('id', user.id).single(),
-                // Active Programs Count
-                supabase.from('client_programs').select('*', { count: 'exact', head: true }).eq('status', 'active'),
-                // Upcoming Sessions (Next 7 days)
-                supabase
-                    .from('appointments')
-                    .select(`id, title, start, duration, client:clients(full_name), type`, { count: 'exact' })
-                    .eq('coach_id', user.id)
-                    .gte('start', new Date().toISOString())
-                    .lte('start', new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString())
-                    .eq('status', 'scheduled')
-                    .order('start', { ascending: true })
-                    .limit(5),
-                // New Clients This Month
-                supabase
-                    .from('clients')
-                    .select('*', { count: 'exact', head: true })
-                    .eq('coach_id', user.id)
-                    .gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()),
-                // Active Programs Progress (for Avg)
-                supabase.from('client_programs').select('progress').eq('status', 'active'),
-                // Payments (All for charts)
-                supabase
-                    .from('payments')
-                    .select('amount, payment_date')
-                    .eq('status', 'paid')
-                    .gte('payment_date', new Date(new Date().getFullYear(), new Date().getMonth() - 5, 1).toISOString()), // Get last 6 months minimum
-                // Recent Programs
-                supabase
-                    .from('client_programs')
-                    .select(`id, start_date, client:clients(full_name), program:programs(name)`)
-                    .order('start_date', { ascending: false })
-                    .limit(5),
-                // Recent Workouts
-                supabase
-                    .from('workout_sessions')
-                    .select(`id, date, client_program:client_programs(client:clients(full_name), program:programs(name))`)
-                    .order('date', { ascending: false })
-                    .limit(5),
-                // Recent Payments
-                supabase
-                    .from('payments')
-                    .select(`id, amount, payment_date, client:clients(full_name)`)
-                    .eq('status', 'paid')
-                    .order('payment_date', { ascending: false })
-                    .limit(5),
-                // Client Progress List
-                supabase
-                    .from('client_programs')
-                    .select(`id, progress, client:clients(full_name), program:programs(name)`)
-                    .eq('status', 'active')
-                    .order('progress', { ascending: false })
-                    .limit(4)
-            ]);
+            ] = results;
 
             // 2. Process Data
             const now = new Date();
