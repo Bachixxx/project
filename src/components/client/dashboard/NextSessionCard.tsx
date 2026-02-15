@@ -38,7 +38,7 @@ export function NextSessionCard({ session }: NextSessionProps) {
     const duration = isScheduled ? session.session.duration_minutes : '60'; // Default assumption
     const difficulty = isScheduled ? session.session.difficulty_level : 'medium';
     const sessionRoute = isScheduled
-        ? `/client/live-workout/scheduled/${session.id}`
+        ? `/client/live-workout/${session.id}`
         : `/client/live-workout/appointment/${session.id}`;
 
     // Helper for difficulty color
