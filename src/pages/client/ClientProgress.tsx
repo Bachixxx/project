@@ -273,7 +273,7 @@ function ClientProgress() {
         title="Mes Progrès"
         subtitle="Suivez l'évolution de vos performances."
         backgroundImage="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=2070&auto=format&fit=crop"
-        className="pb-0"
+        className="pb-12"
         headerContent={
           <div className="bg-white/10 backdrop-blur-md rounded-full px-4 py-1 border border-white/10 text-xs font-medium text-white/80">
             {activeTab === 'summary' ? 'Vue d\'ensemble' : 'Analyse détaillée'}
