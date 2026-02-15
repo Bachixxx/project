@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ChevronLeft, Play, Calendar, CheckCircle, Clock, Dumbbell, User, Award } from 'lucide-react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Play, Calendar, CheckCircle, Clock, Dumbbell, Award } from 'lucide-react';
 import { useClientAuth } from '../../contexts/ClientAuthContext';
 import { supabase } from '../../lib/supabase';
+import { PageHero } from '../../components/client/shared/PageHero';
 
 function ClientWorkout() {
   const { clientProgramId } = useParams();
@@ -154,41 +155,27 @@ function ClientWorkout() {
   return (
     <div className="min-h-screen bg-[#0f172a] text-white pb-24 font-sans">
 
-      {/* Hero Header */}
-      <div className="relative h-64 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#0f172a] z-10" />
-        <div className="absolute inset-0 bg-blue-900/20 z-0" />
-
-        {/* Abstract Shapes */}
-        <div className="absolute top-[-50%] right-[-20%] w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-[100px]" />
-        <div className="absolute bottom-[-50%] left-[-20%] w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[100px]" />
-
-        <div className="relative z-20 p-4 pt-6 h-full flex flex-col justify-between max-w-2xl mx-auto">
-          <Link to="/client/workouts" className="self-start p-2 bg-white/10 backdrop-blur-md rounded-full hover:bg-white/20 transition-all">
-            <ChevronLeft className="w-6 h-6" />
-          </Link>
-
-          <div className="mb-4">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="px-2 py-1 bg-blue-500/20 border border-blue-500/30 rounded-lg text-xs font-bold text-blue-400 uppercase tracking-wider">
-                Programme
+      {/* Page Hero */}
+      <PageHero
+        title={program.program.name}
+        subtitle={`Par ${program.program.coach?.full_name || 'Coach'}`}
+        backgroundImage="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=2070&auto=format&fit=crop"
+        showBackButton={true}
+        headerContent={
+          <div className="flex items-center gap-2 mb-2">
+            <span className="px-2 py-1 bg-white/10 backdrop-blur-md border border-white/20 rounded-lg text-xs font-bold text-white uppercase tracking-wider">
+              Programme
+            </span>
+            {program.program.difficulty_level && (
+              <span className="px-2 py-1 bg-white/10 backdrop-blur-md border border-white/20 rounded-lg text-xs font-medium text-gray-200 capitalize">
+                {program.program.difficulty_level}
               </span>
-              {program.program.difficulty_level && (
-                <span className="px-2 py-1 bg-white/5 border border-white/10 rounded-lg text-xs font-medium text-gray-400 capitalize">
-                  {program.program.difficulty_level}
-                </span>
-              )}
-            </div>
-            <h1 className="text-3xl font-bold text-white mb-2 shadow-sm">{program.program.name}</h1>
-            <div className="flex items-center gap-2 text-sm text-gray-400">
-              <User className="w-4 h-4" />
-              <span>Par {program.program.coach?.full_name || 'Coach'}</span>
-            </div>
+            )}
           </div>
-        </div>
-      </div>
+        }
+      />
 
-      <div className="max-w-2xl mx-auto px-4 -mt-6 relative z-30 space-y-6">
+      <div className="max-w-2xl mx-auto px-4 -mt-12 relative z-30 space-y-6">
 
         {/* Stats Row */}
         <div className="grid grid-cols-2 gap-3">

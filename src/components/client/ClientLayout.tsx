@@ -32,7 +32,8 @@ function ClientLayout() {
   // Pages that have their own immersive hero header and don't need the default top nav
   const immersivePages = ['/client/dashboard', '/client/workouts', '/client/profile', '/client/body-composition', '/client/progress', '/client/appointments'];
   const isImmersivePage = immersivePages.includes(location.pathname) ||
-    location.pathname.startsWith('/client/workouts/') || // For detailed views if they become immersive
+    location.pathname.startsWith('/client/workouts/') || // Keep just in case
+    location.pathname.startsWith('/client/workout/') || // For Program Details
     location.pathname.includes('?tab='); // Handle query params if needed, though pathname usually excludes them
 
   return (
