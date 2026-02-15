@@ -884,9 +884,9 @@ function ClientLiveWorkout() {
           )
         }
 
-        {/* Set Navigation Bar */}
+        {/* Set Navigation Bar (Hidden for AMRAP) */}
         {
-          currentExercise && (
+          currentExercise && currentExercise.group?.type !== 'amrap' && (
             <div className="flex items-center justify-center gap-2 mb-6 shrink-0 overflow-x-auto py-2 no-scrollbar">
               {completedExercises[currentExercise.id]?.sets.map((s, idx) => (
                 <button
@@ -1082,9 +1082,11 @@ function ClientLiveWorkout() {
                       }
                         `}
                   >
-                    {(currentExerciseIndex === exercises.length - 1 && activeSetIndex === (currentExercise.sets || 0) - 1 && activeSet.completed)
+                    {(currentExerciseIndex === exercises.length - 1 && activeSetIndex === (currentExercise.sets || 0) - 1 && activeSet.completed && currentExercise.group?.type !== 'amrap')
                       ? 'Terminer la séance'
-                      : activeSet.completed ? 'Validé' : 'Valider la série'}
+                      : currentExercise.group?.type === 'amrap'
+                        ? 'Exercice Suivant'
+                        : activeSet.completed ? 'Validé' : 'Valider la série'}
                   </button>
                 )}
 
