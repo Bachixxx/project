@@ -11,6 +11,7 @@ export interface DashboardData {
         streak: number;
         level: number;
         xp: number;
+        weight?: number;
     };
     recentActivity: any[];
     weeklyActivity: { date: string; count: number }[];
@@ -113,7 +114,16 @@ export function useClientDashboardData() {
                 return { date, count };
             });
 
-            // 5. Calculate Stats (Basic derivation)
+            // 5. Fetch Latest Weight
+            const { data: latestScan } = await supabase
+                .from('body_scans')
+                .select('weight')
+                .eq('client_id', client.id)
+                .order('date', { ascending: false })
+                .limit(1)
+                .single();
+
+            // 6. Calculate Stats (Basic derivation)
             // Ideally this should be a dedicated stats table or RPC for performance
             const { count: totalWorkouts } = await supabase
                 .from('workout_logs')
@@ -125,7 +135,8 @@ export function useClientDashboardData() {
                 totalDuration: 0, // Hard to sum without aggregation
                 streak: clientData.current_streak || 0,
                 level: clientData.level || 1,
-                xp: clientData.xp || 0
+                xp: clientData.xp || 0,
+                weight: latestScan?.weight
             };
 
             setData({

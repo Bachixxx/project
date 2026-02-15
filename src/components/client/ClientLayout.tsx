@@ -29,73 +29,77 @@ function ClientLayout() {
 
   const isActive = (path: string) => location.pathname === path;
 
+  const isDashboard = location.pathname === '/client/dashboard';
+
   return (
     <div className="min-h-screen bg-[#0f172a] text-gray-100">
-      {/* Top Navigation Bar */}
-      <nav className="bg-white/10 backdrop-blur-lg shadow-xl fixed w-full z-50 pt-[env(safe-area-inset-top)]">
-        <div className="max-w-9xl mx-auto px-4">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="p-2 rounded-lg text-white hover:bg-white/10 lg:hidden hidden" // Hidden on mobile now
-              >
-                {isMobileMenuOpen ? (
-                  <X className="w-6 h-6" />
-                ) : (
-                  <Menu className="w-6 h-6" />
-                )}
-              </button>
-              <div className="ml-2 lg:ml-0 flex items-center gap-3">
-                <img src={branding?.logoUrl || "/logo.png"} alt="Coachency" className="h-8 w-8 rounded-lg shadow-lg" />
-                <span className="text-xl font-bold text-white bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent">
-                  {branding?.appName || 'Coachency Client'}
-                  {client && (
-                    <span className="hidden md:inline-block text-sm font-normal ml-2 text-white/70">
-                      • {client.full_name}
-                    </span>
+      {/* Top Navigation Bar - Hidden on Dashboard */}
+      {!isDashboard && (
+        <nav className="bg-white/10 backdrop-blur-lg shadow-xl fixed w-full z-50 pt-[env(safe-area-inset-top)]">
+          <div className="max-w-9xl mx-auto px-4">
+            <div className="flex justify-between h-16">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                  className="p-2 rounded-lg text-white hover:bg-white/10 lg:hidden hidden" // Hidden on mobile now
+                >
+                  {isMobileMenuOpen ? (
+                    <X className="w-6 h-6" />
+                  ) : (
+                    <Menu className="w-6 h-6" />
                   )}
-                </span>
+                </button>
+                <div className="ml-2 lg:ml-0 flex items-center gap-3">
+                  <img src={branding?.logoUrl || "/logo.png"} alt="Coachency" className="h-8 w-8 rounded-lg shadow-lg" />
+                  <span className="text-xl font-bold text-white bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent">
+                    {branding?.appName || 'Coachency Client'}
+                    {client && (
+                      <span className="hidden md:inline-block text-sm font-normal ml-2 text-white/70">
+                        • {client.full_name}
+                      </span>
+                    )}
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {/* Marketplace Link Hidden
+                <Link
+                  to="/marketplace"
+                  className="hidden sm:flex items-center gap-2 px-4 py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 rounded-lg transition-colors"
+                  title="Marketplace"
+                >
+                  <ShoppingBag className="w-5 h-5" />
+                  <span className="font-medium">Marketplace</span>
+                </Link>
+                <Link
+                  to="/marketplace"
+                  className="sm:hidden p-2 rounded-full hover:bg-white/10 text-amber-300"
+                  title="Marketplace"
+                >
+                  <ShoppingBag className="w-5 h-5" />
+                </Link>
+                */}
+                <Link
+                  to="/client/profile"
+                  className="p-2 rounded-full hover:bg-white/10 text-white"
+                  title="Mon profil"
+                >
+                  <User className="w-5 h-5" />
+                </Link>
+                <button
+                  onClick={handleSignOut}
+                  className="p-2 rounded-full hover:bg-white/10 text-white"
+                  title="Déconnexion"
+                >
+                  <LogOut className="w-5 h-5" />
+                </button>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              {/* Marketplace Link Hidden
-              <Link
-                to="/marketplace"
-                className="hidden sm:flex items-center gap-2 px-4 py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 rounded-lg transition-colors"
-                title="Marketplace"
-              >
-                <ShoppingBag className="w-5 h-5" />
-                <span className="font-medium">Marketplace</span>
-              </Link>
-              <Link
-                to="/marketplace"
-                className="sm:hidden p-2 rounded-full hover:bg-white/10 text-amber-300"
-                title="Marketplace"
-              >
-                <ShoppingBag className="w-5 h-5" />
-              </Link>
-              */}
-              <Link
-                to="/client/profile"
-                className="p-2 rounded-full hover:bg-white/10 text-white"
-                title="Mon profil"
-              >
-                <User className="w-5 h-5" />
-              </Link>
-              <button
-                onClick={handleSignOut}
-                className="p-2 rounded-full hover:bg-white/10 text-white"
-                title="Déconnexion"
-              >
-                <LogOut className="w-5 h-5" />
-              </button>
-            </div>
           </div>
-        </div>
-      </nav>
+        </nav>
+      )}
 
-      <div className="flex pt-[calc(4rem+env(safe-area-inset-top))] w-full pb-20 lg:pb-0">
+      <div className={`flex w-full pb-20 lg:pb-0 ${isDashboard ? 'pt-0' : 'pt-[calc(4rem+env(safe-area-inset-top))]'}`}>
         {/* Mobile Sidebar */}
         <div
           className={`fixed inset-0 bg-black/70 backdrop-blur-sm z-40 lg:hidden transition-opacity duration-300 ${isMobileMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'

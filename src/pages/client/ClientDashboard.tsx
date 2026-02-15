@@ -1,9 +1,7 @@
 import { useClientDashboardData } from '../../hooks/useClientDashboardData';
-import { DashboardHeader } from '../../components/client/dashboard/DashboardHeader';
-import { StatsOverview } from '../../components/client/dashboard/StatsOverview';
-import { NextSessionCard } from '../../components/client/dashboard/NextSessionCard';
-import { QuickActionsGrid } from '../../components/client/dashboard/QuickActionsGrid';
-
+import { DashboardHero } from '../../components/client/dashboard/DashboardHero';
+import { StatsRail } from '../../components/client/dashboard/StatsRail';
+import { QuickActionsRail } from '../../components/client/dashboard/QuickActionsRail';
 import { DashboardSkeleton } from '../../components/client/skeletons/DashboardSkeleton';
 
 function ClientDashboard() {
@@ -22,49 +20,50 @@ function ClientDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0f172a] text-white p-4 pb-24 md:p-8 font-sans overflow-x-hidden">
-      {/* Ambient Background */}
-      <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-        <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[128px]" />
-        <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[128px]" />
-      </div>
+    <div className="min-h-screen bg-[#0f172a] text-white font-sans pb-32">
 
-      <div className="relative z-10 max-w-md mx-auto lg:max-w-4xl">
-        <DashboardHeader
-          clientName={data.clientName}
-          notifications={2} // Mock for now
-        // avatarUrl={client.avatar_url} // If available in hook data
-        />
+      {/* 1. Immersive Hero Section */}
+      <DashboardHero
+        clientName={data.clientName}
+        nextSession={data.nextSession}
+        notificationsCount={2}
+      />
 
-        <StatsOverview
-          level={data.stats.level}
-          xp={data.stats.xp}
-          streak={data.stats.streak}
-          workoutsThisWeek={3}
-        />
+      <div className="flex flex-col gap-8 -mt-6 relative z-10">
 
-        <NextSessionCard session={data.nextSession} />
+        {/* 2. Stats Rail (Horizontal Scroll) */}
+        <div className="px-0">
+          <StatsRail
+            level={data.stats.level}
+            xp={data.stats.xp}
+            streak={data.stats.streak}
+            weight={data.stats.weight}
+          />
+        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <QuickActionsGrid />
+        {/* 3. Quick Actions Rail */}
+        <div className="px-0">
+          <QuickActionsRail />
+        </div>
 
-          {/* Placeholder for future widgets like Weekly Graph */}
-          <div className="hidden lg:block bg-white/5 border border-white/5 rounded-3xl p-6">
-            <h3 className="text-lg font-bold text-white mb-4">Activité Hebdomadaire</h3>
-            <div className="h-40 flex items-end justify-between px-2">
-              {/* Simple Bar Chart Visualization */}
+        {/* 4. Weekly Activity (Existing Widget) */}
+        <div className="px-4">
+          <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3 px-1">Cette Semaine</h3>
+          <div className="bg-white/5 border border-white/5 rounded-3xl p-6">
+            <div className="h-32 flex items-end justify-between px-2">
               {data.weeklyActivity.map((day, i) => (
-                <div key={i} className="flex flex-col items-center gap-2 group">
+                <div key={i} className="flex flex-col items-center gap-2 group w-full">
                   <div
-                    className="w-8 rounded-t-lg bg-blue-500/20 group-hover:bg-blue-500/50 transition-all"
-                    style={{ height: `${day.count > 0 ? (day.count * 40) + 10 : 10}%` }}
+                    className="w-full max-w-[1.5rem] rounded-t-sm bg-blue-500/20 group-hover:bg-blue-500/50 transition-all"
+                    style={{ height: `${day.count > 0 ? (day.count * 30) + 10 : 5}%` }}
                   ></div>
-                  <span className="text-xs text-gray-500 uppercase">{new Date(day.date).toLocaleDateString('fr-FR', { weekday: 'narrow' })}</span>
+                  <span className="text-[10px] text-gray-500 uppercase">{new Date(day.date).toLocaleDateString('fr-FR', { weekday: 'narrow' })}</span>
                 </div>
               ))}
             </div>
           </div>
         </div>
+
       </div>
     </div>
   );
