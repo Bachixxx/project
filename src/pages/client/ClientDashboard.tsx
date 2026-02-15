@@ -2,19 +2,27 @@ import { useClientDashboardData } from '../../hooks/useClientDashboardData';
 import { DashboardHero } from '../../components/client/dashboard/DashboardHero';
 import { StatsRail } from '../../components/client/dashboard/StatsRail';
 import { QuickActionsRail } from '../../components/client/dashboard/QuickActionsRail';
-import { DashboardSkeleton } from '../../components/client/skeletons/DashboardSkeleton';
+// Removed unused motion import
+// Removed unused useNavigate import
+import { useTheme } from '../../contexts/ThemeContext'; // Import useTheme
 
 function ClientDashboard() {
   const { data, loading, error } = useClientDashboardData();
+  // Removed unused navigate
+  const { branding } = useTheme(); // Access branding
 
   if (loading) {
-    return <DashboardSkeleton />;
+    return (
+      <div className="min-h-screen bg-[#0f172a] flex items-center justify-center">
+        <div className="loading loading-lg text-primary-500"></div>
+      </div>
+    );
   }
 
   if (error || !data) {
     return (
       <div className="min-h-screen bg-[#0f172a] flex items-center justify-center text-white">
-        <p>Une erreur est survenue : {error || "Impossible de charger les données"}</p>
+        <p>Erreur de chargement des données.</p>
       </div>
     );
   }
@@ -27,6 +35,7 @@ function ClientDashboard() {
         clientName={data.clientName}
         nextSession={data.nextSession}
         notificationsCount={2}
+        heroImage={branding?.dashboardHeroImage} // Pass custom image
       />
 
       <div className="flex flex-col gap-8 -mt-6 relative z-10">

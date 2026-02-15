@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import { Upload, Save, Eye, Palette, Layout, Smartphone } from 'lucide-react';
+import { Upload, Save, Palette, Layout, Smartphone } from 'lucide-react';
 import { useSubscription } from '../hooks/useSubscription';
 
 interface BrandingSettings {
@@ -9,6 +9,7 @@ interface BrandingSettings {
     logoUrl?: string;
     welcomeMessage?: string;
     appName?: string;
+    dashboardHeroImage?: string; // NEW
 }
 
 function BrandingSettings() {
@@ -16,16 +17,16 @@ function BrandingSettings() {
     // NEW: Use subscription hook
     const { subscriptionInfo, loading: subLoading, subscribeToBranding } = useSubscription();
 
-    const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [settings, setSettings] = useState<BrandingSettings>({
         primaryColor: '#0ea5e9', // Default Sky-500
         logoUrl: '',
         welcomeMessage: 'Bienvenue',
         appName: 'Coachency Client',
+        dashboardHeroImage: '', // Default empty
     });
     const [uploadingLogo, setUploadingLogo] = useState(false);
-    const [previewMode, setPreviewMode] = useState<'iphone' | 'android'>('iphone');
+    const [uploadingHero, setUploadingHero] = useState(false); // NEW
 
     // Helper to convert Hex to Space-separated RGB for Tailwind
     const getRgbString = (hex: string | undefined) => {
@@ -75,6 +76,7 @@ function BrandingSettings() {
                     logoUrl: data.branding_settings.logoUrl || '',
                     welcomeMessage: data.branding_settings.welcomeMessage || 'Bienvenue',
                     appName: data.branding_settings.appName || 'Coachency Client',
+                    dashboardHeroImage: data.branding_settings.dashboardHeroImage || '',
                 });
             }
         } catch (error) {
@@ -85,15 +87,27 @@ function BrandingSettings() {
     };
 
     const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        handleFileUpload(event, 'logoUrl', setUploadingLogo);
+    };
+
+    const handleHeroUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        handleFileUpload(event, 'dashboardHeroImage', setUploadingHero);
+    };
+
+    const handleFileUpload = async (
+        event: React.ChangeEvent<HTMLInputElement>,
+        settingKey: keyof BrandingSettings,
+        setLoadingState: (loading: boolean) => void
+    ) => {
         try {
             if (!event.target.files || event.target.files.length === 0) {
                 return;
             }
-            setUploadingLogo(true);
+            setLoadingState(true);
             const file = event.target.files[0];
             const fileExt = file.name.split('.').pop();
-            const fileName = `${Math.random()}.${fileExt}`;
-            const filePath = `logos/${user?.id}/${fileName}`;
+            const fileName = `${settingKey}_${Math.random()}.${fileExt}`;
+            const filePath = `branding/${user?.id}/${fileName}`;
 
             const { error: uploadError } = await supabase.storage
                 .from('branding')
@@ -114,15 +128,14 @@ function BrandingSettings() {
             const publicUrlWithAuth = `${publicUrl}?t=${new Date().getTime()}`;
 
             setSettings(prev => {
-                console.log('Updating settings with logo:', publicUrlWithAuth);
-                return { ...prev, logoUrl: publicUrlWithAuth };
+                return { ...prev, [settingKey]: publicUrlWithAuth };
             });
 
         } catch (error) {
-            console.error('Error uploading logo:', error);
-            alert('Erreur lors du téléchargement du logo. Vérifiez la console.');
+            console.error(`Error uploading ${settingKey}:`, error);
+            alert('Erreur lors du téléchargement. Vérifiez la console.');
         } finally {
-            setUploadingLogo(false);
+            setLoadingState(false);
         }
     };
 
@@ -300,7 +313,52 @@ function BrandingSettings() {
                                     <Upload className="w-4 h-4" />
                                     Importer un logo
                                 </label>
-                                <p className="text-xs text-gray-500 mt-2">Format suggéré warning: PNG transparent, Carré.</p>
+                                <p className="text-xs text-gray-500 mt-2">Format suggéré: PNG transparent, Carré.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Dashboard Hero Image */}
+                    <div className="glass-card p-6">
+                        <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                            <Smartphone className="w-5 h-5 text-primary-400" />
+                            Image d'accueil (Dashboard)
+                        </h3>
+                        <div className="flex items-center gap-6">
+                            <div className="relative w-32 h-20 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden group">
+                                {settings.dashboardHeroImage ? (
+                                    <img
+                                        src={settings.dashboardHeroImage}
+                                        alt="Hero"
+                                        className="w-full h-full object-cover"
+                                    />
+                                ) : (
+                                    <div className="w-full h-full bg-gradient-to-br from-blue-900 via-slate-900 to-black opacity-50 flex items-center justify-center">
+                                        <span className="text-xs text-gray-500">Défaut</span>
+                                    </div>
+                                )}
+                                {uploadingHero && (
+                                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                                        <div className="loading loading-sm border-white" />
+                                    </div>
+                                )}
+                            </div>
+                            <div>
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleHeroUpload}
+                                    className="hidden"
+                                    id="hero-upload"
+                                />
+                                <label
+                                    htmlFor="hero-upload"
+                                    className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 rounded-lg text-sm text-white hover:bg-white/20 transition-colors cursor-pointer"
+                                >
+                                    <Upload className="w-4 h-4" />
+                                    Changer l'image
+                                </label>
+                                <p className="text-xs text-gray-500 mt-2">Affiche en haut du tableau de bord client.</p>
                             </div>
                         </div>
                     </div>
@@ -336,6 +394,24 @@ function BrandingSettings() {
                         </div>
                     </div>
 
+                    {/* Colors */}
+                    <div className="glass-card p-6">
+                        <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                            <Palette className="w-5 h-5 text-primary-400" />
+                            Couleurs
+                        </h3>
+                        <div className="grid grid-cols-6 gap-3">
+                            {colorPresets.map(color => (
+                                <button
+                                    key={color}
+                                    onClick={() => setSettings({ ...settings, primaryColor: color })}
+                                    className={`w-10 h-10 rounded-full border-2 transition-transform hover:scale-110 ${settings.primaryColor === color ? 'border-white ring-2 ring-white/20' : 'border-transparent'}`}
+                                    style={{ backgroundColor: color }}
+                                />
+                            ))}
+                        </div>
+                    </div>
+
                 </div>
 
                 {/* Right Column: Preview */}
@@ -363,57 +439,64 @@ function BrandingSettings() {
 
                         {/* App Content */}
                         <div
-                            className="flex-1 bg-[#0f172a] text-white overflow-hidden flex flex-col pt-12 relative"
+                            className="flex-1 bg-[#0f172a] text-white overflow-hidden flex flex-col relative"
                         >
                             <div
                                 id="preview-container"
                                 className="h-full flex flex-col"
                                 style={previewStyle}
                             >
-                                {/* Header */}
-                                <div className="px-6 mb-6 flex justify-between items-center">
-                                    <div>
-                                        <h4 className="text-gray-400 text-xs">{settings.welcomeMessage},</h4>
-                                        <h3 className="text-lg font-bold">Thomas</h3>
+                                {/* NEW: Immersive Hero Preview */}
+                                <div className="relative w-full h-48 flex flex-col justify-end p-4 z-10">
+                                    <div className="absolute inset-0 z-0">
+                                        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0f172a]/60 to-[#0f172a]" />
+                                        <img
+                                            src={settings.dashboardHeroImage || "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=2070&auto=format&fit=crop"}
+                                            alt="Hero"
+                                            className="w-full h-full object-cover opacity-60"
+                                        />
                                     </div>
-                                    <div className="w-10 h-10 rounded-full overflow-hidden border border-white/10 bg-white/5">
-                                        {settings.logoUrl ? (
-                                            <img src={settings.logoUrl} className="w-full h-full object-cover" alt="Coach Logo" />
-                                        ) : (
-                                            <div className="w-full h-full flex items-center justify-center text-xs font-bold bg-primary-500 text-white">CO</div>
-                                        )}
+                                    <div className="relative z-10">
+                                        <h4 className="text-lg font-bold">Bonjour, Thomas</h4>
+                                        <p className="text-xs text-gray-300">Prêt à transpirer ? 🔥</p>
+                                    </div>
+
+                                    {/* Logo Overlay */}
+                                    {settings.logoUrl && (
+                                        <div className="absolute top-12 right-4 w-8 h-8 rounded-lg bg-white/10 backdrop-blur-md border border-white/10 flex items-center justify-center p-1 z-20">
+                                            <img src={settings.logoUrl} className="w-full h-full object-contain" />
+                                        </div>
+                                    )}
+                                </div>
+
+
+                                {/* Stats Rail Preview */}
+                                <div className="px-4 -mt-2 relative z-10 flex gap-2 overflow-hidden mb-6 opacity-80">
+                                    <div className="w-24 h-20 rounded-xl bg-gradient-to-br from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 p-2">
+                                        <div className="text-xs text-gray-400">Niveau</div>
+                                        <div className="font-bold">12</div>
+                                    </div>
+                                    <div className="w-24 h-20 rounded-xl bg-gradient-to-br from-orange-500/20 to-red-500/20 border border-orange-500/30 p-2">
+                                        <div className="text-xs text-gray-400">Série</div>
+                                        <div className="font-bold">5 J</div>
+                                    </div>
+                                    <div className="w-24 h-20 rounded-xl bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border border-blue-500/30 p-2">
+                                        <div className="text-xs text-gray-400">Poids</div>
+                                        <div className="font-bold">75 kg</div>
                                     </div>
                                 </div>
 
-                                {/* Stats Card */}
-                                <div className="px-6 mb-6">
-                                    <div className="w-full p-4 rounded-2xl bg-white/5 border border-white/10 relative overflow-hidden group">
+                                {/* Next Session Preview */}
+                                <div className="px-4 mb-6">
+                                    <div className="w-full p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/10 relative overflow-hidden">
                                         <div className="absolute top-0 right-0 p-3">
                                             <div className="w-2 h-2 rounded-full bg-primary-500 shadow-[0_0_10px_rgb(var(--color-primary-500)/0.5)]"></div>
                                         </div>
-                                        <p className="text-xs text-gray-400 mb-1">Prochaine séance</p>
-                                        <h3 className="font-bold text-lg mb-3">Haut du corps</h3>
-                                        <button className="w-full py-2 rounded-lg bg-primary-500 text-white text-xs font-bold shadow-lg shadow-primary-500/20">
-                                            Commencer
+                                        <span className="inline-block px-2 py-0.5 bg-primary-500 text-[10px] font-bold rounded-md mb-2">NEXT</span>
+                                        <h3 className="font-bold text-sm mb-2">{settings.welcomeMessage}</h3>
+                                        <button className="w-full py-2 rounded-xl bg-white text-blue-900 text-xs font-bold">
+                                            COMMENCER
                                         </button>
-                                    </div>
-                                </div>
-
-                                {/* Recent Activity */}
-                                <div className="px-6 flex-1">
-                                    <h4 className="font-bold text-sm mb-3">Activité Récente</h4>
-                                    <div className="space-y-3">
-                                        {[1, 2].map(i => (
-                                            <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5">
-                                                <div className="w-10 h-10 rounded-lg bg-primary-500/20 flex items-center justify-center text-primary-500">
-                                                    <div className="w-5 h-5 bg-current rounded-sm opacity-50" />
-                                                </div>
-                                                <div>
-                                                    <div className="h-3 w-20 bg-white/20 rounded mb-1.5" />
-                                                    <div className="h-2 w-12 bg-white/10 rounded" />
-                                                </div>
-                                            </div>
-                                        ))}
                                     </div>
                                 </div>
 

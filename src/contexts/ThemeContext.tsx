@@ -8,6 +8,7 @@ interface BrandingSettings {
     theme?: 'dark' | 'light';
     welcomeMessage?: string;
     appName?: string;
+    dashboardHeroImage?: string; // Added field
 }
 
 interface ThemeContextType {

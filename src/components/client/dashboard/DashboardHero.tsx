@@ -6,9 +6,10 @@ interface DashboardHeroProps {
     clientName: string;
     nextSession: any | null;
     notificationsCount?: number;
+    heroImage?: string; // NEW
 }
 
-export function DashboardHero({ clientName, nextSession, notificationsCount = 0 }: DashboardHeroProps) {
+export function DashboardHero({ clientName, nextSession, notificationsCount = 0, heroImage }: DashboardHeroProps) {
     const navigate = useNavigate();
 
     // Helper to format date
@@ -31,7 +32,7 @@ export function DashboardHero({ clientName, nextSession, notificationsCount = 0 
             <div className="absolute inset-0 z-0">
                 <div className="absolute inset-0 bg-gradient-to-b from-blue-900/40 via-[#0f172a]/60 to-[#0f172a]" />
                 <img
-                    src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=2070&auto=format&fit=crop"
+                    src={heroImage || "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=2070&auto=format&fit=crop"}
                     alt="Workout Background"
                     className="w-full h-full object-cover opacity-60"
                 />
