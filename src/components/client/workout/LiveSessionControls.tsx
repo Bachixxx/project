@@ -78,7 +78,7 @@ export function LiveSessionControls({
                         </>
                     ) : (
                         <>
-                            <span>Prochain Set</span>
+                            <span>Exercice Suivant</span>
                             <Play className="w-5 h-5 fill-current" />
                         </>
                     )}
