@@ -100,18 +100,32 @@ export function useClientDashboardData() {
             const last7Days = Array.from({ length: 7 }).map((_, i) => {
                 const d = new Date();
                 d.setDate(today.getDate() - (6 - i));
-                return d.toISOString().split('T')[0];
+                // Use local date string (YYYY-MM-DD format key) to match user's perspective
+                return d.toLocaleDateString('fr-CA');
             });
 
             const { data: weeklyLogs } = await supabase
                 .from('workout_logs')
-                .select('completed_at')
+                .select('completed_at, scheduled_session_id, appointment_id')
                 .eq('client_id', client.id)
-                .gte('completed_at', last7Days[0]);
+                .gte('completed_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()); // Fetch last 7 days roughly
 
-            const weeklyActivity = last7Days.map(date => {
-                const count = weeklyLogs?.filter(log => log.completed_at.startsWith(date)).length || 0;
-                return { date, count };
+            const weeklyActivity = last7Days.map(dateStr => {
+                // Filter logs for this day using local date comparison
+                const dayLogs = weeklyLogs?.filter(log => {
+                    const logLocal = new Date(log.completed_at).toLocaleDateString('fr-CA');
+                    return logLocal === dateStr;
+                }) || [];
+
+                // Count unique sessions
+                const uniqueSessions = new Set();
+                dayLogs.forEach(log => {
+                    if (log.scheduled_session_id) uniqueSessions.add(`sched_${log.scheduled_session_id}`);
+                    else if (log.appointment_id) uniqueSessions.add(`app_${log.appointment_id}`);
+                    else uniqueSessions.add(`log_${new Date(log.completed_at).getTime()}`); // Fallback
+                });
+
+                return { date: dateStr, count: uniqueSessions.size };
             });
 
             // 5. Fetch Latest Weight
