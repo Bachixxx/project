@@ -6,6 +6,7 @@ import { supabase } from '../../lib/supabase';
 import { TutorialCard } from '../../components/client/TutorialCard';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Drawer } from 'vaul';
+import { PageHero } from '../../components/client/shared/PageHero';
 
 interface WorkoutLog {
   id: string;
@@ -254,40 +255,20 @@ function ClientProgress() {
   const goals = calculateGoalProgress();
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen bg-[#0f172a] text-white font-sans p-4 pb-24 md:p-8 overflow-hidden relative">
-      {/* Gradients */}
-      <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-        <motion.div
-          animate={{ scale: [1, 1.2, 1], rotate: [0, 90, 0], opacity: [0.1, 0.2, 0.1] }}
-          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-          className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[100px]"
-        />
-        <motion.div
-          animate={{ scale: [1, 1.3, 1], rotate: [0, -90, 0], opacity: [0.1, 0.3, 0.1] }}
-          transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-          className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-[100px]"
-        />
-      </div>
-
-      <motion.div
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.2 }}
-        className="relative z-10 max-w-7xl mx-auto space-y-8"
-      >
-
-        {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 animate-slide-in">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Mes Progrès</h1>
-            <p className="text-gray-400">Suivez l'évolution de vos charges sur vos exercices favoris.</p>
-          </div>
-
-          <div className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-lg border border-white/10 text-sm text-gray-400">
+    <div className="min-h-screen bg-[#0f172a] text-white font-sans pb-24">
+      <PageHero
+        title="Mes Progrès"
+        subtitle="Suivez l'évolution de vos charges sur vos exercices favoris."
+        backgroundImage="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=2070&auto=format&fit=crop"
+        headerContent={
+          <div className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-lg border border-white/10 text-sm text-white/80">
             <Calendar className="w-4 h-4" />
             <span>Tous les temps</span>
           </div>
-        </div>
+        }
+      />
+
+      <div className="max-w-7xl mx-auto px-4 -mt-8 relative z-20 space-y-8">
 
         <TutorialCard
           tutorialId="progress_tracking_v2"
@@ -479,8 +460,8 @@ function ClientProgress() {
 
           </div>
         )}
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   );
 }
 
