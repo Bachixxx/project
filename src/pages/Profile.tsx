@@ -4,26 +4,13 @@ import { ChevronLeft, User, Mail, Phone, Award, Crown, Clock, BadgeEuro, Externa
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useSubscription } from '../hooks/useSubscription';
-import { createPortalSession, createLoginLink, getStripeAccountStatus } from '../lib/stripe';
+import { useCoachProfile } from '../hooks/useCoachProfile';
+import { createPortalSession, createLoginLink } from '../lib/stripe';
 import { ResponsiveModal } from '../components/ResponsiveModal';
 
-interface Coach {
-  id: string;
-  full_name: string;
-  email: string;
-  phone: string;
-  specialization: string;
-  bio: string;
-  profile_image_url: string | null;
-  created_at: string;
-  stripe_account_id?: string;
-}
-
 function ProfilePage() {
-  const [coach, setCoach] = useState<Coach | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { coach, isLoading: coachLoading, stripeStatus, updateProfile } = useCoachProfile();
   const [stripeLoading, setStripeLoading] = useState(false);
-  const [stripeStatus, setStripeStatus] = useState<{ detailsSubmitted: boolean; payoutsEnabled: boolean } | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     full_name: '',
@@ -34,14 +21,20 @@ function ProfilePage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
   const [deleteLoading, setDeleteLoading] = useState(false);
-  const { user } = useAuth();
+
   const { subscriptionInfo } = useSubscription();
 
+  // Update form data when coach data is loaded
   useEffect(() => {
-    if (user) {
-      fetchCoachData();
+    if (coach) {
+      setFormData({
+        full_name: coach.full_name || '',
+        phone: coach.phone || '',
+        specialization: coach.specialization || '',
+        bio: coach.bio || '',
+      });
     }
-  }, [user]);
+  }, [coach]);
 
   // Handle Stripe Connect Return
   useEffect(() => {
@@ -49,48 +42,14 @@ function ProfilePage() {
     const stripeStatus = params.get('stripe_connect');
 
     if (stripeStatus === 'success') {
-      // Clear URL param
       window.history.replaceState({}, '', '/profile');
       alert("Félicitations ! Votre compte de paiement est connecté. Vous pouvez maintenant recevoir des paiements.");
-      fetchCoachData(); // Refresh to get the stripe_account_id if updated
+      // No need to manually fetch, React Query will handle invalidation if needed, or we can force it
     } else if (stripeStatus === 'refresh') {
       window.history.replaceState({}, '', '/profile');
       alert("La configuration a été interrompue. Veuillez réessayer.");
     }
   }, []);
-
-  const fetchCoachData = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('coaches')
-        .select('*')
-        .eq('id', user?.id)
-        .single();
-
-      if (error) throw error;
-      setCoach(data);
-      setFormData({
-        full_name: data.full_name || '',
-        phone: data.phone || '',
-        specialization: data.specialization || '',
-        bio: data.bio || '',
-      });
-
-      // Fetch Stripe Status if account exists
-      if (data.stripe_account_id) {
-        try {
-          const status = await getStripeAccountStatus();
-          setStripeStatus(status);
-        } catch (err) {
-          console.error("Failed to fetch stripe status", err);
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching coach data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleConnectStripe = async () => {
     try {
@@ -143,20 +102,15 @@ function ProfilePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const { error } = await supabase
-        .from('coaches')
-        .update(formData)
-        .eq('id', user?.id);
-
-      if (error) throw error;
+      await updateProfile.mutateAsync(formData);
       setIsEditing(false);
-      fetchCoachData();
     } catch (error) {
       console.error('Error updating profile:', error);
+      alert('Erreur lors de la mise à jour du profil');
     }
   };
 
-  if (loading) {
+  if (coachLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>

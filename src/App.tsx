@@ -41,33 +41,37 @@ const ClientOnboarding = lazy(() => import('./pages/client/ClientOnboarding'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const UpdatePassword = lazy(() => import('./pages/UpdatePassword'));
 
-// Coach Private Pages
-const Dashboard = lazy(() => import('./pages/Dashboard'));
+// Coach Private Pages (Eagerly Loaded for Native Feel)
+import Dashboard from './pages/Dashboard';
+import Clients from './pages/Clients';
+import Calendar from './pages/Calendar';
+import Sessions from './pages/Sessions';
+import Programs from './pages/Programs';
+import Profile from './pages/Profile';
+
+// Less critical / Heavy pages can remain lazy to save some initial bundle
 const Exercises = lazy(() => import('./pages/Exercises'));
-const Sessions = lazy(() => import('./pages/Sessions'));
 const Blocks = lazy(() => import('./pages/Blocks'));
-const Programs = lazy(() => import('./pages/Programs'));
-const Clients = lazy(() => import('./pages/Clients'));
 const ClientDetails = lazy(() => import('./pages/ClientDetails'));
 const ClientAnalytics = lazy(() => import('./pages/ClientAnalytics'));
-const Calendar = lazy(() => import('./pages/Calendar'));
 const CoachProgramDetails = lazy(() => import('./pages/CoachProgramDetails'));
 const LiveWorkout = lazy(() => import('./pages/LiveWorkout'));
 const MonthlyRevenue = lazy(() => import('./pages/MonthlyRevenue'));
 const Payments = lazy(() => import('./pages/Payments'));
 const Terminal = lazy(() => import('./pages/Terminal'));
 const Offers = lazy(() => import('./pages/Offers'));
-const Profile = lazy(() => import('./pages/Profile'));
 const MultiClientCoaching = lazy(() => import('./pages/MultiClientCoaching'));
 const Admin = lazy(() => import('./pages/Admin'));
 const BrandingSettings = lazy(() => import('./pages/BrandingSettings'));
 
 
-// Client Private Pages
-const ClientDashboard = lazy(() => import('./pages/client/ClientDashboard'));
-const ClientWorkouts = lazy(() => import('./pages/client/ClientWorkouts'));
-const ClientAppointments = lazy(() => import('./pages/client/ClientAppointments'));
-const ClientProgress = lazy(() => import('./pages/client/ClientProgress'));
+// Client Private Pages (Eagerly Loaded)
+import ClientDashboard from './pages/client/ClientDashboard';
+import ClientWorkouts from './pages/client/ClientWorkouts';
+import ClientAppointments from './pages/client/ClientAppointments';
+import ClientProgress from './pages/client/ClientProgress';
+
+// Less critical client pages
 const ClientProfile = lazy(() => import('./pages/client/ClientProfile'));
 const ClientBodyComposition = lazy(() => import('./pages/client/ClientBodyComposition'));
 const ClientWorkout = lazy(() => import('./pages/client/ClientWorkout'));
@@ -102,298 +106,303 @@ const NativeRedirect = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from './lib/react-query';
+
 function App() {
   console.log('🔍 Debug Supabase Config:');
   console.log(' - URL Defined:', !!import.meta.env.VITE_SUPABASE_URL);
   console.log(' - Key Defined:', !!import.meta.env.VITE_SUPABASE_ANON_KEY);
 
   return (
-    <AuthProvider>
-      <AdaptyProvider>
-        <NotificationsProvider>
-          <ClientAuthProvider>
-            <LanguageProvider>
-              <ThemeProvider>
-                <LiveSessionProvider>
-                  <TerminalProvider>
-                    <Router>
-                      <ScrollToTop />
-                      <Suspense fallback={<Loading />}>
-                        <NativeRedirect>
-                          <Routes>
-                            {/* Routes publiques */}
-                            <Route path="/" element={<PublicHome />} />
-                            {/* <Route path="/marketplace" element={<Marketplace />} /> */}
-                            <Route path="/features" element={<Features />} />
-                            <Route path="/pricing" element={<Pricing />} />
-                            {/* <Route path="/marketplace/program/:id" element={<ProgramDetails />} /> */}
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <AdaptyProvider>
+          <NotificationsProvider>
+            <ClientAuthProvider>
+              <LanguageProvider>
+                <ThemeProvider>
+                  <LiveSessionProvider>
+                    <TerminalProvider>
+                      <Router>
+                        <ScrollToTop />
+                        <Suspense fallback={<Loading />}>
+                          <NativeRedirect>
+                            <Routes>
+                              {/* Routes publiques */}
+                              <Route path="/" element={<PublicHome />} />
+                              {/* <Route path="/marketplace" element={<Marketplace />} /> */}
+                              <Route path="/features" element={<Features />} />
+                              <Route path="/pricing" element={<Pricing />} />
+                              {/* <Route path="/marketplace/program/:id" element={<ProgramDetails />} /> */}
 
-                            <Route path="/login" element={<Login />} />
-                            <Route path="/register" element={<Register />} />
-                            <Route path="/waitlist" element={<Waitlist />} />
-                            <Route path="/upgrade" element={<Upgrade />} />
-                            <Route path="/terms" element={<Terms />} />
-                            <Route path="/privacy" element={<Privacy />} />
-                            <Route path="/legal" element={<Legal />} />
-                            <Route path="/client/login" element={<ClientLogin />} />
-                            <Route path="/client/check-email" element={<CheckEmail />} />
-                            <Route path="/client/register" element={<ClientRegister />} />
-                            <Route path="/forgot-password" element={<ForgotPassword />} />
-                            <Route path="/update-password" element={<UpdatePassword />} />
+                              <Route path="/login" element={<Login />} />
+                              <Route path="/register" element={<Register />} />
+                              <Route path="/waitlist" element={<Waitlist />} />
+                              <Route path="/upgrade" element={<Upgrade />} />
+                              <Route path="/terms" element={<Terms />} />
+                              <Route path="/privacy" element={<Privacy />} />
+                              <Route path="/legal" element={<Legal />} />
+                              <Route path="/client/login" element={<ClientLogin />} />
+                              <Route path="/client/check-email" element={<CheckEmail />} />
+                              <Route path="/client/register" element={<ClientRegister />} />
+                              <Route path="/forgot-password" element={<ForgotPassword />} />
+                              <Route path="/update-password" element={<UpdatePassword />} />
 
-                            {/* Routes coach */}
-                            <Route element={<Layout />}>
-                              <Route
-                                path="/admin"
-                                element={
-                                  <PrivateRoute>
-                                    <Admin />
-                                  </PrivateRoute>
-                                }
-                              />
-                              <Route
-                                path="/dashboard"
-                                element={
-                                  <PrivateRoute>
-                                    <Dashboard />
-                                  </PrivateRoute>
-                                }
-                              />
-                              <Route
-                                path="/profile"
-                                element={
-                                  <PrivateRoute>
-                                    <Profile />
-                                  </PrivateRoute>
-                                }
-                              />
-                              <Route
-                                path="/exercises"
-                                element={
-                                  <PrivateRoute>
-                                    <Exercises />
-                                  </PrivateRoute>
-                                }
-                              />
-                              <Route
-                                path="/sessions"
-                                element={
-                                  <PrivateRoute>
-                                    <Sessions />
-                                  </PrivateRoute>
-                                }
-                              />
-                              <Route
-                                path="/blocks"
-                                element={
-                                  <PrivateRoute>
-                                    <Blocks />
-                                  </PrivateRoute>
-                                }
-                              />
-                              <Route
-                                path="/programs"
-                                element={
-                                  <PrivateRoute>
-                                    <Programs />
-                                  </PrivateRoute>
-                                }
-                              />
-                              <Route
-                                path="/clients"
-                                element={
-                                  <PrivateRoute>
-                                    <Clients />
-                                  </PrivateRoute>
-                                }
-                              />
-                              <Route
-                                path="/clients/:clientId"
-                                element={
-                                  <PrivateRoute>
-                                    <ClientDetails />
-                                  </PrivateRoute>
-                                }
-                              />
-                              <Route
-                                path="/clients/:clientId/analytics"
-                                element={
-                                  <PrivateRoute>
-                                    <ClientAnalytics />
-                                  </PrivateRoute>
-                                }
-                              />
-                              <Route
-                                path="/calendar"
-                                element={
-                                  <PrivateRoute>
-                                    <Calendar />
-                                  </PrivateRoute>
-                                }
-                              />
-                              <Route
-                                path="/workout/:clientProgramId"
-                                element={
-                                  <PrivateRoute>
-                                    <CoachProgramDetails />
-                                  </PrivateRoute>
-                                }
-                              />
-                              <Route
-                                path="/monthly-revenue"
-                                element={
-                                  <PrivateRoute>
-                                    <MonthlyRevenue />
-                                  </PrivateRoute>
-                                }
-                              />
-                              <Route
-                                path="/payments"
-                                element={
-                                  <PrivateRoute>
-                                    <Payments />
-                                  </PrivateRoute>
-                                }
-                              />
-                              <Route
-                                path="/terminal"
-                                element={
-                                  <PrivateRoute>
-                                    <Terminal />
-                                  </PrivateRoute>
-                                }
-                              />
-                              <Route
-                                path="/offers"
-                                element={
-                                  <PrivateRoute>
-                                    <Offers />
-                                  </PrivateRoute>
-                                }
-                              />
-                              <Route
-                                path="/multi-coaching"
-                                element={
-                                  <PrivateRoute>
-                                    <MultiClientCoaching />
-                                  </PrivateRoute>
-                                }
-                              />
-                              <Route
-                                path="/branding"
-                                element={
-                                  <PrivateRoute>
-                                    <BrandingSettings />
-                                  </PrivateRoute>
-                                }
-                              />
-                              <Route
-                                path="/live-session/:sessionId"
-                                element={
-                                  <PrivateRoute>
-                                    <LiveSessionMode />
-                                  </PrivateRoute>
-                                }
-                              />
-                            </Route>
+                              {/* Routes coach */}
+                              <Route element={<Layout />}>
+                                <Route
+                                  path="/admin"
+                                  element={
+                                    <PrivateRoute>
+                                      <Admin />
+                                    </PrivateRoute>
+                                  }
+                                />
+                                <Route
+                                  path="/dashboard"
+                                  element={
+                                    <PrivateRoute>
+                                      <Dashboard />
+                                    </PrivateRoute>
+                                  }
+                                />
+                                <Route
+                                  path="/profile"
+                                  element={
+                                    <PrivateRoute>
+                                      <Profile />
+                                    </PrivateRoute>
+                                  }
+                                />
+                                <Route
+                                  path="/exercises"
+                                  element={
+                                    <PrivateRoute>
+                                      <Exercises />
+                                    </PrivateRoute>
+                                  }
+                                />
+                                <Route
+                                  path="/sessions"
+                                  element={
+                                    <PrivateRoute>
+                                      <Sessions />
+                                    </PrivateRoute>
+                                  }
+                                />
+                                <Route
+                                  path="/blocks"
+                                  element={
+                                    <PrivateRoute>
+                                      <Blocks />
+                                    </PrivateRoute>
+                                  }
+                                />
+                                <Route
+                                  path="/programs"
+                                  element={
+                                    <PrivateRoute>
+                                      <Programs />
+                                    </PrivateRoute>
+                                  }
+                                />
+                                <Route
+                                  path="/clients"
+                                  element={
+                                    <PrivateRoute>
+                                      <Clients />
+                                    </PrivateRoute>
+                                  }
+                                />
+                                <Route
+                                  path="/clients/:clientId"
+                                  element={
+                                    <PrivateRoute>
+                                      <ClientDetails />
+                                    </PrivateRoute>
+                                  }
+                                />
+                                <Route
+                                  path="/clients/:clientId/analytics"
+                                  element={
+                                    <PrivateRoute>
+                                      <ClientAnalytics />
+                                    </PrivateRoute>
+                                  }
+                                />
+                                <Route
+                                  path="/calendar"
+                                  element={
+                                    <PrivateRoute>
+                                      <Calendar />
+                                    </PrivateRoute>
+                                  }
+                                />
+                                <Route
+                                  path="/workout/:clientProgramId"
+                                  element={
+                                    <PrivateRoute>
+                                      <CoachProgramDetails />
+                                    </PrivateRoute>
+                                  }
+                                />
+                                <Route
+                                  path="/monthly-revenue"
+                                  element={
+                                    <PrivateRoute>
+                                      <MonthlyRevenue />
+                                    </PrivateRoute>
+                                  }
+                                />
+                                <Route
+                                  path="/payments"
+                                  element={
+                                    <PrivateRoute>
+                                      <Payments />
+                                    </PrivateRoute>
+                                  }
+                                />
+                                <Route
+                                  path="/terminal"
+                                  element={
+                                    <PrivateRoute>
+                                      <Terminal />
+                                    </PrivateRoute>
+                                  }
+                                />
+                                <Route
+                                  path="/offers"
+                                  element={
+                                    <PrivateRoute>
+                                      <Offers />
+                                    </PrivateRoute>
+                                  }
+                                />
+                                <Route
+                                  path="/multi-coaching"
+                                  element={
+                                    <PrivateRoute>
+                                      <MultiClientCoaching />
+                                    </PrivateRoute>
+                                  }
+                                />
+                                <Route
+                                  path="/branding"
+                                  element={
+                                    <PrivateRoute>
+                                      <BrandingSettings />
+                                    </PrivateRoute>
+                                  }
+                                />
+                                <Route
+                                  path="/live-session/:sessionId"
+                                  element={
+                                    <PrivateRoute>
+                                      <LiveSessionMode />
+                                    </PrivateRoute>
+                                  }
+                                />
+                              </Route>
 
-                            {/* Routes client */}
-                            <Route element={<ClientLayout />}>
-                              <Route
-                                path="/client/dashboard"
-                                element={
-                                  <ClientPrivateRoute>
-                                    <ClientDashboard />
-                                  </ClientPrivateRoute>
-                                }
-                              />
-                              <Route
-                                path="/client/workouts"
-                                element={
-                                  <ClientPrivateRoute>
-                                    <ClientWorkouts />
-                                  </ClientPrivateRoute>
-                                }
-                              />
-                              <Route
-                                path="/client/appointments"
-                                element={
-                                  <ClientPrivateRoute>
-                                    <ClientAppointments />
-                                  </ClientPrivateRoute>
-                                }
-                              />
-                              <Route
-                                path="/client/progress"
-                                element={
-                                  <ClientPrivateRoute>
-                                    <ClientProgress />
-                                  </ClientPrivateRoute>
-                                }
-                              />
-                              <Route
-                                path="/client/profile"
-                                element={
-                                  <ClientPrivateRoute>
-                                    <ClientProfile />
-                                  </ClientPrivateRoute>
-                                }
-                              />
-                              <Route
-                                path="/client/body-composition"
-                                element={
-                                  <ClientPrivateRoute>
-                                    <ClientBodyComposition />
-                                  </ClientPrivateRoute>
-                                }
-                              />
-                              <Route
-                                path="/client/onboarding"
-                                element={
-                                  <ClientPrivateRoute>
-                                    <ClientOnboarding />
-                                  </ClientPrivateRoute>
-                                }
-                              />
-                              <Route
-                                path="/client/workout/:clientProgramId"
-                                element={
-                                  <ClientPrivateRoute>
-                                    <ClientWorkout />
-                                  </ClientPrivateRoute>
-                                }
-                              />
-                            </Route>
+                              {/* Routes client */}
+                              <Route element={<ClientLayout />}>
+                                <Route
+                                  path="/client/dashboard"
+                                  element={
+                                    <ClientPrivateRoute>
+                                      <ClientDashboard />
+                                    </ClientPrivateRoute>
+                                  }
+                                />
+                                <Route
+                                  path="/client/workouts"
+                                  element={
+                                    <ClientPrivateRoute>
+                                      <ClientWorkouts />
+                                    </ClientPrivateRoute>
+                                  }
+                                />
+                                <Route
+                                  path="/client/appointments"
+                                  element={
+                                    <ClientPrivateRoute>
+                                      <ClientAppointments />
+                                    </ClientPrivateRoute>
+                                  }
+                                />
+                                <Route
+                                  path="/client/progress"
+                                  element={
+                                    <ClientPrivateRoute>
+                                      <ClientProgress />
+                                    </ClientPrivateRoute>
+                                  }
+                                />
+                                <Route
+                                  path="/client/profile"
+                                  element={
+                                    <ClientPrivateRoute>
+                                      <ClientProfile />
+                                    </ClientPrivateRoute>
+                                  }
+                                />
+                                <Route
+                                  path="/client/body-composition"
+                                  element={
+                                    <ClientPrivateRoute>
+                                      <ClientBodyComposition />
+                                    </ClientPrivateRoute>
+                                  }
+                                />
+                                <Route
+                                  path="/client/onboarding"
+                                  element={
+                                    <ClientPrivateRoute>
+                                      <ClientOnboarding />
+                                    </ClientPrivateRoute>
+                                  }
+                                />
+                                <Route
+                                  path="/client/workout/:clientProgramId"
+                                  element={
+                                    <ClientPrivateRoute>
+                                      <ClientWorkout />
+                                    </ClientPrivateRoute>
+                                  }
+                                />
+                              </Route>
 
-                            {/* Client Live Workout Routes (Standalone) */}
-                            <Route
-                              path="/client/live-workout/appointment/:appointmentId"
-                              element={
-                                <ClientPrivateRoute>
-                                  <ClientLiveWorkout />
-                                </ClientPrivateRoute>
-                              }
-                            />
-                            <Route
-                              path="/client/live-workout/:scheduledSessionId"
-                              element={
-                                <ClientPrivateRoute>
-                                  <ClientLiveWorkout />
-                                </ClientPrivateRoute>
-                              }
-                            />
-                          </Routes>
-                        </NativeRedirect>
-                      </Suspense>
-                    </Router>
-                  </TerminalProvider>
-                </LiveSessionProvider>
-              </ThemeProvider>
-            </LanguageProvider>
-          </ClientAuthProvider>
-        </NotificationsProvider>
-      </AdaptyProvider>
-    </AuthProvider >
+                              {/* Client Live Workout Routes (Standalone) */}
+                              <Route
+                                path="/client/live-workout/appointment/:appointmentId"
+                                element={
+                                  <ClientPrivateRoute>
+                                    <ClientLiveWorkout />
+                                  </ClientPrivateRoute>
+                                }
+                              />
+                              <Route
+                                path="/client/live-workout/:scheduledSessionId"
+                                element={
+                                  <ClientPrivateRoute>
+                                    <ClientLiveWorkout />
+                                  </ClientPrivateRoute>
+                                }
+                              />
+                            </Routes>
+                          </NativeRedirect>
+                        </Suspense>
+                      </Router>
+                    </TerminalProvider>
+                  </LiveSessionProvider>
+                </ThemeProvider>
+              </LanguageProvider>
+            </ClientAuthProvider>
+          </NotificationsProvider>
+        </AdaptyProvider>
+      </AuthProvider >
+    </QueryClientProvider>
   );
 }
 

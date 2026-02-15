@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Plus,
   Search,
@@ -11,64 +11,43 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { t } from '../i18n';
+import { useCoachClients, Client } from '../hooks/useCoachClients';
+import { useCoachProfile } from '../hooks/useCoachProfile';
 import { useSubscription } from '../hooks/useSubscription';
 import { sendClientInvitation } from '../lib/client-auth';
 import { SubscriptionAlert } from '../components/SubscriptionAlert';
 import { UpgradeModal } from '../components/UpgradeModal';
+import { ResponsiveModal } from '../components/ResponsiveModal';
 
-interface Client {
-  id: string;
+interface ClientFormData {
   full_name: string;
   email: string;
   phone: string;
   date_of_birth: string;
   gender: string;
-  height: number;
-  weight: number;
+  height: number | string;
+  weight: number | string;
   fitness_goals: string[];
   medical_conditions: string[];
   notes: string;
   status: string;
-  created_at: string;
 }
 
 function ClientsPage() {
-  const [clients, setClients] = useState<Client[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { clients, isLoading, createClient, updateClient } = useCoachClients();
+  const { coach } = useCoachProfile();
+  const { user } = useAuth();
+  const { subscriptionInfo, upgradeSubscription } = useSubscription();
+
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  const { user } = useAuth();
-  const { subscriptionInfo, upgradeSubscription } = useSubscription();
 
-  const [coachCode, setCoachCode] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (user) {
-      fetchClients();
-      fetchCoachCode();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
-
-  const fetchCoachCode = async () => {
-    try {
-      const { data } = await supabase
-        .from('coaches')
-        .select('coach_code')
-        .eq('id', user?.id)
-        .single();
-
-      if (data) setCoachCode(data.coach_code);
-    } catch (error) {
-      console.error('Error fetching coach code:', error);
-    }
-  };
+  const coachCode = coach?.coach_code;
 
   const handleShareInvite = async () => {
     if (!coachCode) return;
@@ -89,23 +68,6 @@ function ClientsPage() {
       }
     } catch (error) {
       console.error('Error sharing:', error);
-    }
-  };
-
-  const fetchClients = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('clients')
-        .select('*')
-        .eq('coach_id', user?.id)
-        .order('full_name');
-
-      if (error) throw error;
-      setClients(data || []);
-    } catch (error) {
-      console.error('Error fetching clients:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -186,7 +148,7 @@ function ClientsPage() {
         </div>
       </div>
 
-      {loading ? (
+      {isLoading ? (
         <div className="flex items-center justify-center py-20">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
         </div>
@@ -211,10 +173,10 @@ function ClientsPage() {
                     {client.full_name}
                   </h3>
                   <div className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-1 ${client.status === 'active'
-                    ? 'bg-green-500/10 text-green-400 border border-green-500/20'
-                    : client.status === 'inactive'
-                      ? 'bg-gray-500/10 text-gray-400 border border-gray-500/20'
-                      : 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'
+                      ? 'bg-green-500/10 text-green-400 border border-green-500/20'
+                      : client.status === 'inactive'
+                        ? 'bg-gray-500/10 text-gray-400 border border-gray-500/20'
+                        : 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'
                     }`}>
                     {client.status.charAt(0).toUpperCase() + client.status.slice(1)}
                   </div>
@@ -293,18 +255,12 @@ function ClientsPage() {
               };
 
               if (selectedClient) {
-                const { error } = await supabase
-                  .from('clients')
-                  .update(sanitizedData)
-                  .eq('id', selectedClient.id);
-
-                if (error) throw error;
+                await updateClient.mutateAsync({
+                  id: selectedClient.id,
+                  data: sanitizedData
+                });
               } else {
-                const { error } = await supabase
-                  .from('clients')
-                  .insert([{ ...sanitizedData, coach_id: user?.id }]);
-
-                if (error) throw error;
+                await createClient.mutateAsync(sanitizedData);
 
                 // Send Invitation Email
                 if (coachCode && user) {
@@ -317,7 +273,6 @@ function ClientsPage() {
                 }
               }
 
-              fetchClients();
               setIsModalOpen(false);
             } catch (error: unknown) {
               const errorMessage = error instanceof Error ? error.message : 'Une erreur est survenue lors de la création du client';
@@ -329,24 +284,6 @@ function ClientsPage() {
       )}
     </div>
   );
-}
-
-import { ResponsiveModal } from '../components/ResponsiveModal';
-
-// ... (existing helper function code if any, though ClientModal is standalone here)
-
-interface ClientFormData {
-  full_name: string;
-  email: string;
-  phone: string;
-  date_of_birth: string;
-  gender: string;
-  height: number | string;
-  weight: number | string;
-  fitness_goals: string[];
-  medical_conditions: string[];
-  notes: string;
-  status: string;
 }
 
 function ClientModal({ client, onClose, onSave }: { client: Client | null, onClose: () => void, onSave: (data: ClientFormData) => void }) {
@@ -470,7 +407,7 @@ function ClientModal({ client, onClose, onSave }: { client: Client | null, onClo
             <input
               type="number"
               name="height"
-              value={formData.height}
+              value={formData.height || ''}
               onChange={handleChange}
               step="0.1"
               className="input-field"
@@ -482,7 +419,7 @@ function ClientModal({ client, onClose, onSave }: { client: Client | null, onClo
             <input
               type="number"
               name="weight"
-              value={formData.weight}
+              value={formData.weight || ''}
               onChange={handleChange}
               step="0.1"
               className="input-field"

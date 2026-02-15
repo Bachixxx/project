@@ -5,20 +5,9 @@ import { useAuth } from '../contexts/AuthContext';
 import { BlockManager, SessionBlock } from '../components/BlockManager';
 import { ExerciseSelector } from '../components/library/ExerciseSelector';
 import { ResponsiveModal } from '../components/ResponsiveModal';
+import { useCoachSessions, Session } from '../hooks/useCoachSessions';
 
 // Updated Interfaces
-interface Session {
-  id: string;
-  name: string;
-  description: string;
-  duration_minutes: number;
-  difficulty_level: string;
-  session_type?: string;
-  // These are for initial load/display
-  session_exercises?: SessionExercise[];
-  exercise_groups?: any[];
-}
-
 interface SessionExercise {
   id: string;
   exercise: {
@@ -60,91 +49,19 @@ interface Exercise {
 }
 
 function SessionsPage() {
-  const [sessions, setSessions] = useState<Session[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { sessions, isLoading, error: queryError, saveSession, deleteSession } = useCoachSessions();
+  const [errorDetails, setErrorDetails] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
-  const { user } = useAuth();
-
-  useEffect(() => {
-    if (user) {
-      fetchSessions();
-    }
-  }, [user]);
-
-  const fetchSessions = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const { data: sessionsData, error: sessionsError } = await supabase
-        .from('sessions')
-        .select(`
-          id,
-          name,
-          description,
-          duration_minutes,
-          difficulty_level,
-          session_type,
-          created_at,
-          exercise_groups (
-            id,
-            name,
-            repetitions,
-            order_index,
-            type,
-            duration_seconds,
-            is_template
-          ),
-          session_exercises (
-            id,
-            sets,
-            reps,
-            rest_time,
-            order_index,
-            instructions,
-            group_id,
-            duration_seconds,
-            distance_meters,
-            calories,
-              exercise:exercises (
-                id,
-                name,
-                category,
-                difficulty_level,
-                tracking_type,
-                track_reps,
-                track_weight,
-                track_duration,
-                track_distance,
-                track_calories
-              )
-            )
-        `)
-        .eq('coach_id', user?.id)
-        .eq('is_template', true)
-        .is('archived_at', null)
-        .order('name');
-
-      if (sessionsError) {
-        throw sessionsError;
-      }
-
-      setSessions(sessionsData as any[]);
-    } catch (error) {
-      console.error('Error in fetchSessions:', error);
-      setError('Impossible de charger les séances. Veuillez réessayer.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { user } = useAuth(); // Still needed for exercise fetch in modal, ideally move that too
 
   const filteredSessions = sessions.filter(session =>
     session.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     session.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const error = errorDetails || (queryError ? 'Impossible de charger les séances.' : null);
 
   return (
     <div className="p-6 max-w-[2000px] mx-auto animate-fade-in">
@@ -184,7 +101,7 @@ function SessionsPage() {
         </div>
       </div>
 
-      {loading ? (
+      {isLoading ? (
         <div className="flex justify-center py-12">
           <div className="w-12 h-12 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin"></div>
         </div>
@@ -225,16 +142,10 @@ function SessionsPage() {
                         onClick={async () => {
                           if (window.confirm('Êtes-vous sûr de vouloir supprimer cette séance ?')) {
                             try {
-                              const { error } = await supabase
-                                .from('sessions')
-                                .update({ archived_at: new Date().toISOString() })
-                                .eq('id', session.id);
-
-                              if (error) throw error;
-                              fetchSessions();
+                              await deleteSession.mutateAsync(session.id);
                             } catch (error) {
                               console.error('Error deleting session:', error);
-                              setError('Failed to delete session. Please try again.');
+                              setErrorDetails('Failed to delete session. Please try again.');
                             }
                           }
                         }}
@@ -299,117 +210,22 @@ function SessionsPage() {
           onClose={() => setIsModalOpen(false)}
           onSave={async (sessionData: any, blocks: SessionBlock[], standaloneExercises: SessionExercise[]) => {
             try {
-              setError(null);
-              let sessionId;
-
-              // 1. Create or Update Session
-              if (selectedSession) {
-                const { data, error } = await supabase
-                  .from('sessions')
-                  .update(sessionData)
-                  .eq('id', selectedSession.id)
-                  .select()
-                  .single();
-                if (error) throw error;
-                sessionId = data.id;
-
-                // Cleanup old data to rewrite
-                await supabase.from('exercise_groups').delete().eq('session_id', sessionId);
-                await supabase.from('session_exercises').delete().eq('session_id', sessionId);
-              } else {
-                const { data, error } = await supabase
-                  .from('sessions')
-                  .insert([{ ...sessionData, coach_id: user?.id, is_template: true }])
-                  .select()
-                  .single();
-                if (error) throw error;
-                sessionId = data.id;
-              }
-
-              // 2. Insert Blocks
-              const blockIdMap = new Map();
-              if (blocks.length > 0) {
-                const blocksToInsert = blocks.map((block) => ({
-                  session_id: sessionId,
-                  name: block.name,
-                  type: block.type,
-                  repetitions: block.rounds || 1,
-                  duration_seconds: block.duration_seconds,
-                  order_index: block.order_index,
-                  coach_id: user?.id,
-                  is_template: false,
-                }));
-
-                const { data: insertedBlocks, error: blocksError } = await supabase
-                  .from('exercise_groups')
-                  .insert(blocksToInsert)
-                  .select();
-
-                if (blocksError) throw blocksError;
-
-                blocks.forEach((block, index) => {
-                  blockIdMap.set(block.id, insertedBlocks[index].id);
-                });
-              }
-
-              // 3. Insert Exercises (Flattened)
-              let allExercisesPayload: any[] = [];
-              let globalOrder = 0;
-
-              // 3a. Block Exercises
-              blocks.forEach((block) => {
-                const realGroupId = blockIdMap.get(block.id);
-                block.exercises.forEach((ex) => {
-                  allExercisesPayload.push({
-                    session_id: sessionId,
-                    exercise_id: ex.exercise.id,
-                    group_id: realGroupId,
-                    sets: ex.sets,
-                    reps: ex.reps,
-                    weight: ex.weight,
-                    rest_time: ex.rest_time,
-                    duration_seconds: ex.duration_seconds,
-                    distance_meters: ex.distance_meters,
-                    calories: ex.calories,
-                    instructions: ex.instructions,
-                    order_index: globalOrder++,
-                  });
-                });
+              setErrorDetails(null);
+              await saveSession.mutateAsync({
+                sessionData,
+                blocks,
+                standaloneExercises,
+                sessionId: selectedSession?.id
               });
-
-              // 3b. Standalone Exercises
-              standaloneExercises.forEach((ex) => {
-                allExercisesPayload.push({
-                  session_id: sessionId,
-                  exercise_id: ex.exercise.id,
-                  group_id: null,
-                  sets: ex.sets,
-                  reps: ex.reps,
-                  weight: ex.weight,
-                  rest_time: ex.rest_time,
-                  duration_seconds: ex.duration_seconds,
-                  distance_meters: ex.distance_meters,
-                  calories: ex.calories,
-                  instructions: ex.instructions,
-                  order_index: globalOrder++,
-                });
-              });
-
-              if (allExercisesPayload.length > 0) {
-                const { error: exError } = await supabase.from('session_exercises').insert(allExercisesPayload);
-                if (exError) throw exError;
-              }
-
-              await fetchSessions();
               setIsModalOpen(false);
-
             } catch (error) {
               console.error('Error saving session:', error);
-              setError('Impossible de sauvegarder la séance.');
+              setErrorDetails('Impossible de sauvegarder la séance.');
             }
           }}
         />
       )}
+
     </div>
   );
 }

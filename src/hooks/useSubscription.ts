@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { createSubscriptionSession } from '../lib/stripe';
@@ -17,34 +17,24 @@ export interface SubscriptionInfo {
 }
 
 export function useSubscription() {
-  const [subscriptionInfo, setSubscriptionInfo] =
-    useState<SubscriptionInfo | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
   const { hasPremium } = useAdapty();
 
-  useEffect(() => {
-    if (user) {
-      fetchSubscriptionInfo();
-    }
-  }, [user, hasPremium]);
+  const { data: subscriptionInfo, isLoading, error, refetch } = useQuery({
+    queryKey: ['subscription', user?.id, hasPremium()],
+    queryFn: async (): Promise<SubscriptionInfo | null> => {
+      if (!user?.id) return null;
 
-  const fetchSubscriptionInfo = async () => {
-    try {
       // Get coach subscription info
       const { data: coachData, error: coachError } = await supabase
         .from('coaches')
         .select('*')
-        .eq('id', user?.id)
+        .eq('id', user.id)
         .maybeSingle();
 
       if (coachError) throw coachError;
 
-      if (!coachData) {
-        setLoading(false);
-        return;
-      }
+      if (!coachData) return null;
 
       // Check native premium status
       const isNativePremium = hasPremium();
@@ -54,32 +44,25 @@ export function useSubscription() {
       const { count: currentClients } = await supabase
         .from('clients')
         .select('*', { count: 'exact', head: true })
-        .eq('coach_id', user?.id);
+        .eq('coach_id', user.id);
 
-      setSubscriptionInfo({
+      return {
         type: isPaid ? 'paid' : 'free',
         clientLimit: isPaid ? 999999 : coachData.client_limit, // Unlimited if paid
         currentClients: currentClients || 0,
-        canAddClient:
-          isPaid ||
-          (currentClients || 0) < coachData.client_limit,
+        canAddClient: isPaid || (currentClients || 0) < coachData.client_limit,
         subscriptionEnd: coachData.subscription_end_date,
         hasBranding: coachData.has_branding || false,
         brandingSubscriptionId: coachData.branding_subscription_id,
         hasTerminal: coachData.has_terminal || false,
         terminalSubscriptionId: coachData.terminal_subscription_id,
-      });
-    } catch (error) {
-      console.error('Error fetching subscription info:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+      };
+    },
+    enabled: !!user,
+  });
 
   const subscribeToBranding = async () => {
     try {
-      setError(null);
-
       // Branding Price ID provided by user
       const brandingPriceId = 'price_1SubaaKjaGJ8zmprmJAOHsmh';
 
@@ -104,15 +87,12 @@ export function useSubscription() {
     }
     catch (error) {
       console.error('Error creating branding subscription session:', error);
-      setError(error instanceof Error ? error.message : 'An unexpected error occurred');
       throw error;
     }
   }
 
   const subscribeToTerminal = async () => {
     try {
-      setError(null);
-
       // Terminal Price ID - Updated from user input
       const terminalPriceId = 'price_1Sv0Y1KjaGJ8zmprX8HCe6QR';
 
@@ -137,15 +117,12 @@ export function useSubscription() {
     }
     catch (error) {
       console.error('Error creating terminal subscription session:', error);
-      setError(error instanceof Error ? error.message : 'An unexpected error occurred');
       throw error;
     }
   }
 
   const upgradeSubscription = async (priceId?: string, mode: 'subscription' | 'payment' = 'subscription') => {
     try {
-      setError(null);
-
       let finalPriceId = priceId;
 
       // If no price ID provided, fallback to default monthly plan
@@ -187,17 +164,17 @@ export function useSubscription() {
     }
     catch (error) {
       console.error('Error creating subscription session:', error);
-      setError(error instanceof Error ? error.message : 'An unexpected error occurred while setting up your subscription');
+      throw error; // Let the component handle the error display
     }
   };
 
   return {
-    subscriptionInfo,
-    loading,
-    error,
+    subscriptionInfo: subscriptionInfo || null,
+    loading: isLoading,
+    error: error ? (error as Error).message : null,
     upgradeSubscription,
     subscribeToBranding,
     subscribeToTerminal,
-    refreshSubscriptionInfo: fetchSubscriptionInfo,
+    refreshSubscriptionInfo: refetch,
   };
 }
