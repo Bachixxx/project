@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Play, Pause, CheckCircle, RotateCcw, Timer, Plus, Minus, X, ChevronLeft } from 'lucide-react';
+import { Play, Pause, CheckCircle, RotateCcw, Timer, Plus, Minus, X, ChevronLeft, ArrowRight } from 'lucide-react';
 import { LiveSessionControls } from '../../components/client/workout/LiveSessionControls';
 import { supabase } from '../../lib/supabase';
 import { useClientAuth } from '../../contexts/ClientAuthContext';
@@ -884,9 +884,9 @@ function ClientLiveWorkout() {
           )
         }
 
-        {/* Set Navigation Bar (Hidden for AMRAP) */}
+        {/* Set Navigation Bar (Hidden for AMRAP & Circuit) */}
         {
-          currentExercise && currentExercise.group?.type !== 'amrap' && (
+          currentExercise && currentExercise.group?.type !== 'amrap' && currentExercise.group?.type !== 'circuit' && (
             <div className="flex items-center justify-center gap-2 mb-6 shrink-0 overflow-x-auto py-2 no-scrollbar">
               {completedExercises[currentExercise.id]?.sets.map((s, idx) => (
                 <button
@@ -943,14 +943,16 @@ function ClientLiveWorkout() {
             `}>
                 {/* Status Indicator */}
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="px-3 py-1 rounded-full bg-white/5 border border-white/5 text-xs font-bold uppercase tracking-wider text-gray-400">
-                      Série {activeSetIndex + 1}
-                    </div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="px-3 py-1 bg-white/10 rounded-lg text-sm font-bold uppercase tracking-wider text-blue-400">
+                      {(currentExercise.group?.type === 'circuit' || currentExercise.group?.type === 'amrap' || currentExercise.group?.type === 'interval')
+                        ? `Tour ${activeSetIndex + 1}`
+                        : `Série ${activeSetIndex + 1}`}
+                    </span>
                     {activeSet.isGhost && (
-                      <div className="px-2 py-1 rounded-full bg-purple-500/20 border border-purple-500/30 text-[10px] font-bold uppercase tracking-wider text-purple-300">
+                      <span className="px-3 py-1 bg-white/5 rounded-lg text-sm font-bold uppercase tracking-wider text-gray-400">
                         Historique
-                      </div>
+                      </span>
                     )}
                   </div>
                   {activeSet.completed && (
@@ -1061,33 +1063,66 @@ function ClientLiveWorkout() {
 
                 {/* Validate Button */}
                 {!activeTimer && (
-                  <button
-                    onClick={() => {
-                      const isLastExercise = currentExerciseIndex === exercises.length - 1;
-                      const isLastSet = activeSetIndex === (currentExercise.sets || 0) - 1;
+                  <div className="space-y-4">
+                    <button
+                      onClick={() => {
+                        const isLastExercise = currentExerciseIndex === exercises.length - 1;
+                        const isLastSet = activeSetIndex === (currentExercise.sets || 0) - 1;
+                        const isAmrap = currentExercise.group?.type === 'amrap';
 
-                      if (isLastExercise && isLastSet && activeSet.completed) {
-                        handleCompleteWorkout();
-                      } else {
-                        handleCompleteSet(activeSetIndex);
-                      }
-                    }}
-                    className={`
-                          w-full py-5 rounded-2xl font-black text-lg uppercase tracking-wider shadow-lg transition-all transform active:scale-95
-                          ${(currentExerciseIndex === exercises.length - 1 && activeSetIndex === (currentExercise.sets || 0) - 1 && activeSet.completed)
-                        ? 'bg-blue-600 text-white shadow-blue-500/20 hover:bg-blue-500'
-                        : activeSet.completed
-                          ? 'bg-green-500 text-white shadow-green-500/20 hover:bg-green-400'
-                          : 'bg-white text-black hover:bg-gray-100'
-                      }
-                        `}
-                  >
-                    {(currentExerciseIndex === exercises.length - 1 && activeSetIndex === (currentExercise.sets || 0) - 1 && activeSet.completed && currentExercise.group?.type !== 'amrap')
-                      ? 'Terminer la séance'
-                      : currentExercise.group?.type === 'amrap'
-                        ? 'Exercice Suivant'
-                        : activeSet.completed ? 'Validé' : 'Valider la série'}
-                  </button>
+                        if (isLastExercise && isLastSet && !isAmrap && activeSet.completed) {
+                          handleCompleteWorkout();
+                        } else {
+                          // For AMRAP/Circuit, completing a set should often just move to next
+                          handleCompleteSet(activeSetIndex);
+                        }
+                      }}
+                      className={`
+                            w-full py-5 rounded-2xl font-black text-lg uppercase tracking-wider shadow-lg transition-all transform active:scale-95 flex items-center justify-center gap-2
+                            ${(currentExerciseIndex === exercises.length - 1 && activeSetIndex === (currentExercise.sets || 0) - 1 && activeSet.completed && currentExercise.group?.type !== 'amrap' && currentExercise.group?.type !== 'circuit')
+                          ? 'bg-blue-600 text-white shadow-blue-500/20 hover:bg-blue-500'
+                          : activeSet.completed
+                            ? 'bg-green-500 text-white shadow-green-500/20 hover:bg-green-400'
+                            : currentExercise.group?.type === 'amrap' || currentExercise.group?.type === 'circuit'
+                              ? 'bg-blue-600 text-white shadow-blue-500/20 hover:bg-blue-500' // Always blue for Flow Mode
+                              : 'bg-white text-black hover:bg-gray-100'
+                        }
+                          `}
+                    >
+                      {(currentExerciseIndex === exercises.length - 1 && activeSetIndex === (currentExercise.sets || 0) - 1 && activeSet.completed && currentExercise.group?.type !== 'amrap' && currentExercise.group?.type !== 'circuit')
+                        ? 'Terminer la séance'
+                        : (currentExercise.group?.type === 'amrap' || currentExercise.group?.type === 'circuit')
+                          ? (
+                            <>
+                              <span>{activeSet.completed ? 'Suivant' : 'Valider & Suivant'}</span>
+                              <ArrowRight className="w-5 h-5" />
+                            </>
+                          )
+                          : activeSet.completed ? 'Validé' : 'Valider la série'}
+                    </button>
+
+                    {/* NEXT EXERCISE PREVIEW (Flow Mode) */}
+                    {(currentExercise.group?.type === 'amrap' || currentExercise.group?.type === 'circuit') && (
+                      <div className="flex items-center justify-center gap-2 opacity-50 text-sm font-medium">
+                        <span className="uppercase tracking-wider text-xs">À suivre :</span>
+                        <span className="text-white">
+                          {(() => {
+                            // Calculate next exercise logic similar to handleAutoAdvance
+                            // Simplified: usually just next index or loop back
+                            const groupExercises = exercises.filter(e => e.group?.id === currentExercise.group?.id);
+                            const currentGroupIndex = groupExercises.findIndex(e => e.id === currentExercise.id);
+
+                            if (currentGroupIndex < groupExercises.length - 1) {
+                              return groupExercises[currentGroupIndex + 1].name;
+                            } else {
+                              // Loops back to start
+                              return groupExercises[0].name;
+                            }
+                          })()}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 )}
 
               </div>
