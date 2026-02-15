@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Clock, Dumbbell, Target, ChevronRight, PlayCircle, Trophy, Search } from 'lucide-react';
+import { Clock, Dumbbell, Target, ChevronRight, PlayCircle, Search } from 'lucide-react';
 import { TutorialCard } from '../../components/client/TutorialCard';
 import { Link } from 'react-router-dom';
 import { useClientAuth } from '../../contexts/ClientAuthContext';
 import { supabase } from '../../lib/supabase';
 
 import { WorkoutFilterChips } from '../../components/client/workout/WorkoutFilterChips';
+import { PageHero } from '../../components/client/shared/PageHero';
 
 function ClientWorkouts() {
   const { client: authClient } = useClientAuth();
@@ -143,27 +144,28 @@ function ClientWorkouts() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0f172a] text-white font-sans p-4 pb-24 md:p-8">
-      {/* Background Gradients */}
+    <div className="min-h-screen bg-[#0f172a] text-white font-sans pb-24">
+      {/* Page Hero */}
+      <PageHero
+        title="Entraînement"
+        subtitle="Votre hub central pour toutes vos activités sportives."
+        backgroundImage="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=2070&auto=format&fit=crop"
+        headerContent={
+          <Link to="/marketplace" className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg shadow-blue-500/30 transition-all text-sm font-bold uppercase tracking-wide group">
+            <span>Catalogue</span>
+            <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          </Link>
+        }
+      />
+
+      {/* Background Gradients (Fixed) */}
       <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-        <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-[100px]" />
-        <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-cyan-500/10 rounded-full blur-[100px]" />
+        <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-blue-500/5 rounded-full blur-[100px]" />
+        <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-cyan-500/5 rounded-full blur-[100px]" />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto space-y-8">
+      <div className="relative z-10 max-w-7xl mx-auto space-y-8 px-4 md:px-8 -mt-12">
 
-        {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 animate-slide-in">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Entraînement</h1>
-            <p className="text-gray-400">Votre hub central pour toutes vos activités sportives.</p>
-          </div>
-
-          <Link to="/marketplace" className="flex items-center gap-2 px-6 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl border border-white/5 transition-all text-sm font-medium">
-            <span>Explorer le catalogue</span>
-            <ChevronRight className="w-4 h-4" />
-          </Link>
-        </div>
 
         <div className="space-y-6 animate-fade-in delay-300">
 
