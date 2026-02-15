@@ -156,7 +156,13 @@ function ClientWorkouts() {
             <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </Link>
         }
-      />
+      >
+        <WorkoutFilterChips
+          filters={filters}
+          activeFilter={activeFilter}
+          onSelect={setActiveFilter}
+        />
+      </PageHero>
 
       {/* Background Gradients (Fixed) */}
       <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
@@ -164,16 +170,10 @@ function ClientWorkouts() {
         <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-cyan-500/5 rounded-full blur-[100px]" />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto space-y-8 px-4 md:px-8 -mt-12">
+      <div className="relative z-10 max-w-7xl mx-auto space-y-8 px-4 md:px-8">
 
 
         <div className="space-y-6 animate-fade-in delay-300">
-
-          <WorkoutFilterChips
-            filters={filters}
-            activeFilter={activeFilter}
-            onSelect={setActiveFilter}
-          />
           <TutorialCard
             tutorialId="workouts_intro"
             title="Hub Entraînement 🏋️‍♂️"
