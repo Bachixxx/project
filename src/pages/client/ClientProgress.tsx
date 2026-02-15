@@ -273,7 +273,7 @@ function ClientProgress() {
         title="Mes Progrès"
         subtitle="Suivez l'évolution de vos performances."
         backgroundImage="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=2070&auto=format&fit=crop"
-        className="pb-12"
+        className="pb-4"
         headerContent={
           <div className="bg-white/10 backdrop-blur-md rounded-full px-4 py-1 border border-white/10 text-xs font-medium text-white/80">
             {activeTab === 'summary' ? 'Vue d\'ensemble' : 'Analyse détaillée'}
@@ -287,11 +287,11 @@ function ClientProgress() {
           ]}
           activeTab={activeTab}
           onTabChange={(id) => setActiveTab(id as any)}
-          className="!sticky-none !top-auto !bg-transparent !border-none !p-0 !m-0 !mb-0"
+          className="!relative !top-auto !bg-transparent !border-none !p-0 !m-0 !mb-0"
         />
       </PageHero>
 
-      <div className="max-w-7xl mx-auto px-4 -mt-8 relative z-20 space-y-8">
+      <div className="max-w-7xl mx-auto px-4 mt-8 relative z-20 space-y-8">
 
         {activeTab === 'summary' && (
           <div className="space-y-8 animate-fade-in">
