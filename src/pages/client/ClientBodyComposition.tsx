@@ -12,7 +12,7 @@ function ClientBodyComposition() {
             <PageHero
                 title="Biométrie"
                 subtitle="Suivez l'évolution de votre corps : poids, mensurations, et composition."
-                backgroundImage="https://images.unsplash.com/photo-1574680096141-1cddd32e04ca?q=80&w=2070&auto=format&fit=crop"
+                backgroundImage="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=2070&auto=format&fit=crop"
                 showBackButton={true}
             />
 
