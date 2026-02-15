@@ -1156,7 +1156,7 @@ function ClientLiveWorkout() {
       <div className="fixed top-20 left-4 bg-black/80 text-white p-2 text-xs z-50 pointer-events-none border border-red-500">
         <p>DEBUG V3</p>
         <p>Ex: {currentExercise?.name}</p>
-        <p>Group ID: {currentExercise?.group_id || 'None'}</p>
+        <p>Group ID: {currentExercise?.group?.id || 'None'}</p>
         <p>Group Data: {currentExercise?.group ? 'LOADED' : 'NULL'}</p>
         <p>Type: {currentExercise?.group?.type || 'N/A'}</p>
       </div>
