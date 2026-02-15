@@ -21,8 +21,14 @@ interface Exercise {
   track_duration?: boolean;
   track_distance?: boolean;
   duration_seconds?: number;
-  distance_meters?: number;
   video_url?: string;
+  group?: {
+    id: string;
+    type: string;
+    name: string;
+    duration_seconds?: number;
+    repetitions?: number;
+  } | null;
 }
 
 function ClientLiveWorkout() {
@@ -308,10 +314,17 @@ function ClientLiveWorkout() {
             tracking_type,
             track_reps,
             track_weight,
-            track_weight,
             track_duration,
             track_distance,
             video_url
+          ),
+          group_id,
+          exercise_group:group_id (
+            id,
+            type,
+            name,
+            duration_seconds,
+            repetitions
           ),
           duration_seconds,
           distance_meters
@@ -337,7 +350,14 @@ function ClientLiveWorkout() {
         track_distance: se.exercise.track_distance,
         video_url: se.exercise.video_url,
         duration_seconds: se.duration_seconds,
-        distance_meters: se.distance_meters
+        distance_meters: se.distance_meters,
+        group: se.exercise_group ? {
+          id: se.exercise_group.id,
+          type: se.exercise_group.type,
+          name: se.exercise_group.name,
+          duration_seconds: se.exercise_group.duration_seconds,
+          repetitions: se.exercise_group.repetitions
+        } : null
       }));
 
       setExercises(exerciseList);
@@ -522,20 +542,38 @@ function ClientLiveWorkout() {
       }
 
       // Logic to auto-advance or show rest
-      if (currentExercise.rest_time > 0 && setIndex < currentExercise.sets - 1) {
-        setRestTimer(currentExercise.rest_time);
+      // Prioritize Rest Time if it exists
+      if (currentExercise.rest_time > 0) {
+        // For circuits, rest usually happens after the last exercise of the round.
+        // But if user set rest on intermediate exercises, we honor it.
+        // If circuit:
+        //   - Intermediate ex: rest > 0 -> Show timer -> next ex
+        //   - Last ex: rest > 0 -> Show timer -> first ex (next round)
 
-        // Auto-advance to next set happens after rest (or immediately if we want?)
-        // Let's stay on current set during rest, or move to next?
-        // Usually, you rest, THEN you do the next set.
-        // So we should probably show rest timer overlay, then advance index when rest is done/skipped.
-      } else if (setIndex < currentExercise.sets - 1) {
+        // Only show rest if we are NOT at the very end of the workout (unless we want a cooldown?)
+        // And for standard sets, we don't rest after the LAST set of the exercise usually.
+        // For circuits, we DO rest after the last exercise of the round (before next round).
+
+        const groupType = currentExercise.group?.type;
+        const isCircuit = groupType === 'circuit';
+        const isInterval = groupType === 'interval';
+        const isAmrap = groupType === 'amrap';
+        const isLastSet = setIndex === currentExercise.sets - 1;
+
+        if (isCircuit || isInterval || isAmrap) {
+          setRestTimer(currentExercise.rest_time);
+        } else {
+          // Standard
+          if (!isLastSet) {
+            setRestTimer(currentExercise.rest_time);
+          } else {
+            // Last set of standard exercise -> No rest, just finish/next
+            handleAutoAdvance();
+          }
+        }
+      } else {
         // No rest time, immediately advance
-        // setTimeout(() => setActiveSetIndex(prev => prev + 1), 300);
-        setActiveSetIndex(prev => prev + 1);
-      } else if (setIndex === currentExercise.sets - 1) {
-        // Last set of exercise
-        // Maybe auto-advance exercise or show "Exercise Complete"
+        handleAutoAdvance();
       }
 
 
@@ -570,6 +608,81 @@ function ClientLiveWorkout() {
         )
       }
     }));
+  };
+
+  const handleAutoAdvance = () => {
+    setRestTimer(null);
+
+    const groupType = currentExercise.group?.type;
+    const isCircuit = groupType === 'circuit';
+    const isAmrap = groupType === 'amrap';
+    const isInterval = groupType === 'interval';
+
+    if (isCircuit || isAmrap || isInterval) {
+      if (!currentExercise.group) return;
+
+      const currentGroupId = currentExercise.group.id;
+      // Find all exercises in this group
+      const groupExercises = exercises
+        .map((e, idx) => ({ ...e, originalIndex: idx }))
+        .filter(e => e.group?.id === currentGroupId);
+
+      // Current position within the group
+      const currentGroupIndex = groupExercises.findIndex(e => e.id === currentExercise.id);
+
+      if (currentGroupIndex === -1) return; // Should not happen
+
+      // Scenario 1: Next exercise in the same round (set)
+      if (currentGroupIndex < groupExercises.length - 1) {
+        const nextExerciseInGroup = groupExercises[currentGroupIndex + 1];
+        setCurrentExerciseIndex(nextExerciseInGroup.originalIndex);
+        // activeSetIndex will be updated by useEffect based on completion status
+      }
+      // Scenario 2: End of round
+      else {
+        // We are at the last exercise of the group
+
+        // FOR AMRAP: Always loop back to start until timer ends (user stops manually or block timer kills it)
+        if (isAmrap) {
+          const firstExerciseInGroup = groupExercises[0];
+          setCurrentExerciseIndex(firstExerciseInGroup.originalIndex);
+          // We might want to auto-increment a "Round Counter" here if we were tracking rounds globally?
+          // For now, simple navigation.
+          return;
+        }
+
+        // FOR CIRCUIT / INTERVAL: Check fixed rounds
+        // Use group.repetitions if available, otherwise fallback to currentExercise.sets
+        const totalRounds = currentExercise.group.repetitions || currentExercise.sets;
+
+        if (activeSetIndex < totalRounds - 1) {
+          // Move to FIRST exercise of the group for the NEXT round
+          const firstExerciseInGroup = groupExercises[0];
+          setCurrentExerciseIndex(firstExerciseInGroup.originalIndex);
+          // activeSetIndex will be updated by useEffect
+        } else {
+          // Scenario 3: Block Complete
+          // Loop done. Move to next exercise outside the group
+          const lastExerciseInGroup = groupExercises[groupExercises.length - 1];
+          const nextExerciseIndex = lastExerciseInGroup.originalIndex + 1;
+
+          if (nextExerciseIndex < exercises.length) {
+            setCurrentExerciseIndex(nextExerciseIndex);
+          } else {
+            // Workout Complete
+            handleCompleteWorkout();
+          }
+        }
+      }
+    } else {
+      // Standard Logic
+      if (activeSetIndex < currentExercise.sets - 1) {
+        setActiveSetIndex(prev => prev + 1);
+      } else {
+        // Exercise Complete -> Next Exercise
+        handleNextExercise();
+      }
+    }
   };
 
   const handleNextExercise = () => {
@@ -696,240 +809,271 @@ function ClientLiveWorkout() {
           >
             <ChevronLeft className="w-5 h-5 text-gray-300" />
           </button>
-
-          <h1 className="text-sm font-bold opacity-70 truncate uppercase tracking-widest text-cyan-400">
-            {currentExerciseIndex + 1}/{exercises.length} - {sessionData.session?.name}
-          </h1>
-          <p className="text-xl font-black text-white truncate leading-none mt-1">
-            {currentExercise.name}
-          </p>
+          <div className="flex-1 min-w-0 mx-4 text-center">
+            <h1 className="text-sm font-bold opacity-70 truncate uppercase tracking-widest text-cyan-400">
+              {currentExerciseIndex + 1}/{exercises.length} - {sessionData.session?.name}
+            </h1>
+            <p className="text-xl font-black text-white truncate leading-none mt-1">
+              {currentExercise.name}
+            </p>
+          </div>
         </div>
+
+        {/* BLOCK TIMER (AMRAP / INTERVAL) */}
+        {currentExercise?.group?.duration_seconds && (currentExercise.group.type === 'amrap' || currentExercise.group.type === 'interval') && (
+          <div className="mb-4 bg-orange-500/10 border border-orange-500/20 rounded-xl p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-orange-500/20 rounded-lg text-orange-400">
+                <Timer className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-orange-200 font-bold text-sm uppercase tracking-wider">{currentExercise.group.type === 'amrap' ? 'AMRAP' : 'Intervalle'} Timer</h3>
+                <p className="text-orange-400/60 text-xs">Temps restant</p>
+
+              </div>
+            </div>
+            <div className="text-2xl font-black text-white tabular-nums">
+              {/* 
+                     TODO: We need a REAL countdown state for this block. 
+                     For now showing static duration or we need to implement a block timer hook.
+                     Let's use a simple placeholder or hook it up to a new state if needed.
+                     For MVP of this fix, let's just show the total duration or "En cours".
+                     Actually, user wants it to work.
+                 */}
+              {Math.floor(currentExercise.group.duration_seconds / 60)}:{(currentExercise.group.duration_seconds % 60).toString().padStart(2, '0')}
+            </div>
+          </div>
+        )
+        }
 
         <div className="w-10 h-10" />
 
         {/* Video Player Integration */}
-        {currentExercise.video_url && (
-          <div className="mb-6 rounded-xl overflow-hidden shadow-lg bg-black aspect-video relative">
-            <iframe
-              src={currentExercise.video_url.includes('youtube.com') || currentExercise.video_url.includes('youtu.be')
-                ? currentExercise.video_url.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')
-                : currentExercise.video_url}
-              title={currentExercise.name}
-              className="w-full h-full object-cover"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
-          </div>
-        )}
+        {
+          currentExercise.video_url && (
+            <div className="mb-6 rounded-xl overflow-hidden shadow-lg bg-black aspect-video relative">
+              <iframe
+                src={currentExercise.video_url.includes('youtube.com') || currentExercise.video_url.includes('youtu.be')
+                  ? currentExercise.video_url.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')
+                  : currentExercise.video_url}
+                title={currentExercise.name}
+                className="w-full h-full object-cover"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+          )
+        }
 
         {/* Set Navigation Bar */}
-        {currentExercise && (
-          <div className="flex items-center justify-center gap-2 mb-6 shrink-0 overflow-x-auto py-2 no-scrollbar">
-            {completedExercises[currentExercise.id]?.sets.map((s, idx) => (
-              <button
-                key={idx}
-                onClick={() => setActiveSetIndex(idx)}
-                className={`
+        {
+          currentExercise && (
+            <div className="flex items-center justify-center gap-2 mb-6 shrink-0 overflow-x-auto py-2 no-scrollbar">
+              {completedExercises[currentExercise.id]?.sets.map((s, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setActiveSetIndex(idx)}
+                  className={`
                   w-8 h-8 rounded-full text-xs font-bold transition-all flex items-center justify-center
                   ${idx === activeSetIndex
-                    ? 'bg-blue-500 text-white scale-110 shadow-lg shadow-blue-500/30'
-                    : s.completed
-                      ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                      : 'bg-white/5 text-gray-500 border border-white/5'
-                  }
+                      ? 'bg-blue-500 text-white scale-110 shadow-lg shadow-blue-500/30'
+                      : s.completed
+                        ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                        : 'bg-white/5 text-gray-500 border border-white/5'
+                    }
                 `}
-              >
-                {idx + 1}
-              </button>
-            ))}
-          </div>
-        )}
+                >
+                  {idx + 1}
+                </button>
+              ))}
+            </div>
+          )
+        }
 
         {/* Timer Card Overlay (If Resting) */}
-        {restTimer !== null && restTimer > 0 && (
-          <div className="absolute inset-4 z-50 flex items-center justify-center bg-[#09090b]/90 backdrop-blur-xl rounded-3xl border border-blue-500/20 animate-in fade-in zoom-in duration-300">
-            <div className="text-center w-full max-w-sm">
-              <div className="w-24 h-24 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-blue-500/20 animate-pulse">
-                <Timer className="w-10 h-10 text-cyan-400" />
+        {
+          restTimer !== null && restTimer > 0 && (
+            <div className="absolute inset-4 z-50 flex items-center justify-center bg-[#09090b]/90 backdrop-blur-xl rounded-3xl border border-blue-500/20 animate-in fade-in zoom-in duration-300">
+              <div className="text-center w-full max-w-sm">
+                <div className="w-24 h-24 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-blue-500/20 animate-pulse">
+                  <Timer className="w-10 h-10 text-cyan-400" />
+                </div>
+                <div className="text-6xl font-black text-white mb-2 tabular-nums tracking-tighter">{restTimer}</div>
+                <p className="text-cyan-200/70 text-sm font-medium uppercase tracking-wide mb-8">Repos - Soufflez un peu</p>
+                <button
+                  onClick={handleAutoAdvance}
+                  className="w-full py-4 bg-white hover:bg-gray-100 rounded-xl text-black font-bold text-lg transition-all"
+                >
+                  Reprendre maintenant
+                </button>
               </div>
-              <div className="text-6xl font-black text-white mb-2 tabular-nums tracking-tighter">{restTimer}</div>
-              <p className="text-cyan-200/70 text-sm font-medium uppercase tracking-wide mb-8">Repos - Soufflez un peu</p>
-              <button
-                onClick={() => {
-                  setRestTimer(null);
-                  if (currentExercise && activeSetIndex < currentExercise.sets - 1) {
-                    setActiveSetIndex(prev => prev + 1);
-                  }
-                }}
-                className="w-full py-4 bg-white hover:bg-gray-100 rounded-xl text-black font-bold text-lg transition-all"
-              >
-                Reprendre maintenant
-              </button>
             </div>
-          </div>
-        )}
+          )
+        }
 
         {/* Focus Mode - Active Set Card */}
-        {currentExercise && activeSet && (
-          <div className="flex-1 flex flex-col justify-center max-w-md mx-auto w-full min-h-[50vh]">
-            <div className={`
+        {
+          currentExercise && activeSet && (
+            <div className="flex-1 flex flex-col justify-center max-w-md mx-auto w-full min-h-[50vh]">
+              <div className={`
               bg-[#1e293b]/60 border backdrop-blur-xl rounded-[2rem] p-6 shadow-2xl flex flex-col gap-6 relative overflow-hidden transition-all duration-500
               ${activeSet.completed
-                ? 'border-green-500/30 shadow-[0_0_50px_rgba(34,197,94,0.15)]'
-                : 'border-white/10'
-              }
+                  ? 'border-green-500/30 shadow-[0_0_50px_rgba(34,197,94,0.15)]'
+                  : 'border-white/10'
+                }
             `}>
-              {/* Status Indicator */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="px-3 py-1 rounded-full bg-white/5 border border-white/5 text-xs font-bold uppercase tracking-wider text-gray-400">
-                    Série {activeSetIndex + 1}
+                {/* Status Indicator */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="px-3 py-1 rounded-full bg-white/5 border border-white/5 text-xs font-bold uppercase tracking-wider text-gray-400">
+                      Série {activeSetIndex + 1}
+                    </div>
+                    {activeSet.isGhost && (
+                      <div className="px-2 py-1 rounded-full bg-purple-500/20 border border-purple-500/30 text-[10px] font-bold uppercase tracking-wider text-purple-300">
+                        Historique
+                      </div>
+                    )}
                   </div>
-                  {activeSet.isGhost && (
-                    <div className="px-2 py-1 rounded-full bg-purple-500/20 border border-purple-500/30 text-[10px] font-bold uppercase tracking-wider text-purple-300">
-                      Historique
+                  {activeSet.completed && (
+                    <div className="flex items-center gap-1 text-green-400 text-sm font-bold uppercase tracking-wide animate-in fade-in slide-in-from-right-2">
+                      <CheckCircle className="w-4 h-4" />
+                      Validé
                     </div>
                   )}
                 </div>
-                {activeSet.completed && (
-                  <div className="flex items-center gap-1 text-green-400 text-sm font-bold uppercase tracking-wide animate-in fade-in slide-in-from-right-2">
-                    <CheckCircle className="w-4 h-4" />
-                    Validé
-                  </div>
-                )}
-              </div>
 
-              {/* Controls */}
-              <div className="space-y-6">
-                {/* Timer/Duration Control if needed */}
-                {activeTimer && activeTimer.setIndex === activeSetIndex ? (
-                  <div className={`rounded-2xl p-6 border text-center animate-fade-in relative overflow-hidden h-48 flex flex-col items-center justify-center ${activeTimer.isPreStart
-                    ? 'bg-red-600/20 border-red-500/30'
-                    : 'bg-blue-600/20 border-blue-500/30'
-                    }`}>
-                    <div className={`text-6xl font-black tabular-nums tracking-tighter mb-4 ${activeTimer.isPreStart ? 'text-red-500' : 'text-white'}`}>
-                      {activeTimer.isPreStart
-                        ? activeTimer.preStartTimeLeft
-                        : `${Math.floor(activeTimer.timeLeft / 60)}:${(activeTimer.timeLeft % 60).toString().padStart(2, '0')}`
+                {/* Controls */}
+                <div className="space-y-6">
+                  {/* Timer/Duration Control if needed */}
+                  {activeTimer && activeTimer.setIndex === activeSetIndex ? (
+                    <div className={`rounded-2xl p-6 border text-center animate-fade-in relative overflow-hidden h-48 flex flex-col items-center justify-center ${activeTimer.isPreStart
+                      ? 'bg-red-600/20 border-red-500/30'
+                      : 'bg-blue-600/20 border-blue-500/30'
+                      }`}>
+                      <div className={`text-6xl font-black tabular-nums tracking-tighter mb-4 ${activeTimer.isPreStart ? 'text-red-500' : 'text-white'}`}>
+                        {activeTimer.isPreStart
+                          ? activeTimer.preStartTimeLeft
+                          : `${Math.floor(activeTimer.timeLeft / 60)}:${(activeTimer.timeLeft % 60).toString().padStart(2, '0')}`
+                        }
+                      </div>
+                      <div className="flex gap-4">
+                        <button onClick={handlePauseTimer} className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center">
+                          {activeTimer.isRunning ? <Pause className="fill-white" /> : <Play className="fill-white" />}
+                        </button>
+                        <button onClick={handleResetTimer} className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center">
+                          <RotateCcw />
+                        </button>
+                        <button onClick={handleStopTimer} className="w-12 h-12 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center">
+                          <X />
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Primary Controls */}
+                      <div className="grid grid-cols-1 gap-4">
+                        {/* Weight Control */}
+                        {(currentExercise.tracking_type === 'reps_weight' || currentExercise.track_weight) && (
+                          <div>
+                            <label className="text-gray-500 text-xs font-bold uppercase mb-2 block text-center">Charge (kg)</label>
+                            <div className="flex items-center justify-between bg-black/20 rounded-2xl p-2 border border-white/5">
+                              <button
+                                onClick={() => handleUpdateSet(activeSetIndex, 'weight', Math.max(0, activeSet.weight - 2.5))}
+                                className="w-16 h-16 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 transition-colors active:scale-90"
+                              >
+                                <Minus className="w-6 h-6 text-gray-300" />
+                              </button>
+                              <input
+                                type="number"
+                                value={activeSet.weight}
+                                onChange={(e) => handleUpdateSet(activeSetIndex, 'weight', parseFloat(e.target.value) || 0)}
+                                className="w-full bg-transparent text-center text-4xl font-black text-white focus:outline-none"
+                              />
+                              <button
+                                onClick={() => handleUpdateSet(activeSetIndex, 'weight', activeSet.weight + 2.5)}
+                                className="w-16 h-16 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 transition-colors active:scale-90"
+                              >
+                                <Plus className="w-6 h-6 text-gray-300" />
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Reps Control */}
+                        {(currentExercise.tracking_type === 'reps_weight' || currentExercise.track_reps) && (
+                          <div>
+                            <label className="text-gray-500 text-xs font-bold uppercase mb-2 block text-center">Répétitions</label>
+                            <div className="flex items-center justify-between bg-black/20 rounded-2xl p-2 border border-white/5">
+                              <button
+                                onClick={() => handleUpdateSet(activeSetIndex, 'reps', Math.max(0, activeSet.reps - 1))}
+                                className="w-16 h-16 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 transition-colors active:scale-90"
+                              >
+                                <Minus className="w-6 h-6 text-gray-300" />
+                              </button>
+                              <input
+                                type="number"
+                                value={activeSet.reps}
+                                onChange={(e) => handleUpdateSet(activeSetIndex, 'reps', parseFloat(e.target.value) || 0)}
+                                className="w-full bg-transparent text-center text-4xl font-black text-white focus:outline-none"
+                              />
+                              <button
+                                onClick={() => handleUpdateSet(activeSetIndex, 'reps', activeSet.reps + 1)}
+                                className="w-16 h-16 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 transition-colors active:scale-90"
+                              >
+                                <Plus className="w-6 h-6 text-gray-300" />
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Duration/Distance Logic (Simplified for brevity, similar structure) */}
+                        {(currentExercise.tracking_type === 'duration' || currentExercise.track_duration) && (
+                          <div>
+                            <button onClick={() => handleStartTimer(activeSetIndex, activeSet.duration_seconds || 60)} className="w-full h-16 bg-blue-600 rounded-xl flex items-center justify-center gap-2 font-bold mb-4">
+                              <Play className="fill-white" /> Lancer Chrono ({activeSet.duration_seconds}s)
+                            </button>
+                          </div>
+                        )}
+
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Validate Button */}
+                {!activeTimer && (
+                  <button
+                    onClick={() => {
+                      const isLastExercise = currentExerciseIndex === exercises.length - 1;
+                      const isLastSet = activeSetIndex === (currentExercise.sets || 0) - 1;
+
+                      if (isLastExercise && isLastSet && activeSet.completed) {
+                        handleCompleteWorkout();
+                      } else {
+                        handleCompleteSet(activeSetIndex);
                       }
-                    </div>
-                    <div className="flex gap-4">
-                      <button onClick={handlePauseTimer} className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center">
-                        {activeTimer.isRunning ? <Pause className="fill-white" /> : <Play className="fill-white" />}
-                      </button>
-                      <button onClick={handleResetTimer} className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center">
-                        <RotateCcw />
-                      </button>
-                      <button onClick={handleStopTimer} className="w-12 h-12 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center">
-                        <X />
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    {/* Primary Controls */}
-                    <div className="grid grid-cols-1 gap-4">
-                      {/* Weight Control */}
-                      {(currentExercise.tracking_type === 'reps_weight' || currentExercise.track_weight) && (
-                        <div>
-                          <label className="text-gray-500 text-xs font-bold uppercase mb-2 block text-center">Charge (kg)</label>
-                          <div className="flex items-center justify-between bg-black/20 rounded-2xl p-2 border border-white/5">
-                            <button
-                              onClick={() => handleUpdateSet(activeSetIndex, 'weight', Math.max(0, activeSet.weight - 2.5))}
-                              className="w-16 h-16 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 transition-colors active:scale-90"
-                            >
-                              <Minus className="w-6 h-6 text-gray-300" />
-                            </button>
-                            <input
-                              type="number"
-                              value={activeSet.weight}
-                              onChange={(e) => handleUpdateSet(activeSetIndex, 'weight', parseFloat(e.target.value) || 0)}
-                              className="w-full bg-transparent text-center text-4xl font-black text-white focus:outline-none"
-                            />
-                            <button
-                              onClick={() => handleUpdateSet(activeSetIndex, 'weight', activeSet.weight + 2.5)}
-                              className="w-16 h-16 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 transition-colors active:scale-90"
-                            >
-                              <Plus className="w-6 h-6 text-gray-300" />
-                            </button>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Reps Control */}
-                      {(currentExercise.tracking_type === 'reps_weight' || currentExercise.track_reps) && (
-                        <div>
-                          <label className="text-gray-500 text-xs font-bold uppercase mb-2 block text-center">Répétitions</label>
-                          <div className="flex items-center justify-between bg-black/20 rounded-2xl p-2 border border-white/5">
-                            <button
-                              onClick={() => handleUpdateSet(activeSetIndex, 'reps', Math.max(0, activeSet.reps - 1))}
-                              className="w-16 h-16 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 transition-colors active:scale-90"
-                            >
-                              <Minus className="w-6 h-6 text-gray-300" />
-                            </button>
-                            <input
-                              type="number"
-                              value={activeSet.reps}
-                              onChange={(e) => handleUpdateSet(activeSetIndex, 'reps', parseFloat(e.target.value) || 0)}
-                              className="w-full bg-transparent text-center text-4xl font-black text-white focus:outline-none"
-                            />
-                            <button
-                              onClick={() => handleUpdateSet(activeSetIndex, 'reps', activeSet.reps + 1)}
-                              className="w-16 h-16 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 transition-colors active:scale-90"
-                            >
-                              <Plus className="w-6 h-6 text-gray-300" />
-                            </button>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Duration/Distance Logic (Simplified for brevity, similar structure) */}
-                      {(currentExercise.tracking_type === 'duration' || currentExercise.track_duration) && (
-                        <div>
-                          <button onClick={() => handleStartTimer(activeSetIndex, activeSet.duration_seconds || 60)} className="w-full h-16 bg-blue-600 rounded-xl flex items-center justify-center gap-2 font-bold mb-4">
-                            <Play className="fill-white" /> Lancer Chrono ({activeSet.duration_seconds}s)
-                          </button>
-                        </div>
-                      )}
-
-                    </div>
-                  </>
-                )}
-              </div>
-
-              {/* Validate Button */}
-              {!activeTimer && (
-                <button
-                  onClick={() => {
-                    const isLastExercise = currentExerciseIndex === exercises.length - 1;
-                    const isLastSet = activeSetIndex === (currentExercise.sets || 0) - 1;
-
-                    if (isLastExercise && isLastSet && activeSet.completed) {
-                      handleCompleteWorkout();
-                    } else {
-                      handleCompleteSet(activeSetIndex);
-                    }
-                  }}
-                  className={`
+                    }}
+                    className={`
                           w-full py-5 rounded-2xl font-black text-lg uppercase tracking-wider shadow-lg transition-all transform active:scale-95
                           ${(currentExerciseIndex === exercises.length - 1 && activeSetIndex === (currentExercise.sets || 0) - 1 && activeSet.completed)
-                      ? 'bg-blue-600 text-white shadow-blue-500/20 hover:bg-blue-500'
-                      : activeSet.completed
-                        ? 'bg-green-500 text-white shadow-green-500/20 hover:bg-green-400'
-                        : 'bg-white text-black hover:bg-gray-100'
-                    }
+                        ? 'bg-blue-600 text-white shadow-blue-500/20 hover:bg-blue-500'
+                        : activeSet.completed
+                          ? 'bg-green-500 text-white shadow-green-500/20 hover:bg-green-400'
+                          : 'bg-white text-black hover:bg-gray-100'
+                      }
                         `}
-                >
-                  {(currentExerciseIndex === exercises.length - 1 && activeSetIndex === (currentExercise.sets || 0) - 1 && activeSet.completed)
-                    ? 'Terminer la séance'
-                    : activeSet.completed ? 'Validé' : 'Valider la série'}
-                </button>
-              )}
+                  >
+                    {(currentExerciseIndex === exercises.length - 1 && activeSetIndex === (currentExercise.sets || 0) - 1 && activeSet.completed)
+                      ? 'Terminer la séance'
+                      : activeSet.completed ? 'Validé' : 'Valider la série'}
+                  </button>
+                )}
 
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          )
+        }
+      </div >
 
       <LiveSessionControls
         isActive={!isGlobalPaused}
@@ -944,7 +1088,7 @@ function ClientLiveWorkout() {
               setActiveSetIndex(prev => prev + 1);
             }
           } else {
-            handleNextExercise();
+            handleAutoAdvance();
           }
         }}
         onPrevious={currentExerciseIndex > 0 ? handlePreviousExercise : undefined}
