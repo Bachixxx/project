@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Save, Scale, AlertCircle } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import { useClientAuth } from '../../../contexts/ClientAuthContext';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface AddBodyScanModalProps {
     isOpen: boolean;
@@ -11,6 +12,7 @@ interface AddBodyScanModalProps {
 
 export function AddBodyScanModal({ isOpen, onClose, onSuccess }: AddBodyScanModalProps) {
     const { client } = useClientAuth();
+    const queryClient = useQueryClient();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -127,6 +129,11 @@ export function AddBodyScanModal({ isOpen, onClose, onSuccess }: AddBodyScanModa
             });
 
             if (insertError) throw insertError;
+
+            if (insertError) throw insertError;
+
+            // Invalidate dashboard query to refresh weight card
+            queryClient.invalidateQueries({ queryKey: ['clientDashboard'] });
 
             onSuccess();
             onClose();

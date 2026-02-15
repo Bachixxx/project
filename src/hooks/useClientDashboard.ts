@@ -144,22 +144,12 @@ export function useClientDashboard() {
             ]);
 
             // 3. Process Data
-            const weightHistory = weightLogsRes.data || [];
 
-            // Determine current weight from latest log OR latest scan to ensure we show the most recent data
-            const latestLog = weightHistory.length > 0 ? weightHistory[weightHistory.length - 1] : null;
+            // User requested to ONLY use biometrics (body_scans) for weight
             const latestScan = latestBodyScanRes.data;
+            const currentWeight = latestScan?.weight || null;
 
-            let currentWeight = null;
-            if (latestScan && latestLog) {
-                const scanDate = new Date(latestScan.date).getTime();
-                const logDate = new Date(latestLog.date).getTime();
-                currentWeight = scanDate >= logDate ? latestScan.weight : latestLog.weight;
-            } else if (latestScan) {
-                currentWeight = latestScan.weight;
-            } else if (latestLog) {
-                currentWeight = latestLog.weight;
-            }
+            const weightHistory = weightLogsRes.data || [];
 
             const weightProgress = weightHistory.length >= 2
                 ? weightHistory[weightHistory.length - 1].weight - weightHistory[0].weight

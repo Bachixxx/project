@@ -6,9 +6,10 @@ interface StatsRailProps {
     xp: number;
     streak: number;
     weight?: number; // Optional, if available
+    onWeightClick?: () => void;
 }
 
-export function StatsRail({ level, xp, streak, weight }: StatsRailProps) {
+export function StatsRail({ level, xp, streak, weight, onWeightClick }: StatsRailProps) {
     const stats = [
         {
             id: 'level',
@@ -35,7 +36,8 @@ export function StatsRail({ level, xp, streak, weight }: StatsRailProps) {
             subtext: 'Dernière pesée',
             icon: <Scale className="w-5 h-5 text-blue-400" />,
             color: 'from-blue-500/20 to-cyan-500/20',
-            borderColor: 'border-blue-500/30'
+            borderColor: 'border-blue-500/30',
+            onClick: onWeightClick
         },
         {
             id: 'workouts',
@@ -57,7 +59,8 @@ export function StatsRail({ level, xp, streak, weight }: StatsRailProps) {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.1 }}
                     whileTap={{ scale: 0.95 }}
-                    className={`flex-none w-32 snap-start rounded-2xl bg-gradient-to-br ${stat.color} border ${stat.borderColor} p-3 flex flex-col justify-between h-28 backdrop-blur-sm`}
+                    onClick={stat.onClick}
+                    className={`flex-none w-32 snap-start rounded-2xl bg-gradient-to-br ${stat.color} border ${stat.borderColor} p-3 flex flex-col justify-between h-28 backdrop-blur-sm ${stat.onClick ? 'cursor-pointer hover:brightness-110 transition-all' : ''}`}
                 >
                     <div className="flex justify-between items-start">
                         <div className="p-1.5 bg-white/10 rounded-lg">

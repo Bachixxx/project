@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { useClientDashboard } from '../../hooks/useClientDashboard';
 import { DashboardHero } from '../../components/client/dashboard/DashboardHero';
 import { StatsRail } from '../../components/client/dashboard/StatsRail';
@@ -6,6 +7,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { supabase } from '../../lib/supabase';
 
 export default function ClientDashboard() {
+  const navigate = useNavigate();
   const { data, isLoading: loading, error } = useClientDashboard();
   const { branding } = useTheme();
 
@@ -79,6 +81,7 @@ export default function ClientDashboard() {
             xp={stats?.xp || 0}
             streak={stats?.streakDays || 0}
             weight={currentWeight ?? undefined}
+            onWeightClick={() => navigate('/client/body-composition')}
           />
         </div>
 
