@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Droplets, Activity, Bone, Plus } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import { BiometricRingChart } from './BiometricRingChart';
@@ -44,7 +45,9 @@ interface BiometricsDashboardProps {
 }
 
 export function BiometricsDashboard({ clientId, readOnly = false }: BiometricsDashboardProps) {
-    const [activeTab, setActiveTab] = useState<'general' | 'fat' | 'muscle' | 'water' | 'bone' | 'photos'>('general');
+    const [searchParams] = useSearchParams();
+    const initialTab = searchParams.get('tab') as any || 'general';
+    const [activeTab, setActiveTab] = useState<'general' | 'fat' | 'muscle' | 'water' | 'bone' | 'photos'>(initialTab);
     const [scanData, setScanData] = useState<ScanData | null>(null);
     const [scanHistory, setScanHistory] = useState<ScanData[]>([]);
     const [loading, setLoading] = useState(true);

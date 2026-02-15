@@ -25,7 +25,7 @@ export function QuickActionsRail() {
             label: 'Photos',
             icon: <Camera className="w-5 h-5 text-white" />,
             color: 'bg-pink-600',
-            action: () => navigate('/client/progress')
+            action: () => navigate('/client/body-composition?tab=photos')
         },
         {
             id: 'program',
