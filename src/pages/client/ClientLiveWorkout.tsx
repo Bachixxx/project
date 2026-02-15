@@ -361,7 +361,7 @@ function ClientLiveWorkout() {
       }));
 
       setExercises(exerciseList);
-      console.log('LIVE WORKOUT EXERCISES:', exerciseList); // DEBUG LOG
+      console.log('LIVE WORKOUT EXERCISES DETAILS:', JSON.stringify(exerciseList, null, 2)); // FULL DEBUG LOG
 
       // --- STATE RESTORATION & GHOST MODE LOGIC ---
 
@@ -809,6 +809,25 @@ function ClientLiveWorkout() {
           >
             <ChevronLeft className="w-5 h-5 text-gray-300" />
           </button>
+
+          {/* BLOCK HEADER INDICATORS */}
+          {currentExercise?.group && (
+            <div className="mb-2 flex items-center gap-2 justify-center">
+              <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${currentExercise.group.type === 'circuit' ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' :
+                currentExercise.group.type === 'amrap' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' :
+                  currentExercise.group.type === 'interval' ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30' :
+                    'bg-gray-800 text-gray-400'
+                }`}>
+                {currentExercise.group.name || currentExercise.group.type}
+              </span>
+              {(currentExercise.group.type === 'circuit' || currentExercise.group.type === 'interval') && (
+                <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-white/5 text-white/60 border border-white/10">
+                  Tour {activeSetIndex + 1}/{currentExercise.group.repetitions || currentExercise.sets}
+                </span>
+              )}
+            </div>
+          )}
+
           <div className="flex-1 min-w-0 mx-4 text-center">
             <h1 className="text-sm font-bold opacity-70 truncate uppercase tracking-widest text-cyan-400">
               {currentExerciseIndex + 1}/{exercises.length} - {sessionData.session?.name}
