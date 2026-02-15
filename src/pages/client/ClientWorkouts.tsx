@@ -162,6 +162,7 @@ function ClientWorkouts() {
           filters={filters}
           activeFilter={activeFilter}
           onSelect={setActiveFilter}
+          className="!pb-0"
         />
       </PageHero>
 

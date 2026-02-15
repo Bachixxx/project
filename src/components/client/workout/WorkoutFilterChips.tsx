@@ -4,11 +4,12 @@ interface FilterChipsProps {
     filters: string[];
     activeFilter: string;
     onSelect: (filter: string) => void;
+    className?: string;
 }
 
-export function WorkoutFilterChips({ filters, activeFilter, onSelect }: FilterChipsProps) {
+export function WorkoutFilterChips({ filters, activeFilter, onSelect, className = '' }: FilterChipsProps) {
     return (
-        <div className="overflow-x-auto pb-4 scrollbar-hide">
+        <div className={`overflow-x-auto pb-4 scrollbar-hide ${className}`}>
             <div className="flex gap-3 px-1">
                 {filters.map((filter) => (
                     <button
