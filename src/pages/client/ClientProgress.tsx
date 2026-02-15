@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Award, Target, ArrowUpRight, Activity, Calendar, Plus, X, Dumbbell, Search } from 'lucide-react';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Defs, LinearGradient, Stop } from 'recharts';
+import { Award, Target, ArrowUpRight, Activity, Calendar, Plus, X, Dumbbell, Search, TrendingUp, BarChart3, Zap } from 'lucide-react';
 import { useClientAuth } from '../../contexts/ClientAuthContext';
 import { supabase } from '../../lib/supabase';
 import { TutorialCard } from '../../components/client/TutorialCard';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Drawer } from 'vaul';
 import { PageHero } from '../../components/client/shared/PageHero';
+import { NavRail } from '../../components/client/shared/NavRail';
 
 interface WorkoutLog {
   id: string;
@@ -36,6 +37,7 @@ interface Exercise {
 function ClientProgress() {
   const { client } = useClientAuth();
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'summary' | 'performance'>('summary');
 
   // Data State
   const [workoutLogs, setWorkoutLogs] = useState<WorkoutLog[]>([]);
@@ -254,136 +256,144 @@ function ClientProgress() {
 
   const goals = calculateGoalProgress();
 
+  // Calculate Global KPIs for Synthesis Tab
+  const totalVolumeAllTime = workoutLogs.reduce((acc, log) => acc + (log.weight * log.reps), 0);
+  const totalSessionsAllTime = new Set(workoutLogs.map(l => l.completed_at.split('T')[0])).size;
+  const currentMonth = new Date().getMonth();
+  const sessionsThisMonth = new Set(
+    workoutLogs
+      .filter(l => new Date(l.completed_at).getMonth() === currentMonth)
+      .map(l => l.completed_at.split('T')[0])
+  ).size;
+
+
   return (
     <div className="min-h-screen bg-[#0f172a] text-white font-sans pb-24">
       <PageHero
         title="Mes Progrès"
-        subtitle="Suivez l'évolution de vos charges sur vos exercices favoris."
+        subtitle="Suivez l'évolution de vos performances."
         backgroundImage="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=2070&auto=format&fit=crop"
+        className="pb-0"
         headerContent={
-          <div className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-lg border border-white/10 text-sm text-white/80">
-            <Calendar className="w-4 h-4" />
-            <span>Tous les temps</span>
+          <div className="bg-white/10 backdrop-blur-md rounded-full px-4 py-1 border border-white/10 text-xs font-medium text-white/80">
+            {activeTab === 'summary' ? 'Vue d\'ensemble' : 'Analyse détaillée'}
           </div>
         }
-      />
+      >
+        <NavRail
+          tabs={[
+            { id: 'summary', label: 'Synthèse', icon: BarChart3 },
+            { id: 'performance', label: 'Performances', icon: TrendingUp }
+          ]}
+          activeTab={activeTab}
+          onTabChange={(id) => setActiveTab(id as any)}
+          className="!sticky-none !top-auto !bg-transparent !border-none !p-0 !m-0 !mb-0"
+        />
+      </PageHero>
 
       <div className="max-w-7xl mx-auto px-4 -mt-8 relative z-20 space-y-8">
 
-        <TutorialCard
-          tutorialId="progress_tracking_v2"
-          title="Analysez vos performances 🏋️‍♂️"
-          message="Visualisez votre progression sur chaque exercice : charge maximale, volume total et évolution. Ajoutez un graphique pour commencer."
-          className="mb-8"
-        />
+        {activeTab === 'summary' && (
+          <div className="space-y-8 animate-fade-in">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* KPI 1 */}
+              <div className="bg-gradient-to-br from-blue-500/20 to-blue-600/5 border border-blue-500/20 rounded-2xl p-5 flex flex-col justify-between aspect-square md:aspect-auto md:h-32">
+                <div className="flex justify-between items-start">
+                  <span className="text-blue-200 text-xs font-bold uppercase tracking-wider">Volume total</span>
+                  <Activity className="w-5 h-5 text-blue-400" />
+                </div>
+                <div>
+                  <span className="text-2xl md:text-3xl font-bold text-white">{(totalVolumeAllTime / 1000).toFixed(1)}k</span>
+                  <span className="text-sm text-blue-200 ml-1">kg</span>
+                </div>
+              </div>
 
-        {workoutLogs.length === 0 ? (
-          <div className="glass-card rounded-3xl p-12 text-center border border-dashed border-white/20 flex flex-col items-center justify-center animate-fade-in delay-100">
-            <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-6">
-              <Activity className="w-10 h-10 text-gray-500" />
-            </div>
-            <h3 className="text-2xl font-bold text-white mb-2">Aucune donnée disponible</h3>
-            <p className="text-gray-400 max-w-md mx-auto mb-8">
-              Commencez à enregistrer vos séances d'entraînement pour voir apparaître vos statistiques.
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-8 animate-fade-in delay-100">
+              {/* KPI 2 */}
+              <div className="bg-gradient-to-br from-emerald-500/20 to-emerald-600/5 border border-emerald-500/20 rounded-2xl p-5 flex flex-col justify-between aspect-square md:aspect-auto md:h-32">
+                <div className="flex justify-between items-start">
+                  <span className="text-emerald-200 text-xs font-bold uppercase tracking-wider">Séances (Total)</span>
+                  <Dumbbell className="w-5 h-5 text-emerald-400" />
+                </div>
+                <div>
+                  <span className="text-2xl md:text-3xl font-bold text-white">{totalSessionsAllTime}</span>
+                </div>
+              </div>
 
-            {/* Controls Bar */}
-            <div className="flex flex-wrap items-center gap-3">
-              <Drawer.Root open={isSelectorOpen} onOpenChange={setIsSelectorOpen} shouldScaleBackground>
-                <Drawer.Trigger asChild>
-                  <button
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-colors shadow-lg shadow-blue-500/20"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Ajouter un graphique
-                  </button>
-                </Drawer.Trigger>
-                <Drawer.Portal>
-                  <Drawer.Overlay className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50" />
-                  <Drawer.Content className="bg-[#1e293b] flex flex-col rounded-t-[10px] h-[85vh] mt-24 fixed bottom-0 left-0 right-0 z-[60] border-t border-white/10 outline-none">
-                    <div className="p-4 bg-[#1e293b] rounded-t-[10px] flex-1">
-                      <div aria-hidden className="mx-auto w-12 h-1.5 flex-shrink-0 rounded-full bg-gray-600 mb-8" />
-                      <div className="max-w-md mx-auto h-full flex flex-col">
-                        <Drawer.Title className="text-2xl font-bold text-white mb-4">Sélectionner un exercice</Drawer.Title>
-
-                        <div className="relative mb-6">
-                          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                          <input
-                            type="text"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder="Rechercher un exercice..."
-                            className="w-full pl-12 pr-4 py-3 bg-black/20 border border-white/10 rounded-xl text-white outline-none focus:ring-2 focus:ring-blue-500"
-                          />
-                        </div>
-
-                        <div className="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
-                          {filteredExercises.map(exercise => {
-                            const isSelected = selectedExercises.includes(exercise.id);
-                            return (
-                              <button
-                                key={exercise.id}
-                                onClick={() => toggleExercise(exercise.id)}
-                                className={`w-full text-left p-4 rounded-xl border transition-all flex items-center justify-between group ${isSelected
-                                  ? 'bg-blue-500/10 border-blue-500/50'
-                                  : 'bg-white/5 border-white/5 hover:bg-white/10'
-                                  }`}
-                              >
-                                <div>
-                                  <h4 className={`font-bold ${isSelected ? 'text-blue-400' : 'text-white'}`}>{exercise.name}</h4>
-                                  <span className="text-xs text-gray-500">
-                                    {exercise.track_weight && "Poids • "}{exercise.track_reps && "Reps • "}{exercise.track_distance && "Distance"}
-                                  </span>
-                                </div>
-                                <div className={`w-6 h-6 rounded-full border flex items-center justify-center transition-colors ${isSelected
-                                  ? 'bg-blue-500 border-blue-500 text-white'
-                                  : 'border-gray-500 text-transparent group-hover:border-gray-400'
-                                  }`}>
-                                  <Activity className="w-3 h-3" />
-                                </div>
-                              </button>
-                            );
-                          })}
-                          {filteredExercises.length === 0 && (
-                            <p className="text-center text-gray-500 py-8">Aucun exercice trouvé.</p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </Drawer.Content>
-                </Drawer.Portal>
-              </Drawer.Root>
-
-              <div className="h-8 w-px bg-white/10 mx-2 hidden md:block" />
-
-              <div className="flex flex-wrap gap-2">
-                <AnimatePresence>
-                  {selectedExercises.map(id => {
-                    const ex = exercises.find(e => e.id === id);
-                    if (!ex) return null;
-                    return (
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.8 }}
-                        key={id}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-sm text-gray-300"
-                      >
-                        <span>{ex.name}</span>
-                        <button onClick={() => toggleExercise(id)} className="p-0.5 hover:text-white hover:bg-white/10 rounded-full transition-colors">
-                          <X className="w-3 h-3" />
-                        </button>
-                      </motion.div>
-                    )
-                  })}
-                </AnimatePresence>
+              {/* KPI 3 */}
+              <div className="bg-gradient-to-br from-purple-500/20 to-purple-600/5 border border-purple-500/20 rounded-2xl p-5 flex flex-col justify-between col-span-2 lg:col-span-1 md:h-32">
+                <div className="flex justify-between items-start">
+                  <span className="text-purple-200 text-xs font-bold uppercase tracking-wider">Ce mois-ci</span>
+                  <Zap className="w-5 h-5 text-purple-400" />
+                </div>
+                <div>
+                  <span className="text-2xl md:text-3xl font-bold text-white">{sessionsThisMonth}</span>
+                  <span className="text-sm text-purple-200 ml-1">entraînements</span>
+                </div>
               </div>
             </div>
 
-            {/* Charts Grid */}
+            {/* Goals Section */}
+            <div>
+              <div className="flex items-center gap-3 mb-4 px-2">
+                <div className="p-2 bg-yellow-500/20 rounded-lg">
+                  <Target className="w-5 h-5 text-yellow-400" />
+                </div>
+                <h2 className="text-xl font-bold text-white">Objectifs</h2>
+              </div>
+
+              {goals.length > 0 ? (
+                <div className="grid gap-4 md:grid-cols-2">
+                  {goals.map((goal: any, index: number) => (
+                    <div key={index} className="bg-white/5 border border-white/10 p-5 rounded-2xl relative overflow-hidden group">
+                      <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-white/10 transition-colors" />
+
+                      <div className="flex justify-between items-start mb-4 relative z-10">
+                        <h4 className="font-bold text-lg text-white">{goal.name}</h4>
+                        <span className={`text-xs font-bold px-2 py-1 rounded-lg ${goal.progress >= 100 ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'}`}>
+                          {goal.progress >= 100 ? 'Complété' : 'En cours'}
+                        </span>
+                      </div>
+
+                      <div className="space-y-1 relative z-10">
+                        <div className="flex justify-between text-xs text-gray-400">
+                          <span>Progression</span>
+                          <span>{goal.progress}%</span>
+                        </div>
+                        <div className="h-2 bg-black/40 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-1000 ease-out ${goal.progress >= 100 ? 'bg-green-500' : 'bg-blue-500'}`}
+                            style={{ width: `${Math.min(100, goal.progress)}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-8 rounded-2xl border border-dashed border-white/10 text-center text-gray-500">
+                  Aucun objectif défini
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'performance' && (
+          <div className="space-y-8 animate-fade-in">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-blue-400" />
+                Évolution
+              </h2>
+              <button
+                onClick={() => setIsSelectorOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-white font-medium rounded-lg text-sm transition-colors border border-white/10"
+              >
+                <Plus className="w-4 h-4" />
+                Ajouter
+              </button>
+            </div>
+
             {selectedExercises.length > 0 ? (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {selectedExercises.map(exerciseId => {
@@ -403,63 +413,75 @@ function ClientProgress() {
                 })}
               </div>
             ) : (
-              <div className="py-20 text-center border border-dashed border-white/10 rounded-3xl bg-white/5">
-                <p className="text-gray-400">Aucun exercice sélectionné. Ajoutez-en un ci-dessus !</p>
+              <div onClick={() => setIsSelectorOpen(true)} className="cursor-pointer border-2 border-dashed border-white/10 rounded-3xl p-12 flex flex-col items-center justify-center hover:bg-white/5 transition-colors group">
+                <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <Plus className="w-8 h-8 text-white/40" />
+                </div>
+                <p className="text-white font-medium">Créer votre premier graphique</p>
+                <p className="text-sm text-gray-500 mt-1">Sélectionnez un exercice pour voir votre progression</p>
               </div>
             )}
-
-            {/* Objectifs Grid (Keep it at bottom) */}
-            <div className="glass-card p-6 rounded-3xl border border-white/10">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-2.5 bg-yellow-500/20 rounded-xl">
-                  <Target className="w-6 h-6 text-yellow-400" />
-                </div>
-                <h2 className="text-lg font-bold text-white">Objectifs Personnels</h2>
-              </div>
-
-              {goals.length > 0 ? (
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {goals.map((goal: any, index: number) => (
-                    <div key={index} className="bg-gradient-to-br from-white/5 to-white/[0.02] p-5 rounded-2xl border border-white/5 hover:border-white/10 transition-all group relative overflow-hidden">
-                      <div className="absolute top-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <ArrowUpRight className="w-4 h-4 text-white/40" />
-                      </div>
-
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex-1 min-w-0 pr-4">
-                          <h4 className="text-white font-bold truncate">{goal.name}</h4>
-                          <p className="text-xs text-gray-400 mt-1">{goal.target}</p>
-                        </div>
-                        <div className={`flex items-center justify-center w-8 h-8 rounded-full ${goal.progress >= 100 ? 'bg-yellow-500 text-black' : 'bg-white/10 text-gray-400'}`}>
-                          <Award className="w-4 h-4" />
-                        </div>
-                      </div>
-
-                      <div className="relative pt-2">
-                        <div className="flex justify-between text-xs font-semibold mb-1.5">
-                          <span className={goal.progress >= 100 ? 'text-yellow-400' : 'text-blue-400'}>
-                            {goal.progress >= 100 ? 'Atteint !' : `${goal.progress}%`}
-                          </span>
-                        </div>
-                        <div className="w-full h-2 bg-black/40 rounded-full overflow-hidden">
-                          <div
-                            className={`h-full rounded-full transition-all duration-1000 ease-out ${goal.progress >= 100 ? 'bg-yellow-500' : 'bg-gradient-to-r from-blue-500 to-purple-500'}`}
-                            style={{ width: `${Math.min(100, goal.progress)}%` }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-gray-400">
-                  Aucun objectif défini. Contactez votre coach pour fixer des objectifs !
-                </div>
-              )}
-            </div>
-
           </div>
         )}
+
+        {/* Exercise Selector Drawer (Shared) */}
+        <Drawer.Root open={isSelectorOpen} onOpenChange={setIsSelectorOpen} shouldScaleBackground>
+          <Drawer.Portal>
+            <Drawer.Overlay className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50" />
+            <Drawer.Content className="bg-[#1e293b] flex flex-col rounded-t-[10px] h-[85vh] mt-24 fixed bottom-0 left-0 right-0 z-[60] border-t border-white/10 outline-none">
+              <div className="p-4 bg-[#1e293b] rounded-t-[10px] flex-1">
+                <div aria-hidden className="mx-auto w-12 h-1.5 flex-shrink-0 rounded-full bg-gray-600 mb-8" />
+                <div className="max-w-md mx-auto h-full flex flex-col">
+                  <Drawer.Title className="text-2xl font-bold text-white mb-4">Sélectionner un exercice</Drawer.Title>
+
+                  <div className="relative mb-6">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Rechercher un exercice..."
+                      className="w-full pl-12 pr-4 py-3 bg-black/20 border border-white/10 rounded-xl text-white outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+                    {filteredExercises.map(exercise => {
+                      const isSelected = selectedExercises.includes(exercise.id);
+                      return (
+                        <button
+                          key={exercise.id}
+                          onClick={() => toggleExercise(exercise.id)}
+                          className={`w-full text-left p-4 rounded-xl border transition-all flex items-center justify-between group ${isSelected
+                            ? 'bg-blue-500/10 border-blue-500/50'
+                            : 'bg-white/5 border-white/5 hover:bg-white/10'
+                            }`}
+                        >
+                          <div>
+                            <h4 className={`font-bold ${isSelected ? 'text-blue-400' : 'text-white'}`}>{exercise.name}</h4>
+                            <span className="text-xs text-gray-500">
+                              {exercise.track_weight && "Poids • "}{exercise.track_reps && "Reps • "}{exercise.track_distance && "Distance"}
+                            </span>
+                          </div>
+                          <div className={`w-6 h-6 rounded-full border flex items-center justify-center transition-colors ${isSelected
+                            ? 'bg-blue-500 border-blue-500 text-white'
+                            : 'border-gray-500 text-transparent group-hover:border-gray-400'
+                            }`}>
+                            <Activity className="w-3 h-3" />
+                          </div>
+                        </button>
+                      );
+                    })}
+                    {filteredExercises.length === 0 && (
+                      <p className="text-center text-gray-500 py-8">Aucun exercice trouvé.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </Drawer.Content>
+          </Drawer.Portal>
+        </Drawer.Root>
+
       </div>
     </div>
   );
@@ -467,10 +489,9 @@ function ClientProgress() {
 
 // Sub-component for individual charts to handle metric state independently
 function ExerciseChartCard({ exercise, data, onClose }: { exercise: Exercise, data: any[], onClose: () => void }) {
-  // Determine default metric based on tracking type priority
   const getDefaultMetric = () => {
     if (exercise.track_weight) return 'weight';
-    if (exercise.track_reps) return 'total_reps'; // Use total reps for bodyweight
+    if (exercise.track_reps) return 'total_reps';
     if (exercise.track_distance) return 'distance';
     if (exercise.track_duration) return 'duration';
     if (exercise.track_calories) return 'calories';
@@ -481,27 +502,22 @@ function ExerciseChartCard({ exercise, data, onClose }: { exercise: Exercise, da
 
   if (!exercise) return null;
 
-  // Configuration for the chart based on current metric
   const metricConfig = {
-    weight: { label: "Charge Max (kg)", color: "#a855f7" },
-    total_reps: { label: "Total Répétitions", color: "#3b82f6" },
-    volume: { label: "Volume (kg × reps)", color: "#10b981" },
-    distance: { label: "Distance (m)", color: "#f59e0b" },
-    duration: { label: "Durée (min)", color: "#ef4444" },
-    calories: { label: "Calories", color: "#ec4899" }
+    weight: { label: "Charge Max (kg)", color: "#a855f7", gradient: ['#a855f7', '#7e22ce'] },
+    total_reps: { label: "Total Répétitions", color: "#3b82f6", gradient: ['#3b82f6', '#1d4ed8'] },
+    volume: { label: "Volume (kg × reps)", color: "#10b981", gradient: ['#10b981', '#047857'] },
+    distance: { label: "Distance (m)", color: "#f59e0b", gradient: ['#f59e0b', '#b45309'] },
+    duration: { label: "Durée (min)", color: "#ef4444", gradient: ['#ef4444', '#b91c1c'] },
+    calories: { label: "Calories", color: "#ec4899", gradient: ['#ec4899', '#be185d'] }
   };
 
   const config = metricConfig[metric];
 
-  // Available tabs for this exercise
-  // FORCE DISPLAY: Always show core metrics (Weight, Reps) to ensure versatility
-  // The user wants to see them even if tracking was disabled in the past.
   const tabs = [
     { id: 'weight', label: 'Poids' },
     { id: 'total_reps', label: 'Reps' }
   ];
 
-  // Add optional metrics if enabled (or if meaningful data exists)
   if (exercise.track_weight && exercise.track_reps) {
     tabs.push({ id: 'volume', label: 'Volume' });
   }
@@ -511,8 +527,11 @@ function ExerciseChartCard({ exercise, data, onClose }: { exercise: Exercise, da
   if (exercise.track_calories) tabs.push({ id: 'calories', label: 'Kcal' });
 
   return (
-    <div className="glass-card p-6 rounded-3xl border border-white/10 flex flex-col h-[500px] animate-fade-in relative group">
-      <div className="flex items-start justify-between mb-6">
+    <div className="glass-card p-6 rounded-3xl border border-white/10 flex flex-col h-[400px] animate-fade-in relative group overflow-hidden">
+      {/* Ambient Glow */}
+      <div className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-20 blur-3xl" style={{ backgroundColor: config.color }} />
+
+      <div className="flex items-start justify-between mb-6 relative z-10">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-white/5 rounded-xl border border-white/5">
             <Dumbbell className="w-5 h-5 text-gray-300" />
@@ -530,16 +549,16 @@ function ExerciseChartCard({ exercise, data, onClose }: { exercise: Exercise, da
         </button>
       </div>
 
-      {/* Tabs / Pills */}
       <div className="flex flex-wrap gap-2 mb-4 min-h-[32px] z-10 relative">
         {tabs.map(tab => (
           <button
             key={tab.id}
             onClick={() => setMetric(tab.id as any)}
             className={`px-3 py-1 text-xs font-bold rounded-full transition-all border ${metric === tab.id
-              ? 'bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-500/25'
-              : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10 hover:text-white'
+              ? 'bg-white/10 text-white border-white/20 shadow-lg'
+              : 'bg-white/5 text-gray-400 border-white/5 hover:bg-white/10 hover:text-white'
               }`}
+            style={metric === tab.id ? { borderColor: config.color, color: config.color, backgroundColor: `${config.color}20` } : {}}
           >
             {tab.label}
           </button>
@@ -547,9 +566,15 @@ function ExerciseChartCard({ exercise, data, onClose }: { exercise: Exercise, da
       </div>
 
       {data.length > 0 ? (
-        <div className="flex-1 w-full min-h-0">
+        <div className="flex-1 w-full min-h-0 relative z-10">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data}>
+            <AreaChart data={data}>
+              <defs>
+                <linearGradient id={`gradient-${exercise.id}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor={config.gradient[0]} stopOpacity={0.4} />
+                  <stop offset="95%" stopColor={config.gradient[1]} stopOpacity={0} />
+                </linearGradient>
+              </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
               <XAxis
                 dataKey="date"
@@ -580,22 +605,22 @@ function ExerciseChartCard({ exercise, data, onClose }: { exercise: Exercise, da
                 labelStyle={{ color: '#94a3b8', marginBottom: '0.5rem', fontSize: '0.75rem' }}
                 itemStyle={{ fontSize: '0.875rem', fontWeight: 600 }}
               />
-              <Line
+              <Area
                 type="monotone"
                 dataKey={metric}
                 stroke={config.color}
-                name={config.label}
                 strokeWidth={3}
-                dot={{ fill: config.color, strokeWidth: 2, stroke: '#0f172a', r: 4 }}
+                fill={`url(#gradient-${exercise.id})`}
+                name={config.label}
                 activeDot={{ r: 6, strokeWidth: 0, fill: 'white' }}
-                animationDuration={1000}
+                animationDuration={1500}
               />
-            </LineChart>
+            </AreaChart>
           </ResponsiveContainer>
         </div>
       ) : (
         <div className="flex-1 flex flex-col items-center justify-center text-center">
-          <p className="text-gray-500 text-sm">Pas assez de données pour ce graphique</p>
+          <p className="text-gray-500 text-sm">Pas assez de données</p>
         </div>
       )}
     </div>
