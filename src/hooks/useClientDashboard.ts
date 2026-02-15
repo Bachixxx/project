@@ -40,7 +40,7 @@ export function useClientDashboard() {
             const { data: clients, error: clientError } = await supabase
                 .from('clients')
                 .select('*')
-                .eq('email', user.email)
+                .eq('auth_id', user.id)
                 .limit(1);
 
             const client = clients?.[0];

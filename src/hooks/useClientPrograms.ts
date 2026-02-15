@@ -24,14 +24,16 @@ export function useClientPrograms() {
     const { user } = useAuth();
 
     const query = useQuery({
-        queryKey: ['clientPrograms', user?.email],
+        queryKey: ['clientPrograms', user?.id],
         queryFn: async (): Promise<ClientProgram[]> => {
             // 1. Get Client ID
-            const { data: client, error: clientError } = await supabase
+            const { data: clients, error: clientError } = await supabase
                 .from('clients')
                 .select('id')
-                .eq('email', user?.email)
-                .single();
+                .eq('auth_id', user?.id)
+                .limit(1);
+
+            const client = clients?.[0];
 
             if (clientError || !client) throw Error('Client not found');
 
