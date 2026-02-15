@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Droplets, Activity, Bone, Plus } from 'lucide-react';
+import { Droplets, Activity, Bone, Plus, LayoutDashboard, Dumbbell, Camera } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
+import { NavRail } from '../shared/NavRail';
 import { BiometricRingChart } from './BiometricRingChart';
 import { BiometricTrendChart } from './BiometricTrendChart';
 import { BodyMap, BodySegmentLabel } from './BodyMap';
@@ -123,14 +124,7 @@ export function BiometricsDashboard({ clientId, readOnly = false }: BiometricsDa
         fetchLatestScan();
     }, [clientId]);
 
-    const tabs = [
-        { id: 'general', label: 'Général' },
-        { id: 'fat', label: 'Graisse' },
-        { id: 'muscle', label: 'Muscle' },
-        { id: 'water', label: 'Eau' },
-        { id: 'bone', label: 'Os' },
-        { id: 'photos', label: 'Photos' }
-    ];
+
 
     if (loading && !scanData) return <div className="p-8 text-center text-gray-400 animate-pulse">Chargement des données...</div>;
 
@@ -201,19 +195,19 @@ export function BiometricsDashboard({ clientId, readOnly = false }: BiometricsDa
             </div>
 
             {/* Tab Navigation */}
-            <div className="flex overflow-x-auto gap-2 mb-8 pb-2 scrollbar-hide">
-                {tabs.map((tab) => (
-                    <button
-                        key={tab.id}
-                        onClick={() => setActiveTab(tab.id as any)}
-                        className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${activeTab === tab.id
-                            ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30'
-                            : 'bg-white/5 text-gray-400 hover:bg-white/10'
-                            }`}
-                    >
-                        {tab.label}
-                    </button>
-                ))}
+            <div className="mb-8">
+                <NavRail
+                    tabs={[
+                        { id: 'general', label: 'Général', icon: LayoutDashboard },
+                        { id: 'fat', label: 'Graisse', icon: Activity },
+                        { id: 'muscle', label: 'Muscle', icon: Dumbbell },
+                        { id: 'water', label: 'Eau', icon: Droplets },
+                        { id: 'bone', label: 'Os', icon: Bone },
+                        { id: 'photos', label: 'Photos', icon: Camera }
+                    ]}
+                    activeTab={activeTab}
+                    onTabChange={(id) => setActiveTab(id as any)}
+                />
             </div>
 
             {/* Content */}

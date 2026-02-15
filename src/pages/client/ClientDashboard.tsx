@@ -36,6 +36,7 @@ function ClientDashboard() {
         nextSession={data.nextSession}
         notificationsCount={2}
         heroImage={branding?.dashboardHeroImage} // Pass custom image
+        welcomeMessage={branding?.welcomeMessage} // Pass custom welcome message
       />
 
       <div className="flex flex-col gap-8 -mt-6 relative z-10">

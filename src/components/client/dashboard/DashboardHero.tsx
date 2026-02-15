@@ -6,11 +6,14 @@ interface DashboardHeroProps {
     clientName: string;
     nextSession: any | null;
     notificationsCount?: number;
-    heroImage?: string; // NEW
+    heroImage?: string;
+    welcomeMessage?: string; // NEW
 }
 
-export function DashboardHero({ clientName, nextSession, notificationsCount = 0, heroImage }: DashboardHeroProps) {
+export function DashboardHero({ clientName, nextSession, notificationsCount = 0, heroImage, welcomeMessage }: DashboardHeroProps) {
     const navigate = useNavigate();
+
+    // ... (formatDate and getSessionRoute remain unchanged)
 
     // Helper to format date
     const formatDate = (dateString: string) => {
@@ -58,9 +61,15 @@ export function DashboardHero({ clientName, nextSession, notificationsCount = 0,
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2 }}
                 >
-                    <h1 className="text-4xl font-black text-white mb-1 tracking-tight">
-                        Bonjour, <span className="text-blue-400">{clientName.split(' ')[0]}</span>
-                    </h1>
+                    {welcomeMessage ? (
+                        <h1 className="text-4xl font-black text-white mb-2 tracking-tight">
+                            {welcomeMessage}
+                        </h1>
+                    ) : (
+                        <h1 className="text-4xl font-black text-white mb-1 tracking-tight">
+                            Bonjour, <span className="text-blue-400">{clientName.split(' ')[0]}</span>
+                        </h1>
+                    )}
                     <p className="text-gray-300 text-lg mb-8 font-medium">Prêt à transpirer ? 🔥</p>
                 </motion.div>
 

@@ -1,34 +1,26 @@
-import React, { useState, useEffect } from 'react';
-import { ChevronLeft, Plus } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import React from 'react';
 import { useClientAuth } from '../../contexts/ClientAuthContext';
+import { PageHero } from '../../components/client/shared/PageHero';
 import { BiometricsDashboard } from '../../components/client/biometrics/BiometricsDashboard';
-import { AddBodyScanModal } from '../../components/client/biometrics/AddBodyScanModal';
 import { TutorialCard } from '../../components/client/TutorialCard';
 
 function ClientBodyComposition() {
-    const navigate = useNavigate();
     const { client } = useClientAuth();
 
     return (
-        <div className="min-h-screen bg-[#0f172a] text-white p-4 pb-24 md:p-8">
-            {/* Background Gradients */}
-            <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-                <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-[100px]" />
-                <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[100px]" />
-            </div>
+        <div className="min-h-screen bg-[#0f172a] text-white font-sans pb-24">
+            <PageHero
+                title="Biométrie"
+                subtitle="Suivez l'évolution de votre corps : poids, mensurations, et composition."
+                backgroundImage="https://images.unsplash.com/photo-1574680096141-1cddd32e04ca?q=80&w=2070&auto=format&fit=crop"
+                showBackButton={true}
+            />
 
-            <div className="relative z-10 max-w-4xl mx-auto">
-                <button onClick={() => navigate(-1)} className="mb-4 p-2 -ml-2 text-gray-400 hover:text-white transition-colors flex items-center gap-2">
-                    <ChevronLeft className="w-6 h-6" />
-                    Retour
-                </button>
-
+            <div className="relative z-10 max-w-4xl mx-auto px-4 md:px-8 space-y-8">
                 <TutorialCard
                     tutorialId="biometrics_intro"
                     title="Votre évolution corporelle 📉"
                     message="Suivez votre poids, vos mensurations et vos photos de progression. Ajoutez régulièrement de nouvelles mesures pour visualiser votre transformation."
-                    className="mb-6"
                 />
 
                 {client?.id && <BiometricsDashboard clientId={client.id} readOnly={false} />}
