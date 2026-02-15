@@ -56,10 +56,7 @@ export default function ClientDashboard() {
     );
   }
 
-  const { client, nextSession, stats, weightHistory, weeklyWorkouts } = data;
-  const currentWeight = weightHistory && weightHistory.length > 0
-    ? weightHistory[weightHistory.length - 1].weight
-    : undefined;
+  const { client, nextSession, stats, weeklyWorkouts, currentWeight } = data;
 
   return (
     <div className="min-h-screen bg-[#0f172a] text-white font-sans pb-32">
@@ -81,7 +78,7 @@ export default function ClientDashboard() {
             level={stats?.level || 1}
             xp={stats?.xp || 0}
             streak={stats?.streakDays || 0}
-            weight={currentWeight}
+            weight={currentWeight ?? undefined}
           />
         </div>
 

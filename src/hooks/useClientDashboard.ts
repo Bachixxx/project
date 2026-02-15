@@ -16,6 +16,7 @@ export interface ClientDashboardData {
     programProgress: number;
     recentLogs: any[];
     weightHistory: WeightEntry[];
+    currentWeight: number | null;
     stats: {
         totalWorkouts: number;
         streakDays: number;
@@ -64,7 +65,8 @@ export function useClientDashboard() {
                 workoutsRes,
                 weightLogsRes,
                 recentLogsRes,
-                allWorkoutsRes
+                allWorkoutsRes,
+                latestBodyScanRes
             ] = await Promise.all([
                 // Next Session
                 supabase
@@ -128,18 +130,44 @@ export function useClientDashboard() {
                 supabase
                     .from('workout_sessions')
                     .select('id, date')
+                    .eq('client_id', client.id),
+
+                // Latest Body Scan (for current weight)
+                supabase
+                    .from('body_scans')
+                    .select('date, weight')
                     .eq('client_id', client.id)
+                    .neq('weight', null)
+                    .order('date', { ascending: false })
+                    .limit(1)
+                    .maybeSingle()
             ]);
 
             // 3. Process Data
             const weightHistory = weightLogsRes.data || [];
+
+            // Determine current weight from latest log OR latest scan to ensure we show the most recent data
+            const latestLog = weightHistory.length > 0 ? weightHistory[weightHistory.length - 1] : null;
+            const latestScan = latestBodyScanRes.data;
+
+            let currentWeight = null;
+            if (latestScan && latestLog) {
+                const scanDate = new Date(latestScan.date).getTime();
+                const logDate = new Date(latestLog.date).getTime();
+                currentWeight = scanDate >= logDate ? latestScan.weight : latestLog.weight;
+            } else if (latestScan) {
+                currentWeight = latestScan.weight;
+            } else if (latestLog) {
+                currentWeight = latestLog.weight;
+            }
+
             const weightProgress = weightHistory.length >= 2
                 ? weightHistory[weightHistory.length - 1].weight - weightHistory[0].weight
                 : null;
 
             const stats = {
                 totalWorkouts: allWorkoutsRes.count || allWorkoutsRes.data?.length || 0,
-                streakDays: client.current_streak || calculateStreak(allWorkoutsRes.data || []), // Use DB streak, fallback to calc
+                streakDays: client.current_streak || calculateStreak(allWorkoutsRes.data || []),
                 totalVolume: workoutsRes.data?.reduce((acc, curr) => acc + (curr.volume_load || 0), 0) || 0,
                 level: client.level || 1,
                 xp: client.xp || 0
@@ -154,6 +182,7 @@ export function useClientDashboard() {
                 programProgress: activeProgramRes.data?.progress || 0,
                 recentLogs: recentLogsRes.data || [],
                 weightHistory,
+                currentWeight,
                 stats
             };
         },
