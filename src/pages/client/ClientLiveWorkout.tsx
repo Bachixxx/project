@@ -146,23 +146,12 @@ function ClientLiveWorkout() {
     return () => clearInterval(interval);
   }, [loading, sessionData, isGlobalPaused]);
 
-  const startRestTimer = (duration: number) => {
-    // For AMRAP/Circuit, we typically skip rest or have very short transition
-    // If the group type is AMRAP or Circuit, we might want to override the rest time
-    const isFlowMode = currentExercise?.group?.type === 'amrap' || currentExercise?.group?.type === 'circuit';
-
-    // If we want to ENFORCE no rest in AMRAP, check here:
-    if (isFlowMode) {
-      // Immediate transition without rest timer
-      handleAutoAdvance();
-      return;
-    }
-
-    if (activeTimer && activeTimer.setIndex === activeSetIndex) {
+  const handleStartTimer = (setIndex: number, duration: number) => {
+    if (activeTimer && activeTimer.setIndex === setIndex) {
       setActiveTimer(prev => prev ? { ...prev, isRunning: true } : null);
     } else {
       setActiveTimer({
-        setIndex: activeSetIndex,
+        setIndex,
         timeLeft: duration,
         totalTime: duration,
         isRunning: true,
@@ -170,6 +159,19 @@ function ClientLiveWorkout() {
         preStartTimeLeft: 5
       });
     }
+  };
+
+  const startRestPhase = (duration: number) => {
+    // For AMRAP/Circuit, we typically skip rest or have very short transition
+    const isFlowMode = currentExercise?.group?.type === 'amrap' || currentExercise?.group?.type === 'circuit';
+
+    // ENFORCE no rest in AMRAP/Circuit (Flow Mode)
+    if (isFlowMode) {
+      handleAutoAdvance();
+      return;
+    }
+
+    handleStartTimer(activeSetIndex, duration);
   };
 
   const handlePauseTimer = () => {
@@ -541,11 +543,11 @@ function ClientLiveWorkout() {
         const isLastSet = setIndex === currentExercise.sets - 1;
 
         if (isCircuit || isInterval || isAmrap) {
-          startRestTimer(currentExercise.rest_time);
+          startRestPhase(currentExercise.rest_time);
         } else {
           // Standard
           if (!isLastSet) {
-            startRestTimer(currentExercise.rest_time);
+            startRestPhase(currentExercise.rest_time);
           } else {
             // Last set of standard exercise -> No rest, just finish/next
             handleAutoAdvance();
