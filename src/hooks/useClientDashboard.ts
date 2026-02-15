@@ -37,11 +37,13 @@ export function useClientDashboard() {
             if (!user?.email) throw new Error('User not authenticated');
 
             // 1. Get Client Profile
-            const { data: client, error: clientError } = await supabase
+            const { data: clients, error: clientError } = await supabase
                 .from('clients')
                 .select('*')
                 .eq('email', user.email)
-                .maybeSingle();
+                .limit(1);
+
+            const client = clients?.[0];
 
             if (clientError) throw clientError;
 
