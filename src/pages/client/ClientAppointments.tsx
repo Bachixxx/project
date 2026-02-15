@@ -161,7 +161,7 @@ function ClientAppointments() {
 
       // Filter in JS to avoid inner join RLS issues
       const availableGroupSessions = (availableGroupSessionsRaw || []).filter(
-        (s: any) => ['group', 'group_public'].includes(s.session?.session_type)
+        (s: any) => ['group', 'group_public'].includes(s.session?.session_type) && !s.client_id
       );
 
       // --- FETCH REGISTERED APPOINTMENTS FOR "MY CALENDAR" ---
