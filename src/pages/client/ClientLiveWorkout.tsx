@@ -1039,8 +1039,30 @@ function ClientLiveWorkout() {
                 {/* Duration Logic  */}
                 {showDurationInput && (
                   <div className="flex-1 flex flex-col items-center">
-                    <button onClick={() => handleStartTimer(activeSetIndex, activeSet.duration_seconds || 60)} className={`w-full h-16 rounded-2xl flex items-center justify-center gap-2 font-bold mb-2 bg-${isFlowMode ? 'orange' : 'indigo'}-500/20 text-${isFlowMode ? 'orange' : 'indigo'}-400 border border-${isFlowMode ? 'orange' : 'indigo'}-500/30`}>
-                      <Play className="fill-current w-5 h-5" /> Lancer Chrono ({activeSet.duration_seconds || 60}s)
+                    <label className="text-xs font-medium text-white/50 uppercase tracking-wider mb-2">Durée (s)</label>
+                    <div className="flex items-center justify-between w-full bg-[#27272a] rounded-2xl p-1 h-16 ring-1 ring-white/5 focus-within:ring-white/20 transition-all mb-2">
+                      <button
+                        onClick={() => handleUpdateSet(activeSetIndex, 'duration_seconds', Math.max(5, (activeSet.duration_seconds || 60) - 10))}
+                        className="w-12 h-12 flex items-center justify-center text-white/60 hover:text-white rounded-xl active:bg-white/5 transition-colors"
+                      >
+                        <Minus className="w-6 h-6" />
+                      </button>
+                      <input
+                        type="number"
+                        value={activeSet.duration_seconds || 60}
+                        onChange={(e) => handleUpdateSet(activeSetIndex, 'duration_seconds', parseFloat(e.target.value) || 0)}
+                        className="w-20 bg-transparent text-center text-3xl font-bold text-white border-none focus:ring-0 p-0 font-display [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [-moz-appearance:textfield]"
+                        placeholder="60"
+                      />
+                      <button
+                        onClick={() => handleUpdateSet(activeSetIndex, 'duration_seconds', (activeSet.duration_seconds || 60) + 10)}
+                        className={`w-12 h-12 flex items-center justify-center text-${isFlowMode ? 'orange' : 'indigo'}-500 hover:text-${isFlowMode ? 'orange' : 'indigo'}-400 rounded-xl active:bg-white/5 transition-colors`}
+                      >
+                        <Plus className="w-6 h-6" />
+                      </button>
+                    </div>
+                    <button onClick={() => handleStartTimer(activeSetIndex, activeSet.duration_seconds || 60)} className={`w-full h-12 rounded-xl flex items-center justify-center gap-2 font-bold bg-${isFlowMode ? 'orange' : 'indigo'}-500/20 text-${isFlowMode ? 'orange' : 'indigo'}-400 border border-${isFlowMode ? 'orange' : 'indigo'}-500/30 transition-active active:scale-95`}>
+                      <Play className="fill-current w-4 h-4" /> Lancer Chrono
                     </button>
                   </div>
                 )}
@@ -1061,6 +1083,23 @@ function ClientLiveWorkout() {
                     </button>
                     <button onClick={handleStopTimer} className="w-10 h-10 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center">
                       <X className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        const isLastExercise = currentExerciseIndex === exercises.length - 1;
+                        const isLastSet = activeSetIndex === (currentExercise.sets || 0) - 1;
+
+                        if (isLastExercise && isLastSet && !isAmrap && activeSet.completed) {
+                          handleCompleteWorkout();
+                        } else {
+                          handleCompleteSet(activeSetIndex);
+                        }
+                        setActiveTimer(null);
+                      }}
+                      className="w-10 h-10 rounded-full bg-green-500/20 text-green-400 flex items-center justify-center"
+                      title="Valider la série"
+                    >
+                      <CheckCircle className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
