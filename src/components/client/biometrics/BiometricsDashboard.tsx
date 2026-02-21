@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Droplets, Activity, Bone, Plus, LayoutDashboard, Dumbbell, Camera } from 'lucide-react';
+import { Droplets, Activity, Bone, Plus, LayoutDashboard, Dumbbell, Camera, Scale } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import { NavRail } from '../shared/NavRail';
 import { BiometricRingChart } from './BiometricRingChart';
 import { BiometricTrendChart } from './BiometricTrendChart';
-import { BodyMap, BodySegmentLabel } from './BodyMap';
-import { BiometricBar } from './BiometricBar';
+import { BodyVisualizer } from './BodyVisualizer'; // New Component
 import { AddBodyScanModal } from './AddBodyScanModal';
 import { PhotoEvolution } from './PhotoEvolution';
 
-// Data Types matching DB
+// Data Types matching DB is imported or redefined if needed. 
+// Assuming ScanData interface is consistent with DB.
 export interface ScanData {
     id: string;
     date: string;
@@ -55,11 +55,9 @@ export function BiometricsDashboard({ clientId, readOnly = false }: BiometricsDa
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [selectedMetrics, setSelectedMetrics] = useState<Array<keyof ScanData>>(['weight']);
 
-    // Helper to toggle metric selection
     const toggleMetric = (metricId: keyof ScanData) => {
         setSelectedMetrics(prev => {
             if (prev.includes(metricId)) {
-                // Remove it, but keep at least one
                 if (prev.length === 1) return prev;
                 return prev.filter(id => id !== metricId);
             } else {
@@ -71,7 +69,6 @@ export function BiometricsDashboard({ clientId, readOnly = false }: BiometricsDa
     const fetchLatestScan = async () => {
         if (!clientId) return;
 
-        // 1. Try cache first
         const cacheKey = `biometrics_data_${clientId}`;
         const cachedData = localStorage.getItem(cacheKey);
 
@@ -80,7 +77,6 @@ export function BiometricsDashboard({ clientId, readOnly = false }: BiometricsDa
                 const { latest, history } = JSON.parse(cachedData);
                 if (latest) setScanData(latest);
                 if (history) setScanHistory(history);
-                // Don't set loading to true if we have cached data
             } catch (e) {
                 console.error("Error parsing biometrics cache", e);
                 setLoading(true);
@@ -96,17 +92,16 @@ export function BiometricsDashboard({ clientId, readOnly = false }: BiometricsDa
                 .eq('client_id', clientId)
                 .order('date', { ascending: false })
                 .order('created_at', { ascending: false })
-                .limit(20); // Fetch last 20 scans for history
+                .limit(20);
 
             if (error) throw error;
             if (data && data.length > 0) {
                 const latest = data[0];
                 const history = [...data].reverse();
 
-                setScanData(latest); // Latest scan is the first one
-                setScanHistory(history); // History needs to be chronological for the chart
+                setScanData(latest);
+                setScanHistory(history);
 
-                // 3. Update Cache
                 localStorage.setItem(cacheKey, JSON.stringify({
                     latest,
                     history,
@@ -124,341 +119,357 @@ export function BiometricsDashboard({ clientId, readOnly = false }: BiometricsDa
         fetchLatestScan();
     }, [clientId]);
 
-
-
-    if (loading && !scanData) return <div className="p-8 text-center text-gray-400 animate-pulse">Chargement des données...</div>;
+    if (loading && !scanData) return <div className="min-h-[300px] flex items-center justify-center"><div className="loading loading-spinner text-blue-500"></div></div>;
 
     if (!scanData && !loading) {
         return (
-            <div className="flex flex-col items-center justify-center text-center p-8 bg-white/5 rounded-3xl border border-white/5">
-                <div className="w-20 h-20 bg-gray-800 rounded-full flex items-center justify-center mb-6">
-                    <Activity className="w-10 h-10 text-gray-500" />
+            <div className="flex flex-col items-center justify-center text-center p-12 bg-[#1e293b]/50 rounded-3xl border border-dashed border-white/10 m-4">
+                <div className="w-20 h-20 bg-blue-500/10 rounded-full flex items-center justify-center mb-6 animate-pulse">
+                    <Scale className="w-8 h-8 text-blue-500" />
                 </div>
-                <h2 className="text-xl font-bold mb-2 text-white">Aucune analyse disponible</h2>
-                <p className="text-gray-400 max-w-xs mb-8">
-                    {readOnly
-                        ? "Ce client n'a pas encore ajouté d'analyse corporelle."
-                        : "Commencez par ajouter votre première pesée pour suivre votre évolution."}
-                </p>
-
+                <h2 className="text-xl font-bold mb-2 text-white">Aucune mesure</h2>
+                <p className="text-gray-400 max-w-xs mb-8">Commencez votre suivi en ajoutant votre première analyse corporelle.</p>
                 {!readOnly && (
                     <>
-                        <button
-                            onClick={() => setIsAddModalOpen(true)}
-                            className="px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-full shadow-lg shadow-blue-500/30 transition-all flex items-center gap-2"
-                        >
+                        <button onClick={() => setIsAddModalOpen(true)} className="px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg shadow-blue-500/20 transition-all flex items-center gap-2">
                             <Plus className="w-5 h-5" />
                             Ajouter une mesure
                         </button>
-
-                        <AddBodyScanModal
-                            isOpen={isAddModalOpen}
-                            onClose={() => setIsAddModalOpen(false)}
-                            onSuccess={() => {
-                                fetchLatestScan();
-                            }}
-                        />
+                        <AddBodyScanModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} onSuccess={fetchLatestScan} />
                     </>
                 )}
             </div>
         );
     }
 
+    // --- RENDER HELPERS ---
+
+    // --- RENDER HELPERS ---
+
+    const BiometricZoneBar = ({ value, min = 0, max = 100, low = 30, high = 70, unit, label }: any) => {
+        // Calculate percentages for zones
+        const range = max - min;
+        const lowPercent = ((low - min) / range) * 100;
+        const highPercent = ((high - min) / range) * 100;
+        const valuePercent = Math.min(Math.max(((value - min) / range) * 100, 0), 100);
+
+        // Determine status
+        let statusText = "Normal";
+        let statusColor = "text-emerald-400";
+        if (value < low) {
+            statusText = "Faible";
+            statusColor = "text-yellow-400";
+        } else if (value > high) {
+            statusText = "Élevé";
+            statusColor = "text-rose-400";
+        }
+
+        return (
+            <div className="w-full mt-4 space-y-2">
+                <div className="flex justify-between items-end text-xs font-medium">
+                    <span className="text-slate-400">{label}</span>
+                    <span className={statusColor}>{statusText}</span>
+                </div>
+
+                <div className="relative h-2 w-full bg-[#0f172a] rounded-full overflow-hidden flex shadow-inner">
+                    {/* Low Zone */}
+                    <div style={{ width: `${lowPercent}%` }} className="h-full bg-yellow-500/20 border-r border-[#0f172a]/50" />
+                    {/* Normal Zone */}
+                    <div style={{ width: `${highPercent - lowPercent}%` }} className="h-full bg-emerald-500/20 border-r border-[#0f172a]/50" />
+                    {/* High Zone */}
+                    <div style={{ width: `${100 - highPercent}%` }} className="h-full bg-rose-500/20" />
+
+                    {/* Cursor */}
+                    <div
+                        className="absolute top-0 bottom-0 w-1 bg-white shadow-[0_0_10px_white] transition-all duration-1000"
+                        style={{ left: `${valuePercent}%` }}
+                    />
+                </div>
+
+                <div className="flex justify-between text-[10px] text-slate-500 font-medium px-0.5">
+                    <span>{min}</span>
+                    <span className="text-slate-600">{low}</span>
+                    <span className="text-slate-600">{high}</span>
+                    <span>{max}</span>
+                </div>
+            </div>
+        );
+    };
+
+    const StatsCard = ({ title, value, unit, color, icon: Icon, goal, range }: any) => (
+        <div className="glass-card p-6 rounded-2xl relative overflow-hidden group hover:border-[#4f44e9]/30 transition-colors">
+            <div className={`absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity text-${color}-500`}>
+                <Icon className="w-16 h-16 transform rotate-12" />
+            </div>
+
+            <div className="relative z-10">
+                <h3 className={`text-xs font-bold uppercase tracking-wider mb-2 text-slate-400 flex items-center gap-2`}>
+                    {title}
+                </h3>
+                <div className="flex items-baseline gap-2">
+                    <p className="text-3xl font-bold text-white tracking-tight">{value}</p>
+                    <span className="text-sm font-medium text-primary">{unit}</span>
+                </div>
+
+                {range && (
+                    <BiometricZoneBar
+                        value={parseFloat(value)}
+                        min={range[0]}
+                        max={range[1]}
+                        low={range[2]}
+                        high={range[3]}
+                        unit={unit}
+                        label="Analyse"
+                    />
+                )}
+            </div>
+        </div>
+    );
+
     return (
-        <div className="space-y-6">
+        <div className="space-y-8 pb-24">
             {!readOnly && (
-                <AddBodyScanModal
-                    isOpen={isAddModalOpen}
-                    onClose={() => setIsAddModalOpen(false)}
-                    onSuccess={() => {
-                        fetchLatestScan();
-                    }}
-                />
+                <AddBodyScanModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} onSuccess={fetchLatestScan} />
             )}
 
-            {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-                <div className="text-left">
-                    <h2 className="text-xl font-bold text-white">Analyse Corporelle</h2>
-                    {scanData && <p className="text-xs text-gray-400">{new Date(scanData.date).toLocaleDateString()}</p>}
+            {/* Header & Main Stats */}
+            <div className="flex items-center justify-between px-1">
+                <div>
+                    <h2 className="text-2xl font-bold text-white">Suivi Corporel</h2>
+                    {scanData && <p className="text-sm text-gray-400">Dernière mesure: {new Date(scanData.date).toLocaleDateString()}</p>}
                 </div>
                 {!readOnly && (
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={() => setIsAddModalOpen(true)}
-                            className="p-2 text-blue-400 hover:text-blue-300 transition-colors bg-blue-500/10 rounded-full"
-                        >
-                            <Plus className="w-5 h-5" />
-                        </button>
-                    </div>
+                    <button
+                        onClick={() => setIsAddModalOpen(true)}
+                        className="p-3 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-400 rounded-xl transition-colors border border-indigo-500/30 flex-shrink-0"
+                        title="Ajouter une mesure"
+                    >
+                        <Plus className="w-6 h-6" />
+                    </button>
                 )}
             </div>
 
-            {/* Tab Navigation */}
-            <div className="mb-8">
-                <NavRail
-                    tabs={[
-                        { id: 'general', label: 'Général', icon: LayoutDashboard },
-                        { id: 'fat', label: 'Graisse', icon: Activity },
-                        { id: 'muscle', label: 'Muscle', icon: Dumbbell },
-                        { id: 'water', label: 'Eau', icon: Droplets },
-                        { id: 'bone', label: 'Os', icon: Bone },
-                        { id: 'photos', label: 'Photos', icon: Camera }
-                    ]}
-                    activeTab={activeTab}
-                    onTabChange={(id) => setActiveTab(id as any)}
-                />
-            </div>
+            {/* Navigation Tabs */}
+            <NavRail
+                tabs={[
+                    { id: 'general', label: 'Général', icon: LayoutDashboard },
+                    { id: 'muscle', label: 'Muscle', icon: Dumbbell },
+                    { id: 'fat', label: 'Graisse', icon: Activity },
+                    { id: 'water', label: 'Eau', icon: Droplets },
+                    { id: 'bone', label: 'Os', icon: Bone },
+                    { id: 'photos', label: 'Photos', icon: Camera }
+                ]}
+                activeTab={activeTab}
+                onTabChange={(id) => setActiveTab(id as any)}
+            />
 
-            {/* Content */}
-            <div className="animate-fade-in space-y-6">
+            {/* TAB CONTENT */}
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
 
+                {/* 1. GENERAL TAB */}
                 {activeTab === 'general' && scanData && (
-                    <>
-                        {/* Main Ring Chart */}
-                        <div className="glass-card p-8 rounded-3xl flex flex-col items-center justify-center relative overflow-hidden bg-[#1e293b]/50 border border-white/10">
-                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-emerald-500"></div>
-                            <BiometricRingChart
-                                percentage={scanData.total_body_water_percent || 0}
-                                label="IMC"
-                                subLabel={scanData.bmi ? `${scanData.bmi}` : '--'}
-                                value={`${scanData.weight} kg`}
-                                color="#06b6d4"
-                                size={240}
-                            />
-
-                            {/* Floating Stats Cards */}
-                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 w-full mt-8">
-                                <div className="bg-white/5 p-4 rounded-xl border border-white/5 backdrop-blur-sm">
-                                    <h3 className="text-xs font-bold text-yellow-500 uppercase mb-1">Graisse</h3>
-                                    <p className="text-2xl font-bold text-white">{scanData.body_fat_percent || '--'} %</p>
-                                </div>
-                                <div className="bg-white/5 p-4 rounded-xl border border-white/5 backdrop-blur-sm">
-                                    <h3 className="text-xs font-bold text-red-500 uppercase mb-1">Muscle</h3>
-                                    <p className="text-2xl font-bold text-white">{scanData.skeletal_muscle_mass || '--'} kg</p>
-                                </div>
-                                <div className="bg-white/5 p-4 rounded-xl border border-white/5 backdrop-blur-sm">
-                                    <h3 className="text-xs font-bold text-pink-500 uppercase mb-1">Os</h3>
-                                    <p className="text-2xl font-bold text-white">{scanData.bone_mass || '--'} kg</p>
-                                </div>
-                                <div className="bg-white/5 p-4 rounded-xl border border-white/5 backdrop-blur-sm">
-                                    <h3 className="text-xs font-bold text-orange-500 uppercase mb-1">Eau</h3>
-                                    <p className="text-2xl font-bold text-white">{scanData.total_body_water_percent || '--'} %</p>
-                                </div>
-                                <div className="bg-white/5 p-4 rounded-xl border border-white/5 backdrop-blur-sm">
-                                    <h3 className="text-xs font-bold text-purple-500 uppercase mb-1">Viscérale</h3>
-                                    <p className="text-2xl font-bold text-white">{scanData.visceral_fat_level || '--'}</p>
-                                </div>
-                                <div className="bg-white/5 p-4 rounded-xl border border-white/5 backdrop-blur-sm">
-                                    <h3 className="text-xs font-bold text-green-500 uppercase mb-1">BMR</h3>
-                                    <p className="text-2xl font-bold text-white">{scanData.bmr || '--'} <span className="text-xs text-gray-400 font-normal">kcal</span></p>
-                                </div>
-                                <div className="bg-white/5 p-4 rounded-xl border border-white/5 backdrop-blur-sm lg:col-span-2">
-                                    <h3 className="text-xs font-bold text-blue-300 uppercase mb-1">Âge Meta.</h3>
-                                    <p className="text-2xl font-bold text-white">{scanData.metabolic_age || '--'} <span className="text-xs text-gray-400 font-normal">ans</span></p>
+                    <div className="space-y-6">
+                        {/* Hero Ring Chart Container - Replaced with Stitch Main Card Style if desired, or kept as Ring */}
+                        <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#1e293b] to-[#0f172a] border border-white/5 p-8 shadow-2xl">
+                            {/* ... keeping ring chart for general view as it looks premium ... */}
+                            <div className="flex flex-col items-center justify-center">
+                                <BiometricRingChart
+                                    percentage={75}
+                                    label="Poids Actuel"
+                                    subLabel=""
+                                    value={`${scanData.weight} kg`}
+                                    color="#4f44e9"
+                                    size={220}
+                                />
+                                {/* Added Zone Bar for Weight context */}
+                                <div className="w-full max-w-xs mt-6">
+                                    <BiometricZoneBar value={scanData.weight} min={40} max={120} low={65} high={85} unit="kg" label="Analyse du Poids" />
                                 </div>
                             </div>
                         </div>
 
-                        {/* Trend Chart Section */}
-                        <div className="space-y-4">
-                            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide no-scrollbar">
-                                {[
-                                    { id: 'weight', label: 'Poids', color: 'bg-blue-500', text: 'text-blue-500' },
-                                    { id: 'bmi', label: 'IMC', color: 'bg-emerald-500', text: 'text-emerald-500' },
-                                    { id: 'body_fat_percent', label: 'Graisse %', color: 'bg-yellow-500', text: 'text-yellow-500' },
-                                    { id: 'skeletal_muscle_mass', label: 'Muscle (kg)', color: 'bg-red-500', text: 'text-red-500' },
-                                    { id: 'total_body_water_percent', label: 'Eau %', color: 'bg-cyan-500', text: 'text-cyan-500' },
-                                    { id: 'bone_mass', label: 'Os (kg)', color: 'bg-pink-500', text: 'text-pink-500' },
-                                    { id: 'visceral_fat_level', label: 'Viscérale', color: 'bg-purple-500', text: 'text-purple-500' },
-                                    { id: 'bmr', label: 'BMR', color: 'bg-green-500', text: 'text-green-500' },
-                                    { id: 'metabolic_age', label: 'Âge Meta.', color: 'bg-orange-500', text: 'text-orange-500' },
-                                ].map((metric) => {
-                                    const isSelected = selectedMetrics.includes(metric.id as keyof ScanData);
-                                    return (
+                        {/* KPI Grid */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <StatsCard title="Graisse" value={scanData.body_fat_percent || '--'} unit="%" color="yellow" icon={Activity} range={[5, 40, 10, 20]} />
+                            <StatsCard title="Muscle" value={scanData.skeletal_muscle_mass || '--'} unit="kg" color="primary" icon={Dumbbell} range={[20, 60, 30, 45]} />
+                            <StatsCard title="Eau" value={scanData.total_body_water_percent || '--'} unit="%" color="cyan" icon={Droplets} range={[40, 70, 50, 60]} />
+                            <StatsCard title="Os" value={scanData.bone_mass || '--'} unit="kg" color="pink" icon={Bone} range={[1, 5, 2.5, 3.5]} />
+                            <div className="col-span-2">
+                                <StatsCard title="Métabolisme (BMR)" value={scanData.bmr || '--'} unit="kcal/j" color="orange" icon={Activity} />
+                            </div>
+                        </div>
+
+                        {/* Chart Section */}
+                        <div className="bg-[#1e293b]/40 border border-white/5 rounded-3xl p-6">
+                            <div className="flex flex-col gap-4 mb-6">
+                                <div className="flex items-center justify-between">
+                                    <h3 className="text-lg font-bold text-white">Évolution</h3>
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                    {[
+                                        { id: 'weight', label: 'Poids', color: 'bg-indigo-500' },
+                                        { id: 'body_fat_percent', label: 'Graisse', color: 'bg-yellow-500' },
+                                        { id: 'skeletal_muscle_mass', label: 'Muscle', color: 'bg-blue-500' },
+                                        { id: 'total_body_water_percent', label: 'Eau', color: 'bg-cyan-500' },
+                                        { id: 'bone_mass', label: 'Os', color: 'bg-pink-500' },
+                                        { id: 'bmi', label: 'IMC', color: 'bg-emerald-500' }
+                                    ].map((metric) => (
                                         <button
                                             key={metric.id}
-                                            onClick={() => toggleMetric(metric.id as keyof ScanData)}
-                                            className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 ${isSelected
-                                                ? `${metric.color} text-white shadow-lg ring-2 ring-white/20`
-                                                : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                                            onClick={() => toggleMetric(metric.id as any)}
+                                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border border-transparent ${selectedMetrics.includes(metric.id as any)
+                                                ? `${metric.color} text-white shadow-lg`
+                                                : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:border-white/10'
                                                 }`}
                                         >
-                                            {isSelected && <span className="w-2 h-2 rounded-full bg-white" />}
                                             {metric.label}
                                         </button>
-                                    );
-                                })}
+                                    ))}
+                                </div>
                             </div>
-
-                            <BiometricTrendChart
-                                data={scanHistory}
-                                metrics={
-                                    [
-                                        // Standard metrics share the same 'common' axis to show relative magnitude
-                                        { id: 'weight', label: 'Poids', color: '#3b82f6', unit: 'kg', yAxisId: 'common' },
-                                        { id: 'bmi', label: 'IMC', color: '#10b981', unit: 'kg/m²', yAxisId: 'common' },
-                                        { id: 'body_fat_percent', label: 'Masse Grasse', color: '#eab308', unit: '%', yAxisId: 'common' },
-                                        { id: 'skeletal_muscle_mass', label: 'Masse Musculaire', color: '#ef4444', unit: 'kg', yAxisId: 'common' },
-                                        { id: 'total_body_water_percent', label: 'Eau Corporelle', color: '#06b6d4', unit: '%', yAxisId: 'common' },
-                                        { id: 'bone_mass', label: 'Masse Osseuse', color: '#ec4899', unit: 'kg', yAxisId: 'common' },
-                                        { id: 'visceral_fat_level', label: 'Graisse Viscérale', color: '#a855f7', unit: '', yAxisId: 'common' },
-                                        { id: 'metabolic_age', label: 'Âge Métabolique', color: '#f97316', unit: 'ans', yAxisId: 'common' },
-
-                                        // BMR has its own axis because the values are much larger (1000+)
-                                        { id: 'bmr', label: 'Métabolisme de Base', color: '#22c55e', unit: 'kcal', yAxisId: 'bmr', domain: [0, 'auto'] as [number, 'auto'] },
-                                    ]
-                                        // @ts-ignore
-                                        .filter(m => selectedMetrics.includes(m.id as keyof ScanData))
-                                }
-                            />
-                        </div>
-                    </>
-                )}
-
-                {activeTab === 'muscle' && scanData && (
-                    <div className="space-y-6">
-                        <div className="glass-card p-6 rounded-3xl border border-white/10 bg-[#1e293b]/50">
-                            <h3 className="text-lg font-bold text-white mb-6">Masse Musculaire Squelettique</h3>
-                            <BiometricBar
-                                label="Masse Musculaire"
-                                value={scanData.skeletal_muscle_mass || 0}
-                                unit="kg"
-                                min={20}
-                                max={60}
-                                lowThreshold={28}
-                                highThreshold={42}
-                            />
-                        </div>
-
-                        <div className="glass-card p-0 rounded-3xl border border-white/10 overflow-hidden relative min-h-[500px] flex items-center justify-center bg-gradient-to-b from-[#1a2c4e] to-[#0f172a]">
-                            <div className="absolute top-6 left-6 z-10">
-                                <span className="block text-gray-400 text-xs font-bold uppercase tracking-wider">Total Muscle</span>
-                                <span className="text-3xl font-bold text-white">{scanData.skeletal_muscle_mass || '--'} <span className="text-sm text-gray-500">kg</span></span>
-                            </div>
-
-                            <BodyMap>
-                                {scanData.segmental_muscle_right_arm && <BodySegmentLabel x={15} y={30} label="Bras Droit" value={`${scanData.segmental_muscle_right_arm} kg`} align="left" />}
-                                {scanData.segmental_muscle_left_arm && <BodySegmentLabel x={85} y={30} label="Bras Gauche" value={`${scanData.segmental_muscle_left_arm} kg`} align="right" />}
-                                {scanData.segmental_muscle_trunk && <BodySegmentLabel x={50} y={45} label="Buste" value={`${scanData.segmental_muscle_trunk} kg`} align="right" />}
-                                {scanData.segmental_muscle_right_leg && <BodySegmentLabel x={15} y={75} label="Jambe Droite" value={`${scanData.segmental_muscle_right_leg} kg`} align="left" />}
-                                {scanData.segmental_muscle_left_leg && <BodySegmentLabel x={85} y={75} label="Jambe Gauche" value={`${scanData.segmental_muscle_left_leg} kg`} align="right" />}
-                            </BodyMap>
-                        </div>
-                    </div>
-                )}
-
-                {activeTab === 'fat' && scanData && (
-                    <div className="space-y-6">
-                        <div className="glass-card p-6 rounded-3xl border border-white/10 bg-[#1e293b]/50">
-                            <h3 className="text-lg font-bold text-white mb-6">Masse Grasse Corporelle</h3>
-                            <BiometricBar
-                                label="Masse Grasse"
-                                value={scanData.body_fat_mass || 0}
-                                unit="kg"
-                                min={5}
-                                max={50}
-                                lowThreshold={10}
-                                highThreshold={20}
-                            />
-                            <div className="mt-8">
-                                <BiometricBar
-                                    label="Pourcentage de Graisse"
-                                    value={scanData.body_fat_percent || 0}
-                                    unit="%"
-                                    min={5}
-                                    max={50}
-                                    lowThreshold={15}
-                                    highThreshold={25}
+                            <div className="h-64">
+                                <BiometricTrendChart
+                                    data={scanHistory}
+                                    metrics={[
+                                        { id: 'weight', label: 'Poids', color: '#4f44e9', unit: 'kg', yAxisId: 'common' },
+                                        { id: 'body_fat_percent', label: 'Graisse', color: '#eab308', unit: '%', yAxisId: 'common' },
+                                        { id: 'skeletal_muscle_mass', label: 'Muscle', color: '#3b82f6', unit: 'kg', yAxisId: 'common' },
+                                        { id: 'total_body_water_percent', label: 'Eau', color: '#22d3ee', unit: '%', yAxisId: 'common' },
+                                        { id: 'bone_mass', label: 'Os', color: '#ec4899', unit: 'kg', yAxisId: 'common' },
+                                        { id: 'bmi', label: 'IMC', color: '#10b981', unit: '', yAxisId: 'common' }
+                                    ].filter(m => selectedMetrics.includes(m.id as any))}
                                 />
                             </div>
                         </div>
+                    </div>
+                )}
 
-                        <div className="glass-card p-0 rounded-3xl border border-white/10 overflow-hidden relative min-h-[500px] flex items-center justify-center bg-gradient-to-b from-[#1a2c4e] to-[#0f172a]">
-                            <div className="absolute top-6 left-6 z-10">
-                                <span className="block text-gray-400 text-xs font-bold uppercase tracking-wider">Graisse Segmentaire</span>
-                                <span className="text-3xl font-bold text-white">{scanData.body_fat_mass || '--'} <span className="text-sm text-gray-500">kg</span></span>
+                {/* 2. MUSCLE TAB */}
+                {activeTab === 'muscle' && scanData && (
+                    <div className="space-y-6">
+                        <StatsCard title="Masse Musculaire" value={scanData.skeletal_muscle_mass} unit="kg" color="primary" icon={Dumbbell} range={[20, 60, 30, 45]} />
+
+                        <div className="relative bg-[#0b1221] rounded-[2.5rem] p-6 border border-blue-900/30 overflow-hidden shadow-2xl shadow-blue-900/20">
+                            <div className="absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-blue-500/10 to-transparent pointer-events-none" />
+
+                            <div className="text-center mb-4 relative z-10">
+                                <h3 className="text-white font-bold text-lg">Visualisation Musculaire</h3>
+                                <p className="text-blue-400 text-xs uppercase tracking-wider">Analyse Segmentaire</p>
                             </div>
 
-                            <BodyMap>
-                                {scanData.segmental_fat_right_arm && <BodySegmentLabel x={15} y={30} label="Bras Droit" value={`${scanData.segmental_fat_right_arm} kg`} align="left" />}
-                                {scanData.segmental_fat_left_arm && <BodySegmentLabel x={85} y={30} label="Bras Gauche" value={`${scanData.segmental_fat_left_arm} kg`} align="right" />}
-                                {scanData.segmental_fat_trunk && <BodySegmentLabel x={50} y={45} label="Buste" value={`${scanData.segmental_fat_trunk} kg`} align="right" />}
-                                {scanData.segmental_fat_right_leg && <BodySegmentLabel x={15} y={75} label="Jambe Droite" value={`${scanData.segmental_fat_right_leg} kg`} align="left" />}
-                                {scanData.segmental_fat_left_leg && <BodySegmentLabel x={85} y={75} label="Jambe Gauche" value={`${scanData.segmental_fat_left_leg} kg`} align="right" />}
-                            </BodyMap>
+                            <BodyVisualizer scanData={scanData} mode="muscle" />
+
+                            <div className="mt-8 space-y-4 bg-[#1e293b]/50 p-6 rounded-2xl border border-white/5">
+                                <h4 className="text-sm font-bold text-gray-300 mb-2">Détails Segmentaires</h4>
+                                <div className="grid grid-cols-1 gap-6">
+                                    <BiometricZoneBar label="Bras Gauche" value={scanData.segmental_muscle_left_arm} unit="kg" min={1} max={6} low={2.5} high={4.5} />
+                                    <BiometricZoneBar label="Bras Droit" value={scanData.segmental_muscle_right_arm} unit="kg" min={1} max={6} low={2.5} high={4.5} />
+                                    <BiometricZoneBar label="Tronc" value={scanData.segmental_muscle_trunk} unit="kg" min={20} max={40} low={25} high={35} />
+                                    <BiometricZoneBar label="Jambe Gauche" value={scanData.segmental_muscle_left_leg} unit="kg" min={5} max={15} low={8} high={12} />
+                                    <BiometricZoneBar label="Jambe Droite" value={scanData.segmental_muscle_right_leg} unit="kg" min={5} max={15} low={8} high={12} />
+                                </div>
+                            </div>
                         </div>
                     </div>
                 )}
 
+                {/* 3. FAT TAB (Uses similar visualizer logic) */}
+                {activeTab === 'fat' && scanData && (
+                    <div className="space-y-6">
+                        <StatsCard title="Masse Grasse" value={scanData.body_fat_mass} unit="kg" color="yellow" icon={Activity} range={[2, 30, 8, 15]} />
+                        <div className="relative bg-[#1a1505] rounded-[2.5rem] p-6 border border-yellow-900/30 overflow-hidden shadow-2xl shadow-yellow-900/10">
+                            <div className="absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-yellow-500/10 to-transparent pointer-events-none" />
+                            <div className="text-center mb-4 relative z-10">
+                                <h3 className="text-white font-bold text-lg">Visualisation Graisseuse</h3>
+                                <p className="text-yellow-500 text-xs uppercase tracking-wider">Analyse Segmentaire</p>
+                            </div>
+                            <BodyVisualizer scanData={scanData} mode="fat" />
+
+                            <div className="mt-8 space-y-4 bg-[#1e293b]/50 p-6 rounded-2xl border border-white/5">
+                                <h4 className="text-sm font-bold text-gray-300 mb-2">Détails Segmentaires</h4>
+                                <div className="grid grid-cols-1 gap-6">
+                                    <BiometricZoneBar label="Bras Gauche" value={scanData.segmental_fat_left_arm} unit="kg" min={0} max={5} low={1} high={2.5} />
+                                    <BiometricZoneBar label="Bras Droit" value={scanData.segmental_fat_right_arm} unit="kg" min={0} max={5} low={1} high={2.5} />
+                                    <BiometricZoneBar label="Tronc" value={scanData.segmental_fat_trunk} unit="kg" min={2} max={15} low={5} high={10} />
+                                    <BiometricZoneBar label="Jambe Gauche" value={scanData.segmental_fat_left_leg} unit="kg" min={0} max={8} low={2} high={4} />
+                                    <BiometricZoneBar label="Jambe Droite" value={scanData.segmental_fat_right_leg} unit="kg" min={0} max={8} low={2} high={4} />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* 4. WATER TAB */}
                 {activeTab === 'water' && scanData && (
-                    <div className="glass-card p-6 rounded-3xl border border-white/10 bg-[#1e293b]/50">
-                        <h3 className="text-lg font-bold text-white mb-6">Eau Corporelle</h3>
-                        <BiometricBar
-                            label="Eau Corporelle Totale"
-                            value={scanData.total_body_water || 0}
-                            unit="L"
-                            min={20}
-                            max={60}
-                            lowThreshold={35}
-                            highThreshold={50}
-                        />
-                        <div className="mt-8 text-center p-8 bg-blue-500/10 rounded-2xl border border-blue-500/20">
-                            <Droplets className="w-12 h-12 text-blue-400 mx-auto mb-4" />
-                            <h4 className="text-2xl font-bold text-white mb-2">{scanData.total_body_water_percent || '--'} %</h4>
-                            <p className="text-gray-400 text-sm">Votre taux d'hydratation.</p>
-                        </div>
-                    </div>
-                )}
+                    <div className="space-y-6">
+                        <StatsCard title="Masse Hydrique" value={scanData.total_body_water_percent} unit="%" color="cyan" icon={Droplets} range={[40, 70, 50, 60]} />
 
-                {activeTab === 'bone' && scanData && (
-                    <div className="glass-card p-6 rounded-3xl border border-white/10 bg-[#1e293b]/50">
-                        <h3 className="text-lg font-bold text-white mb-6">Masse Osseuse</h3>
-                        <BiometricBar
-                            label="Contenu Minéral Osseux"
-                            value={scanData.bone_mass || 0}
-                            unit="kg"
-                            min={1}
-                            max={6}
-                            lowThreshold={2.5}
-                            highThreshold={4.0}
-                        />
-                        <div className="mt-8 text-center p-8 bg-gray-500/10 rounded-2xl border border-gray-500/20">
-                            <Bone className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                            <p className="text-gray-400 text-sm">Une densité osseuse saine est importante pour votre santé globale.</p>
-                        </div>
-                    </div>
-                )}
+                        <div className="bg-[#1e293b]/40 border border-white/5 rounded-3xl p-8 text-center space-y-4 shadow-xl">
+                            <div className="w-20 h-20 bg-cyan-500/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-cyan-500/30 shadow-[0_0_30px_rgba(6,182,212,0.2)]">
+                                <Droplets className="w-10 h-10 text-cyan-400" />
+                            </div>
+                            <h3 className="text-xl font-bold text-white">Hydratation Globale</h3>
+                            <p className="text-gray-400 max-w-md mx-auto leading-relaxed">
+                                L'eau corporelle totale représente environ 50 à 60% du poids du corps.
+                                Une bonne hydratation est essentielle pour la performance musculaire, la récupération et la santé globale.
+                            </p>
 
-            </div>
-
-            {activeTab === 'photos' && (
-                <div className="animate-fade-in">
-                    <div className="animate-fade-in">
-                        {readOnly && (
-                            <div className="mb-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl flex items-start gap-3">
-                                <div className="p-2 bg-blue-500/20 rounded-lg shrink-0">
-                                    <Activity className="w-5 h-5 text-blue-400" />
+                            <div className="grid grid-cols-2 gap-4 mt-8 pt-6 border-t border-white/10">
+                                <div className="p-4 bg-white/5 rounded-2xl">
+                                    <div className="text-2xl font-black text-white mb-1">
+                                        {scanData.total_body_water_percent ? (scanData.total_body_water_percent < 50 ? 'À surveiller' : 'Optimale') : '--'}
+                                    </div>
+                                    <div className="text-xs text-gray-400 uppercase tracking-wider">Statut</div>
                                 </div>
-                                <div className="text-sm text-gray-300 space-y-2">
-                                    <p className="font-bold text-blue-300">
-                                        🔒 Accès protégé par consentement
-                                    </p>
-                                    <p>
-                                        L'accès à ces photos est conditionné par l'accord explicite du client.
-                                        En tant que coach, vous vous engagez à respecter la confidentialité de ces données sensibles.
-                                    </p>
-                                    <p className="text-xs text-gray-500 pt-2 border-t border-white/5">
-                                        La plateforme Coachency agit en tant qu'hébergeur technique et décline toute responsabilité quant à l'usage fait de ces images.
-                                        Le respect des lois sur la protection des données (RGPD) relève de votre responsabilité professionnelle.
-                                    </p>
+                                <div className="p-4 bg-white/5 rounded-2xl">
+                                    <div className="text-2xl font-black text-white mb-1">
+                                        50-60%
+                                    </div>
+                                    <div className="text-xs text-cyan-400 uppercase tracking-wider">Objectif</div>
                                 </div>
                             </div>
-                        )}
-                        <PhotoEvolution clientId={clientId} readOnly={readOnly} />
+                        </div>
                     </div>
-                </div>
-            )}
+                )}
+
+                {/* 5. PHOTOS TAB */}
+                {activeTab === 'photos' && (
+                    <PhotoEvolution clientId={clientId} readOnly={readOnly} />
+                )}
+
+                {/* 6. BONE TAB */}
+                {activeTab === 'bone' && scanData && (
+                    <div className="space-y-6">
+                        <StatsCard title="Masse Osseuse" value={scanData.bone_mass} unit="kg" color="pink" icon={Bone} range={[1, 5, 2.5, 3.5]} />
+
+                        <div className="bg-[#1e293b]/40 border border-white/5 rounded-3xl p-8 text-center space-y-4 shadow-xl">
+                            <div className="w-20 h-20 bg-pink-500/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-pink-500/30 shadow-[0_0_30px_rgba(236,72,153,0.2)]">
+                                <Bone className="w-10 h-10 text-pink-400" />
+                            </div>
+                            <h3 className="text-xl font-bold text-white">Densité Minérale Osseuse</h3>
+                            <p className="text-gray-400 max-w-md mx-auto leading-relaxed">
+                                La masse osseuse est un indicateur clé de la santé squelettique.
+                                Un suivi régulier est important, une bonne nutrition et des exercices de musculation contribuent à la renforcer.
+                            </p>
+
+                            <div className="grid grid-cols-2 gap-4 mt-8 pt-6 border-t border-white/10">
+                                <div className="p-4 bg-white/5 rounded-2xl">
+                                    <div className="text-2xl font-black text-white mb-1">
+                                        {scanData.bone_mass ? (scanData.bone_mass < 2.0 ? 'Faible' : 'Normale') : '--'}
+                                    </div>
+                                    <div className="text-xs text-gray-400 uppercase tracking-wider">Statut Estimé</div>
+                                </div>
+                                <div className="p-4 bg-white/5 rounded-2xl">
+                                    <div className="text-2xl font-black text-white mb-1">
+                                        &gt; 2.5kg
+                                    </div>
+                                    <div className="text-xs text-pink-400 uppercase tracking-wider">Objectif</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

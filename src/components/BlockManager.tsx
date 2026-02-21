@@ -37,6 +37,7 @@ export interface SessionExercise {
         track_duration: boolean;
         track_distance: boolean;
         track_calories: boolean;
+        tracking_type?: 'reps_weight' | 'duration' | 'distance';
     };
     sets: number;
     reps: number;

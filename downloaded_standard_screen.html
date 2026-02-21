@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="fr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Séance Standard Premium</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Theme Config -->
+<script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#4f44e9",
+              "primary-glow": "#6366f1",
+              "background-light": "#f6f6f8",
+              "background-dark": "#09090b",
+              "surface-dark": "#18181b",
+              "success": "#10b981",
+            },
+            fontFamily: {
+              "display": ["Inter", "sans-serif"]
+            },
+            borderRadius: {
+              "DEFAULT": "0.5rem",
+              "lg": "1rem",
+              "xl": "1.5rem",
+              "2xl": "2rem",
+              "full": "9999px"
+            },
+            boxShadow: {
+                'glow': '0 0 20px -5px rgba(79, 68, 233, 0.5)',
+                'glow-strong': '0 0 30px -5px rgba(99, 102, 241, 0.6)',
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        /* Custom Utilities for Glassmorphism & Gradients */
+        .bg-glass {
+            background: rgba(24, 24, 27, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        
+        .bg-gradient-radial-t {
+            background: radial-gradient(circle at 50% -20%, rgba(79, 68, 233, 0.15), transparent 70%);
+        }
+
+        .bg-gradient-radial-b {
+            background: radial-gradient(circle at 0% 100%, rgba(79, 68, 233, 0.1), transparent 50%);
+        }
+
+        /* Hide scrollbar for clean UI */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display antialiased selection:bg-primary selection:text-white h-screen overflow-hidden flex flex-col relative">
+<!-- Ambient Background Glows -->
+<div class="absolute inset-0 pointer-events-none z-0">
+<div class="absolute top-0 left-0 w-full h-1/2 bg-gradient-radial-t"></div>
+<div class="absolute bottom-0 left-0 w-2/3 h-1/3 bg-gradient-radial-b"></div>
+</div>
+<!-- Main Content Area -->
+<main class="relative z-10 flex flex-col h-full overflow-y-auto no-scrollbar pb-24">
+<!-- Header -->
+<header class="flex items-center justify-between px-6 pt-6 pb-2 shrink-0">
+<button class="flex items-center justify-center w-10 h-10 rounded-full bg-surface-dark/50 text-white hover:bg-surface-dark transition-colors">
+<span class="material-symbols-outlined text-[24px]">arrow_back</span>
+</button>
+<div class="flex flex-col items-center">
+<span class="text-xs font-semibold tracking-wider text-primary uppercase mb-1">Exercice 2/5</span>
+<div class="h-1 w-12 rounded-full bg-surface-dark overflow-hidden">
+<div class="h-full w-2/5 bg-primary rounded-full"></div>
+</div>
+</div>
+<button class="flex items-center justify-center w-10 h-10 rounded-full bg-surface-dark/50 text-white hover:bg-surface-dark transition-colors">
+<span class="material-symbols-outlined text-[24px]">more_vert</span>
+</button>
+</header>
+<!-- Exercise Title & Meta -->
+<div class="px-6 py-4 text-center shrink-0">
+<div class="inline-flex items-center gap-2 px-3 py-1 mb-3 rounded-full bg-white/5 border border-white/10">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+<span class="text-[10px] font-bold tracking-widest text-white/70 uppercase">SÉRIE EN COURS</span>
+</div>
+<h1 class="text-3xl font-bold text-white tracking-tight leading-tight">Développé Couché</h1>
+<p class="text-sm text-white/50 mt-1 font-medium">Pectoraux • Barbell Bench Press</p>
+</div>
+<!-- Video Player -->
+<div class="px-6 mb-6 shrink-0">
+<div class="relative aspect-video w-full overflow-hidden rounded-2xl bg-surface-dark shadow-2xl ring-1 ring-white/10 group">
+<div class="absolute inset-0 bg-cover bg-center opacity-80 group-hover:scale-105 transition-transform duration-700" data-alt="Man lifting barbell on a bench press in a dark gym" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBjRj2uTZRBc55Ieyf7yVgYtLUKWsPxEcXA9p3OPvTknGv5-6j36a8Va2qdiC6Ss_D2iwxdqI8PHA3GplYop_IBPmCdMYSV_bDg9j7nx5Mw45jnWqPSRTGRiKUZoOmiwwkAhEFlQctTFlJGmDX-Ovy5KHRzebUNlEL2LEkW4OlglzFhzhs7deqDP77Fx8RyT29Lb5nyy4YBJ2RSDVLbsYDq52mcQGyXvrWXr867ZqLFmRPpWCBczVWG8uLtgetGD4pNpT2qIi3kpus')"></div>
+<!-- Play Overlay -->
+<div class="absolute inset-0 bg-black/20 flex items-center justify-center">
+<button class="w-14 h-14 flex items-center justify-center rounded-full bg-white/20 backdrop-blur-md text-white border border-white/30 hover:bg-white/30 transition-all">
+<span class="material-symbols-outlined text-[32px] fill-1">play_arrow</span>
+</button>
+</div>
+<!-- Video Controls overlay (fake) -->
+<div class="absolute bottom-3 right-3 px-2 py-1 rounded bg-black/60 text-white text-[10px] font-bold backdrop-blur-sm">
+                    0:15 / LOOP
+                </div>
+</div>
+</div>
+<!-- Set Progression Tracker -->
+<div class="px-6 mb-6 flex justify-center w-full shrink-0">
+<div class="flex items-center gap-3">
+<!-- Completed Set -->
+<div class="flex flex-col items-center gap-1 group">
+<div class="w-10 h-10 rounded-full bg-success/20 text-success border border-success/30 flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">check</span>
+</div>
+<span class="text-[10px] font-medium text-success/80">1</span>
+</div>
+<!-- Connector Line -->
+<div class="w-4 h-[2px] bg-white/10 rounded-full"></div>
+<!-- Active Set -->
+<div class="flex flex-col items-center gap-1">
+<div class="relative w-12 h-12 rounded-full bg-primary/10 border-2 border-primary text-white flex items-center justify-center shadow-glow shadow-primary/40 z-10">
+<span class="text-sm font-bold">2</span>
+<!-- Pulsing ring effect -->
+<div class="absolute inset-0 rounded-full border border-primary animate-ping opacity-20"></div>
+</div>
+<span class="text-[10px] font-bold text-primary">COURANTE</span>
+</div>
+<!-- Connector Line -->
+<div class="w-4 h-[2px] bg-white/10 rounded-full"></div>
+<!-- Future Set -->
+<div class="flex flex-col items-center gap-1 opacity-50">
+<div class="w-10 h-10 rounded-full bg-surface-dark border border-white/10 text-white/40 flex items-center justify-center">
+<span class="text-xs font-medium">3</span>
+</div>
+<span class="text-[10px] font-medium text-white/30">PENDING</span>
+</div>
+<!-- Connector Line -->
+<div class="w-4 h-[2px] bg-white/10 rounded-full opacity-30"></div>
+<!-- Future Set (Small) -->
+<div class="flex flex-col items-center gap-1 opacity-30">
+<div class="w-8 h-8 rounded-full bg-surface-dark border border-white/10 text-white/40 flex items-center justify-center">
+<span class="text-[10px] font-medium">4</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Active Data Card (Glassmorphic) -->
+<div class="px-6 flex-1 flex flex-col justify-end pb-4">
+<div class="bg-glass rounded-2xl p-6 shadow-xl relative overflow-hidden">
+<!-- Decorative gradient inside card -->
+<div class="absolute -top-10 -right-10 w-32 h-32 bg-primary/20 rounded-full blur-3xl pointer-events-none"></div>
+<div class="flex justify-between items-center gap-4 mb-8">
+<!-- Weight Input -->
+<div class="flex-1 flex flex-col items-center">
+<label class="text-xs font-medium text-white/50 uppercase tracking-wider mb-3">Poids (kg)</label>
+<div class="flex items-center gap-3">
+<button class="w-10 h-10 rounded-full bg-surface-dark text-white/70 hover:text-white hover:bg-white/10 transition flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">remove</span>
+</button>
+<div class="relative">
+<input class="w-20 bg-transparent text-center text-4xl font-bold text-white border-none focus:ring-0 p-0 font-display" readonly="" type="text" value="80"/>
+<span class="absolute top-0 -right-2 text-xs font-medium text-white/30 mt-1">kg</span>
+</div>
+<button class="w-10 h-10 rounded-full bg-surface-dark text-white/70 hover:text-white hover:bg-white/10 transition flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">add</span>
+</button>
+</div>
+</div>
+<div class="w-[1px] h-16 bg-white/10"></div>
+<!-- Reps Input -->
+<div class="flex-1 flex flex-col items-center">
+<label class="text-xs font-medium text-white/50 uppercase tracking-wider mb-3">Reps</label>
+<div class="flex items-center gap-3">
+<button class="w-10 h-10 rounded-full bg-surface-dark text-white/70 hover:text-white hover:bg-white/10 transition flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">remove</span>
+</button>
+<input class="w-16 bg-transparent text-center text-4xl font-bold text-white border-none focus:ring-0 p-0 font-display" readonly="" type="text" value="10"/>
+<button class="w-10 h-10 rounded-full bg-surface-dark text-white/70 hover:text-white hover:bg-white/10 transition flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">add</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Primary Action Button -->
+<button class="relative w-full group overflow-hidden rounded-xl bg-primary p-4 shadow-glow-strong hover:bg-primary-glow transition-all active:scale-[0.98]">
+<div class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
+<div class="relative flex items-center justify-center gap-2">
+<span class="text-white font-bold text-lg tracking-wide">Valider la série</span>
+<span class="material-symbols-outlined text-white text-[20px]">check_circle</span>
+</div>
+</button>
+</div>
+</div>
+</main>
+<!-- Floating Bottom Navigation Bar -->
+<div class="fixed bottom-6 left-1/2 transform -translate-x-1/2 w-full max-w-[90%] z-50">
+<div class="bg-[#1d1c26] border border-[#2a2938] rounded-full shadow-2xl px-1 py-1 flex justify-between items-center backdrop-blur-md">
+<!-- Prev Button -->
+<a class="flex items-center justify-center w-12 h-12 rounded-full text-[#9f9db8] hover:text-white hover:bg-white/5 transition-all active:scale-95" href="#">
+<span class="material-symbols-outlined text-[24px]">arrow_back</span>
+</a>
+<!-- Timer Center -->
+<div class="flex flex-col items-center px-4">
+<div class="flex items-center gap-1.5 text-white/90">
+<span class="material-symbols-outlined text-[18px] fill-1 text-primary">timer</span>
+<span class="font-mono text-base font-bold tracking-wider">24:10</span>
+</div>
+<span class="text-[9px] text-[#9f9db8] font-medium tracking-wide uppercase">Durée Totale</span>
+</div>
+<!-- Next Button -->
+<a class="flex items-center justify-center w-12 h-12 rounded-full text-[#9f9db8] hover:text-white hover:bg-white/5 transition-all active:scale-95" href="#">
+<span class="material-symbols-outlined text-[24px]">arrow_forward</span>
+</a>
+</div>
+</div>
+</body></html>

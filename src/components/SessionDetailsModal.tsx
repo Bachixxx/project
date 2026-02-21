@@ -628,9 +628,21 @@ export function SessionDetailsModal({ scheduledSessionId, onClose, onStatusChang
                               <div key={exIndex} className="bg-white/5 rounded-lg p-3 border border-white/10">
                                 <div className="font-medium text-white mb-2">{exercise.name}</div>
                                 <div className="flex flex-wrap gap-3 text-xs text-gray-300">
-                                  <span className="bg-blue-500/10 text-blue-300 px-2 py-0.5 rounded">{exercise.sets} séries</span>
-                                  <span>•</span>
-                                  <span className="bg-purple-500/10 text-purple-300 px-2 py-0.5 rounded">{exercise.reps} reps</span>
+                                  {exercise.track_duration || exercise.tracking_type === 'duration' ? (
+                                    <span className="bg-blue-500/10 text-blue-300 px-2 py-0.5 rounded border border-blue-500/20">
+                                      {Math.floor((exercise.duration_seconds || 0) / 60)}m {(exercise.duration_seconds || 0) % 60}s
+                                    </span>
+                                  ) : exercise.track_distance || exercise.tracking_type === 'distance' ? (
+                                    <span className="bg-blue-500/10 text-blue-300 px-2 py-0.5 rounded border border-blue-500/20">
+                                      {exercise.distance_meters}m
+                                    </span>
+                                  ) : (
+                                    <>
+                                      <span className="bg-blue-500/10 text-blue-300 px-2 py-0.5 rounded">{exercise.sets} séries</span>
+                                      <span>•</span>
+                                      <span className="bg-purple-500/10 text-purple-300 px-2 py-0.5 rounded">{exercise.reps} reps</span>
+                                    </>
+                                  )}
                                 </div>
 
                                 {/* Logs for Group Exercise */}

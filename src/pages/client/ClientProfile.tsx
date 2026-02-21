@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Mail, Phone, Calendar, Weight, Ruler, Edit, Save, X, Shield, Settings, Bell, LogOut, ChevronRight } from 'lucide-react';
+import { User, Mail, Phone, Calendar, Weight, Ruler, Edit, Save, X, Shield, Settings, Bell, LogOut, ChevronRight, Trash2 } from 'lucide-react';
 import { TutorialCard } from '../../components/client/TutorialCard';
 import { useClientAuth } from '../../contexts/ClientAuthContext';
 import { supabase } from '../../lib/supabase';
@@ -502,34 +502,33 @@ function ClientProfile() {
                   </div>
                 </form>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {/* Info Card 1 */}
-                  <div className="glass-card p-6 rounded-3xl border border-white/10 hover:border-white/20 transition-all group">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="p-3 bg-blue-500/10 rounded-xl group-hover:bg-blue-500/20 transition-colors">
-                        <User className="w-6 h-6 text-blue-400" />
-                      </div>
-                      <h3 className="text-lg font-bold text-white">{t('profile.personalInfo')}</h3>
+                <div className="space-y-6 max-w-2xl mx-auto pb-8">
+
+                  {/* Personal Info Group */}
+                  <div className="bg-[#1e293b]/40 border border-white/5 rounded-[2rem] overflow-hidden backdrop-blur-xl">
+                    <div className="px-6 py-4 bg-white/5 border-b border-white/5 flex items-center gap-3">
+                      <User className="w-4 h-4 text-blue-400" />
+                      <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider">{t('profile.personalInfo')}</h3>
                     </div>
-                    <div className="space-y-4">
-                      <div className="flex justify-between items-center py-2 border-b border-white/5">
-                        <span className="text-gray-400 text-sm">{t('profile.fields.gender')}</span>
+                    <div className="divide-y divide-white/5">
+                      <div className="px-6 py-4 flex items-center justify-between">
+                        <span className="text-slate-400 text-sm">{t('profile.fields.gender')}</span>
                         <span className="text-white font-medium">
                           {clientDetails?.gender === 'male' ? t('profile.genders.male') :
                             clientDetails?.gender === 'female' ? t('profile.genders.female') :
                               clientDetails?.gender === 'other' ? t('profile.genders.other') : t('profile.genders.none')}
                         </span>
                       </div>
-                      <div className="flex justify-between items-center py-2 border-b border-white/5">
-                        <span className="text-gray-400 text-sm">{t('profile.fields.age')}</span>
+                      <div className="px-6 py-4 flex items-center justify-between">
+                        <span className="text-slate-400 text-sm">{t('profile.fields.age')}</span>
                         <span className="text-white font-medium">
                           {clientDetails?.date_of_birth
                             ? `${new Date().getFullYear() - new Date(clientDetails.date_of_birth).getFullYear()} ${t('profile.fields.years')}`
                             : t('profile.empty.na')}
                         </span>
                       </div>
-                      <div className="flex justify-between items-center py-2">
-                        <span className="text-gray-400 text-sm">{t('profile.fields.birthday')}</span>
+                      <div className="px-6 py-4 flex items-center justify-between">
+                        <span className="text-slate-400 text-sm">{t('profile.fields.birthday')}</span>
                         <span className="text-white font-medium">
                           {clientDetails?.date_of_birth
                             ? new Date(clientDetails.date_of_birth).toLocaleDateString()
@@ -539,64 +538,23 @@ function ClientProfile() {
                     </div>
                   </div>
 
-                  {/* My Coach Card */}
-                  <div className="glass-card p-6 rounded-3xl border border-white/10 hover:border-white/20 transition-all group">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="p-3 bg-indigo-500/10 rounded-xl group-hover:bg-indigo-500/20 transition-colors">
-                        <Shield className="w-6 h-6 text-indigo-400" />
-                      </div>
-                      <h3 className="text-lg font-bold text-white">Mon Coach</h3>
+                  {/* Measurements Group */}
+                  <div className="bg-[#1e293b]/40 border border-white/5 rounded-[2rem] overflow-hidden backdrop-blur-xl">
+                    <div className="px-6 py-4 bg-white/5 border-b border-white/5 flex items-center gap-3">
+                      <Ruler className="w-4 h-4 text-purple-400" />
+                      <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider">{t('profile.measurements')}</h3>
                     </div>
-
-                    <div className="space-y-4">
-                      {coachDetails ? (
-                        <div className="flex items-center gap-4 bg-white/5 p-3 rounded-xl">
-                          {coachDetails.profile_image_url ? (
-                            <img src={coachDetails.profile_image_url} className="w-12 h-12 rounded-full object-cover" alt="Coach" />
-                          ) : (
-                            <div className="w-12 h-12 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400 font-bold">
-                              {coachDetails.full_name?.charAt(0)}
-                            </div>
-                          )}
-                          <div>
-                            <h4 className="font-bold text-white">{coachDetails.full_name}</h4>
-                            <p className="text-xs text-gray-400">{coachDetails.email}</p>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="text-center py-4 text-gray-500 text-sm italic">
-                          Aucun coach assigné.
-                        </div>
-                      )}
-
-                      <button
-                        onClick={() => setShowCoachModal(true)}
-                        className="w-full py-2 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 rounded-lg text-sm font-medium transition-colors border border-indigo-500/20"
-                      >
-                        {coachDetails ? "Changer de coach" : "Ajouter un coach"}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Info Card 2 */}
-                  <div className="glass-card p-6 rounded-3xl border border-white/10 hover:border-white/20 transition-all group">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="p-3 bg-purple-500/10 rounded-xl group-hover:bg-purple-500/20 transition-colors">
-                        <Ruler className="w-6 h-6 text-purple-400" />
-                      </div>
-                      <h3 className="text-lg font-bold text-white">{t('profile.measurements')}</h3>
-                    </div>
-                    <div className="space-y-4">
-                      <div className="flex justify-between items-center py-2 border-b border-white/5">
-                        <span className="text-gray-400 text-sm">{t('profile.fields.currentWeight')}</span>
+                    <div className="divide-y divide-white/5">
+                      <div className="px-6 py-4 flex items-center justify-between">
+                        <span className="text-slate-400 text-sm">{t('profile.fields.currentWeight')}</span>
                         <span className="text-white font-medium">{clientDetails?.weight ? `${clientDetails.weight} kg` : t('profile.empty.data')}</span>
                       </div>
-                      <div className="flex justify-between items-center py-2 border-b border-white/5">
-                        <span className="text-gray-400 text-sm">{t('profile.fields.height').replace(' (cm)', '')}</span>
+                      <div className="px-6 py-4 flex items-center justify-between">
+                        <span className="text-slate-400 text-sm">{t('profile.fields.height').replace(' (cm)', '')}</span>
                         <span className="text-white font-medium">{clientDetails?.height ? `${clientDetails.height} cm` : t('profile.empty.data')}</span>
                       </div>
-                      <div className="flex justify-between items-center py-2">
-                        <span className="text-gray-400 text-sm">{t('profile.fields.bmi')}</span>
+                      <div className="px-6 py-4 flex items-center justify-between">
+                        <span className="text-slate-400 text-sm">{t('profile.fields.bmi')}</span>
                         <span className="text-white font-medium">
                           {clientDetails?.height && clientDetails?.weight
                             ? (clientDetails.weight / Math.pow(clientDetails.height / 100, 2)).toFixed(1)
@@ -606,21 +564,19 @@ function ClientProfile() {
                     </div>
                   </div>
 
-                  {/* Goals Card */}
-                  <div className="glass-card p-6 rounded-3xl border border-white/10 hover:border-white/20 transition-all group md:col-span-2 lg:col-span-1">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="p-3 bg-green-500/10 rounded-xl group-hover:bg-green-500/20 transition-colors">
-                        <Shield className="w-6 h-6 text-green-400" />
-                      </div>
-                      <h3 className="text-lg font-bold text-white">{t('profile.healthGoals')}</h3>
+                  {/* Goals Group */}
+                  <div className="bg-[#1e293b]/40 border border-white/5 rounded-[2rem] overflow-hidden backdrop-blur-xl">
+                    <div className="px-6 py-4 bg-white/5 border-b border-white/5 flex items-center gap-3">
+                      <Shield className="w-4 h-4 text-green-400" />
+                      <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider">{t('profile.healthGoals')}</h3>
                     </div>
-                    <div className="space-y-6">
+                    <div className="p-6 space-y-6">
                       <div>
                         <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">{t('clients.goals')}</h4>
                         <div className="flex flex-wrap gap-2">
                           {clientDetails?.fitness_goals && clientDetails.fitness_goals.length > 0 ? (
                             clientDetails.fitness_goals.map((goal: string, index: number) => (
-                              <span key={index} className="px-3 py-1 rounded-lg bg-green-500/10 text-green-400 border border-green-500/20 text-sm font-medium">
+                              <span key={index} className="px-3 py-1.5 rounded-xl bg-green-500/10 text-green-400 border border-green-500/20 text-sm font-medium">
                                 {goal}
                               </span>
                             ))
@@ -635,7 +591,7 @@ function ClientProfile() {
                           <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">{t('profile.fields.conditions')}</h4>
                           <div className="flex flex-wrap gap-2">
                             {clientDetails.medical_conditions.map((condition: string, index: number) => (
-                              <span key={index} className="px-3 py-1 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20 text-sm font-medium">
+                              <span key={index} className="px-3 py-1.5 rounded-xl bg-red-500/10 text-red-400 border border-red-500/20 text-sm font-medium">
                                 {condition}
                               </span>
                             ))}
@@ -644,46 +600,72 @@ function ClientProfile() {
                       )}
                     </div>
                   </div>
+
+                  {/* My Coach Group */}
+                  <div className="bg-[#1e293b]/40 border border-white/5 rounded-[2rem] overflow-hidden backdrop-blur-xl">
+                    <div className="px-6 py-4 bg-white/5 border-b border-white/5 flex items-center gap-3">
+                      <User className="w-4 h-4 text-indigo-400" />
+                      <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider">Mon Coach</h3>
+                    </div>
+                    <div className="p-6">
+                      {coachDetails ? (
+                        <div className="flex items-center gap-4 bg-[#0f172a] p-4 rounded-2xl border border-white/5 mb-4 shadow-inner">
+                          {coachDetails.profile_image_url ? (
+                            <img src={coachDetails.profile_image_url} className="w-14 h-14 rounded-full object-cover shadow-lg shadow-black/50" alt="Coach" />
+                          ) : (
+                            <div className="w-14 h-14 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400 font-bold text-xl">
+                              {coachDetails.full_name?.charAt(0)}
+                            </div>
+                          )}
+                          <div className="flex-1">
+                            <h4 className="font-bold text-white text-lg">{coachDetails.full_name}</h4>
+                            <p className="text-sm text-indigo-400/80">{coachDetails.email}</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-center py-6 text-gray-500 text-sm italic border border-dashed border-white/10 rounded-2xl mb-4">
+                          Aucun coach assigné.
+                        </div>
+                      )}
+
+                      <button
+                        onClick={() => setShowCoachModal(true)}
+                        className="w-full py-3.5 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 rounded-xl text-sm font-bold transition-colors border border-indigo-500/20 active:scale-[0.98]"
+                      >
+                        {coachDetails ? "Changer de coach" : "Ajouter un coach"}
+                      </button>
+                    </div>
+                  </div>
+
                 </div>
               )}
             </motion.div>
           ) : (
-            <motion.div key="settings" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Settings Section (Mock for now but consistent styling) */}
-              <div className="glass-card p-6 rounded-3xl border border-white/10 hover:border-white/20 transition-all">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-3 bg-white/5 rounded-xl">
-                    <Shield className="w-6 h-6 text-white" />
-                  </div>
-                  <h3 className="text-lg font-bold text-white">{t('profile.security')}</h3>
-                </div>
-                <button className="w-full flex items-center justify-between p-4 bg-white/5 rounded-xl hover:bg-white/10 transition-colors group">
-                  <span className="text-gray-300 group-hover:text-white transition-colors">{t('profile.changePassword')}</span>
-                  <ChevronRight className="w-5 h-5 text-gray-500 group-hover:text-white" />
-                </button>
-              </div>
+            <motion.div key="settings" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }} className="max-w-2xl mx-auto pb-8 space-y-6">
 
-              <div className="glass-card p-6 rounded-3xl border border-white/10 hover:border-white/20 transition-all">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-3 bg-white/5 rounded-xl">
-                    <Bell className="w-6 h-6 text-white" />
-                  </div>
-                  <h3 className="text-lg font-bold text-white">{t('profile.notifications')}</h3>
+              {/* Security */}
+              <div className="bg-[#1e293b]/50 border border-slate-700/50 rounded-[2rem] overflow-hidden backdrop-blur-xl">
+                <div className="px-6 py-4 bg-white/5 border-b border-white/5">
+                  <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider">Sécurité & Compte</h3>
                 </div>
-                <div className="space-y-4">
-                  <p className="text-sm text-gray-400 mb-4">
-                    Activez les notifications pour recevoir des rappels pour vos séances et vos nouveaux programmes.
-                  </p>
+                <div className="divide-y divide-white/5">
+                  <button className="w-full px-6 py-4 flex items-center justify-between hover:bg-white/5 transition-colors group active:bg-white/10">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
+                        <Shield className="w-5 h-5 text-blue-400" />
+                      </div>
+                      <span className="text-slate-200 font-medium group-hover:text-white transition-colors">{t('profile.changePassword')}</span>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-slate-500 group-hover:text-slate-300 transition-colors" />
+                  </button>
+
+                  {/* Notifications */}
                   <button
                     onClick={async () => {
                       if (window.OneSignal) {
-                        // Check if already subscribed
                         const isPushSupported = window.OneSignal.Notifications.isPushSupported();
                         if (isPushSupported) {
-                          // This prompts the native browser permission request 
-                          // or the OneSignal Slidedown if configured
                           await window.OneSignal.Notifications.requestPermission();
-                          // Also try manual opt-in
                           await window.OneSignal.User.PushSubscription.optIn();
                           alert("Notifications activées !");
                         } else {
@@ -693,37 +675,47 @@ function ClientProfile() {
                         alert("Erreur: OneSignal non chargé. Essayez de rafraîchir la page.");
                       }
                     }}
-                    className="w-full py-3 bg-white/10 hover:bg-white/20 text-white font-medium rounded-xl transition-all border border-white/10 flex items-center justify-center gap-2"
+                    className="w-full px-6 py-4 flex items-center justify-between hover:bg-white/5 transition-colors group active:bg-white/10"
                   >
-                    <Bell className="w-5 h-5" />
-                    Activer les notifications Push
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center">
+                        <Bell className="w-5 h-5 text-purple-400" />
+                      </div>
+                      <div className="text-left">
+                        <span className="text-slate-200 font-medium block group-hover:text-white transition-colors">{t('profile.notifications')}</span>
+                        <span className="text-xs text-slate-500">Activer les rappels push</span>
+                      </div>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-slate-500 group-hover:text-slate-300 transition-colors" />
                   </button>
-
 
                 </div>
               </div>
 
               {/* Danger Zone */}
-              <div className="glass-card p-6 rounded-3xl border border-red-500/20 hover:border-red-500/40 transition-all md:col-span-2">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-3 bg-red-500/10 rounded-xl">
-                    <Shield className="w-6 h-6 text-red-500" />
-                  </div>
-                  <h3 className="text-lg font-bold text-white">{t('profile.dangerZone')}</h3>
+              <div className="bg-[#1e293b]/50 border border-red-900/30 rounded-[2rem] overflow-hidden mt-6 backdrop-blur-xl">
+                <div className="px-6 py-4 bg-red-500/5 border-b border-red-500/10">
+                  <h3 className="text-sm font-bold text-red-500 uppercase tracking-wider">{t('profile.dangerZone')}</h3>
                 </div>
-                <div className="flex flex-col md:flex-row items-center justify-between gap-4 p-4 bg-red-500/5 rounded-xl border border-red-500/10">
-                  <div>
-                    <h4 className="font-bold text-white mb-1">{t('profile.deleteAccount')}</h4>
-                    <p className="text-sm text-gray-400">Cette action est irréversible. Toutes vos données seront effacées.</p>
-                  </div>
+                <div className="divide-y divide-red-500/10">
                   <button
                     onClick={handleDeleteAccount}
-                    className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors text-sm font-bold whitespace-nowrap"
+                    className="w-full px-6 py-4 flex items-center justify-between hover:bg-red-500/10 transition-colors group active:bg-red-500/20"
                   >
-                    {t('profile.deleteAccountAction') || "Supprimer mon compte"}
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center">
+                        <Trash2 className="w-5 h-5 text-red-500" />
+                      </div>
+                      <div className="text-left">
+                        <span className="text-red-400 font-medium block group-hover:text-red-300 transition-colors">{t('profile.deleteAccountAction') || "Supprimer mon compte"}</span>
+                        <span className="text-xs text-red-500/50">Action irréversible</span>
+                      </div>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-red-500/50 group-hover:text-red-400 transition-colors" />
                   </button>
                 </div>
               </div>
+
             </motion.div>
           )}</AnimatePresence>
 

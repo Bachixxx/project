@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Bell, Play, Calendar, MapPin } from 'lucide-react';
+import { Bell, Calendar, Flame } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface DashboardHeroProps {
@@ -7,15 +7,12 @@ interface DashboardHeroProps {
     nextSession: any | null;
     notificationsCount?: number;
     heroImage?: string;
-    welcomeMessage?: string; // NEW
+    welcomeMessage?: string;
 }
 
 export function DashboardHero({ clientName, nextSession, notificationsCount = 0, heroImage, welcomeMessage }: DashboardHeroProps) {
     const navigate = useNavigate();
 
-    // ... (formatDate and getSessionRoute remain unchanged)
-
-    // Helper to format date
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
         return date.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -29,103 +26,95 @@ export function DashboardHero({ clientName, nextSession, notificationsCount = 0,
     };
 
     return (
-        <div className="relative w-full h-[45vh] min-h-[400px] flex flex-col justify-end pb-8 px-6 overflow-hidden">
+        <div className="relative h-[420px] w-full overflow-hidden shrink-0">
+            {/* Dynamic Background (Edge to Edge) */}
+            <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url('${heroImage || "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=2070&auto=format&fit=crop"}')` }}></div>
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0f172a]/40 to-[#0f172a]"></div>
 
-            {/* Dynamic Background */}
-            <div className="absolute inset-0 z-0">
-                <div className="absolute inset-0 bg-gradient-to-b from-blue-900/40 via-[#0f172a]/60 to-[#0f172a]" />
-                <img
-                    src={heroImage || "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=2070&auto=format&fit=crop"}
-                    alt="Workout Background"
-                    className="w-full h-full object-cover opacity-60"
-                />
-            </div>
-
-            {/* Top Bar (Absolute) */}
-            <div className="absolute top-0 left-0 w-full p-6 pt-[calc(env(safe-area-inset-top)+1rem)] flex justify-between items-start z-20">
-                <div>
-                    {/* Logo or Brand Mark could go here if needed */}
+            {/* Inner Content Container (Max Width for Responsiveness) */}
+            <div className="relative z-20 w-full h-full max-w-5xl mx-auto">
+                {/* Top Nav */}
+                <div className="absolute top-0 left-0 w-full p-6 pt-[calc(env(safe-area-inset-top)+1rem)] flex justify-between items-center z-20">
+                    <div className="w-10 h-10 rounded-full border-2 border-blue-500/50 overflow-hidden bg-white/10 hidden">
+                        {/* Optional generic avatar container */}
+                    </div>
+                    <div className="flex-1"></div> {/* Spacer */}
+                    <button className="relative w-10 h-10 bg-white/5 backdrop-blur-md border border-white/10 rounded-full flex items-center justify-center text-white hover:bg-white/10 transition-colors">
+                        <Bell className="w-5 h-5" />
+                        {notificationsCount > 0 && (
+                            <span className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-[#0f172a]" />
+                        )}
+                    </button>
                 </div>
-                <button className="relative p-2 bg-white/10 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-colors">
-                    <Bell className="w-6 h-6" />
-                    {notificationsCount > 0 && (
-                        <span className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-[#0f172a]" />
-                    )}
-                </button>
-            </div>
 
-            {/* Content */}
-            <div className="relative z-10 w-full">
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
-                >
-                    {welcomeMessage ? (
-                        <h1 className="text-4xl font-black text-white mb-2 tracking-tight">
-                            {welcomeMessage}
-                        </h1>
-                    ) : (
-                        <h1 className="text-4xl font-black text-white mb-1 tracking-tight">
-                            Bonjour, <span className="text-blue-400">{clientName.split(' ')[0]}</span>
-                        </h1>
-                    )}
-                    <p className="text-gray-300 text-lg mb-8 font-medium">Prêt à transpirer ? 🔥</p>
-                </motion.div>
-
-                {/* Next Session Card (Integrated) */}
-                {nextSession ? (
+                {/* Greeting */}
+                <div className="absolute bottom-40 left-6 right-6 z-10">
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: 0.4 }}
-                        className="bg-white/10 backdrop-blur-xl border border-white/10 rounded-3xl p-5 shadow-2xl relative overflow-hidden group"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2 }}
                     >
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/20 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
+                        {welcomeMessage ? (
+                            <h1 className="text-4xl font-extrabold tracking-tight text-white mb-2">
+                                {welcomeMessage}
+                            </h1>
+                        ) : (
+                            <h1 className="text-4xl font-extrabold tracking-tight text-white mb-2">
+                                Bonjour, {clientName.split(' ')[0]}
+                            </h1>
+                        )}
+                        <p className="text-slate-300 font-medium">Prêt pour votre séance de force ?</p>
+                    </motion.div>
+                </div>
 
-                        <div className="flex justify-between items-start mb-4">
-                            <div>
-                                <span className="inline-block px-3 py-1 bg-blue-500 text-white text-xs font-bold rounded-full mb-2 uppercase tracking-wide">Prochaine Séance</span>
-                                <h2 className="text-2xl font-bold text-white leading-tight">
+                {/* Next Session Card (Glassmorphic) */}
+                <div className="absolute bottom-4 left-4 right-4 z-20">
+                    {nextSession ? (
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: 0.4 }}
+                            className="bg-white/5 backdrop-blur-xl border border-white/10 p-5 rounded-xl flex items-center justify-between shadow-xl"
+                        >
+                            <div className="flex flex-col gap-1 flex-1 min-w-0 pr-4">
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-blue-400">Prochaine Séance</span>
+                                <h3 className="text-lg font-bold text-white truncate">
                                     {nextSession.type === 'scheduled' ? nextSession.session.name : nextSession.title}
-                                </h2>
+                                </h3>
+                                <div className="flex items-center gap-3 mt-1">
+                                    <div className="flex items-center gap-1 text-slate-300 text-xs">
+                                        <Calendar className="w-3.5 h-3.5" />
+                                        <span className="truncate">{formatDate(nextSession.start || nextSession.scheduled_date)}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1 text-slate-300 text-xs">
+                                        <Flame className="w-3.5 h-3.5" />
+                                        <span>-- kcal</span>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-
-                        <div className="flex items-center gap-4 text-sm text-gray-300 mb-6">
-                            <div className="flex items-center gap-1.5">
-                                <Calendar className="w-4 h-4 text-blue-400" />
-                                <span>{formatDate(nextSession.start || nextSession.scheduled_date)}</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                                <MapPin className="w-4 h-4 text-blue-400" />
-                                <span>Salle de sport</span>
-                            </div>
-                        </div>
-
-                        <button
-                            onClick={() => navigate(getSessionRoute(nextSession))}
-                            className="w-full py-3.5 bg-white text-blue-900 rounded-2xl font-bold text-lg flex items-center justify-center gap-2 shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all"
+                            <button
+                                onClick={() => navigate(getSessionRoute(nextSession))}
+                                className="bg-white text-blue-600 font-bold px-5 py-3 rounded-full shadow-lg hover:scale-105 transition-transform active:scale-95 text-sm shrink-0 whitespace-nowrap"
+                            >
+                                Démarrer
+                            </button>
+                        </motion.div>
+                    ) : (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="bg-white/5 backdrop-blur-md rounded-xl p-5 border border-white/10 shadow-xl"
                         >
-                            <Play className="w-5 h-5 fill-current" />
-                            COMMENCER
-                        </button>
-                    </motion.div>
-                ) : (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="bg-white/5 backdrop-blur-md rounded-3xl p-6 border border-white/5"
-                    >
-                        <p className="text-gray-400 text-center">Aucune séance prévue aujourd'hui.</p>
-                        <button
-                            onClick={() => navigate('/client/workouts')}
-                            className="w-full mt-4 py-3 bg-white/10 hover:bg-white/20 rounded-xl text-white font-medium transition-colors"
-                        >
-                            Voir le catalogue
-                        </button>
-                    </motion.div>
-                )}
+                            <p className="text-slate-300 text-sm font-medium">Aucune séance prévue aujourd'hui.</p>
+                            <button
+                                onClick={() => navigate('/client/workouts')}
+                                className="mt-3 text-blue-400 font-bold text-sm hover:text-blue-300 transition-colors"
+                            >
+                                Voir le catalogue &rarr;
+                            </button>
+                        </motion.div>
+                    )}
+                </div>
             </div>
         </div>
     );

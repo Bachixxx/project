@@ -167,7 +167,7 @@ function Layout() {
           {/* Collapse Toggle Button - Desktop Only */}
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="hidden lg:flex absolute -right-3 top-6 bg-blue-600 rounded-full p-1 text-white shadow-lg border border-white/10 hover:bg-blue-700 transition-colors z-50"
+            className="hidden lg:flex absolute -right-3 top-1/2 -translate-y-1/2 bg-blue-600 rounded-full p-1 text-white shadow-lg border border-white/10 hover:bg-blue-700 transition-colors z-50"
           >
             {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
           </button>

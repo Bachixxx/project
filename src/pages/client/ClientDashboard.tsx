@@ -60,8 +60,12 @@ export default function ClientDashboard() {
 
   const { client, nextSession, stats, weeklyWorkouts, currentWeight } = data;
 
+  const days = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+  // Provide a placeholder visualization showing current weeklyWorkouts scaled
+  const currentWeekCount = weeklyWorkouts || 0;
+
   return (
-    <div className="min-h-screen bg-[#0f172a] text-white font-sans pb-32">
+    <div className="min-h-screen bg-[#0f172a] text-slate-100 font-sans pb-32 w-full relative overflow-x-hidden">
 
       {/* 1. Immersive Hero Section */}
       <DashboardHero
@@ -72,10 +76,10 @@ export default function ClientDashboard() {
         welcomeMessage={branding?.welcomeMessage}
       />
 
-      <div className="flex flex-col gap-8 -mt-6 relative z-10">
+      <div className="flex flex-col -mt-4 relative z-10 w-full max-w-5xl mx-auto">
 
         {/* 2. Stats Rail (Horizontal Scroll) */}
-        <div className="px-0">
+        <div>
           <StatsRail
             level={stats?.level || 1}
             xp={stats?.xp || 0}
@@ -86,23 +90,33 @@ export default function ClientDashboard() {
         </div>
 
         {/* 3. Quick Actions Rail */}
-        <div className="px-0">
+        <div className="mt-2">
           <QuickActionsRail />
         </div>
 
-        {/* 4. Weekly Activity (Simplified) */}
-        <div className="px-6">
-          <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3 px-1">Cette Semaine</h3>
-          <div className="bg-white/5 border border-white/5 rounded-3xl p-6 flex items-center justify-between">
-            <div className="flex flex-col">
-              <span className="text-3xl font-bold text-white">{weeklyWorkouts}</span>
-              <span className="text-sm text-gray-400">séances terminées</span>
+        {/* 4. Weekly Activity Chart Card */}
+        <div className="px-4 py-4 w-full">
+          <div className="bg-white/5 backdrop-blur-md p-6 rounded-2xl border border-blue-500/10 shadow-xl">
+            <div className="flex justify-between items-start mb-6">
+              <div>
+                <h4 className="text-lg font-bold text-white tracking-tight">Cette Semaine</h4>
+                <p className="text-sm text-slate-400">{weeklyWorkouts} séances terminées</p>
+              </div>
             </div>
-            {/* Simple visual indicator */}
-            <div className="flex gap-1 h-12 items-end">
-              {[...Array(7)].map((_, i) => (
-                <div key={i} className={`w-2 rounded-full ${i < weeklyWorkouts ? 'bg-blue-500' : 'bg-white/10'}`} style={{ height: `${i < weeklyWorkouts ? '80%' : '30%'}` }}></div>
-              ))}
+            <div className="flex items-end justify-between h-32 gap-3 mt-4">
+              {days.map((day, i) => {
+                const isCompleted = i < currentWeekCount;
+                const heightPercentage = isCompleted ? '80%' : '20%';
+                return (
+                  <div key={i} className="flex flex-col items-center gap-2 flex-1 group h-full justify-end">
+                    <div
+                      className={`w-full rounded-full transition-all duration-500 ease-out ${isCompleted ? 'bg-blue-600 shadow-[0_0_15px_rgba(37,99,235,0.4)]' : 'bg-slate-800 group-hover:bg-slate-700'}`}
+                      style={{ height: heightPercentage }}
+                    ></div>
+                    <span className="text-[10px] font-bold text-slate-500">{day}</span>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>

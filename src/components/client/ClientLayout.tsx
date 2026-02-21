@@ -162,7 +162,7 @@ function ClientLayout() {
         <ClientBottomNav />
 
         {/* Main Content */}
-        <main className="flex-1 w-full p-0 lg:p-8 overflow-x-hidden">
+        <main className={`flex-1 w-full overflow-x-hidden ${isImmersivePage ? 'p-0 lg:p-0' : 'p-0 lg:p-8'}`}>
           <React.Fragment key={location.pathname}> {/* Force re-render for animation */}
             {/* Note: AnimatePresence needs to be handled at a higher level or around specific routes for exit animations to work perfectly with Outlet, 
                  but wrapping the content here gives us the enter animation which is the most important for "feel". 

@@ -942,9 +942,11 @@ const SessionModal = ({ session, exercises, loadingExercises, onClose, onRegiste
                         <div className="flex-1 min-w-0">
                           <p className="text-white font-medium truncate">{se.exercise?.name || 'Exercice'}</p>
                           <div className="flex items-center gap-3 mt-1 text-xs text-white/50">
-                            {se.exercise?.tracking_type === 'duration' ? (
-                              <span className="text-white/70">{se.duration_seconds}s</span>
-                            ) : se.exercise?.tracking_type === 'distance' ? (
+                            {se.exercise?.track_duration || se.exercise?.tracking_type === 'duration' ? (
+                              <span className="text-white/70">
+                                {Math.floor((se.duration_seconds || 0) / 60)}m {(se.duration_seconds || 0) % 60}s
+                              </span>
+                            ) : se.exercise?.track_distance || se.exercise?.tracking_type === 'distance' ? (
                               <span className="text-white/70">{se.distance_meters}m</span>
                             ) : (
                               <span className="text-white/70">{se.sets} séries × {se.reps} reps</span>
