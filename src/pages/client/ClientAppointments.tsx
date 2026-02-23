@@ -20,7 +20,6 @@ function ClientAppointments() {
   const [groupSessions, setGroupSessions] = useState<any[]>([]);
   const [selectedSession, setSelectedSession] = useState<any>(null);
   const [selectedNote, setSelectedNote] = useState<any>(null);
-  const [selectedMetric, setSelectedMetric] = useState<any>(null);
   const [sessionExercises, setSessionExercises] = useState<any[]>([]);
   const [exerciseGroups, setExerciseGroups] = useState<any[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -478,7 +477,7 @@ function ClientAppointments() {
     }
 
     if (event.item_type === 'metric') {
-      setSelectedMetric(event);
+      navigate('/client/biometrics');
       return;
     }
 
@@ -854,13 +853,7 @@ function ClientAppointments() {
         />
       )}
 
-      {selectedMetric && (
-        <MetricModal
-          metric={selectedMetric}
-          onClose={() => setSelectedMetric(null)}
-          onSave={handleUpdateSession}
-        />
-      )}
+
     </div>
   );
 }

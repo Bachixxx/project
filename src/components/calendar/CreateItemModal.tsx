@@ -53,7 +53,7 @@ export function CreateItemModal({ isOpen, onClose, date, clientId, onCreate, onU
                 client_id: clientId,
                 scheduled_date: format(date, 'yyyy-MM-dd'),
                 item_type: type,
-                title: type === 'rest' ? 'Jour de repos' : title,
+                title: type === 'rest' ? 'Jour de repos' : (type === 'metric' && !title ? 'Jour de Pesée' : title),
                 content: content ? { text: content } : {},
                 position: itemToEdit?.position || 0,
                 status: itemToEdit?.status || 'scheduled',
@@ -103,7 +103,7 @@ export function CreateItemModal({ isOpen, onClose, date, clientId, onCreate, onU
         { id: 'session', label: 'Séance', icon: Dumbbell, color: 'bg-blue-500' },
         { id: 'note', label: 'Note', icon: StickyNote, color: 'bg-amber-500' },
         { id: 'rest', label: 'Repos', icon: Moon, color: 'bg-indigo-500' },
-        { id: 'metric', label: 'Métrique', icon: Activity, color: 'bg-green-500' },
+        { id: 'metric', label: 'Pesée / Biométrie', icon: Activity, color: 'bg-green-500' },
     ];
 
     return (
@@ -133,7 +133,16 @@ export function CreateItemModal({ isOpen, onClose, date, clientId, onCreate, onU
                                 <button
                                     key={t.id}
                                     type="button"
-                                    onClick={() => setType(t.id)}
+                                    onClick={() => {
+                                        setType(t.id);
+                                        if (t.id === 'metric') {
+                                            setTitle('Jour de Pesée');
+                                        } else if (t.id === 'rest') {
+                                            setTitle('Jour de repos');
+                                        } else {
+                                            setTitle(itemToEdit?.title || '');
+                                        }
+                                    }}
                                     className={`
                     flex flex-col items-center gap-2 p-3 rounded-xl border transition-all
                     ${type === t.id
@@ -208,7 +217,7 @@ export function CreateItemModal({ isOpen, onClose, date, clientId, onCreate, onU
                                     />
                                 </div>
 
-                                {(type === 'note' || type === 'session') && (
+                                {(type === 'note' || type === 'session' || type === 'metric') && (
                                     <div>
                                         <label className="block text-sm font-medium text-gray-300 mb-2">
                                             {type === 'session' ? 'Description (Optionnel)' : 'Contenu'}
