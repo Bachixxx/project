@@ -803,10 +803,12 @@ function ClientAppointments() {
           <SessionModal
             session={selectedSession}
             exercises={sessionExercises}
+            groups={exerciseGroups}
             loadingExercises={loadingExercises}
             onClose={() => {
               setIsModalOpen(false);
               setSessionExercises([]);
+              setExerciseGroups([]);
             }}
             onRegister={handleRegister}
             onUnregister={handleUnregister}
