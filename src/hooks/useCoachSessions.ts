@@ -18,6 +18,7 @@ interface SaveSessionParams {
     blocks: any[];
     standaloneExercises: any[];
     sessionId?: string;
+    is_template?: boolean;
 }
 
 export function useCoachSessions() {
@@ -87,7 +88,7 @@ export function useCoachSessions() {
 
     // 2. Save Session Mutation (Create or Update)
     const saveSession = useMutation({
-        mutationFn: async ({ sessionData, blocks, standaloneExercises, sessionId }: SaveSessionParams) => {
+        mutationFn: async ({ sessionData, blocks, standaloneExercises, sessionId, is_template }: SaveSessionParams) => {
             if (!user?.id) throw new Error("No user");
 
             let targetSessionId = sessionId;
@@ -108,7 +109,7 @@ export function useCoachSessions() {
             } else {
                 const { data, error } = await supabase
                     .from('sessions')
-                    .insert([{ ...sessionData, coach_id: user.id, is_template: true }])
+                    .insert([{ ...sessionData, coach_id: user.id, is_template: is_template !== undefined ? is_template : true }])
                     .select()
                     .single();
                 if (error) throw error;

@@ -14,7 +14,8 @@ import {
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { eachDayOfInterval, format, isSameDay, parseISO, isSameWeek } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { WorkoutBuilderDrawer } from './WorkoutBuilderDrawer';
+import { SessionBuilderModal } from '../library/SessionBuilderModal';
+import { useCoachSessions } from '../../hooks/useCoachSessions';
 import { DayColumn } from './DayColumn';
 import { CalendarItem as CalendarItemComponent } from './CalendarItem';
 import { CreateItemModal } from './CreateItemModal';
@@ -38,6 +39,8 @@ export function CalendarGrid({ clientId }: CalendarGridProps) {
         loadMorePast,
         loadMoreFuture
     } = useCalendar(clientId);
+
+    const { saveSession } = useCoachSessions();
 
     const [activeId, setActiveId] = useState<string | null>(null);
     const [addingToDate, setAddingToDate] = useState<Date | null>(null);
@@ -212,8 +215,8 @@ export function CalendarGrid({ clientId }: CalendarGridProps) {
 
     // --- Updated handleItemClick ---
     const handleItemClick = (item: any) => {
-        // Check if it's a builder session
-        const isBuilderSession = item.item_type === 'session' && item.content?.modules;
+        // Any session can be opened in the builder, but check if we should
+        const isBuilderSession = item.item_type === 'session';
 
         if (isBuilderSession) {
             setBuilderDate(new Date(item.scheduled_date));
@@ -227,34 +230,66 @@ export function CalendarGrid({ clientId }: CalendarGridProps) {
     };
 
     // --- Builder Logic ---
-    const handleOpenBuilderFromModal = () => {
+    const handleOpenBuilderFromModal = (builderData?: any) => {
         if (addingToDate) {
             setBuilderDate(addingToDate);
+            setBuilderInitialData(builderData || itemToEdit);
             setAddingToDate(null); // Close modal
+            setItemToEdit(null);
             setIsBuilderOpen(true);
         }
     };
 
-    const handleSaveWorkout = async (workoutData: any) => {
+    const handleSaveWorkout = async (sessionData: any, blocks: any[], standaloneExercises: any[]) => {
         if (!builderDate) return;
 
-        // Check if workoutData has a specific scheduled_date (with time)
-        const dateToUse = workoutData.scheduled_date
-            ? (workoutData.scheduled_date instanceof Date ? workoutData.scheduled_date.toISOString() : workoutData.scheduled_date)
-            : format(builderDate, 'yyyy-MM-dd');
+        try {
+            const dateToUse = format(builderDate, 'yyyy-MM-dd');
 
-        await createItem({
-            client_id: clientId,
-            scheduled_date: dateToUse,
-            item_type: 'session',
-            title: workoutData.title,
-            content: workoutData.content || {}, // ensure content is passed
-            position: 0,
-            status: 'scheduled'
-        });
+            // 1. Determine if we update or create the session
+            const isExistingSession = builderInitialData?.session?.id;
+            const isTemplate = builderInitialData?.session?.is_template;
 
-        setIsBuilderOpen(false);
-        setBuilderDate(null);
+            // If it's an existing session but it's a template, we MUST create a copy (is_template = false)
+            // If it's an existing session and is NOT a template, we can update it in place.
+            let targetSessionId = (isExistingSession && !isTemplate) ? builderInitialData.session.id : undefined;
+
+            const savedSessionId = await saveSession.mutateAsync({
+                sessionData,
+                blocks,
+                standaloneExercises,
+                sessionId: targetSessionId,
+                is_template: false // Custom calendar sessions are not templates
+            });
+
+            // 2. Update or Create the custom scheduled_session
+            if (builderInitialData?.id && builderInitialData.item_type === 'session') {
+                await updateItem(builderInitialData.id, {
+                    scheduled_date: dateToUse,
+                    title: sessionData.name || 'Séance',
+                    session_id: savedSessionId,
+                    content: {} // No JSON modules needed anymore
+                });
+            } else {
+                await createItem({
+                    client_id: clientId,
+                    scheduled_date: dateToUse,
+                    item_type: 'session',
+                    title: sessionData.name || 'Séance',
+                    session_id: savedSessionId,
+                    content: {},
+                    position: 0,
+                    status: 'scheduled'
+                });
+            }
+
+            setIsBuilderOpen(false);
+            setBuilderDate(null);
+            setBuilderInitialData(null);
+        } catch (error) {
+            console.error('Error saving workout from calendar:', error);
+            alert('Erreur lors de la sauvegarde de la séance.');
+        }
     };
 
     if (loading && !items.length) {
@@ -392,20 +427,21 @@ export function CalendarGrid({ clientId }: CalendarGridProps) {
                 />
             )}
 
-            {/* Workout Builder Drawer */}
-            <WorkoutBuilderDrawer
-                isOpen={isBuilderOpen}
-                onClose={() => {
-                    setIsBuilderOpen(false);
-                    setBuilderDate(null);
-                    setBuilderInitialData(null);
-                }}
-                onSave={handleSaveWorkout}
-                onDelete={deleteItem}
-                initialDate={builderDate || new Date()}
-                clientId={clientId}
-                initialData={builderInitialData}
-            />
+            {/* Workout Builder Modal */}
+            {isBuilderOpen && (
+                <SessionBuilderModal
+                    session={
+                        builderInitialData?.session ||
+                        (builderInitialData?.session_id ? { id: builderInitialData.session_id } : null)
+                    }
+                    onClose={() => {
+                        setIsBuilderOpen(false);
+                        setBuilderDate(null);
+                        setBuilderInitialData(null);
+                    }}
+                    onSave={handleSaveWorkout}
+                />
+            )}
         </div>
     );
 }

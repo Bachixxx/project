@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Play, Calendar, CheckCircle, Clock, Dumbbell, Award } from 'lucide-react';
 import { useClientAuth } from '../../contexts/ClientAuthContext';
@@ -29,6 +29,7 @@ function ClientWorkout() {
           id,
           status,
           progress,
+          scheduling_type,
           program:programs!inner (
             id,
             name,
@@ -95,47 +96,67 @@ function ClientWorkout() {
     setStartingSessionId(session.id);
 
     try {
-      // Check if unfinished session exists today
-      // (This logic is partly handled by the UI showing "Reprendre", but let's be safe)
       const today = new Date().toISOString().split('T')[0];
-
-      // Look for an existing scheduled session for today that isn't completed
-      const { data: existingSession } = await supabase
-        .from('scheduled_sessions')
-        .select('id')
-        .eq('client_id', client.id)
-        .eq('session_id', session.id)
-        .gte('scheduled_date', today) // Simplification: any session from today onwards or just "recent"
-        .neq('status', 'completed')
-        .maybeSingle();
-
-      if (existingSession) {
-        navigate(`/client/live-workout/${existingSession.id}`);
-        return;
-      }
-
-      // Create NEW Scheduled Session (Unified Engine)
       const prog = program.program as any;
-      const { data: newSession, error: createError } = await supabase
-        .from('scheduled_sessions')
-        .insert([{
-          client_id: client.id,
-          coach_id: prog.coach_id, // Use Program Author as Coach
-          session_id: session.id,
-          scheduled_date: new Date().toISOString(),
-          status: 'scheduled',
-          notes: `Séance du programme: ${prog.name}`
-        }])
-        .select()
-        .single();
 
-      if (createError) throw createError;
+      if (program.scheduling_type === 'coach_led') {
+        // MUST use an existing scheduled session
+        const { data: existingSession } = await supabase
+          .from('scheduled_sessions')
+          .select('id')
+          .eq('client_id', client.id)
+          .eq('session_id', session.id)
+          .eq('status', 'scheduled') // Only pick explicitly scheduled ones
+          .order('scheduled_date', { ascending: true }) // Get the earliest scheduled one
+          .limit(1)
+          .maybeSingle();
 
-      navigate(`/client/live-workout/${newSession.id}`);
+        if (existingSession) {
+          navigate(`/client/live-workout/${existingSession.id}`);
+          return;
+        } else {
+          // In theory, the UI should prevent clicking here, but safeguard:
+          throw new Error("Cette séance n'a pas été planifiée.");
+        }
+      } else {
+        // Self-paced logic (Autonomie)
+        // Look for an existing scheduled session for today that isn't completed
+        const { data: existingSession } = await supabase
+          .from('scheduled_sessions')
+          .select('id')
+          .eq('client_id', client.id)
+          .eq('session_id', session.id)
+          .gte('scheduled_date', today) // Simplification: any session from today onwards or just "recent"
+          .neq('status', 'completed')
+          .maybeSingle();
+
+        if (existingSession) {
+          navigate(`/client/live-workout/${existingSession.id}`);
+          return;
+        }
+
+        // Create NEW Scheduled Session (Unified Engine)
+        const { data: newSession, error: createError } = await supabase
+          .from('scheduled_sessions')
+          .insert([{
+            client_id: client.id,
+            coach_id: prog.coach_id, // Use Program Author as Coach
+            session_id: session.id,
+            scheduled_date: new Date().toISOString(),
+            status: 'scheduled',
+            notes: `Séance du programme: ${prog.name}`
+          }])
+          .select()
+          .single();
+
+        if (createError) throw createError;
+
+        navigate(`/client/live-workout/${newSession.id}`);
+      }
 
     } catch (error) {
       console.error('Error starting session:', error);
-      alert('Erreur lors du lancement de la séance');
+      alert(error instanceof Error ? error.message : 'Erreur lors du lancement de la séance');
       setStartingSessionId(null);
     }
   };
@@ -220,7 +241,6 @@ function ClientWorkout() {
               const status = sessionsStatus[session.id]; // { status, scheduled_date }
               const isCompleted = status?.status === 'completed';
               const isScheduled = status?.status === 'scheduled';
-              const isLocked = index > 0 && !(sessionsStatus[sortedSessions[index - 1].session.id]?.status === 'completed'); // Simple lock logic? Maybe too strict.
 
               return (
                 <div
@@ -248,6 +268,9 @@ function ClientWorkout() {
                         {isCompleted && (
                           <span className="text-xs font-mono text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full">Fait</span>
                         )}
+                        {program.scheduling_type === 'coach_led' && !isScheduled && !isCompleted && (
+                          <span className="text-xs font-medium text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full whitespace-nowrap">Non planifié</span>
+                        )}
                       </div>
 
                       <p className="text-sm text-gray-500 line-clamp-2 mb-3">
@@ -268,9 +291,15 @@ function ClientWorkout() {
                       {/* Action Button */}
                       {isCompleted ? (
                         <button
-                          onClick={() => handleStartSession(session)}
-                          disabled={startingSessionId === session.id}
-                          className="w-full py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 text-sm font-medium transition-all flex items-center justify-center gap-2 border border-white/5"
+                          onClick={() => {
+                            if (program.scheduling_type === 'coach_led' && (!isScheduled || status?.status === 'completed')) {
+                              alert("Cette séance doit être planifiée par votre coach avant de pouvoir la refaire.");
+                              return;
+                            }
+                            handleStartSession(session);
+                          }}
+                          disabled={startingSessionId === session.id || (program.scheduling_type === 'coach_led' && !isScheduled)}
+                          className="w-full py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 text-sm font-medium transition-all flex items-center justify-center gap-2 border border-white/5 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {startingSessionId === session.id ? (
                             <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -283,16 +312,26 @@ function ClientWorkout() {
                         </button>
                       ) : (
                         <button
-                          onClick={() => handleStartSession(session)}
-                          disabled={startingSessionId === session.id}
-                          className="w-full py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white text-sm font-bold shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2"
+                          onClick={() => {
+                            if (program.scheduling_type === 'coach_led' && !isScheduled) {
+                              alert("En attente de planification par votre coach.");
+                              return;
+                            }
+                            handleStartSession(session);
+                          }}
+                          disabled={startingSessionId === session.id || (program.scheduling_type === 'coach_led' && !isScheduled)}
+                          className="w-full py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white text-sm font-bold shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2 disabled:from-gray-600 disabled:to-gray-700 disabled:shadow-none disabled:cursor-not-allowed disabled:text-gray-400 group"
                         >
                           {startingSessionId === session.id ? (
                             <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                           ) : (
                             <>
-                              <Play className="w-4 h-4 fill-current" />
-                              {isScheduled ? 'Reprendre' : 'Commencer'}
+                              {program.scheduling_type === 'coach_led' && !isScheduled ? (
+                                <Clock className="w-4 h-4" />
+                              ) : (
+                                <Play className="w-4 h-4 fill-current group-disabled:fill-gray-400" />
+                              )}
+                              {program.scheduling_type === 'coach_led' && !isScheduled ? 'En attente' : (isScheduled ? 'Reprendre' : 'Commencer')}
                             </>
                           )}
                         </button>

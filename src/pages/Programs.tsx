@@ -13,7 +13,8 @@ import {
   Target,
   Globe,
   ChevronRight,
-  Filter
+  Filter,
+  UserPlus
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -21,6 +22,7 @@ import { t } from '../i18n';
 import { useSubscription } from '../hooks/useSubscription';
 import { ExerciseGroupManager, GroupModal } from '../components/ExerciseGroupManager';
 import { useCoachPrograms, Program, ProgramSession, Session } from '../hooks/useCoachPrograms';
+import { ShareProgramModal } from '../components/ShareProgramModal';
 
 // --- Interfaces ---
 // Re-exporting interfaces from hook for local usage compatibility if needed, 
@@ -73,6 +75,7 @@ function ProgramsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProgram, setSelectedProgram] = useState<Program | null>(null);
+  const [sharingProgram, setSharingProgram] = useState<Program | null>(null);
   const { user } = useAuth();
 
   // useEffect for fetching removed, hook handles it.
@@ -182,6 +185,13 @@ function ProgramsPage() {
 
                 <div className="flex gap-2">
                   <button
+                    onClick={() => setSharingProgram(program)}
+                    className="p-2 text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors"
+                    title="Assigner à des clients"
+                  >
+                    <UserPlus className="w-4 h-4" />
+                  </button>
+                  <button
                     onClick={() => {
                       setSelectedProgram(program);
                       setIsModalOpen(true);
@@ -258,6 +268,17 @@ function ProgramsPage() {
                 alert('Vous avez atteint la limite de 5 programmes pour le plan gratuit. Passez à la version Pro pour créer des programmes illimités.');
               }
             }
+          }}
+        />
+      )}
+
+      {sharingProgram && (
+        <ShareProgramModal
+          program={sharingProgram as any}
+          onClose={() => setSharingProgram(null)}
+          onSuccess={() => {
+            setSharingProgram(null);
+            // Optionally refresh or show an alert
           }}
         />
       )}

@@ -402,8 +402,11 @@ function ClientLiveWorkout() {
         }
 
 
+        const isFlowGroup = ex.group?.type === 'circuit' || ex.group?.type === 'interval';
+        const numSets = isFlowGroup && ex.group?.repetitions ? ex.group.repetitions : (ex.group?.type === 'amrap' ? 50 : ex.sets);
+
         initialCompleted[ex.id] = {
-          sets: Array(ex.sets).fill(null).map((_, idx) => {
+          sets: Array(numSets).fill(null).map((_, idx) => {
             // 1. Try Current Log (Restoration)
             const currentLog = currentLogs?.find(l => l.exercise_id === ex.id && l.set_number === idx + 1);
 
@@ -1190,7 +1193,15 @@ function ClientLiveWorkout() {
         }}
         onPrevious={currentExerciseIndex > 0 ? handlePreviousExercise : undefined}
         onFinish={handleCompleteWorkout}
-        isLastExercise={currentExerciseIndex === exercises.length - 1}
+        isLastExercise={
+          currentExerciseIndex === exercises.length - 1 &&
+          (currentExercise?.group?.type === 'amrap'
+            ? false
+            : activeSetIndex >= ((currentExercise?.group?.type === 'circuit' || currentExercise?.group?.type === 'interval')
+              ? (currentExercise.group?.repetitions || 1)
+              : (currentExercise?.sets || 1)) - 1
+          )
+        }
       />
 
     </div >

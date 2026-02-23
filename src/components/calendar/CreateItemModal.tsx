@@ -3,6 +3,7 @@ import { X, Dumbbell, StickyNote, Moon, Activity, Calendar, BookOpen } from 'luc
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { SessionSelector } from '../library/SessionSelector';
+import { supabase } from '../../lib/supabase';
 
 interface CreateItemModalProps {
     isOpen: boolean;
@@ -13,7 +14,7 @@ interface CreateItemModalProps {
     onUpdate?: (id: string, item: any) => Promise<void>;
     onDelete?: (id: string) => Promise<void>;
     itemToEdit?: any;
-    onOpenBuilder: () => void;
+    onOpenBuilder: (builderData?: any) => void;
 }
 
 type ItemType = 'session' | 'note' | 'rest' | 'metric';
@@ -86,7 +87,16 @@ export function CreateItemModal({ isOpen, onClose, date, clientId, onCreate, onU
 
     const handleOpenBuilder = () => {
         onClose();
-        onOpenBuilder();
+
+        const tempItemData = {
+            id: itemToEdit?.id,
+            title: title || (type === 'rest' ? 'Jour de repos' : ''),
+            content: { text: content },
+            scheduled_date: date,
+            session_id: sessionId
+        };
+
+        onOpenBuilder(tempItemData);
     };
 
     const types: { id: ItemType; label: string; icon: any; color: string }[] = [
@@ -137,15 +147,15 @@ export function CreateItemModal({ isOpen, onClose, date, clientId, onCreate, onU
                             ))}
                         </div>
 
-                        {/* Builder CTA - Only show if not editing or if we want to allow converting to builder? Let's hide for now on edit to keep simple */}
-                        {!itemToEdit && type === 'session' && (
+                        {/* Builder CTA */}
+                        {type === 'session' && (
                             <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 flex items-center justify-between group cursor-pointer hover:bg-blue-500/20 transition-colors" onClick={handleOpenBuilder}>
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center">
                                         <Dumbbell className="w-5 h-5" />
                                     </div>
                                     <div>
-                                        <h3 className="font-bold text-white text-sm">Créer une séance complète</h3>
+                                        <h3 className="font-bold text-white text-sm">{itemToEdit ? "Modifier dans le constructeur" : "Créer une séance complète"}</h3>
                                         <p className="text-xs text-blue-200">Constructeur d'exercices & sets</p>
                                     </div>
                                 </div>
@@ -251,7 +261,6 @@ export function CreateItemModal({ isOpen, onClose, date, clientId, onCreate, onU
                     onSelect={(session) => {
                         setTitle(session.name);
                         setSessionId(session.id);
-                        // Optional: load description into content?
                         if (session.description) {
                             setContent(session.description);
                         }

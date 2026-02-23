@@ -12,10 +12,10 @@ export interface CalendarItem {
     scheduled_date: string;
     status: string;
     session?: {
-        id: string;
         name: string;
         duration_minutes: number;
         difficulty_level?: string;
+        is_template?: boolean;
     } | null;
     session_id?: string | null;
 }
@@ -49,7 +49,8 @@ export function useCalendar(clientId: string, initialDate: Date = new Date()) {
             id,
             name,
             duration_minutes,
-            difficulty_level
+            difficulty_level,
+            is_template
           )
         `)
                 .eq('client_id', clientId)
