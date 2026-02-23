@@ -452,7 +452,7 @@ function CalendarPage() {
               <div className="w-full h-full flex flex-col justify-center">
                 <div className="flex items-center gap-1.5 mb-0.5">
                   {event.type === 'private' ? <User className="w-3 h-3 text-blue-200" /> : <Users className="w-3 h-3 text-emerald-200" />}
-                  <span className="font-semibold leading-tight truncate text-sm shadow-sm">{event.title}</span>
+                  <span className="font-semibold leading-tight truncate text-sm shadow-sm">{event.title || 'Séance'}</span>
                 </div>
                 <div className="text-xs opacity-75 truncate pl-4.5">
                   {format(event.start, 'HH:mm')} - {format(event.end, 'HH:mm')}
@@ -486,7 +486,7 @@ function CalendarPage() {
 
                     <div className="space-y-1">
                       <h4 className="font-bold text-white text-lg leading-tight group-hover:text-blue-400 transition-colors">
-                        {event.title}
+                        {event.title || 'Séance'}
                       </h4>
                       <div className="flex items-center gap-2 text-sm text-gray-300">
                         <User className="w-3.5 h-3.5 text-blue-400" />

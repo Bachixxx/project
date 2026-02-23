@@ -622,10 +622,12 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
       // Also create an appointment for the calendar/dashboard
       const endDateTime = new Date(scheduledDateTime.getTime() + formData.duration_minutes * 60000);
 
-      let appointmentTitle = formData.name;
+      let appointmentTitle = formData.name || 'Séance';
       if (sessionMode === 'existing') {
         const selectedSession = existingSessions.find(s => s.id === selectedSessionId);
-        if (selectedSession) appointmentTitle = selectedSession.name;
+        if (selectedSession && selectedSession.name) {
+          appointmentTitle = selectedSession.name;
+        }
       }
 
       const { error: appointmentError } = await supabase
