@@ -318,6 +318,7 @@ function ProgramModal({ program, onClose, onSave }: any) {
         .from('sessions')
         .select('id, name, description, duration_minutes, difficulty_level')
         .eq('coach_id', user?.id)
+        .is('archived_at', null)
         .order('name');
 
       if (error) throw error;

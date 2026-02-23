@@ -140,6 +140,7 @@ export function ScheduleSessionModal({ clientId, onClose, onSuccess, selectedSlo
         .select('id, name, description, duration_minutes')
         .eq('coach_id', user?.id)
         .eq('session_type', 'private')
+        .is('archived_at', null)
         .order('name');
 
       if (error) throw error;
