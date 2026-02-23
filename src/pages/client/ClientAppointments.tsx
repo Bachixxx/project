@@ -477,7 +477,7 @@ function ClientAppointments() {
     }
 
     if (event.item_type === 'metric') {
-      navigate('/client/biometrics');
+      navigate('/client/body-composition');
       return;
     }
 
