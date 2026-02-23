@@ -369,8 +369,16 @@ function ClientAppointments() {
       });
 
       const allPersonalMerged = [...currentPersonalSessions, ...formattedMyPrivateApps];
-      const uniquePersonalSessions = Array.from(new Map(allPersonalMerged.map(item => [item.id, item])).values());
 
+      const uniquePersonalSessionsMap = new Map();
+      allPersonalMerged.forEach(item => {
+        // Create a unique key using session_id and exact start time. If session_id is missing, fallback to title and time.
+        const key = `${item.session_id || item.title}-${item.start.getTime()}`;
+        if (!uniquePersonalSessionsMap.has(key)) {
+          uniquePersonalSessionsMap.set(key, item);
+        }
+      });
+      const uniquePersonalSessions = Array.from(uniquePersonalSessionsMap.values());
       setPersonalSessions(uniquePersonalSessions);
 
       const allGroupSessions = [...formattedGroupSessions, ...formattedPublicGroups]
