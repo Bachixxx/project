@@ -56,7 +56,7 @@ function ClientAppointments() {
   const fetchSessions = async () => {
     try {
       // 1. Try cache first
-      const cacheKey = `appointments_data_${client.id}`;
+      const cacheKey = `appointments_data_v3_${client.id}`;
       const cachedData = localStorage.getItem(cacheKey);
 
       if (cachedData) {
@@ -135,7 +135,8 @@ function ClientAppointments() {
           coach: s.coach,
           type: 'personal',
           item_type: s.item_type || 'session',
-          content: s.content
+          content: s.content,
+          session_id: s.session_id
         };
       });
 
@@ -254,7 +255,8 @@ function ClientAppointments() {
           coach: s.coach,
           type: 'group',
           source: 'scheduled_session',
-          registered: true
+          registered: true,
+          session_id: s.session_id
         }));
       }
 
@@ -333,7 +335,8 @@ function ClientAppointments() {
         registered: registrationMap.has(s.id),
         registrationStatus: registrationMap.get(s.id),
         max_participants: s.max_participants,
-        current_participants: s.current_participants
+        current_participants: s.current_participants,
+        session_id: s.session_id
       }));
 
       const formattedPublicGroups: any[] = [];
