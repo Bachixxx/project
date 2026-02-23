@@ -781,46 +781,47 @@ function ClientAppointments() {
           )
         }
 
-        {
-          isModalOpen && selectedSession && (
-            <SessionModal
-              session={selectedSession}
-              exercises={sessionExercises}
-              loadingExercises={loadingExercises}
-              onClose={() => {
-                setIsModalOpen(false);
-                setSessionExercises([]);
-              }}
-              onRegister={handleRegister}
-              onUnregister={handleUnregister}
-              onStartTraining={() => {
-                if (selectedSession.source === 'appointment') {
-                  navigate(`/client/live-workout/appointment/${selectedSession.id}`);
-                } else {
-                  navigate(`/client/live-workout/${selectedSession.id}`);
-                }
-              }}
-              registering={registering}
-            />
-          )
-        }
-
-        {selectedNote && (
-          <NoteModal
-            note={selectedNote}
-            onClose={() => setSelectedNote(null)}
-            onSave={handleUpdateSession}
-          />
-        )}
-
-        {selectedMetric && (
-          <MetricModal
-            metric={selectedMetric}
-            onClose={() => setSelectedMetric(null)}
-            onSave={handleUpdateSession}
-          />
-        )}
       </div>
+
+      {
+        isModalOpen && selectedSession && (
+          <SessionModal
+            session={selectedSession}
+            exercises={sessionExercises}
+            loadingExercises={loadingExercises}
+            onClose={() => {
+              setIsModalOpen(false);
+              setSessionExercises([]);
+            }}
+            onRegister={handleRegister}
+            onUnregister={handleUnregister}
+            onStartTraining={() => {
+              if (selectedSession.source === 'appointment') {
+                navigate(`/client/live-workout/appointment/${selectedSession.id}`);
+              } else {
+                navigate(`/client/live-workout/${selectedSession.id}`);
+              }
+            }}
+            registering={registering}
+          />
+        )
+      }
+
+      {selectedNote && (
+        <NoteModal
+          note={selectedNote}
+          onClose={() => setSelectedNote(null)}
+          onSave={handleUpdateSession}
+        />
+      )}
+
+      {selectedMetric && (
+        <MetricModal
+          metric={selectedMetric}
+          onClose={() => setSelectedMetric(null)}
+          onSave={handleUpdateSession}
+        />
+      )}
     </div>
   );
 }
