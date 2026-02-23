@@ -94,18 +94,22 @@ function ClientLiveWorkout() {
     if (restTimer && restTimer > 0) {
       interval = setInterval(() => {
         setRestTimer(prev => {
-          if (prev === 1) {
-            // Auto-advance after rest? Optional.
-            // For now, let's keep it manual or auto-advance if we want seamless flow.
-            // Let's stick to the plan: show rest, then user clicks to continue or we auto-advance?
-            // The Timer Overlay has a "Resume" button.
-            return null;
+          if (prev !== null && prev > 0) {
+            return prev - 1;
           }
-          return prev ? prev - 1 : null
+          return prev;
         });
       }, 1000);
     }
     return () => clearInterval(interval);
+  }, [restTimer]);
+
+  useEffect(() => {
+    if (restTimer === 0) {
+      handleAutoAdvance();
+      // handleAutoAdvance will also setRestTimer(null), but just to be sure:
+      setRestTimer(null);
+    }
   }, [restTimer]);
 
   useEffect(() => {
@@ -163,16 +167,13 @@ function ClientLiveWorkout() {
   };
 
   const startRestPhase = (duration: number) => {
-    // For AMRAP/Circuit, we typically skip rest or have very short transition
-    const isFlowMode = currentExercise?.group?.type === 'amrap' || currentExercise?.group?.type === 'circuit';
-
-    // ENFORCE no rest in AMRAP/Circuit (Flow Mode)
-    if (isFlowMode) {
+    // We respect the configured rest time, even in Flow Mode,
+    // so coaches can insert transitions for circuits if desired.
+    if (duration > 0) {
+      setRestTimer(duration);
+    } else {
       handleAutoAdvance();
-      return;
     }
-
-    handleStartTimer(activeSetIndex, duration);
   };
 
   const handlePauseTimer = () => {
