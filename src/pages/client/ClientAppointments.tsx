@@ -266,9 +266,8 @@ function ClientAppointments() {
         ...formattedRegisteredSessions
       ];
 
-      const uniqueSessions = Array.from(new Map(allMySessions.map(item => [item.id, item])).values());
+      let currentPersonalSessions = Array.from(new Map(allMySessions.map(item => [item.id, item])).values());
 
-      setPersonalSessions(uniqueSessions);
 
       // --- END FETCH REGISTERED APPOINTMENTS ---
 
@@ -337,39 +336,51 @@ function ClientAppointments() {
         current_participants: s.current_participants
       }));
 
-      const formattedAppointments = (publicAppointments || []).map(a => ({
-        id: a.id,
-        title: a.title,
-        start: new Date(a.start),
-        end: new Date(new Date(a.start).getTime() + (a.duration || 60) * 60000),
-        status: a.status,
-        notes: a.notes,
-        coach: a.coach,
-        type: 'group',
-        source: 'appointment',
-        price: a.price,
-        payment_method: a.payment_method,
-        max_participants: a.max_participants,
-        current_participants: a.current_participants || 0,
-        registered: appointmentRegistrationMap.has(a.id) && appointmentRegistrationMap.get(a.id) !== 'cancelled',
-        registrationStatus: appointmentRegistrationMap.get(a.id),
-        session_id: a.session_id,
-        session: a.session
-      }));
+      const formattedPublicGroups: any[] = [];
+      const formattedMyPrivateApps: any[] = [];
 
-      // console.log('Formatted group sessions:', formattedGroupSessions);
-      // console.log('Formatted appointments:', formattedAppointments);
+      (publicAppointments || []).forEach(a => {
+        const isMyPrivate = a.client_id === client.id && a.type === 'private';
+        const mapped = {
+          id: a.id,
+          title: a.title,
+          start: new Date(a.start),
+          end: new Date(new Date(a.start).getTime() + (a.duration || 60) * 60000),
+          status: a.status,
+          notes: a.notes,
+          coach: a.coach,
+          type: isMyPrivate ? 'personal' : 'group',
+          source: 'appointment',
+          price: a.price,
+          payment_method: a.payment_method,
+          max_participants: a.max_participants,
+          current_participants: a.current_participants || 0,
+          registered: appointmentRegistrationMap.has(a.id) && appointmentRegistrationMap.get(a.id) !== 'cancelled',
+          registrationStatus: appointmentRegistrationMap.get(a.id),
+          session_id: a.session_id,
+          session: a.session
+        };
 
-      const allGroupSessions = [...formattedGroupSessions, ...formattedAppointments]
+        if (isMyPrivate) {
+          formattedMyPrivateApps.push(mapped);
+        } else if (a.type === 'group') {
+          formattedPublicGroups.push(mapped);
+        }
+      });
+
+      const allPersonalMerged = [...currentPersonalSessions, ...formattedMyPrivateApps];
+      const uniquePersonalSessions = Array.from(new Map(allPersonalMerged.map(item => [item.id, item])).values());
+
+      setPersonalSessions(uniquePersonalSessions);
+
+      const allGroupSessions = [...formattedGroupSessions, ...formattedPublicGroups]
         .sort((a, b) => a.start.getTime() - b.start.getTime());
-
-      // console.log('All group sessions combined:', allGroupSessions);
 
       setGroupSessions(allGroupSessions);
 
       // 3. Update Cache
       localStorage.setItem(cacheKey, JSON.stringify({
-        personal: uniqueSessions,
+        personal: uniquePersonalSessions,
         group: allGroupSessions,
         timestamp: new Date().getTime()
       }));
