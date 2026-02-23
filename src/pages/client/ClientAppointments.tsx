@@ -22,6 +22,7 @@ function ClientAppointments() {
   const [selectedNote, setSelectedNote] = useState<any>(null);
   const [selectedMetric, setSelectedMetric] = useState<any>(null);
   const [sessionExercises, setSessionExercises] = useState<any[]>([]);
+  const [exerciseGroups, setExerciseGroups] = useState<any[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [registering, setRegistering] = useState(false);
   const [loadingExercises, setLoadingExercises] = useState(false);
@@ -385,43 +386,57 @@ function ClientAppointments() {
       setLoadingExercises(true);
       console.log('Fetching exercises for session:', sessionId);
 
-      const { data, error } = await supabase
-        .from('session_exercises')
-        .select(`
-          id,
-          sets,
-          reps,
-          rest_time,
-          instructions,
-          order_index,
-          exercise:exercises (
+      const [exercisesRes, groupsRes] = await Promise.all([
+        supabase
+          .from('session_exercises')
+          .select(`
             id,
-            name,
-            description,
-            category,
-            equipment,
-            tracking_type,
-            track_reps,
-            track_weight,
-            track_duration,
-            track_distance
-          ),
-          duration_seconds,
-          distance_meters
-        `)
-        .eq('session_id', sessionId)
-        .order('order_index', { ascending: true });
+            sets,
+            reps,
+            rest_time,
+            instructions,
+            order_index,
+            group_id,
+            exercise:exercises (
+              id,
+              name,
+              description,
+              category,
+              equipment,
+              tracking_type,
+              track_reps,
+              track_weight,
+              track_duration,
+              track_distance
+            ),
+            duration_seconds,
+            distance_meters
+          `)
+          .eq('session_id', sessionId)
+          .order('order_index', { ascending: true }),
+        supabase
+          .from('exercise_groups')
+          .select('*')
+          .eq('session_id', sessionId)
+          .order('order_index', { ascending: true })
+      ]);
 
-      if (error) {
-        console.error('Error fetching session exercises:', error);
-        throw error;
+      if (exercisesRes.error) {
+        console.error('Error fetching session exercises:', exercisesRes.error);
+        throw exercisesRes.error;
+      }
+      if (groupsRes.error) {
+        console.error('Error fetching exercise groups:', groupsRes.error);
+        throw groupsRes.error;
       }
 
-      console.log('Fetched exercises:', data);
-      setSessionExercises(data || []);
+      console.log('Fetched exercises:', exercisesRes.data);
+      setSessionExercises(exercisesRes.data || []);
+      setExerciseGroups(groupsRes.data || []);
     } catch (error) {
       console.error('Error in fetchSessionExercises:', error);
       setSessionExercises([]);
+      setExerciseGroups([]);
     } finally {
       setLoadingExercises(false);
     }
@@ -826,7 +841,7 @@ function ClientAppointments() {
   );
 }
 
-const SessionModal = ({ session, exercises, loadingExercises, onClose, onRegister, onUnregister, onStartTraining, registering }: any) => {
+const SessionModal = ({ session, exercises, groups, loadingExercises, onClose, onRegister, onUnregister, onStartTraining, registering }: any) => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'scheduled': return 'bg-blue-500/20 text-blue-100 border border-blue-500/30';
@@ -937,34 +952,108 @@ const SessionModal = ({ session, exercises, loadingExercises, onClose, onRegiste
                   </div>
                 ) : exercises && exercises.length > 0 ? (
                   <div className="space-y-1">
-                    {exercises.map((se: any, idx: number) => (
-                      <div key={se.id} className="group flex items-start gap-4 p-3 rounded-xl hover:bg-white/5 transition-colors border border-transparent hover:border-white/5">
-                        <span className="flex-shrink-0 w-6 text-sm font-medium text-white/30 pt-0.5">{idx + 1}</span>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-white font-medium truncate">{se.exercise?.name || 'Exercice'}</p>
-                          <div className="flex items-center gap-3 mt-1 text-xs text-white/50">
-                            {se.exercise?.track_duration || se.exercise?.tracking_type === 'duration' ? (
-                              <span className="text-white/70">
-                                {Math.floor((se.duration_seconds || 0) / 60)}m {(se.duration_seconds || 0) % 60}s
-                              </span>
-                            ) : se.exercise?.track_distance || se.exercise?.tracking_type === 'distance' ? (
-                              <span className="text-white/70">{se.distance_meters}m</span>
-                            ) : (
-                              <span className="text-white/70">{se.sets} séries × {se.reps} reps</span>
-                            )}
-                            {se.rest_time > 0 && (
-                              <>
-                                <span className="w-1 h-1 rounded-full bg-white/20"></span>
-                                <span>{se.rest_time}s repos</span>
-                              </>
-                            )}
-                          </div>
-                          {se.instructions && (
-                            <p className="text-white/40 text-xs mt-1.5 line-clamp-2">{se.instructions}</p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
+                    {(() => {
+                      const standalone = (exercises || []).filter((e: any) => !e.group_id);
+                      const grouped = (groups || []).map((g: any) => ({
+                        ...g,
+                        exercises: (exercises || []).filter((e: any) => e.group_id === g.id).sort((a: any, b: any) => a.order_index - b.order_index)
+                      })).filter((g: any) => g.exercises.length > 0);
+
+                      const allBlocks = [
+                        ...grouped,
+                        ...standalone.map((e: any) => ({ type: 'standalone', order_index: e.order_index, exercise: e, id: `standalone-${e.id}` }))
+                      ].sort((a: any, b: any) => a.order_index - b.order_index);
+
+                      return allBlocks.map((block: any, blockIdx: number) => {
+                        if (block.type === 'standalone') {
+                          const se = block.exercise;
+                          return (
+                            <div key={block.id} className="group flex items-start gap-4 p-3 rounded-xl hover:bg-white/5 transition-colors border border-transparent hover:border-white/5">
+                              <span className="flex-shrink-0 w-6 text-sm font-medium text-white/30 pt-0.5">{blockIdx + 1}</span>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-white font-medium truncate">{se.exercise?.name || 'Exercice'}</p>
+                                <div className="flex items-center gap-3 mt-1 text-xs text-white/50">
+                                  {se.exercise?.track_duration || se.exercise?.tracking_type === 'duration' ? (
+                                    <span className="text-white/70">
+                                      {se.duration_seconds ? `${Math.floor(se.duration_seconds / 60)}m ${se.duration_seconds % 60}s` : 'Durée libre'}
+                                    </span>
+                                  ) : se.exercise?.track_distance || se.exercise?.tracking_type === 'distance' ? (
+                                    <span className="text-white/70">{se.distance_meters}m</span>
+                                  ) : (
+                                    <span className="text-white/70">{se.sets} séries × {se.reps} reps</span>
+                                  )}
+                                  {se.rest_time > 0 && (
+                                    <>
+                                      <span className="w-1 h-1 rounded-full bg-white/20"></span>
+                                      <span>{se.rest_time}s repos</span>
+                                    </>
+                                  )}
+                                </div>
+                                {se.instructions && (
+                                  <p className="text-white/40 text-xs mt-1.5 line-clamp-2">{se.instructions}</p>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        } else {
+                          return (
+                            <div key={`group-${block.id}`} className="p-4 rounded-2xl bg-white/5 border border-white/10 mb-2 mt-2 group relative overflow-hidden">
+                              <div className="flex items-center justify-between mb-3 border-b border-white/10 pb-3">
+                                <h4 className="font-bold text-white flex items-center gap-2">
+                                  <span className="text-white/30 text-sm font-medium">{blockIdx + 1}.</span>
+                                  {block.name || 'Bloc'}
+                                </h4>
+                                <div className="flex gap-2">
+                                  {block.type === 'circuit' && block.repetitions > 1 && (
+                                    <span className="text-xs font-semibold text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded-md border border-blue-500/20">
+                                      {block.repetitions} Tours
+                                    </span>
+                                  )}
+                                  {block.type === 'amrap' && (
+                                    <span className="text-xs font-semibold text-purple-400 bg-purple-500/10 px-2.5 py-1 rounded-md border border-purple-500/20">
+                                      AMRAP {Math.floor((block.duration_seconds || 0) / 60)} min
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="space-y-1">
+                                {block.exercises.map((se: any, idx: number) => (
+                                  <div key={`g-ex-${se.id}`} className="flex items-start gap-4 p-2 rounded-xl hover:bg-white/5 transition-colors">
+                                    <div className="flex-shrink-0 w-6 flex items-center justify-center">
+                                      <span className="text-sm font-medium text-white/20 pt-0.5">{String.fromCharCode(97 + idx)}</span>
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-white/90 text-sm font-medium truncate">{se.exercise?.name || 'Exercice'}</p>
+                                      <div className="flex items-center gap-3 mt-1 text-xs text-white/50">
+                                        {se.exercise?.track_duration || se.exercise?.tracking_type === 'duration' ? (
+                                          <span className="text-white/70">
+                                            {se.duration_seconds ? `${Math.floor(se.duration_seconds / 60)}m ${se.duration_seconds % 60}s` : 'Durée libre'}
+                                          </span>
+                                        ) : se.exercise?.track_distance || se.exercise?.tracking_type === 'distance' ? (
+                                          <span className="text-white/70">{se.distance_meters}m</span>
+                                        ) : (
+                                          <span className="text-white/70">{block.type === 'circuit' || block.type === 'amrap' ? `${se.reps} reps` : `${se.sets} séries × ${se.reps} reps`}</span>
+                                        )}
+                                        {se.rest_time > 0 && (
+                                          <>
+                                            <span className="w-1 h-1 rounded-full bg-white/20"></span>
+                                            <span>{se.rest_time}s repos</span>
+                                          </>
+                                        )}
+                                      </div>
+                                      {se.instructions && (
+                                        <p className="text-white/40 text-[10px] sm:text-xs mt-1 line-clamp-2">{se.instructions}</p>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        }
+                      });
+                    })()}
                   </div>
                 ) : (
                   <div className="text-center py-6 border border-dashed border-white/10 rounded-xl">
