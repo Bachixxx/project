@@ -26,108 +26,145 @@ function Terms() {
             Dernière mise à jour : 13 février 2025
           </div>
 
-          <div className="prose max-w-none">
-            <p className="text-gray-600 mb-6">
-              Bienvenue sur Coachency.app ! Ce document définit les conditions d'utilisation du service.
+          <div className="prose max-w-none text-gray-600">
+            <p className="mb-6 font-medium text-gray-800">
+              Bienvenue sur Coachency.app ! Les présentes Conditions Générales d'Utilisation (ci-après "CGU") constituent un accord légal et contraignant entre Bächtold Jérémy (ci-après "l'Exploitant", "nous", "notre") et toute personne accédant ou utilisant la Plateforme (ci-après "l'Utilisateur", "vous").
+            </p>
+            <p className="mb-6">
+              En créant un compte ou en utilisant Coachency.app, vous acceptez sans réserve les présentes CGU. Si vous n'acceptez pas ces conditions, vous ne devez pas utiliser notre Plateforme.
             </p>
 
             <section className="mb-8">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">
-                1. Présentation du service
-              </h2>
-              <p className="text-gray-600">
-                Coachency.app est une plateforme de gestion dédiée aux coachs sportifs et à leurs clients, permettant la gestion des clients, la création de programmes personnalisés, la gestion des revenus et l'accès à une bibliothèque d'exercices. La plateforme facilite l'organisation et le suivi des performances des clients.
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">1. Définitions</h2>
+              <ul className="list-disc pl-6 space-y-2">
+                <li><strong>Plateforme :</strong> désigne l'application web Coachency.app et toutes ses interfaces accessibles par les utilisateurs.</li>
+                <li><strong>Coach :</strong> professionnel du sport ou de la santé utilisant la Plateforme pour gérer, suivre et facturer ses propres clients.</li>
+                <li><strong>Client :</strong> personne physique invitée par un Coach pour bénéficier de ses services sportifs via la Plateforme.</li>
+                <li><strong>Utilisateur :</strong> désigne indistinctement les Coachs et les Clients utilisant la Plateforme.</li>
+                <li><strong>Contenu :</strong> désigne l'ensemble des textes, vidéos, photos, données de santé, programmes d'entraînement ou autres informations téléchargés, saisis ou partagés sur la Plateforme par les Utilisateurs.</li>
+              </ul>
+            </section>
+
+            <section className="mb-8">
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">2. Description des services et Licence (SaaS)</h2>
+              <p className="mb-4">
+                Coachency.app est fourni sous la forme d'un logiciel en tant que service (SaaS - Software as a Service). Sous réserve du respect des présentes CGU et du paiement des éventuels abonnements applicables, l'Exploitant vous accorde une licence limitée, non exclusive, non transférable et révocable afin d'accéder et d'utiliser la Plateforme.
+              </p>
+              <p>Il est formellement interdit de :</p>
+              <ul className="list-disc pl-6 mb-4 space-y-2">
+                <li>Copier, modifier, distribuer, vendre ou louer toute ou partie de la Plateforme.</li>
+                <li>Faire de l'ingénierie inverse (reverse engineering) ou tenter d'extraire le code source.</li>
+                <li>Utiliser la Plateforme pour héberger ou transmettre des virus, malwares ou tout code nuisible.</li>
+                <li>Effectuer des actions de type aspiration de données (scraping).</li>
+              </ul>
+            </section>
+
+            <section className="mb-8">
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">3. Accès au service et Sécurité du compte</h2>
+              <p className="mb-4">
+                Pour utiliser la Plateforme, l'Utilisateur doit créer un compte. L'Utilisateur s'engage à fournir des informations exactes, complètes et à jour.
+              </p>
+              <p>
+                L'Utilisateur est seul responsable de la sécurité et de la confidentialité de ses identifiants de connexion. Toute action effectuée depuis le compte de l'Utilisateur est réputée avoir été effectuée par lui-même. En cas de perte ou d'accès non autorisé, l'Utilisateur doit en informer immédiatement l'Exploitant à <strong>coachency@gmail.com</strong>.
               </p>
             </section>
 
             <section className="mb-8">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">
-                2. Accès et utilisation
-              </h2>
-              <ul className="list-disc pl-6 text-gray-600 space-y-2">
-                <li>L'accès est réservé aux coachs sportifs et à leurs clients.</li>
-                <li>Chaque coach ne peut voir que ses propres clients et inversement.</li>
-                <li>L'utilisateur s'engage à fournir des informations exactes et à respecter les lois en vigueur.</li>
-                <li>Toute utilisation frauduleuse du service entraînera une suspension immédiate du compte.</li>
-                <li>Coachency.app se réserve le droit de modifier ou de supprimer toute information jugée inappropriée.</li>
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">4. Conditions financières et Abonnements (Coachs)</h2>
+              <p className="mb-4">
+                Certaines fonctionnalités destinées aux Coachs peuvent requérir un abonnement payant. Les tarifs, cycles de facturation et fonctionnalités incluses sont affichés sur la Plateforme.
+              </p>
+              <ul className="list-disc pl-6 space-y-2">
+                <li><strong>Paiement :</strong> Les transactions sont opérées par des prestataires de paiement tiers sécurisés (par ex. Stripe ou Apple Store). L'Exploitant ne stocke aucune donnée de carte bancaire complète.</li>
+                <li><strong>Renouvellement :</strong> Sauf résiliation effectuée par le Coach avant la fin de la période de facturation en cours, l'abonnement se renouvelle automatiquement.</li>
+                <li><strong>Politique de remboursement :</strong> Pour les services numériques SaaS, l'Exploitant n'accorde aucun remboursement pour la période de facturation entamée, sauf obligation légale impérative ou disposition contraire de la plateforme d'achat tierce (ex: Apple Store).</li>
+                <li><strong>Taxes :</strong> Sauf mention contraire, les prix peuvent exclure les taxes applicables (comme la TVA), qui seront ajoutées au moment du paiement en fonction de la juridiction de résidence du Coach.</li>
               </ul>
             </section>
 
             <section className="mb-8">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">
-                3. Comportement des utilisateurs
-              </h2>
-              <ul className="list-disc pl-6 text-gray-600 space-y-2">
-                <li>Les utilisateurs doivent respecter la législation en vigueur et s'abstenir de publier du contenu offensant, diffamatoire ou illégal.</li>
-                <li>Tout comportement abusif ou non conforme entraînera une suspension du compte sans préavis.</li>
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">5. Rôles et Obligations Spécifiques du Coach</h2>
+              <p className="mb-4">
+                La Plateforme n'est qu'un outil technologique d'intermédiation logicielle. En utilisant Coachency.app, le Coach reconnaît et accepte expressément que :
+              </p>
+              <ul className="list-disc pl-6 space-y-2">
+                <li>Il exerce son activité de manière totalement indépendante de l'Exploitant. L'Exploitant n'est ni son employeur, ni son partenaire commercial, ni son agent.</li>
+                <li>Il est seul et unique responsable des services (entraînements, conseils) vendus et fournis à ses Clients, ainsi que de la gestion de ses propres tarifs et facturations clients.</li>
+                <li>Il est de sa propre responsabilité d'obtenir toutes les accréditations, assurances professionnelles ou diplômes nécessaires pour exercer l'activité de coaching dans sa juridiction.</li>
+                <li>Il est seul responsable du traitement juridique et du respect du RGPD/nLPD vis-à-vis des données personnelles de ses Clients qu'il renseigne ou gère sur la Plateforme (l'Exploitant n'étant qu'un sous-traitant technique de ces données).</li>
               </ul>
             </section>
 
             <section className="mb-8">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">
-                4. Accès au service & maintenance
-              </h2>
-              <ul className="list-disc pl-6 text-gray-600 space-y-2">
-                <li>Coachency.app peut suspendre temporairement le service pour maintenance ou en cas de force majeure.</li>
-                <li>Les utilisateurs seront informés à l'avance dans la mesure du possible.</li>
-              </ul>
-            </section>
-
-            <section className="mb-8">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">
-                5. Modification des conditions
-              </h2>
-              <p className="text-gray-600">
-                Coachency.app se réserve le droit de modifier ces conditions à tout moment. Les utilisateurs seront informés des modifications via un message sur la plateforme.
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">6. Avertissement sur la santé et Indépendance médicale</h2>
+              <p className="mb-4 font-bold text-red-600">L'utilisation de la plateforme ne remplace en aucun cas une consultation médicale.</p>
+              <p className="mb-4">
+                L'Exploitant ne fournit <strong>aucun conseil médical, diagnostic ou prescription</strong> de nature médicale, paramédicale, diététique ou sportive.
+              </p>
+              <p className="mb-4">
+                Le Client reconnaît que les programmes sportifs comportent des risques inhérents de blessures ou de problèmes de santé. Il incombe au Client de s'assurer auprès d'un professionnel de santé de son aptitude physique à suivre les entraînements proposés par son Coach.
+              </p>
+              <p>
+                L'Exploitant décline formellement toute responsabilité relative à l'adéquation, l'innocuité ou les effets (y compris pertes matérielles, blessures physiques ou décès) des programmes ou exercices conçus ou distribués via la Plateforme par les Coachs.
               </p>
             </section>
 
             <section className="mb-8">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">
-                6. Abonnements et paiements
-              </h2>
-              <ul className="list-disc pl-6 text-gray-600 space-y-2">
-                <li>L'utilisation de certaines fonctionnalités pour les coachs peut nécessiter la souscription à un abonnement payant.</li>
-                <li>Le paiement s'effectue via des prestataires sécurisés (ex: Stripe, Apple App Store). Les conditions de paiement et de remboursement sont régies par ces prestataires ainsi que par la loi applicable.</li>
-                <li>Sauf mention contraire, les abonnements sont renouvelés automatiquement. L'utilisateur peut résilier son abonnement à tout moment selon les modalités prévues sur la plateforme.</li>
-              </ul>
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">7. Disponibilité des services (SLA)</h2>
+              <p className="mb-4">
+                L'Exploitant est soumis à une obligation de moyens (et non de résultat) concernant la mise à disposition de la Plateforme (SLA basé sur le principe du "Best Effort"). Bien que nous nous efforcions d'assurer un accès 24/7, la Plateforme peut être temporairement suspendue pour des raisons de maintenance, de mises à jour ou en cas de pannes techniques liées à nos hébergeurs.
+              </p>
+              <p>L'Exploitant ne garantit pas que le service sera totalement exempt d'erreurs, de bugs ou d'interruptions, et décline toute responsabilité pour les éventuelles pertes de données.</p>
             </section>
 
             <section className="mb-8">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">
-                7. Propriété intellectuelle
-              </h2>
-              <ul className="list-disc pl-6 text-gray-600 space-y-2">
-                <li>La plateforme Coachency.app (code, design, marque, logo) est protégée par le droit d'auteur. Toute reproduction ou utilisation non autorisée est strictement interdite.</li>
-                <li>Les coachs restent propriétaires de leurs contenus (programmes, vidéos, conseils) et accordent à Coachency.app une licence d'utilisation limitée au fonctionnement du service.</li>
-              </ul>
-            </section>
-
-            <section className="mb-8">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">
-                8. Limitation de responsabilité
-              </h2>
-              <ul className="list-disc pl-6 text-gray-600 space-y-2">
-                <li>Coachency.app s'efforce de maintenir un service continu, mais ne saurait être tenu responsable des temps d'arrêt, de perte de données ou de bugs informatiques. La plateforme est fournie "en l'état".</li>
-                <li><strong>Avertissement sur la santé :</strong> Coachency.app est une plateforme logicielle et ne fournit **aucun conseil médical, sportif ou nutritionnel directement**. La relation et les conseils donnés engagent uniquement la responsabilité du coach envers son client. Coachency.app décline toute responsabilité quant aux blessures, problèmes de santé ou dommages résultant de l'utilisation des programmes créés par les coachs.</li>
-              </ul>
-            </section>
-
-            <section className="mb-8">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">
-                9. Résiliation et suppression de compte
-              </h2>
-              <p className="text-gray-600">
-                L'utilisateur peut demander la suppression de son compte à tout moment. L'accès aux services et aux données associées sera définitivement perdu après traitement de la demande.
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">8. Propriété intellectuelle</h2>
+              <p className="mb-4">
+                Tous les droits rattachés au logiciel, au nom "Coachency", à l'interface, aux logos et aux bases de données structurelles sont la propriété exclusive de l'Exploitant.
+              </p>
+              <p>
+                L'Utilisateur conserve l'entière propriété intellectuelle sur les Contenus originaux qu'il publie (vidéos personnelles, programmes sur mesure). Toutefois, en publiant ces Contenus sur la Plateforme, l'Utilisateur concède à l'Exploitant une licence mondiale, gratuite et transférable à la seule et unique fin d'héberger, afficher et exécuter ces Contenus dans le cadre strict du fonctionnement normal du service.
               </p>
             </section>
 
             <section className="mb-8">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">
-                10. Droit applicable et for juridique
-              </h2>
-              <p className="text-gray-600">
-                Les présentes conditions sont soumises au <strong>droit suisse</strong>. En cas de litige qui ne pourrait être résolu à l'amiable, le for juridique exclusif est fixé dans le canton de <strong>Genève</strong>, sous réserve de fors impératifs (notamment en matière de protection des consommateurs).
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">9. Limitation de responsabilité et Indemnisation</h2>
+              <p className="mb-4">
+                Dans toute la mesure permise par la loi applicable, l'Exploitant (ainsi que ses dirigeants, employés ou partenaires) ne saurait être tenu responsable des dommages indirects, accessoires, matériels ou consécutifs (y compris, mais sans s'y limiter, la perte de données, de réputation, de profits ou d'opportunités commerciales) découlant de l'utilisation ou de l'impossibilité d'utiliser la Plateforme.
+              </p>
+              <p className="mb-4">
+                <strong>Clause d'Indemnisation :</strong> Le Coach s'engage à garantir, indemniser et protéger l'Exploitant face à toute plainte, réclamation ou action en justice (y compris les frais d'avocats raisonnables) intentée par un de ses Clients ou par un tiers, fondée sur (a) un manquement du Coach aux présentes CGU, ou (b) le Contenu ou les conseils sportifs/nutritionnels fournis par ledit Coach via la Plateforme.
+              </p>
+            </section>
+
+            <section className="mb-8">
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">10. Modifications des CGU</h2>
+              <p>
+                L'Exploitant se réserve le droit de modifier les présentes CGU à tout moment, notamment pour se conformer aux évolutions légales ou techniques. En cas de modification substantielle, les Utilisateurs seront informés par email ou via une notification sur la Plateforme. Continuer à utiliser la Plateforme après de telles modifications vaut acceptation ferme des nouvelles CGU.
+              </p>
+            </section>
+
+            <section className="mb-8">
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">11. Force Majeure</h2>
+              <p>
+                L'Exploitant ne pourra être tenu responsable de la non-exécution ou d'un retard dans l'exécution de ses obligations découlant des présentes CGU si cela résulte d'un cas de force majeure, tel que reconnu par la jurisprudence suisse (catastrophes naturelles, grèves, pandémies, coupures d'infrastructures télécoms, attaques de piratage massif, défaillances durables d'AWS/fournisseurs cloud).
+              </p>
+            </section>
+
+            <section className="mb-8">
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">12. Invalidité partielle et Intégralité de l'accord</h2>
+              <p>
+                Si une ou plusieurs stipulations des présentes CGU sont tenues pour non valides ou déclarées comme telles en application d'une loi, d'un règlement ou à la suite d'une décision définitive d'une juridiction compétente, les autres stipulations garderont toute leur force et leur portée. Les présentes CGU constituent l'intégralité de l'accord entre l'Exploitant et l'Utilisateur.
+              </p>
+            </section>
+
+            <section className="mb-8">
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">13. Droit applicable et For juridique</h2>
+              <p>
+                Les présentes Conditions Générales d'Utilisation sont exclusivement soumises au <strong>droit matériel suisse</strong>, à l'exclusion des règles de conflits de lois.
+              </p>
+              <p>
+                En cas de litige relatif à l'interprétation, la formation ou l'exécution des présentes CGU, interdisant une résolution à l'amiable, le for juridique est de la compétence exclusive des tribunaux du <strong>Canton de Genève (Suisse)</strong>, sous réserve impérative du for du domicile en matière de droit de la consommation (si et seulement si l'Utilisateur qualifie pour le statut de consommateur protégé au sens des lois suisses et/ou européennes applicables).
               </p>
             </section>
           </div>

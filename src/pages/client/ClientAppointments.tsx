@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import format from 'date-fns/format';
-import startOfWeek from 'date-fns/startOfWeek';
-import fr from 'date-fns/locale/fr';
-import { Users, User, Loader, X, Clock, FileText, Play, ChevronLeft, ChevronRight } from 'lucide-react';
-import { TutorialCard } from '../../components/client/TutorialCard';
+import { format, startOfWeek, addDays, isSameDay, isToday } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { Calendar as CalendarIcon, Play, CheckCircle, X, FileText, Video, ExternalLink, Info, Dumbbell, Clock, User, Users, Activity, StickyNote, Moon, ChevronLeft, ChevronRight, Loader } from 'lucide-react';
 import { useClientAuth } from '../../contexts/ClientAuthContext';
 import { supabase } from '../../lib/supabase';
 import { createCheckoutSession } from '../../lib/stripe';
@@ -757,27 +755,51 @@ function ClientAppointments() {
                             onClick={() => handleSelectEvent(event)}
                             className={`
                               group relative overflow-hidden rounded-2xl p-4 border transition-all cursor-pointer
-                              ${event.type === 'personal'
-                                ? 'bg-gradient-to-br from-blue-900/20 to-blue-900/5 border-blue-500/20 hover:border-blue-500/40'
-                                : 'bg-gradient-to-br from-emerald-900/20 to-emerald-900/5 border-emerald-500/20 hover:border-emerald-500/40'
+                              ${event.item_type === 'note'
+                                ? 'bg-gradient-to-br from-amber-900/20 to-amber-900/5 border-amber-500/20 hover:border-amber-500/40'
+                                : event.item_type === 'rest'
+                                  ? 'bg-gradient-to-br from-indigo-900/20 to-indigo-900/5 border-indigo-500/20 hover:border-indigo-500/40'
+                                  : event.item_type === 'metric'
+                                    ? 'bg-gradient-to-br from-green-900/20 to-green-900/5 border-green-500/20 hover:border-green-500/40'
+                                    : event.type === 'personal'
+                                      ? 'bg-gradient-to-br from-blue-900/20 to-blue-900/5 border-blue-500/20 hover:border-blue-500/40'
+                                      : 'bg-gradient-to-br from-emerald-900/20 to-emerald-900/5 border-emerald-500/20 hover:border-emerald-500/40'
                               }
                             `}
                           >
                             <div className="flex justify-between items-start gap-4">
                               <div className="flex-1">
                                 <div className="flex items-center gap-2 mb-1">
-                                  <span className={`text-xs font-bold px-2 py-0.5 rounded-md ${event.type === 'personal' ? 'bg-blue-500/20 text-blue-300' : 'bg-emerald-500/20 text-emerald-300'}`}>
-                                    {event.type === 'personal' ? 'Personnel' : 'Groupe'}
+                                  <span className={`text-xs font-bold px-2 py-0.5 rounded-md 
+                                    ${event.item_type === 'note' ? 'bg-amber-500/20 text-amber-300'
+                                      : event.item_type === 'rest' ? 'bg-indigo-500/20 text-indigo-300'
+                                        : event.item_type === 'metric' ? 'bg-green-500/20 text-green-300'
+                                          : event.type === 'personal' ? 'bg-blue-500/20 text-blue-300'
+                                            : 'bg-emerald-500/20 text-emerald-300'
+                                    }`}>
+                                    {event.item_type === 'note' ? 'Note'
+                                      : event.item_type === 'rest' ? 'Repos'
+                                        : event.item_type === 'metric' ? 'Pesée / Biométrie'
+                                          : event.type === 'personal' ? 'Personnel'
+                                            : 'Groupe'}
                                   </span>
-                                  <span className="text-white/40 text-xs flex items-center gap-1">
-                                    <Clock className="w-3 h-3" />
-                                    {format(event.start, 'HH:mm')} - {format(event.end, 'HH:mm')}
-                                  </span>
+                                  {event.item_type === 'session' && (
+                                    <span className="text-white/40 text-xs flex items-center gap-1">
+                                      <Clock className="w-3 h-3" />
+                                      {format(event.start, 'HH:mm')} - {format(event.end, 'HH:mm')}
+                                    </span>
+                                  )}
                                 </div>
-                                <h4 className="text-lg font-bold text-white group-hover:text-blue-400 transition-colors mb-1">
+                                <h4 className={`text-lg font-bold text-white transition-colors mb-1
+                                  ${event.item_type === 'note' ? 'group-hover:text-amber-400'
+                                    : event.item_type === 'rest' ? 'group-hover:text-indigo-400'
+                                      : event.item_type === 'metric' ? 'group-hover:text-green-400'
+                                        : event.type === 'personal' ? 'group-hover:text-blue-400'
+                                          : 'group-hover:text-emerald-400'
+                                  }`}>
                                   {event.title}
                                 </h4>
-                                {event.coach && (
+                                {event.coach && event.item_type === 'session' && (
                                   <div className="flex items-center gap-2 text-sm text-white/60">
                                     <User className="w-3.5 h-3.5" />
                                     <span>{event.coach.full_name}</span>
@@ -786,7 +808,19 @@ function ClientAppointments() {
                               </div>
 
                               <div className="flex flex-col items-end gap-2">
-                                {(event.registered || event.type === 'personal') ? (
+                                {event.item_type === 'note' ? (
+                                  <div className="w-8 h-8 rounded-full flex items-center justify-center bg-amber-500/20 text-amber-400">
+                                    <StickyNote className="w-4 h-4" />
+                                  </div>
+                                ) : event.item_type === 'rest' ? (
+                                  <div className="w-8 h-8 rounded-full flex items-center justify-center bg-indigo-500/20 text-indigo-400">
+                                    <Moon className="w-4 h-4" />
+                                  </div>
+                                ) : event.item_type === 'metric' ? (
+                                  <div className="border border-green-500/30 px-3 py-1.5 rounded-xl bg-green-500/10 text-xs font-medium text-green-400 hover:bg-green-500/20 transition-colors whitespace-nowrap">
+                                    Remplir mes mesures
+                                  </div>
+                                ) : (event.registered || event.type === 'personal') ? (
                                   <div className={`w-8 h-8 rounded-full flex items-center justify-center ${event.type === 'personal' ? 'bg-blue-500/20 text-blue-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
                                     <Play className="w-4 h-4 fill-current" />
                                   </div>
@@ -1152,9 +1186,8 @@ const SessionModal = ({ session, exercises, groups, loadingExercises, onClose, o
   );
 }
 
-const NoteModal = ({ note, onClose, onSave }: any) => {
+const NoteModal = ({ note, onClose }: any) => {
   const [content, setContent] = useState<string>("");
-  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!note.content) {
@@ -1166,27 +1199,14 @@ const NoteModal = ({ note, onClose, onSave }: any) => {
     }
   }, [note]);
 
-  const handleSave = async () => {
-    try {
-      setSaving(true);
-      await onSave(note.id, { text: content });
-      onClose();
-    } catch (error) {
-      console.error("Error saving note:", error);
-      alert("Erreur lors de l'enregistrement");
-    } finally {
-      setSaving(false);
-    }
-  };
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onClick={onClose} />
       <div className="relative bg-[#0f172a] rounded-2xl max-w-md w-full border border-white/10 shadow-2xl animate-scale-in p-6">
         <div className="flex justify-between items-start mb-6">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium mb-3 bg-yellow-500/10 text-yellow-400 border border-yellow-500/20">
-              Note
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium mb-3 bg-amber-500/10 text-amber-400 border border-amber-500/20">
+              Note du Coach
             </div>
             <h2 className="text-xl font-bold text-white mb-1">{note.title}</h2>
             <p className="text-sm text-white/50">
@@ -1197,99 +1217,18 @@ const NoteModal = ({ note, onClose, onSave }: any) => {
             <X className="w-5 h-5" />
           </button>
         </div>
-
-        <div className="bg-white/5 rounded-xl p-4 border border-white/5 mx-auto max-h-[60vh] overflow-y-auto custom-scrollbar">
-          <textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            className="w-full bg-transparent border-none text-white/80 placeholder:text-white/20 focus:ring-0 resize-none min-h-[150px] leading-relaxed"
-            placeholder="Écrivez votre note ici..."
-          />
+        <div className="bg-amber-500/5 rounded-xl p-4 border border-amber-500/10 min-h-[150px]">
+          <p className="text-white/80 whitespace-pre-wrap leading-relaxed">
+            {content || note.notes}
+          </p>
         </div>
 
-        <div className="mt-6 flex justify-end gap-3">
-          <button onClick={onClose} className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors">
-            Annuler
-          </button>
+        <div className="mt-6 flex justify-end">
           <button
-            onClick={handleSave}
-            disabled={saving}
-            className="px-4 py-2 rounded-lg bg-yellow-500 hover:bg-yellow-600 text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={onClose}
+            className="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-medium transition-colors"
           >
-            {saving ? 'Enregistrement...' : 'Enregistrer'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const MetricModal = ({ metric, onClose, onSave }: any) => {
-  const [value, setValue] = useState<string>("");
-  const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    if (!metric.content) {
-      setValue(metric.notes || "");
-    } else if (typeof metric.content === 'string') {
-      setValue(metric.content);
-    } else {
-      setValue(metric.content.value || metric.content.text || "");
-    }
-  }, [metric]);
-
-  const handleSave = async () => {
-    try {
-      setSaving(true);
-      await onSave(metric.id, { value: value });
-      onClose();
-    } catch (error) {
-      console.error("Error saving metric:", error);
-      alert("Erreur lors de l'enregistrement");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onClick={onClose} />
-      <div className="relative bg-[#0f172a] rounded-2xl max-w-md w-full border border-white/10 shadow-2xl animate-scale-in p-6">
-        <div className="flex justify-between items-start mb-6">
-          <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium mb-3 bg-purple-500/10 text-purple-400 border border-purple-500/20">
-              Métrique
-            </div>
-            <h2 className="text-xl font-bold text-white mb-1">{metric.title}</h2>
-            <p className="text-sm text-white/50">
-              {format(metric.start, 'EEEE d MMMM', { locale: fr })}
-            </p>
-          </div>
-          <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        <div className="bg-purple-500/5 rounded-xl p-6 border border-purple-500/10 text-center">
-          <input
-            type="text"
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            className="w-full bg-transparent border-b border-purple-500/30 text-center text-2xl font-bold text-white/90 placeholder:text-white/20 focus:ring-0 focus:border-purple-500 transition-colors py-2"
-            placeholder="Ex: 75 kg"
-          />
-        </div>
-
-        <div className="mt-6 flex justify-end gap-3">
-          <button onClick={onClose} className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors">
-            Annuler
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="px-4 py-2 rounded-lg bg-purple-500 hover:bg-purple-600 text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {saving ? 'Enregistrement...' : 'Enregistrer'}
+            Fermer
           </button>
         </div>
       </div>
