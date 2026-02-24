@@ -87,6 +87,13 @@ export default function CoachOnboarding() {
   const Step1Discovery = () => {
     const [slide, setSlide] = useState(1);
     const [hoveredFeature, setHoveredFeature] = useState<number | null>(null);
+    const [lastHoveredFeature, setLastHoveredFeature] = useState<number | null>(null);
+
+    useEffect(() => {
+      if (hoveredFeature !== null) {
+        setLastHoveredFeature(hoveredFeature);
+      }
+    }, [hoveredFeature]);
 
     const slides = [
       {
@@ -155,12 +162,14 @@ export default function CoachOnboarding() {
 
     const currentSlideData = slides[slide - 1];
 
-    // Determine which mockup to show
+    // Determine which mockup to show based on hover or last hover
     const getActiveMockup = () => {
       let mockup: { type: string, label: string } | undefined;
 
-      if (hoveredFeature !== null && currentSlideData.mockups[hoveredFeature as keyof typeof currentSlideData.mockups]) {
-        mockup = currentSlideData.mockups[hoveredFeature as keyof typeof currentSlideData.mockups] as unknown as { type: string, label: string };
+      const featureIdToUse = hoveredFeature !== null ? hoveredFeature : lastHoveredFeature;
+
+      if (featureIdToUse !== null && currentSlideData.mockups[featureIdToUse as keyof typeof currentSlideData.mockups]) {
+        mockup = currentSlideData.mockups[featureIdToUse as keyof typeof currentSlideData.mockups] as unknown as { type: string, label: string };
       } else {
         mockup = currentSlideData.mockups.default as unknown as { type: string, label: string };
       }
@@ -220,7 +229,10 @@ export default function CoachOnboarding() {
           <div className="flex gap-4 mt-auto pt-6">
             {slide > 1 && (
               <button
-                onClick={() => setSlide(s => s - 1)}
+                onClick={() => {
+                  setSlide(s => s - 1);
+                  setLastHoveredFeature(null); // Reset when sliding
+                }}
                 className="px-6 py-4 bg-white/5 text-white rounded-xl font-medium hover:bg-white/10 transition-colors flex items-center justify-center"
               >
                 <ChevronLeft className="w-5 h-5" />
@@ -230,6 +242,7 @@ export default function CoachOnboarding() {
               onClick={() => {
                 if (slide < 4) {
                   setSlide(s => s + 1);
+                  setLastHoveredFeature(null); // Reset when sliding
                 } else {
                   nextStep(); // Move to Step 2 (Profile)
                 }
@@ -250,58 +263,69 @@ export default function CoachOnboarding() {
 
           <div className="relative w-full max-w-lg aspect-square flex items-center justify-center">
             {/* Dynamic Mockup Container */}
-            <div
-              key={`${slide}-${hoveredFeature || 'default'}`}
-              className="animate-fade-in-up w-full h-full bg-slate-800/80 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl flex flex-col items-center justify-center p-8 relative overflow-hidden group"
-            >
+            <div className="w-full h-full bg-slate-800/80 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl flex flex-col items-center justify-center p-8 relative overflow-hidden group">
               {/* This grid overlay subtlely mimics a screen reflection/texture */}
               <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5 mix-blend-overlay pointer-events-none" />
 
-              {activeMockup.type === 'smartphone' && (
-                <div className="relative">
-                  <div className="w-[280px] h-[580px] bg-slate-900 border-[8px] border-slate-700 rounded-[3rem] shadow-2xl flex items-center justify-center overflow-hidden relative">
-                    {/* Dynamic content placeholder for smartphone */}
-                    <div className="absolute inset-0 bg-gradient-to-b from-slate-800 to-slate-900 flex flex-col items-center justify-center p-6 text-center">
-                      <Smartphone className="w-16 h-16 text-blue-400/50 mb-4 animate-pulse" />
-                      <h3 className="text-white font-bold text-xl mb-2">{activeMockup.label}</h3>
-                      <p className="text-gray-500 text-sm">Image à intégrer</p>
-                    </div>
-                  </div>
-                </div>
-              )}
+              {/* ContentWrapper to handle fade transition. Use 'activeMockup' keys to trigger re-renders if necessary, but keep the container stable */}
+              <div key={`${slide}-${activeMockup.label}`} className="animate-fade-in w-full h-full flex items-center justify-center z-10">
 
-              {activeMockup.type === 'laptop' && (
-                <div className="relative w-full">
-                  <div className="w-full aspect-video bg-slate-900 border-[8px] border-slate-700 rounded-t-2xl shadow-2xl flex items-center justify-center overflow-hidden relative">
-                    {/* Dynamic content placeholder for laptop */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-900 flex flex-col items-center justify-center p-6 text-center">
-                      <Laptop className="w-20 h-20 text-cyan-400/50 mb-4 animate-pulse" />
-                      <h3 className="text-white font-bold text-2xl mb-2">{activeMockup.label}</h3>
-                      <p className="text-gray-500 text-sm">Image à intégrer</p>
-                    </div>
-                  </div>
-                  <div className="w-[110%] -ml-[5%] h-5 bg-slate-600 rounded-b-xl shadow-xl relative flex justify-center">
-                    <div className="w-20 h-2 bg-slate-500 rounded-b-lg absolute top-0" />
-                  </div>
-                </div>
-              )}
+                {activeMockup.type === 'smartphone' && (
+                  <div className="relative h-full py-4 flex items-center justify-center">
+                    <div className="w-[280px] h-[580px] bg-slate-900 border-[10px] border-slate-700 rounded-[3rem] shadow-2xl flex items-center justify-center overflow-hidden relative transform scale-95 md:scale-100">
+                      {/* Notch */}
+                      <div className="absolute top-0 w-32 h-6 bg-slate-700 rounded-b-3xl z-20 flex justify-center">
+                        <div className="w-12 h-1.5 bg-slate-800 rounded-full mt-2" />
+                      </div>
 
-              {activeMockup.type === 'mixed' && (
-                <div className="relative w-full h-full flex items-center justify-center">
-                  <div className="absolute top-10 left-0 w-[90%] aspect-video bg-slate-900 border-[6px] border-slate-700 rounded-md shadow-2xl flex items-center justify-center z-10 opacity-90 transform -rotate-2 hover:rotate-0 transition-transform duration-500">
-                    <div className="flex flex-col items-center text-center">
-                      <Laptop className="w-12 h-12 text-indigo-400/50 mb-2" />
-                      <span className="text-white font-bold text-lg">Macbook</span>
+                      {/* Dynamic content placeholder for smartphone */}
+                      <div className="absolute inset-0 bg-gradient-to-b from-slate-800 to-slate-900 flex flex-col items-center justify-center p-6 text-center">
+                        <Smartphone className="w-16 h-16 text-blue-400/50 mb-4 animate-pulse" />
+                        <h3 className="text-white font-bold text-xl mb-2">{activeMockup.label}</h3>
+                        <p className="text-gray-500 text-sm">Image à intégrer</p>
+                      </div>
                     </div>
                   </div>
-                  <div className="absolute bottom-10 right-0 w-[160px] h-[340px] bg-slate-900 border-[6px] border-slate-700 rounded-[2rem] shadow-2xl flex items-center justify-center z-20 opacity-95 transform rotate-6 hover:rotate-0 transition-transform duration-500">
-                    <div className="flex flex-col items-center text-center">
-                      <Smartphone className="w-10 h-10 text-emerald-400/50 mb-2" />
-                      <span className="text-white font-bold text-sm">iPhone</span>
+                )}
+
+                {activeMockup.type === 'laptop' && (
+                  <div className="relative w-full px-4">
+                    <div className="w-full aspect-video bg-slate-900 border-[10px] border-slate-700 rounded-t-2xl shadow-2xl flex items-center justify-center overflow-hidden relative">
+                      {/* Webcam notch */}
+                      <div className="absolute top-0 w-full h-4 flex justify-center">
+                        <div className="w-2 h-2 bg-slate-800 rounded-full mt-1" />
+                      </div>
+
+                      {/* Dynamic content placeholder for laptop */}
+                      <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-900 flex flex-col items-center justify-center p-6 text-center mt-2">
+                        <Laptop className="w-20 h-20 text-cyan-400/50 mb-4 animate-pulse" />
+                        <h3 className="text-white font-bold text-2xl mb-2">{activeMockup.label}</h3>
+                        <p className="text-gray-500 text-sm">Image à intégrer</p>
+                      </div>
+                    </div>
+                    <div className="w-[110%] -ml-[5%] h-5 bg-slate-600 rounded-b-xl shadow-xl relative flex justify-center">
+                      <div className="w-24 h-2 bg-slate-500 rounded-b-lg absolute top-0" />
                     </div>
                   </div>
-                </div>
-              )}
+                )}
+
+                {activeMockup.type === 'mixed' && (
+                  <div className="relative w-full h-full flex items-center justify-center">
+                    <div className="absolute top-6 left-0 w-[90%] aspect-video bg-slate-900 border-[8px] border-slate-700 rounded-xl shadow-2xl flex items-center justify-center z-10 opacity-90 transform -rotate-2 hover:rotate-0 transition-transform duration-500">
+                      <div className="flex flex-col items-center text-center">
+                        <Laptop className="w-12 h-12 text-indigo-400/50 mb-2" />
+                        <span className="text-white font-bold text-lg">Dashboard Desktop</span>
+                      </div>
+                    </div>
+                    <div className="absolute bottom-6 right-0 w-[170px] h-[360px] bg-slate-900 border-[8px] border-slate-700 rounded-[2.5rem] shadow-2xl flex items-center justify-center z-20 opacity-95 transform rotate-6 hover:rotate-0 transition-transform duration-500">
+                      <div className="flex flex-col items-center text-center">
+                        <Smartphone className="w-10 h-10 text-emerald-400/50 mb-2" />
+                        <span className="text-white font-bold text-sm">App Client Mobile</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
