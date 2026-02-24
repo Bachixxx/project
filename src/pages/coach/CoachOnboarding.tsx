@@ -86,6 +86,7 @@ export default function CoachOnboarding() {
 
   const Step1Discovery = () => {
     const [slide, setSlide] = useState(1);
+    const [hoveredFeature, setHoveredFeature] = useState<number | null>(null);
 
     const slides = [
       {
@@ -94,11 +95,16 @@ export default function CoachOnboarding() {
         icon: <Users className="w-8 h-8 text-blue-400" />,
         bgColor: "bg-blue-500/20",
         features: [
-          { icon: <Activity className="w-5 h-5 text-emerald-400" />, title: "Suivi Biométrique 360°", desc: "Poids, masse musculaire, hydratation et galerie photos avant/après." },
-          { icon: <Dumbbell className="w-5 h-5 text-indigo-400" />, title: "Bibliothèque d'Entraînement", desc: "Créez vos exercices personnalisés, vos blocs d'intensité (AMRAP, Circuits) et vos programmes." },
-          { icon: <Settings className="w-5 h-5 text-purple-400" />, title: "À votre Image", desc: "Application client personnalisée avec votre logo et un message de bienvenue unique." }
+          { id: 1, icon: <Activity className="w-5 h-5 text-emerald-400" />, title: "Suivi Biométrique 360°", desc: "Poids, masse musculaire, hydratation et galerie photos avant/après." },
+          { id: 2, icon: <Dumbbell className="w-5 h-5 text-indigo-400" />, title: "Bibliothèque d'Entraînement", desc: "Créez vos exercices personnalisés, vos blocs d'intensité (AMRAP, Circuits) et vos programmes." },
+          { id: 3, icon: <Settings className="w-5 h-5 text-purple-400" />, title: "À votre Image", desc: "Application client personnalisée avec votre logo et un message de bienvenue unique." }
         ],
-        mockupType: "smartphone"
+        mockups: {
+          default: { type: 'mixed', label: 'Vue Globale' },
+          1: { type: 'smartphone', label: 'Vue Biométrie Client' },
+          2: { type: 'laptop', label: 'Créateur de Programme' },
+          3: { type: 'smartphone', label: 'App Client Personnalisée' }
+        }
       },
       {
         id: 2,
@@ -106,10 +112,14 @@ export default function CoachOnboarding() {
         icon: <Dumbbell className="w-8 h-8 text-orange-400" />,
         bgColor: "bg-orange-500/20",
         features: [
-          { icon: <MonitorPlay className="w-5 h-5 text-red-400" />, title: "Live Workout", desc: "Prenez le contrôle ! Lancez la séance en direct, gérez les chronos et ajustez les charges à la volée." },
-          { icon: <CreditCard className="w-5 h-5 text-amber-400" />, title: "Terminal Tap-to-Pay", desc: "Encaissez vos clients immédiatement après la séance grâce au terminal intégré (Sans contact ou QR Code)." }
+          { id: 4, icon: <MonitorPlay className="w-5 h-5 text-red-400" />, title: "Live Workout", desc: "Prenez le contrôle ! Lancez la séance en direct, gérez les chronos et ajustez les charges à la volée." },
+          { id: 5, icon: <CreditCard className="w-5 h-5 text-amber-400" />, title: "Terminal Tap-to-Pay", desc: "Encaissez vos clients immédiatement après la séance grâce au terminal intégré (Sans contact ou QR Code)." }
         ],
-        mockupType: "smartphone"
+        mockups: {
+          default: { type: 'smartphone', label: 'Outils Présentiel' },
+          4: { type: 'smartphone', label: 'Flow Mode (Séance en direct)' },
+          5: { type: 'smartphone', label: 'Terminal Tap-to-Pay' }
+        }
       },
       {
         id: 3,
@@ -117,10 +127,14 @@ export default function CoachOnboarding() {
         icon: <Users className="w-8 h-8 text-emerald-400" />,
         bgColor: "bg-emerald-500/20",
         features: [
-          { icon: <CalendarDays className="w-5 h-5 text-teal-400" />, title: "Réservation Autonome", desc: "Planifiez vos cours, fixez une limite de places et laissez les clients s'inscrire et payer via leur app." },
-          { icon: <LayoutDashboard className="w-5 h-5 text-green-400" />, title: "Mode Multi-Coaching", desc: "Gardez un œil sur tout le monde. Affichez et gérez simultanément le programme de plusieurs clients en présentiel." }
+          { id: 6, icon: <CalendarDays className="w-5 h-5 text-teal-400" />, title: "Réservation Autonome", desc: "Planifiez vos cours, fixez une limite de places et laissez les clients s'inscrire et payer via leur app." },
+          { id: 7, icon: <LayoutDashboard className="w-5 h-5 text-green-400" />, title: "Mode Multi-Coaching", desc: "Gardez un œil sur tout le monde. Affichez et gérez simultanément le programme de plusieurs clients en présentiel." }
         ],
-        mockupType: "laptop"
+        mockups: {
+          default: { type: 'laptop', label: 'Outils de Groupe' },
+          6: { type: 'smartphone', label: 'Réservation Client' },
+          7: { type: 'laptop', label: 'Dashboard Multi-Coaching' }
+        }
       },
       {
         id: 4,
@@ -128,87 +142,170 @@ export default function CoachOnboarding() {
         icon: <Sparkles className="w-8 h-8 text-cyan-400" />,
         bgColor: "bg-cyan-500/20",
         features: [
-          { icon: <CalendarDays className="w-5 h-5 text-blue-400" />, title: "Planning Interactif", desc: "Construisez l'agenda de vos clients d'un glissement de doigt (Drag & Drop) : Séances, repos, et prises de mesures." },
-          { icon: <CreditCard className="w-5 h-5 text-emerald-400" />, title: "Abonnements & Revenus", desc: "Sécurisez votre chiffre d'affaires. Créez des abonnements récurrents et suivez vos paiements sur votre Dashboard." }
+          { id: 8, icon: <CalendarDays className="w-5 h-5 text-blue-400" />, title: "Planning Interactif", desc: "Construisez l'agenda de vos clients d'un glissement de doigt (Drag & Drop) : Séances, repos, et prises de mesures." },
+          { id: 9, icon: <CreditCard className="w-5 h-5 text-emerald-400" />, title: "Abonnements & Revenus", desc: "Sécurisez votre chiffre d'affaires. Créez des abonnements récurrents et suivez vos paiements sur votre Dashboard." }
         ],
-        mockupType: "laptop"
+        mockups: {
+          default: { type: 'laptop', label: 'Outils Distanciel' },
+          8: { type: 'laptop', label: 'Planning Client Interactif' },
+          9: { type: 'laptop', label: 'Tableau de bord Revenus' }
+        }
       }
     ];
 
     const currentSlideData = slides[slide - 1];
 
+    // Determine which mockup to show
+    const getActiveMockup = () => {
+      let mockup: { type: string, label: string } | undefined;
+
+      if (hoveredFeature !== null && currentSlideData.mockups[hoveredFeature as keyof typeof currentSlideData.mockups]) {
+        mockup = currentSlideData.mockups[hoveredFeature as keyof typeof currentSlideData.mockups] as unknown as { type: string, label: string };
+      } else {
+        mockup = currentSlideData.mockups.default as unknown as { type: string, label: string };
+      }
+
+      return mockup || { type: 'smartphone', label: 'Aperçu' };
+    };
+
+    const activeMockup = getActiveMockup();
+
     return (
-      <div className="animate-fade-in text-center flex flex-col h-full min-h-[600px]">
-        {/* Carousel indicators */}
-        <div className="flex justify-center gap-2 mb-6">
-          {[1, 2, 3, 4].map(i => (
-            <div key={i} className={`h-1.5 rounded-full transition-all duration-300 ${slide === i ? 'w-8 bg-blue-500' : 'w-2 bg-white/20'}`} />
-          ))}
-        </div>
+      <div className="animate-fade-in flex flex-col lg:flex-row h-full min-h-[600px] gap-8 xl:gap-16 items-center">
 
-        <div key={slide} className="animate-fade-in transition-all duration-300 ease-in-out">
-          <div className={`w-16 h-16 ${currentSlideData.bgColor} rounded-2xl flex items-center justify-center mx-auto mb-6 transition-colors duration-300`}>
-            {currentSlideData.icon}
-          </div>
-
-          <h2 className="text-2xl md:text-3xl font-bold text-white mb-6 min-h-[80px] md:min-h-[40px] flex items-center justify-center">
-            {currentSlideData.title}
-          </h2>
-
-          {/* Mockup Placeholder */}
-          <div className="w-full relative bg-slate-800/50 rounded-2xl border border-white/5 mb-8 overflow-hidden flex items-center justify-center min-h-[220px]">
-            {currentSlideData.mockupType === 'smartphone' ? (
-              <div className="flex flex-col items-center opacity-50">
-                <Smartphone className="w-16 h-16 text-gray-400 mb-2" />
-                <span className="text-sm font-medium text-gray-400">Mockup Smartphone à venir</span>
-                <span className="text-xs text-gray-500">(Insérer capture d'écran ici)</span>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center opacity-50">
-                <Laptop className="w-16 h-16 text-gray-400 mb-2" />
-                <span className="text-sm font-medium text-gray-400">Mockup Ordinateur à venir</span>
-                <span className="text-xs text-gray-500">(Insérer capture d'écran ici)</span>
-              </div>
-            )}
-          </div>
-
-          <div className="grid gap-3 mb-8 text-left">
-            {currentSlideData.features.map((feature, idx) => (
-              <div key={idx} className="bg-white/5 border border-white/10 p-4 rounded-xl flex items-start gap-4">
-                <div className="w-10 h-10 bg-black/20 rounded-lg flex items-center justify-center shrink-0">
-                  {feature.icon}
-                </div>
-                <div>
-                  <h4 className="text-white font-medium text-sm md:text-base">{feature.title}</h4>
-                  <p className="text-xs md:text-sm text-gray-400 mt-1 leading-relaxed">{feature.desc}</p>
-                </div>
-              </div>
+        {/* Left Side: Content */}
+        <div className="flex-1 flex flex-col w-full h-full max-w-xl mx-auto lg:mx-0">
+          {/* Carousel indicators */}
+          <div className="flex justify-start gap-2 mb-8">
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} className={`h-1.5 rounded-full transition-all duration-300 ${slide === i ? 'w-8 bg-blue-500' : 'w-2 bg-white/20'}`} />
             ))}
           </div>
+
+          <div key={slide} className="animate-fade-in transition-all duration-300 ease-in-out flex-1 flex flex-col">
+            <div className={`w-14 h-14 ${currentSlideData.bgColor} rounded-2xl flex items-center justify-center mb-6 transition-colors duration-300`}>
+              {currentSlideData.icon}
+            </div>
+
+            <h2 className="text-3xl lg:text-4xl font-bold text-white mb-8">
+              {currentSlideData.title}
+            </h2>
+
+            <div className="grid gap-4 mb-8">
+              {currentSlideData.features.map((feature) => (
+                <div
+                  key={feature.id}
+                  onMouseEnter={() => setHoveredFeature(feature.id)}
+                  onMouseLeave={() => setHoveredFeature(null)}
+                  className={`border p-5 rounded-2xl flex items-start gap-4 transition-all duration-300 cursor-default ${hoveredFeature === feature.id
+                    ? 'bg-white/10 border-blue-500/50 shadow-[0_0_30px_rgba(59,130,246,0.15)] scale-[1.02] -translate-y-1 z-10'
+                    : 'bg-white/5 border-white/10 hover:bg-white/[0.07] hover:border-white/20'
+                    }`}
+                >
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-colors ${hoveredFeature === feature.id ? 'bg-blue-500/20' : 'bg-black/20'
+                    }`}>
+                    {React.cloneElement(feature.icon as React.ReactElement, {
+                      className: `w-6 h-6 transition-colors ${hoveredFeature === feature.id ? 'text-blue-400' : (feature.icon as React.ReactElement).props.className}`
+                    })}
+                  </div>
+                  <div>
+                    <h4 className="text-white font-semibold text-lg">{feature.title}</h4>
+                    <p className="text-sm text-gray-400 mt-1.5 leading-relaxed">{feature.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex gap-4 mt-auto pt-6">
+            {slide > 1 && (
+              <button
+                onClick={() => setSlide(s => s - 1)}
+                className="px-6 py-4 bg-white/5 text-white rounded-xl font-medium hover:bg-white/10 transition-colors flex items-center justify-center"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+            )}
+            <button
+              onClick={() => {
+                if (slide < 4) {
+                  setSlide(s => s + 1);
+                } else {
+                  nextStep(); // Move to Step 2 (Profile)
+                }
+              }}
+              className="flex-1 py-4 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-all hover:shadow-[0_0_30px_rgba(59,130,246,0.3)] shadow-lg"
+            >
+              {slide === 4 ? "Configurer mon profil" : "Suivant"} <ChevronRight className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
-        <div className="flex gap-4 mt-auto">
-          {slide > 1 && (
-            <button
-              onClick={() => setSlide(s => s - 1)}
-              className="px-4 py-4 bg-white/5 text-white rounded-xl font-medium hover:bg-white/10 transition-colors flex items-center justify-center"
+        {/* Right Side: Visuals/Mockups (Hidden on small screens) */}
+        <div className="hidden lg:flex flex-1 items-center justify-center relative w-full h-[600px]">
+          {/* Background glow that follows the active mockup */}
+          <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[80%] rounded-full blur-[100px] opacity-40 transition-colors duration-700 pointer-events-none ${activeMockup.type === 'smartphone' ? 'bg-blue-500/40' :
+            activeMockup.type === 'laptop' ? 'bg-cyan-500/40' : 'bg-indigo-500/40'
+            }`} />
+
+          <div className="relative w-full max-w-lg aspect-square flex items-center justify-center">
+            {/* Dynamic Mockup Container */}
+            <div
+              key={`${slide}-${hoveredFeature || 'default'}`}
+              className="animate-fade-in-up w-full h-full bg-slate-800/80 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl flex flex-col items-center justify-center p-8 relative overflow-hidden group"
             >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-          )}
-          <button
-            onClick={() => {
-              if (slide < 4) {
-                setSlide(s => s + 1);
-              } else {
-                nextStep(); // Move to Step 2 (Profile)
-              }
-            }}
-            className="flex-1 py-4 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity"
-          >
-            {slide === 4 ? "Configurer mon profil" : "Suivant"} <ChevronRight className="w-5 h-5" />
-          </button>
+              {/* This grid overlay subtlely mimics a screen reflection/texture */}
+              <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5 mix-blend-overlay pointer-events-none" />
+
+              {activeMockup.type === 'smartphone' && (
+                <div className="relative">
+                  <div className="w-[280px] h-[580px] bg-slate-900 border-[8px] border-slate-700 rounded-[3rem] shadow-2xl flex items-center justify-center overflow-hidden relative">
+                    {/* Dynamic content placeholder for smartphone */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-slate-800 to-slate-900 flex flex-col items-center justify-center p-6 text-center">
+                      <Smartphone className="w-16 h-16 text-blue-400/50 mb-4 animate-pulse" />
+                      <h3 className="text-white font-bold text-xl mb-2">{activeMockup.label}</h3>
+                      <p className="text-gray-500 text-sm">Image à intégrer</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeMockup.type === 'laptop' && (
+                <div className="relative w-full">
+                  <div className="w-full aspect-video bg-slate-900 border-[8px] border-slate-700 rounded-t-2xl shadow-2xl flex items-center justify-center overflow-hidden relative">
+                    {/* Dynamic content placeholder for laptop */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-900 flex flex-col items-center justify-center p-6 text-center">
+                      <Laptop className="w-20 h-20 text-cyan-400/50 mb-4 animate-pulse" />
+                      <h3 className="text-white font-bold text-2xl mb-2">{activeMockup.label}</h3>
+                      <p className="text-gray-500 text-sm">Image à intégrer</p>
+                    </div>
+                  </div>
+                  <div className="w-[110%] -ml-[5%] h-5 bg-slate-600 rounded-b-xl shadow-xl relative flex justify-center">
+                    <div className="w-20 h-2 bg-slate-500 rounded-b-lg absolute top-0" />
+                  </div>
+                </div>
+              )}
+
+              {activeMockup.type === 'mixed' && (
+                <div className="relative w-full h-full flex items-center justify-center">
+                  <div className="absolute top-10 left-0 w-[90%] aspect-video bg-slate-900 border-[6px] border-slate-700 rounded-md shadow-2xl flex items-center justify-center z-10 opacity-90 transform -rotate-2 hover:rotate-0 transition-transform duration-500">
+                    <div className="flex flex-col items-center text-center">
+                      <Laptop className="w-12 h-12 text-indigo-400/50 mb-2" />
+                      <span className="text-white font-bold text-lg">Macbook</span>
+                    </div>
+                  </div>
+                  <div className="absolute bottom-10 right-0 w-[160px] h-[340px] bg-slate-900 border-[6px] border-slate-700 rounded-[2rem] shadow-2xl flex items-center justify-center z-20 opacity-95 transform rotate-6 hover:rotate-0 transition-transform duration-500">
+                    <div className="flex flex-col items-center text-center">
+                      <Smartphone className="w-10 h-10 text-emerald-400/50 mb-2" />
+                      <span className="text-white font-bold text-sm">iPhone</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
+
       </div>
     );
   };
@@ -280,8 +377,8 @@ export default function CoachOnboarding() {
             <button
               onClick={() => setPreferences(p => ({ ...p, currency: 'CHF' }))}
               className={`p-4 rounded-xl border flex flex-col items-center justify-center gap-2 transition-all ${preferences.currency === 'CHF'
-                  ? 'bg-blue-500/20 border-blue-500 text-blue-400'
-                  : 'bg-white/5 border-white/10 text-gray-400 hover:border-white/20'
+                ? 'bg-blue-500/20 border-blue-500 text-blue-400'
+                : 'bg-white/5 border-white/10 text-gray-400 hover:border-white/20'
                 }`}
             >
               <span className="text-2xl font-bold">CHF</span>
@@ -290,8 +387,8 @@ export default function CoachOnboarding() {
             <button
               onClick={() => setPreferences(p => ({ ...p, currency: 'EUR' }))}
               className={`p-4 rounded-xl border flex flex-col items-center justify-center gap-2 transition-all ${preferences.currency === 'EUR'
-                  ? 'bg-blue-500/20 border-blue-500 text-blue-400'
-                  : 'bg-white/5 border-white/10 text-gray-400 hover:border-white/20'
+                ? 'bg-blue-500/20 border-blue-500 text-blue-400'
+                : 'bg-white/5 border-white/10 text-gray-400 hover:border-white/20'
                 }`}
             >
               <span className="text-2xl font-bold">€</span>
@@ -306,8 +403,8 @@ export default function CoachOnboarding() {
             <button
               onClick={() => setPreferences(p => ({ ...p, measurementSystem: 'metric' }))}
               className={`p-4 rounded-xl border flex items-center justify-center gap-2 transition-all ${preferences.measurementSystem === 'metric'
-                  ? 'bg-blue-500/20 border-blue-500 text-blue-400'
-                  : 'bg-white/5 border-white/10 text-gray-400 hover:border-white/20'
+                ? 'bg-blue-500/20 border-blue-500 text-blue-400'
+                : 'bg-white/5 border-white/10 text-gray-400 hover:border-white/20'
                 }`}
             >
               Métrique (kg, cm)
@@ -315,8 +412,8 @@ export default function CoachOnboarding() {
             <button
               onClick={() => setPreferences(p => ({ ...p, measurementSystem: 'imperial' }))}
               className={`p-4 rounded-xl border flex items-center justify-center gap-2 transition-all ${preferences.measurementSystem === 'imperial'
-                  ? 'bg-blue-500/20 border-blue-500 text-blue-400'
-                  : 'bg-white/5 border-white/10 text-gray-400 hover:border-white/20'
+                ? 'bg-blue-500/20 border-blue-500 text-blue-400'
+                : 'bg-white/5 border-white/10 text-gray-400 hover:border-white/20'
                 }`}
             >
               Impérial (lbs, in)
@@ -397,7 +494,7 @@ export default function CoachOnboarding() {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-blue-500/10 rounded-full blur-[120px]" />
       </div>
 
-      <div className="max-w-xl w-full relative z-10">
+      <div className={`w-full relative z-10 transition-all duration-500 ease-in-out ${currentStep === 1 ? 'max-w-6xl' : 'max-w-xl'}`}>
         {/* Progress Tracker */}
         <div className="flex justify-center mb-8">
           <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/10">
