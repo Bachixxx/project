@@ -81,6 +81,55 @@ function Terms() {
                 Coachency.app se réserve le droit de modifier ces conditions à tout moment. Les utilisateurs seront informés des modifications via un message sur la plateforme.
               </p>
             </section>
+
+            <section className="mb-8">
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">
+                6. Abonnements et paiements
+              </h2>
+              <ul className="list-disc pl-6 text-gray-600 space-y-2">
+                <li>L'utilisation de certaines fonctionnalités pour les coachs peut nécessiter la souscription à un abonnement payant.</li>
+                <li>Le paiement s'effectue via des prestataires sécurisés (ex: Stripe, Apple App Store). Les conditions de paiement et de remboursement sont régies par ces prestataires ainsi que par la loi applicable.</li>
+                <li>Sauf mention contraire, les abonnements sont renouvelés automatiquement. L'utilisateur peut résilier son abonnement à tout moment selon les modalités prévues sur la plateforme.</li>
+              </ul>
+            </section>
+
+            <section className="mb-8">
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">
+                7. Propriété intellectuelle
+              </h2>
+              <ul className="list-disc pl-6 text-gray-600 space-y-2">
+                <li>La plateforme Coachency.app (code, design, marque, logo) est protégée par le droit d'auteur. Toute reproduction ou utilisation non autorisée est strictement interdite.</li>
+                <li>Les coachs restent propriétaires de leurs contenus (programmes, vidéos, conseils) et accordent à Coachency.app une licence d'utilisation limitée au fonctionnement du service.</li>
+              </ul>
+            </section>
+
+            <section className="mb-8">
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">
+                8. Limitation de responsabilité
+              </h2>
+              <ul className="list-disc pl-6 text-gray-600 space-y-2">
+                <li>Coachency.app s'efforce de maintenir un service continu, mais ne saurait être tenu responsable des temps d'arrêt, de perte de données ou de bugs informatiques. La plateforme est fournie "en l'état".</li>
+                <li><strong>Avertissement sur la santé :</strong> Coachency.app est une plateforme logicielle et ne fournit **aucun conseil médical, sportif ou nutritionnel directement**. La relation et les conseils donnés engagent uniquement la responsabilité du coach envers son client. Coachency.app décline toute responsabilité quant aux blessures, problèmes de santé ou dommages résultant de l'utilisation des programmes créés par les coachs.</li>
+              </ul>
+            </section>
+
+            <section className="mb-8">
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">
+                9. Résiliation et suppression de compte
+              </h2>
+              <p className="text-gray-600">
+                L'utilisateur peut demander la suppression de son compte à tout moment. L'accès aux services et aux données associées sera définitivement perdu après traitement de la demande.
+              </p>
+            </section>
+
+            <section className="mb-8">
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">
+                10. Droit applicable et for juridique
+              </h2>
+              <p className="text-gray-600">
+                Les présentes conditions sont soumises au <strong>droit suisse</strong>. En cas de litige qui ne pourrait être résolu à l'amiable, le for juridique exclusif est fixé dans le canton de <strong>Genève</strong>, sous réserve de fors impératifs (notamment en matière de protection des consommateurs).
+              </p>
+            </section>
           </div>
         </div>
       </div>

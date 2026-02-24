@@ -29,40 +29,33 @@ function Legal() {
           <div className="prose max-w-none">
             <section className="mb-8">
               <h2 className="text-xl font-semibold text-gray-800 mb-4">
-                1. Propriétaire du site
+                1. Propriétaire de l'application
               </h2>
               <ul className="list-disc pl-6 text-gray-600 space-y-2">
                 <li>Nom : Bächtold Jérémy</li>
                 <li>Adresse : Route des Romelles 9, 1293 Bellevue, Genève, Suisse</li>
                 <li>Email de contact : coachency@gmail.com</li>
+                <li>Numéro IDE (Suisse) : [À compléter si enregistré au registre du commerce]</li>
               </ul>
             </section>
 
             <section className="mb-8">
               <h2 className="text-xl font-semibold text-gray-800 mb-4">
-                2. Hébergeur
+                2. Hébergement
               </h2>
               <ul className="list-disc pl-6 text-gray-600 space-y-2">
-                <li>Nom : [À compléter lorsque disponible]</li>
-                <li>Adresse : [À compléter lorsque disponible]</li>
+                <li>Fournisseur d'infrastructure (Base de données et Stockage) : <strong>Amazon Web Services EMEA SARL, Succursale de Zurich</strong> (via Supabase)</li>
+                <li>Adresse du centre de données principal : Zurich, Suisse</li>
+                <li>Site web : aws.amazon.com</li>
               </ul>
             </section>
 
             <section className="mb-8">
               <h2 className="text-xl font-semibold text-gray-800 mb-4">
-                3. Responsabilité en cas de faille de sécurité
+                3. Contact pour signaler un abus ou une faille
               </h2>
               <p className="text-gray-600">
-                Coachency.app s'engage à notifier rapidement toute faille de sécurité affectant les données des utilisateurs.
-              </p>
-            </section>
-
-            <section className="mb-8">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">
-                4. Contact pour signaler un abus
-              </h2>
-              <p className="text-gray-600">
-                Toute violation des conditions d'utilisation peut être signalée à coachency@gmail.com.
+                Toute violation des conditions d'utilisation, contenu illicite ou problème de sécurité peut être directement signalé à l'adresse suivante : <strong>coachency@gmail.com</strong>.
               </p>
             </section>
           </div>

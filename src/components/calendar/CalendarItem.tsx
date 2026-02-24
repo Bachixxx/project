@@ -80,6 +80,17 @@ export function CalendarItem({ item, isOverlay, onCopy, onClick, onDelete }: Cal
                     </div>
                 );
 
+            case 'metric':
+                return (
+                    <div className="flex flex-col gap-0.5">
+                        <div className="flex items-center gap-1.5 text-green-500 mb-0.5">
+                            <Activity className="w-3.5 h-3.5" />
+                            <span className="font-semibold text-xs uppercase tracking-wide">Pesée / Biométrie</span>
+                        </div>
+                        <p className="text-sm font-medium text-white/90 leading-snug truncate">{item.title}</p>
+                    </div>
+                );
+
             case 'session':
             default:
                 // Default to session view
@@ -114,10 +125,12 @@ export function CalendarItem({ item, isOverlay, onCopy, onClick, onDelete }: Cal
   `;
 
     const typeClasses = item.item_type === 'note'
-        ? 'bg-amber-500/5 border-amber-500/10 hover:bg-amber-500/10'
+        ? 'bg-amber-500/10 border-amber-500/30 hover:bg-amber-500/20 hover:border-amber-500/50'
         : item.item_type === 'rest'
-            ? 'bg-indigo-500/5 border-indigo-500/10 hover:bg-indigo-500/10'
-            : 'bg-[#1e293b] border-l-4';
+            ? 'bg-indigo-500/10 border-indigo-500/30 hover:bg-indigo-500/20 hover:border-indigo-500/50'
+            : item.item_type === 'metric'
+                ? 'bg-green-500/10 border-green-500/30 hover:bg-green-500/20 hover:border-green-500/50'
+                : 'bg-[#1e293b] border-l-4';
 
     return (
         <div
