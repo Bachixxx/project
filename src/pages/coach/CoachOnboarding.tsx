@@ -262,9 +262,7 @@ export default function CoachOnboarding() {
 
           <div className="relative w-full max-w-lg aspect-square flex items-center justify-center">
             {/* Dynamic Mockup Container */}
-            <div className="w-full h-full bg-slate-800/80 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl flex flex-col items-center justify-center p-8 relative overflow-hidden group">
-              {/* This grid overlay subtlely mimics a screen reflection/texture */}
-              <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5 mix-blend-overlay pointer-events-none" />
+            <div className="w-full h-full flex flex-col items-center justify-center relative overflow-hidden group">
 
               {/* Only the structure changes if switching type, otherwise screen fades natively */}
               <div className="w-full h-full flex items-center justify-center z-10 transition-all duration-300">
