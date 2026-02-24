@@ -255,71 +255,139 @@ export default function CoachOnboarding() {
         </div>
 
         {/* Right Side: Visuals/Mockups */}
-        <div className="hidden lg:flex flex-1 items-center justify-center relative w-full h-[600px]">
+        <div className="hidden lg:flex flex-1 items-center justify-center relative w-full h-[600px] xl:h-[700px]">
           {/* Background glow that follows the active mockup */}
           <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[80%] rounded-full blur-[100px] opacity-40 transition-colors duration-700 pointer-events-none ${activeMockup.type === 'smartphone' ? 'bg-blue-500/30' : 'bg-cyan-500/30'
             }`} />
 
           <div className="relative w-full max-w-lg aspect-square flex items-center justify-center">
             {/* Dynamic Mockup Container */}
-            <div className="w-full h-full flex flex-col items-center justify-center relative overflow-hidden group">
+            <div className="w-full h-full flex flex-col items-center justify-center relative group">
 
               {/* Only the structure changes if switching type, otherwise screen fades natively */}
-              <div className="w-full h-full flex items-center justify-center z-10 transition-all duration-300">
+              <div className="w-full h-full flex items-center justify-center z-10 transition-all duration-500">
 
                 {activeMockup.type === 'smartphone' && (
-                  <div className="relative h-full py-4 flex items-center justify-center">
-                    <div className="w-[300px] h-[600px] bg-slate-900 border-[12px] border-slate-800 rounded-[3rem] shadow-2xl flex items-center justify-center overflow-hidden relative transform scale-95 md:scale-100 ring-[3px] ring-slate-700/50">
-                      {/* Notch (Dynamic Island) */}
-                      <div className="absolute top-2 w-28 h-7 bg-black rounded-full z-20 flex justify-center items-center shadow-md">
-                        <div className="w-2.5 h-2.5 bg-slate-900/50 rounded-full mr-2" />
-                        <div className="w-2.5 h-2.5 bg-blue-900/40 rounded-full" />
-                      </div>
+                  <div className="relative flex items-center justify-center drop-shadow-[0_45px_45px_rgba(0,0,0,0.6)] transform scale-95 md:scale-100 transition-transform hover:scale-[1.02] duration-500">
+                    {/* iPhone Frame */}
+                    <div className="relative w-[300px] h-[620px] bg-gradient-to-tr from-slate-800 via-slate-600 to-slate-800 rounded-[3.5rem] p-1.5 shadow-[inset_0_0_0_2px_rgba(255,255,255,0.2)]">
 
-                      {/* Dynamic content inside screen with forced crossfade */}
-                      <div key={activeMockup.label} className="absolute inset-0 bg-gradient-to-b from-slate-800 to-slate-900 flex flex-col items-center justify-center p-6 text-center animate-fade-in shadow-inner">
-                        <div className="bg-white/5 p-4 rounded-2xl mb-4 backdrop-blur-sm border border-white/10 shadow-lg">
-                          <ActiveMockupIcon className="w-16 h-16 text-blue-400/80" />
+                      {/* Silent switch */}
+                      <div className="absolute top-[100px] -left-1 w-1 h-8 bg-gradient-to-r from-slate-400 to-slate-600 rounded-l-sm" />
+                      {/* Volume up */}
+                      <div className="absolute top-[140px] -left-1 w-1 h-14 bg-gradient-to-r from-slate-400 to-slate-600 rounded-l-sm" />
+                      {/* Volume down */}
+                      <div className="absolute top-[210px] -left-1 w-1 h-14 bg-gradient-to-r from-slate-400 to-slate-600 rounded-l-sm" />
+                      {/* Power button */}
+                      <div className="absolute top-[180px] -right-1 w-1 h-20 bg-gradient-to-l from-slate-400 to-slate-600 rounded-r-sm" />
+
+                      {/* Inner screen border (black) */}
+                      <div className="w-full h-full bg-black rounded-[3.25rem] p-[10px] relative shadow-inner overflow-hidden flex items-center justify-center">
+
+                        {/* Notch (Dynamic Island) */}
+                        <div className="absolute top-5 w-[110px] h-[34px] bg-black rounded-full z-30 flex items-center justify-between px-3 shadow-[0_2px_10px_rgba(0,0,0,0.8)] border border-white/5">
+                          {/* FaceID sensor */}
+                          <div className="w-3 h-3 rounded-full bg-slate-900 border border-slate-700/50 shadow-inner" />
+                          {/* Front Camera */}
+                          <div className="w-3 h-3 rounded-full bg-[#0a0a0a] border border-blue-900/30 flex items-center justify-center relative overflow-hidden">
+                            <div className="absolute w-1.5 h-1.5 bg-blue-500/30 blur-[1px] rounded-full" />
+                          </div>
                         </div>
-                        <h3 className="text-white font-bold text-xl mb-3 leading-tight px-4">{activeMockup.label}</h3>
-                        <div className="w-12 h-1 bg-blue-500/50 rounded-full mb-6" />
-                        <div className="w-3/4 h-3 bg-white/5 rounded-full mb-2" />
-                        <div className="w-1/2 h-3 bg-white/5 rounded-full" />
 
-                        <p className="text-gray-500/50 text-xs mt-auto pb-4 uppercase tracking-widest font-semibold">Image à intégrer</p>
+                        {/* Screen surface background */}
+                        <div className="w-full h-full bg-slate-900 rounded-[2.7rem] relative overflow-hidden ring-[0.5px] ring-white/10">
+                          {/* Dynamic content inside screen with forced crossfade */}
+                          <div key={activeMockup.label} className="absolute inset-0 bg-gradient-to-b from-slate-800 to-slate-950 flex flex-col items-center justify-center p-6 text-center animate-fade-in z-10">
+                            <div className="bg-white/5 p-4 rounded-2xl mb-4 backdrop-blur-md border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
+                              <ActiveMockupIcon className="w-16 h-16 text-blue-400/90 drop-shadow-md" />
+                            </div>
+                            <h3 className="text-white font-bold text-xl mb-4 leading-tight px-4">{activeMockup.label}</h3>
+
+                            {/* Mockup UI skeleton details */}
+                            <div className="w-full space-y-3 opacity-60">
+                              <div className="w-16 h-1 bg-blue-500 rounded-full mx-auto mb-6 shadow-[0_0_10px_rgba(59,130,246,0.6)]" />
+                              <div className="w-[85%] h-3.5 bg-white/10 rounded-full mx-auto" />
+                              <div className="w-[60%] h-3 bg-white/5 rounded-full mx-auto" />
+
+                              <div className="grid grid-cols-2 gap-3 mt-8">
+                                <div className="h-16 bg-white/5 rounded-xl border border-white/5" />
+                                <div className="h-16 bg-white/5 rounded-xl border border-white/5" />
+                              </div>
+                            </div>
+
+                            {/* Screen glare effect (subtle) */}
+                            <div className="absolute top-0 right-0 w-full h-[50%] bg-gradient-to-br from-white/10 to-transparent skew-y-12 transform origin-top-right mix-blend-overlay pointer-events-none" />
+
+                            {/* Bottom home indicator */}
+                            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-[100px] h-[4px] bg-white/30 rounded-full backdrop-blur-md z-20" />
+
+                            <p className="text-gray-500/50 text-[10px] absolute bottom-8 uppercase tracking-[0.2em] font-bold">Image à intégrer</p>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
                 )}
 
                 {activeMockup.type === 'laptop' && (
-                  <div className="relative w-full px-4 transform scale-95 md:scale-100 transition-transform">
-                    <div className="w-full aspect-video bg-slate-900 border-[10px] border-slate-800 rounded-t-2xl shadow-2xl flex items-center justify-center overflow-hidden relative ring-2 ring-slate-700/50">
-                      {/* Webcam notch */}
-                      <div className="absolute top-0 w-full h-4 flex justify-center z-20">
-                        <div className="w-8 h-3 bg-slate-800 rounded-b-md mx-auto shadow-sm flex justify-center items-center">
-                          <div className="w-1 h-1 bg-green-900/50 rounded-full"></div>
+                  <div className="relative w-full max-w-[540px] px-4 transform scale-95 md:scale-100 transition-transform hover:scale-[1.02] duration-500 drop-shadow-[0_45px_45px_rgba(0,0,0,0.6)]">
+                    {/* Laptop Screen Frame */}
+                    <div className="w-full aspect-[16/10] bg-gradient-to-tr from-slate-800 via-slate-600 to-slate-800 rounded-t-3xl p-1.5 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.2)] relative z-10">
+                      {/* Inner screen bezel */}
+                      <div className="w-full h-full bg-black rounded-t-[1.3rem] p-3 pb-2 relative flex flex-col justify-end">
+                        {/* Webcam notch */}
+                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-black rounded-b-xl z-30 flex justify-center items-center shadow-lg">
+                          <div className="w-2.5 h-2.5 bg-slate-900 border border-slate-700/50 rounded-full flex items-center justify-center overflow-hidden">
+                            <div className="w-1 h-1 bg-blue-500/40 rounded-full blur-[1px]" />
+                          </div>
+                          <div className="w-1 h-1 bg-green-500/80 rounded-full ml-3 shadow-[0_0_4px_rgba(34,197,94,0.6)]" />
                         </div>
-                      </div>
 
-                      {/* Dynamic content inside screen with forced crossfade */}
-                      <div key={activeMockup.label} className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-900 flex flex-col items-center justify-center p-6 text-center mt-2 animate-fade-in shadow-inner">
-                        <div className="flex items-center gap-6">
-                          <div className="bg-white/5 p-5 rounded-2xl backdrop-blur-sm border border-white/10 shadow-lg">
-                            <ActiveMockupIcon className="w-20 h-20 text-cyan-400/80" />
-                          </div>
-                          <div className="text-left">
-                            <h3 className="text-white font-bold text-2xl mb-3 leading-tight">{activeMockup.label}</h3>
-                            <div className="w-16 h-1 bg-cyan-500/50 rounded-full mb-4" />
-                            <div className="w-48 h-3 bg-white/5 rounded-full mb-2" />
-                            <div className="w-32 h-3 bg-white/5 rounded-full" />
+                        {/* Screen surface */}
+                        <div className="w-full h-full bg-slate-900 rounded-t-lg rounded-b-sm overflow-hidden relative ring-[0.5px] ring-white/10">
+                          {/* Dynamic content inside screen with forced crossfade */}
+                          <div key={activeMockup.label} className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-950 flex flex-col items-center justify-center p-8 z-10 animate-fade-in shadow-inner">
+                            <div className="flex items-center gap-8 w-full max-w-sm mx-auto mb-10">
+                              <div className="bg-white/5 p-6 rounded-3xl backdrop-blur-md border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.3)] shrink-0">
+                                <ActiveMockupIcon className="w-20 h-20 text-cyan-400/90 drop-shadow-md" />
+                              </div>
+                              <div className="text-left w-full flex-1">
+                                <h3 className="text-white font-bold text-2xl mb-4 leading-tight">{activeMockup.label}</h3>
+                                <div className="w-16 h-1 bg-cyan-500 rounded-full mb-6 shadow-[0_0_10px_rgba(6,182,212,0.6)]" />
+
+                                {/* Mockup UI skeleton lines */}
+                                <div className="space-y-3 opacity-60">
+                                  <div className="w-full h-3 bg-white/10 rounded-full" />
+                                  <div className="w-3/4 h-3 bg-white/5 rounded-full" />
+                                  <div className="w-1/2 h-3 bg-white/5 rounded-full" />
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Screen glare effect */}
+                            <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-tr from-white/10 via-transparent to-transparent opacity-30 pointer-events-none mix-blend-overlay" />
+
+                            <p className="text-gray-500/50 text-[10px] absolute bottom-4 uppercase tracking-[0.2em] font-bold">Image à intégrer</p>
                           </div>
                         </div>
-                        <p className="text-gray-500/50 text-xs absolute bottom-4 uppercase tracking-widest font-semibold">Image à intégrer</p>
+
+                        {/* Logo space (empty black gap at bottom of screen) */}
+                        <div className="w-full h-4 mt-1" />
                       </div>
                     </div>
-                    <div className="w-[110%] -ml-[5%] h-5 bg-gradient-to-b from-slate-400 to-slate-500 rounded-b-xl shadow-2xl relative flex justify-center border-t border-slate-600 z-10">
-                      <div className="w-32 h-1.5 bg-slate-600 rounded-b-lg absolute top-0 shadow-inner" />
+
+                    {/* Laptop Base */}
+                    <div className="relative z-20">
+                      {/* Base Top (keyboard deck deck level) */}
+                      <div className="w-[110%] -ml-[5%] h-3 bg-gradient-to-r from-slate-500 via-slate-400 to-slate-500 rounded-t-[2px] shadow-[inset_0_1.5px_1px_rgba(255,255,255,0.4)] border-t border-slate-300 relative flex justify-center items-start overflow-hidden">
+                        {/* Trackpad thumb notch cutout */}
+                        <div className="w-28 h-2 bg-slate-600/80 rounded-b-lg shadow-inner absolute top-0" />
+                      </div>
+                      {/* Base Front Edge (depth) */}
+                      <div className="w-[110%] -ml-[5%] h-3 bg-gradient-to-b from-slate-500 to-slate-800 rounded-b-2xl shadow-[0_20px_40px_rgba(0,0,0,0.6)] flex justify-between px-6 pt-0.5">
+                        <div className="w-2 h-0.5 bg-slate-900 rounded-full opacity-30" />
+                        <div className="w-2 h-0.5 bg-slate-900 rounded-full opacity-30" />
+                      </div>
                     </div>
                   </div>
                 )}
