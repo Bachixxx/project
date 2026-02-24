@@ -149,7 +149,7 @@ function Register() {
 
       // --- CARDLESS TRIAL FLOW ---
       // No payment required at signup. Immediate access.
-      navigate('/dashboard');
+      navigate('/onboarding');
 
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
@@ -176,7 +176,7 @@ function Register() {
             Votre abonnement Pro a été activé avec succès. Vous avez maintenant accès à toutes les fonctionnalités premium.
           </p>
           <button
-            onClick={() => navigate('/dashboard')}
+            onClick={() => navigate('/onboarding')}
             className="w-full py-4 px-6 bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-bold rounded-xl hover:from-blue-600 hover:to-cyan-600 shadow-lg shadow-blue-500/25 transition-all transform hover:scale-[1.02]"
           >
             Accéder à mon tableau de bord

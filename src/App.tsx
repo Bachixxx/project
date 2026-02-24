@@ -9,7 +9,7 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { NotificationsProvider } from './contexts/NotificationsContext';
 import { LiveSessionProvider } from './contexts/LiveSessionContext'; // Added
 import { TerminalProvider } from './contexts/TerminalContext'; // Added
-import PrivateRoute from './components/PrivateRoute';
+import CoachPrivateRoute from './components/coach/CoachPrivateRoute';
 import ScrollToTop from './components/ScrollToTop';
 import ClientPrivateRoute from './components/client/ClientPrivateRoute';
 import ClientLayout from './components/client/ClientLayout';
@@ -25,6 +25,7 @@ import Home from './pages/Home';
 // const ProgramDetails = lazy(() => import('./pages/ProgramDetails'));
 const Login = lazy(() => import('./pages/Login'));
 const Register = lazy(() => import('./pages/Register')); // Keep if we want to revert later, but unused for main route
+const CoachOnboarding = lazy(() => import('./pages/coach/CoachOnboarding'));
 const Waitlist = lazy(() => import('./pages/Waitlist')); // New
 const Features = lazy(() => import('./pages/Features'));
 const Pricing = lazy(() => import('./pages/Pricing'));
@@ -129,6 +130,7 @@ function App() {
                         <Suspense fallback={<Loading />}>
                           <NativeRedirect>
                             <Routes>
+                              <Route path="/onboarding" element={<CoachPrivateRoute><CoachOnboarding /></CoachPrivateRoute>} />
                               {/* Routes publiques */}
                               <Route path="/" element={<PublicHome />} />
                               {/* <Route path="/marketplace" element={<Marketplace />} /> */}
@@ -154,153 +156,153 @@ function App() {
                                 <Route
                                   path="/admin"
                                   element={
-                                    <PrivateRoute>
+                                    <CoachPrivateRoute>
                                       <Admin />
-                                    </PrivateRoute>
+                                    </CoachPrivateRoute>
                                   }
                                 />
                                 <Route
                                   path="/dashboard"
                                   element={
-                                    <PrivateRoute>
+                                    <CoachPrivateRoute>
                                       <Dashboard />
-                                    </PrivateRoute>
+                                    </CoachPrivateRoute>
                                   }
                                 />
                                 <Route
                                   path="/profile"
                                   element={
-                                    <PrivateRoute>
+                                    <CoachPrivateRoute>
                                       <Profile />
-                                    </PrivateRoute>
+                                    </CoachPrivateRoute>
                                   }
                                 />
                                 <Route
                                   path="/exercises"
                                   element={
-                                    <PrivateRoute>
+                                    <CoachPrivateRoute>
                                       <Exercises />
-                                    </PrivateRoute>
+                                    </CoachPrivateRoute>
                                   }
                                 />
                                 <Route
                                   path="/sessions"
                                   element={
-                                    <PrivateRoute>
+                                    <CoachPrivateRoute>
                                       <Sessions />
-                                    </PrivateRoute>
+                                    </CoachPrivateRoute>
                                   }
                                 />
                                 <Route
                                   path="/blocks"
                                   element={
-                                    <PrivateRoute>
+                                    <CoachPrivateRoute>
                                       <Blocks />
-                                    </PrivateRoute>
+                                    </CoachPrivateRoute>
                                   }
                                 />
                                 <Route
                                   path="/programs"
                                   element={
-                                    <PrivateRoute>
+                                    <CoachPrivateRoute>
                                       <Programs />
-                                    </PrivateRoute>
+                                    </CoachPrivateRoute>
                                   }
                                 />
                                 <Route
                                   path="/clients"
                                   element={
-                                    <PrivateRoute>
+                                    <CoachPrivateRoute>
                                       <Clients />
-                                    </PrivateRoute>
+                                    </CoachPrivateRoute>
                                   }
                                 />
                                 <Route
                                   path="/clients/:clientId"
                                   element={
-                                    <PrivateRoute>
+                                    <CoachPrivateRoute>
                                       <ClientDetails />
-                                    </PrivateRoute>
+                                    </CoachPrivateRoute>
                                   }
                                 />
                                 <Route
                                   path="/clients/:clientId/analytics"
                                   element={
-                                    <PrivateRoute>
+                                    <CoachPrivateRoute>
                                       <ClientAnalytics />
-                                    </PrivateRoute>
+                                    </CoachPrivateRoute>
                                   }
                                 />
                                 <Route
                                   path="/calendar"
                                   element={
-                                    <PrivateRoute>
+                                    <CoachPrivateRoute>
                                       <Calendar />
-                                    </PrivateRoute>
+                                    </CoachPrivateRoute>
                                   }
                                 />
                                 <Route
                                   path="/workout/:clientProgramId"
                                   element={
-                                    <PrivateRoute>
+                                    <CoachPrivateRoute>
                                       <CoachProgramDetails />
-                                    </PrivateRoute>
+                                    </CoachPrivateRoute>
                                   }
                                 />
                                 <Route
                                   path="/monthly-revenue"
                                   element={
-                                    <PrivateRoute>
+                                    <CoachPrivateRoute>
                                       <MonthlyRevenue />
-                                    </PrivateRoute>
+                                    </CoachPrivateRoute>
                                   }
                                 />
                                 <Route
                                   path="/payments"
                                   element={
-                                    <PrivateRoute>
+                                    <CoachPrivateRoute>
                                       <Payments />
-                                    </PrivateRoute>
+                                    </CoachPrivateRoute>
                                   }
                                 />
                                 <Route
                                   path="/terminal"
                                   element={
-                                    <PrivateRoute>
+                                    <CoachPrivateRoute>
                                       <Terminal />
-                                    </PrivateRoute>
+                                    </CoachPrivateRoute>
                                   }
                                 />
                                 <Route
                                   path="/offers"
                                   element={
-                                    <PrivateRoute>
+                                    <CoachPrivateRoute>
                                       <Offers />
-                                    </PrivateRoute>
+                                    </CoachPrivateRoute>
                                   }
                                 />
                                 <Route
                                   path="/multi-coaching"
                                   element={
-                                    <PrivateRoute>
+                                    <CoachPrivateRoute>
                                       <MultiClientCoaching />
-                                    </PrivateRoute>
+                                    </CoachPrivateRoute>
                                   }
                                 />
                                 <Route
                                   path="/branding"
                                   element={
-                                    <PrivateRoute>
+                                    <CoachPrivateRoute>
                                       <BrandingSettings />
-                                    </PrivateRoute>
+                                    </CoachPrivateRoute>
                                   }
                                 />
                                 <Route
                                   path="/live-session/:sessionId"
                                   element={
-                                    <PrivateRoute>
+                                    <CoachPrivateRoute>
                                       <LiveSessionMode />
-                                    </PrivateRoute>
+                                    </CoachPrivateRoute>
                                   }
                                 />
                               </Route>
