@@ -65,7 +65,7 @@ function Terms() {
                 Pour utiliser la Plateforme, l'Utilisateur doit créer un compte. L'Utilisateur s'engage à fournir des informations exactes, complètes et à jour.
               </p>
               <p>
-                L'Utilisateur est seul responsable de la sécurité et de la confidentialité de ses identifiants de connexion. Toute action effectuée depuis le compte de l'Utilisateur est réputée avoir été effectuée par lui-même. En cas de perte ou d'accès non autorisé, l'Utilisateur doit en informer immédiatement l'Exploitant à <strong>coachency@gmail.com</strong>.
+                L'Utilisateur est seul responsable de la sécurité et de la confidentialité de ses identifiants de connexion. Toute action effectuée depuis le compte de l'Utilisateur est réputée avoir été effectuée par lui-même. En cas de perte ou d'accès non autorisé, l'Utilisateur doit en informer immédiatement l'Exploitant à <strong>contact@coachency.ch</strong>.
               </p>
             </section>
 

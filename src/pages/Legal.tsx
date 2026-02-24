@@ -41,7 +41,7 @@ function Legal() {
                   <li><strong>Nom et prénom :</strong> Bächtold Jérémy</li>
                   <li><strong>Statut actuel :</strong> Indépendant / Personne Physique</li>
                   <li><strong>Adresse de domiciliation :</strong> Route des Romelles 9, 1293 Bellevue, Canton de Genève, Suisse</li>
-                  <li><strong>Email de contact officiel :</strong> coachency@gmail.com</li>
+                  <li><strong>Email de contact officiel :</strong> contact@coachency.ch</li>
                   <li><strong>Responsable de la Publication :</strong> Bächtold Jérémy</li>
                   <li><strong>Numéro d'Identification des Entreprises (IDE / CHE) :</strong> <em>[Sera complété lors de l'inscription au RC/TVA si les seuils sont atteints]</em></li>
                 </ul>
@@ -88,7 +88,7 @@ function Legal() {
                 En qualité de prestataire technique logiciel, l'Exploitant de Coachency.app intervient en tant qu'hébergeur des contenus générés par les Coachs Utilisateurs.
               </p>
               <p className="mt-2 text-gray-600">
-                Afin de signaler la présence d'un contenu susceptible d'enfreindre la loi, constitutif d'une infraction, ou de toute activité illicite de la part d'un utilisateur utilisant Coachency.app, vous pouvez joindre l'éditeur par courriel avec accusé de réception à l'adresse suivante : <strong>coachency@gmail.com</strong>, en mentionnant précisément l'objet de votre réclamation avec les preuves associées.
+                Afin de signaler la présence d'un contenu susceptible d'enfreindre la loi, constitutif d'une infraction, ou de toute activité illicite de la part d'un utilisateur utilisant Coachency.app, vous pouvez joindre l'éditeur par courriel avec accusé de réception à l'adresse suivante : <strong>contact@coachency.ch</strong>, en mentionnant précisément l'objet de votre réclamation avec les preuves associées.
               </p>
             </section>
           </div>

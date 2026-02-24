@@ -47,7 +47,7 @@ function Privacy() {
                 L'Exploitant légal et Délégué à la protection des données (DPO) pour Coachency.app est :<br />
                 <strong>Bächtold Jérémy</strong><br />
                 Route des Romelles 9, 1293 Bellevue, Genève, Suisse<br />
-                Contact : <strong>coachency@gmail.com</strong>
+                Contact : <strong>contact@coachency.ch</strong>
               </p>
             </section>
 
@@ -133,7 +133,7 @@ function Privacy() {
 
             <section className="mb-8">
               <h2 className="text-xl font-semibold text-gray-800 mb-4">8. Exercice de Vos Droits</h2>
-              <p className="mb-4">Conformément à la nLPD et au RGPD, vous disposez des droits suivants, exerçables gratuitement en contactant <strong>coachency@gmail.com</strong> :</p>
+              <p className="mb-4">Conformément à la nLPD et au RGPD, vous disposez des droits suivants, exerçables gratuitement en contactant <strong>contact@coachency.ch</strong> :</p>
               <ul className="list-disc pl-6 space-y-2">
                 <li><strong>Droit d'accès :</strong> Obtenir une copie des données traitées.</li>
                 <li><strong>Droit de rectification :</strong> Corriger des données inexactes ou incomplètes.</li>
