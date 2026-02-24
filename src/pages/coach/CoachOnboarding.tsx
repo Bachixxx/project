@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../contexts/AuthContext';
 import {
   ChevronRight, ChevronLeft, Check, Sparkles,
   Users, Activity, CreditCard, Settings, Camera,
-  Dumbbell, MonitorPlay, CalendarDays, Smartphone, Laptop, LayoutDashboard
+  Dumbbell, MonitorPlay, CalendarDays, LayoutDashboard
 } from 'lucide-react';
 import { t } from '../../i18n';
 
@@ -107,10 +107,9 @@ export default function CoachOnboarding() {
           { id: 3, icon: <Settings className="w-5 h-5 text-purple-400" />, title: "À votre Image", desc: "Application client personnalisée avec votre logo et un message de bienvenue unique." }
         ],
         mockups: {
-          default: { type: 'mixed', label: 'Vue Globale' },
-          1: { type: 'smartphone', label: 'Vue Biométrie Client' },
-          2: { type: 'laptop', label: 'Créateur de Programme' },
-          3: { type: 'smartphone', label: 'App Client Personnalisée' }
+          1: { type: 'smartphone', label: 'Vue Biométrie Client', icon: Activity },
+          2: { type: 'laptop', label: 'Créateur de Programme', icon: Dumbbell },
+          3: { type: 'smartphone', label: 'App Client Personnalisée', icon: Settings }
         }
       },
       {
@@ -123,9 +122,8 @@ export default function CoachOnboarding() {
           { id: 5, icon: <CreditCard className="w-5 h-5 text-amber-400" />, title: "Terminal Tap-to-Pay", desc: "Encaissez vos clients immédiatement après la séance grâce au terminal intégré (Sans contact ou QR Code)." }
         ],
         mockups: {
-          default: { type: 'smartphone', label: 'Outils Présentiel' },
-          4: { type: 'smartphone', label: 'Flow Mode (Séance en direct)' },
-          5: { type: 'smartphone', label: 'Terminal Tap-to-Pay' }
+          4: { type: 'smartphone', label: 'Flow Mode (Séance en direct)', icon: MonitorPlay },
+          5: { type: 'smartphone', label: 'Terminal Tap-to-Pay', icon: CreditCard }
         }
       },
       {
@@ -138,9 +136,8 @@ export default function CoachOnboarding() {
           { id: 7, icon: <LayoutDashboard className="w-5 h-5 text-green-400" />, title: "Mode Multi-Coaching", desc: "Gardez un œil sur tout le monde. Affichez et gérez simultanément le programme de plusieurs clients en présentiel." }
         ],
         mockups: {
-          default: { type: 'laptop', label: 'Outils de Groupe' },
-          6: { type: 'smartphone', label: 'Réservation Client' },
-          7: { type: 'laptop', label: 'Dashboard Multi-Coaching' }
+          6: { type: 'smartphone', label: 'Réservation Client', icon: CalendarDays },
+          7: { type: 'laptop', label: 'Dashboard Multi-Coaching', icon: LayoutDashboard }
         }
       },
       {
@@ -153,9 +150,8 @@ export default function CoachOnboarding() {
           { id: 9, icon: <CreditCard className="w-5 h-5 text-emerald-400" />, title: "Abonnements & Revenus", desc: "Sécurisez votre chiffre d'affaires. Créez des abonnements récurrents et suivez vos paiements sur votre Dashboard." }
         ],
         mockups: {
-          default: { type: 'laptop', label: 'Outils Distanciel' },
-          8: { type: 'laptop', label: 'Planning Client Interactif' },
-          9: { type: 'laptop', label: 'Tableau de bord Revenus' }
+          8: { type: 'laptop', label: 'Planning Client Interactif', icon: CalendarDays },
+          9: { type: 'laptop', label: 'Tableau de bord Revenus', icon: CreditCard }
         }
       }
     ];
@@ -164,20 +160,18 @@ export default function CoachOnboarding() {
 
     // Determine which mockup to show based on hover or last hover
     const getActiveMockup = () => {
-      let mockup: { type: string, label: string } | undefined;
+      let featureIdToUse = hoveredFeature !== null ? hoveredFeature : lastHoveredFeature;
 
-      const featureIdToUse = hoveredFeature !== null ? hoveredFeature : lastHoveredFeature;
-
-      if (featureIdToUse !== null && currentSlideData.mockups[featureIdToUse as keyof typeof currentSlideData.mockups]) {
-        mockup = currentSlideData.mockups[featureIdToUse as keyof typeof currentSlideData.mockups] as unknown as { type: string, label: string };
-      } else {
-        mockup = currentSlideData.mockups.default as unknown as { type: string, label: string };
+      // Fallback to first feature of current slide if ID is invalid or not in slide
+      if (featureIdToUse === null || !(featureIdToUse in currentSlideData.mockups)) {
+        featureIdToUse = currentSlideData.features[0].id;
       }
 
-      return mockup || { type: 'smartphone', label: 'Aperçu' };
+      return currentSlideData.mockups[featureIdToUse as keyof typeof currentSlideData.mockups] as unknown as { type: string, label: string, icon: any };
     };
 
     const activeMockup = getActiveMockup();
+    const ActiveMockupIcon = activeMockup.icon;
 
     return (
       <div className="animate-fade-in flex flex-col lg:flex-row h-full min-h-[600px] gap-8 xl:gap-16 items-center">
@@ -201,28 +195,34 @@ export default function CoachOnboarding() {
             </h2>
 
             <div className="grid gap-4 mb-8">
-              {currentSlideData.features.map((feature) => (
-                <div
-                  key={feature.id}
-                  onMouseEnter={() => setHoveredFeature(feature.id)}
-                  onMouseLeave={() => setHoveredFeature(null)}
-                  className={`border p-5 rounded-2xl flex items-start gap-4 transition-all duration-300 cursor-default ${hoveredFeature === feature.id
-                    ? 'bg-white/10 border-blue-500/50 shadow-[0_0_30px_rgba(59,130,246,0.15)] scale-[1.02] -translate-y-1 z-10'
-                    : 'bg-white/5 border-white/10 hover:bg-white/[0.07] hover:border-white/20'
-                    }`}
-                >
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-colors ${hoveredFeature === feature.id ? 'bg-blue-500/20' : 'bg-black/20'
-                    }`}>
-                    {React.cloneElement(feature.icon as React.ReactElement, {
-                      className: `w-6 h-6 transition-colors ${hoveredFeature === feature.id ? 'text-blue-400' : (feature.icon as React.ReactElement).props.className}`
-                    })}
+              {currentSlideData.features.map((feature) => {
+                const isHovered = hoveredFeature === feature.id;
+                const isActive = hoveredFeature === null && lastHoveredFeature === feature.id || (hoveredFeature === null && lastHoveredFeature === null && feature.id === currentSlideData.features[0].id);
+                const shouldHighlight = isHovered || (hoveredFeature === null && isActive);
+
+                return (
+                  <div
+                    key={feature.id}
+                    onMouseEnter={() => setHoveredFeature(feature.id)}
+                    onMouseLeave={() => setHoveredFeature(null)}
+                    className={`border p-5 rounded-2xl flex items-start gap-4 transition-all duration-300 cursor-default ${shouldHighlight
+                      ? 'bg-white/10 border-blue-500/50 shadow-[0_0_30px_rgba(59,130,246,0.15)] scale-[1.02] -translate-y-1 z-10'
+                      : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/[0.07] hover:border-white/20'
+                      }`}
+                  >
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-colors ${shouldHighlight ? 'bg-blue-500/20' : 'bg-black/20'
+                      }`}>
+                      {React.cloneElement(feature.icon as React.ReactElement, {
+                        className: `w-6 h-6 transition-colors ${shouldHighlight ? 'text-blue-400' : (feature.icon as React.ReactElement).props.className}`
+                      })}
+                    </div>
+                    <div>
+                      <h4 className="text-white font-semibold text-lg">{feature.title}</h4>
+                      <p className="text-sm text-gray-400 mt-1.5 leading-relaxed">{feature.desc}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="text-white font-semibold text-lg">{feature.title}</h4>
-                    <p className="text-sm text-gray-400 mt-1.5 leading-relaxed">{feature.desc}</p>
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
 
@@ -254,11 +254,10 @@ export default function CoachOnboarding() {
           </div>
         </div>
 
-        {/* Right Side: Visuals/Mockups (Hidden on small screens) */}
+        {/* Right Side: Visuals/Mockups */}
         <div className="hidden lg:flex flex-1 items-center justify-center relative w-full h-[600px]">
           {/* Background glow that follows the active mockup */}
-          <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[80%] rounded-full blur-[100px] opacity-40 transition-colors duration-700 pointer-events-none ${activeMockup.type === 'smartphone' ? 'bg-blue-500/40' :
-            activeMockup.type === 'laptop' ? 'bg-cyan-500/40' : 'bg-indigo-500/40'
+          <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[80%] rounded-full blur-[100px] opacity-40 transition-colors duration-700 pointer-events-none ${activeMockup.type === 'smartphone' ? 'bg-blue-500/30' : 'bg-cyan-500/30'
             }`} />
 
           <div className="relative w-full max-w-lg aspect-square flex items-center justify-center">
@@ -267,61 +266,62 @@ export default function CoachOnboarding() {
               {/* This grid overlay subtlely mimics a screen reflection/texture */}
               <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5 mix-blend-overlay pointer-events-none" />
 
-              {/* ContentWrapper to handle fade transition. Use 'activeMockup' keys to trigger re-renders if necessary, but keep the container stable */}
-              <div key={`${slide}-${activeMockup.label}`} className="animate-fade-in w-full h-full flex items-center justify-center z-10">
+              {/* Only the structure changes if switching type, otherwise screen fades natively */}
+              <div className="w-full h-full flex items-center justify-center z-10 transition-all duration-300">
 
                 {activeMockup.type === 'smartphone' && (
                   <div className="relative h-full py-4 flex items-center justify-center">
-                    <div className="w-[280px] h-[580px] bg-slate-900 border-[10px] border-slate-700 rounded-[3rem] shadow-2xl flex items-center justify-center overflow-hidden relative transform scale-95 md:scale-100">
-                      {/* Notch */}
-                      <div className="absolute top-0 w-32 h-6 bg-slate-700 rounded-b-3xl z-20 flex justify-center">
-                        <div className="w-12 h-1.5 bg-slate-800 rounded-full mt-2" />
+                    <div className="w-[300px] h-[600px] bg-slate-900 border-[12px] border-slate-800 rounded-[3rem] shadow-2xl flex items-center justify-center overflow-hidden relative transform scale-95 md:scale-100 ring-[3px] ring-slate-700/50">
+                      {/* Notch (Dynamic Island) */}
+                      <div className="absolute top-2 w-28 h-7 bg-black rounded-full z-20 flex justify-center items-center shadow-md">
+                        <div className="w-2.5 h-2.5 bg-slate-900/50 rounded-full mr-2" />
+                        <div className="w-2.5 h-2.5 bg-blue-900/40 rounded-full" />
                       </div>
 
-                      {/* Dynamic content placeholder for smartphone */}
-                      <div className="absolute inset-0 bg-gradient-to-b from-slate-800 to-slate-900 flex flex-col items-center justify-center p-6 text-center">
-                        <Smartphone className="w-16 h-16 text-blue-400/50 mb-4 animate-pulse" />
-                        <h3 className="text-white font-bold text-xl mb-2">{activeMockup.label}</h3>
-                        <p className="text-gray-500 text-sm">Image à intégrer</p>
+                      {/* Dynamic content inside screen with forced crossfade */}
+                      <div key={activeMockup.label} className="absolute inset-0 bg-gradient-to-b from-slate-800 to-slate-900 flex flex-col items-center justify-center p-6 text-center animate-fade-in shadow-inner">
+                        <div className="bg-white/5 p-4 rounded-2xl mb-4 backdrop-blur-sm border border-white/10 shadow-lg">
+                          <ActiveMockupIcon className="w-16 h-16 text-blue-400/80" />
+                        </div>
+                        <h3 className="text-white font-bold text-xl mb-3 leading-tight px-4">{activeMockup.label}</h3>
+                        <div className="w-12 h-1 bg-blue-500/50 rounded-full mb-6" />
+                        <div className="w-3/4 h-3 bg-white/5 rounded-full mb-2" />
+                        <div className="w-1/2 h-3 bg-white/5 rounded-full" />
+
+                        <p className="text-gray-500/50 text-xs mt-auto pb-4 uppercase tracking-widest font-semibold">Image à intégrer</p>
                       </div>
                     </div>
                   </div>
                 )}
 
                 {activeMockup.type === 'laptop' && (
-                  <div className="relative w-full px-4">
-                    <div className="w-full aspect-video bg-slate-900 border-[10px] border-slate-700 rounded-t-2xl shadow-2xl flex items-center justify-center overflow-hidden relative">
+                  <div className="relative w-full px-4 transform scale-95 md:scale-100 transition-transform">
+                    <div className="w-full aspect-video bg-slate-900 border-[10px] border-slate-800 rounded-t-2xl shadow-2xl flex items-center justify-center overflow-hidden relative ring-2 ring-slate-700/50">
                       {/* Webcam notch */}
-                      <div className="absolute top-0 w-full h-4 flex justify-center">
-                        <div className="w-2 h-2 bg-slate-800 rounded-full mt-1" />
+                      <div className="absolute top-0 w-full h-4 flex justify-center z-20">
+                        <div className="w-8 h-3 bg-slate-800 rounded-b-md mx-auto shadow-sm flex justify-center items-center">
+                          <div className="w-1 h-1 bg-green-900/50 rounded-full"></div>
+                        </div>
                       </div>
 
-                      {/* Dynamic content placeholder for laptop */}
-                      <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-900 flex flex-col items-center justify-center p-6 text-center mt-2">
-                        <Laptop className="w-20 h-20 text-cyan-400/50 mb-4 animate-pulse" />
-                        <h3 className="text-white font-bold text-2xl mb-2">{activeMockup.label}</h3>
-                        <p className="text-gray-500 text-sm">Image à intégrer</p>
+                      {/* Dynamic content inside screen with forced crossfade */}
+                      <div key={activeMockup.label} className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-900 flex flex-col items-center justify-center p-6 text-center mt-2 animate-fade-in shadow-inner">
+                        <div className="flex items-center gap-6">
+                          <div className="bg-white/5 p-5 rounded-2xl backdrop-blur-sm border border-white/10 shadow-lg">
+                            <ActiveMockupIcon className="w-20 h-20 text-cyan-400/80" />
+                          </div>
+                          <div className="text-left">
+                            <h3 className="text-white font-bold text-2xl mb-3 leading-tight">{activeMockup.label}</h3>
+                            <div className="w-16 h-1 bg-cyan-500/50 rounded-full mb-4" />
+                            <div className="w-48 h-3 bg-white/5 rounded-full mb-2" />
+                            <div className="w-32 h-3 bg-white/5 rounded-full" />
+                          </div>
+                        </div>
+                        <p className="text-gray-500/50 text-xs absolute bottom-4 uppercase tracking-widest font-semibold">Image à intégrer</p>
                       </div>
                     </div>
-                    <div className="w-[110%] -ml-[5%] h-5 bg-slate-600 rounded-b-xl shadow-xl relative flex justify-center">
-                      <div className="w-24 h-2 bg-slate-500 rounded-b-lg absolute top-0" />
-                    </div>
-                  </div>
-                )}
-
-                {activeMockup.type === 'mixed' && (
-                  <div className="relative w-full h-full flex items-center justify-center">
-                    <div className="absolute top-6 left-0 w-[90%] aspect-video bg-slate-900 border-[8px] border-slate-700 rounded-xl shadow-2xl flex items-center justify-center z-10 opacity-90 transform -rotate-2 hover:rotate-0 transition-transform duration-500">
-                      <div className="flex flex-col items-center text-center">
-                        <Laptop className="w-12 h-12 text-indigo-400/50 mb-2" />
-                        <span className="text-white font-bold text-lg">Dashboard Desktop</span>
-                      </div>
-                    </div>
-                    <div className="absolute bottom-6 right-0 w-[170px] h-[360px] bg-slate-900 border-[8px] border-slate-700 rounded-[2.5rem] shadow-2xl flex items-center justify-center z-20 opacity-95 transform rotate-6 hover:rotate-0 transition-transform duration-500">
-                      <div className="flex flex-col items-center text-center">
-                        <Smartphone className="w-10 h-10 text-emerald-400/50 mb-2" />
-                        <span className="text-white font-bold text-sm">App Client Mobile</span>
-                      </div>
+                    <div className="w-[110%] -ml-[5%] h-5 bg-gradient-to-b from-slate-400 to-slate-500 rounded-b-xl shadow-2xl relative flex justify-center border-t border-slate-600 z-10">
+                      <div className="w-32 h-1.5 bg-slate-600 rounded-b-lg absolute top-0 shadow-inner" />
                     </div>
                   </div>
                 )}
