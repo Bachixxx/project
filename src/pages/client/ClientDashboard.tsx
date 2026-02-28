@@ -64,7 +64,7 @@ export default function ClientDashboard() {
 
   // Create a Set of days with workouts (0 = Sunday, 1 = Monday, etc.)
   const daysWithWorkouts = new Set(
-    (weeklyWorkoutsData || []).map((w: any) => new Date(w.date).getDay())
+    (weeklyWorkoutsData || []).map((w: any) => new Date(w.completed_at || w.date).getDay())
   );
 
   return (

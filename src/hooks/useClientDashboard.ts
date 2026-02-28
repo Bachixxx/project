@@ -100,11 +100,11 @@ export function useClientDashboard() {
 
                 // Weekly Workouts (This week)
                 supabase
-                    .from('workout_sessions')
-                    .select('id, date, duration_minutes, volume_load')
+                    .from('workout_logs')
+                    .select('id, completed_at, reps, weight')
                     .eq('client_id', client.id)
-                    .gte('date', startOfWeek(new Date(), { weekStartsOn: 1 }).toISOString())
-                    .lte('date', endOfWeek(new Date(), { weekStartsOn: 1 }).toISOString()),
+                    .gte('completed_at', startOfWeek(new Date(), { weekStartsOn: 1 }).toISOString())
+                    .lte('completed_at', endOfWeek(new Date(), { weekStartsOn: 1 }).toISOString()),
 
                 // Weight Logs (Last 30 days)
                 supabase
@@ -131,8 +131,8 @@ export function useClientDashboard() {
 
                 // All Workouts (for stats)
                 supabase
-                    .from('workout_sessions')
-                    .select('id, date')
+                    .from('workout_logs')
+                    .select('id, completed_at, reps, weight')
                     .eq('client_id', client.id),
 
                 // Latest Body Scan (for current weight)
@@ -158,10 +158,24 @@ export function useClientDashboard() {
                 ? weightHistory[weightHistory.length - 1].weight - weightHistory[0].weight
                 : null;
 
+            const allLogs = allWorkoutsRes.data || [];
+            // Map logs to exact unique dates to calculate total completed sessions
+            const uniqueWorkoutDates = Array.from(new Set(
+                allLogs.map(l => new Date(l.completed_at).toDateString())
+            ));
+
+            const totalVolume = allLogs.reduce((acc, curr) => acc + ((curr.weight || 0) * (curr.reps || 0)), 0);
+
+            // For the week specifically
+            const currentWeekLogs = workoutsRes.data || [];
+            const weeklyWorkoutsSet = new Set(
+                currentWeekLogs.map(l => new Date(l.completed_at).toDateString())
+            );
+
             const stats = {
-                totalWorkouts: allWorkoutsRes.count || allWorkoutsRes.data?.length || 0,
-                streakDays: client.current_streak || calculateStreak(allWorkoutsRes.data || []),
-                totalVolume: workoutsRes.data?.reduce((acc, curr) => acc + (curr.volume_load || 0), 0) || 0,
+                totalWorkouts: uniqueWorkoutDates.length,
+                streakDays: client.current_streak || calculateStreakFromLogs(uniqueWorkoutDates),
+                totalVolume: totalVolume,
                 level: client.level || 1,
                 xp: client.xp || 0
             };
@@ -170,7 +184,7 @@ export function useClientDashboard() {
                 client,
                 nextSession: nextSessionRes.data,
                 activeProgram: activeProgramRes.data,
-                weeklyWorkouts: workoutsRes.data?.length || 0,
+                weeklyWorkouts: weeklyWorkoutsSet.size,
                 weeklyWorkoutsData: workoutsRes.data || [],
                 weightProgress,
                 programProgress: activeProgramRes.data?.progress || 0,
@@ -190,26 +204,24 @@ export function useClientDashboard() {
     };
 }
 
-function calculateStreak(workouts: any[]): number {
-    if (!workouts.length) return 0;
 
-    const sortedDates = workouts
-        .map(w => new Date(w.date).toDateString())
-        .sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
 
-    const uniqueDates = [...new Set(sortedDates)];
+function calculateStreakFromLogs(uniqueDates: string[]): number {
+    if (!uniqueDates.length) return 0;
+
+    const sortedDates = [...uniqueDates].sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
     let streak = 0;
     const today = new Date().toDateString();
     const yesterday = new Date(Date.now() - 86400000).toDateString();
 
     // Check if first workout is today or yesterday
-    if (uniqueDates[0] !== today && uniqueDates[0] !== yesterday) {
+    if (sortedDates[0] !== today && sortedDates[0] !== yesterday) {
         return 0;
     }
 
-    let currentDate = uniqueDates[0] === today ? new Date() : new Date(Date.now() - 86400000);
+    let currentDate = sortedDates[0] === today ? new Date() : new Date(Date.now() - 86400000);
 
-    for (const dateStr of uniqueDates) {
+    for (const dateStr of sortedDates) {
         if (dateStr === currentDate.toDateString()) {
             streak++;
             currentDate.setDate(currentDate.getDate() - 1);
