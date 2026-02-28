@@ -107,7 +107,7 @@ export default function CoachOnboarding() {
           { id: 3, icon: <Settings className="w-5 h-5 text-purple-400" />, title: "À votre Image", desc: "Application client personnalisée avec votre logo et un message de bienvenue unique." }
         ],
         mockups: {
-          1: { type: 'laptop', label: 'Vue Biométrie Client', icon: Activity },
+          1: { type: 'laptop', label: 'Vue Biométrie Client', icon: Activity, video: '/assets/onboarding/Suivi Biométrique 360.mov' },
           2: { type: 'laptop', label: 'Créateur de Programme', icon: Dumbbell },
           3: { type: 'smartphone', label: 'App Client Personnalisée', icon: Settings }
         }
@@ -167,7 +167,7 @@ export default function CoachOnboarding() {
         featureIdToUse = currentSlideData.features[0].id;
       }
 
-      return currentSlideData.mockups[featureIdToUse as keyof typeof currentSlideData.mockups] as unknown as { type: string, label: string, icon: any };
+      return currentSlideData.mockups[featureIdToUse as keyof typeof currentSlideData.mockups] as unknown as { type: string, label: string, icon: any, video?: string };
     };
 
     const activeMockup = getActiveMockup();
@@ -295,33 +295,46 @@ export default function CoachOnboarding() {
                         </div>
 
                         {/* Screen surface background */}
-                        <div className="w-full h-full bg-slate-900 rounded-[2.7rem] relative overflow-hidden ring-[0.5px] ring-white/10">
+                        <div className="w-full h-full bg-slate-900 rounded-[2.7rem] relative overflow-hidden ring-[0.5px] ring-white/10 flex items-center justify-center">
                           {/* Dynamic content inside screen with forced crossfade */}
-                          <div key={activeMockup.label} className="absolute inset-0 bg-gradient-to-b from-slate-800 to-slate-950 flex flex-col items-center justify-center p-6 text-center animate-fade-in z-10">
-                            <div className="bg-white/5 p-4 rounded-2xl mb-4 backdrop-blur-md border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
-                              <ActiveMockupIcon className="w-16 h-16 text-blue-400/90 drop-shadow-md" />
-                            </div>
-                            <h3 className="text-white font-bold text-xl mb-4 leading-tight px-4">{activeMockup.label}</h3>
+                          <div key={activeMockup.label} className="absolute inset-0 bg-gradient-to-b from-slate-800 to-slate-950 flex flex-col items-center justify-center text-center animate-fade-in z-10">
 
-                            {/* Mockup UI skeleton details */}
-                            <div className="w-full space-y-3 opacity-60">
-                              <div className="w-16 h-1 bg-blue-500 rounded-full mx-auto mb-6 shadow-[0_0_10px_rgba(59,130,246,0.6)]" />
-                              <div className="w-[85%] h-3.5 bg-white/10 rounded-full mx-auto" />
-                              <div className="w-[60%] h-3 bg-white/5 rounded-full mx-auto" />
+                            {activeMockup.video ? (
+                              <video
+                                src={activeMockup.video}
+                                autoPlay
+                                loop
+                                muted
+                                playsInline
+                                className="w-full h-full object-cover animate-fade-in"
+                              />
+                            ) : (
+                              <div className="flex flex-col items-center justify-center h-full w-full p-6">
+                                <div className="bg-white/5 p-4 rounded-2xl mb-4 backdrop-blur-md border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
+                                  <ActiveMockupIcon className="w-16 h-16 text-blue-400/90 drop-shadow-md" />
+                                </div>
+                                <h3 className="text-white font-bold text-xl mb-4 leading-tight px-4">{activeMockup.label}</h3>
 
-                              <div className="grid grid-cols-2 gap-3 mt-8">
-                                <div className="h-16 bg-white/5 rounded-xl border border-white/5" />
-                                <div className="h-16 bg-white/5 rounded-xl border border-white/5" />
+                                {/* Mockup UI skeleton details */}
+                                <div className="w-full space-y-3 opacity-60">
+                                  <div className="w-16 h-1 bg-blue-500 rounded-full mx-auto mb-6 shadow-[0_0_10px_rgba(59,130,246,0.6)]" />
+                                  <div className="w-[85%] h-3.5 bg-white/10 rounded-full mx-auto" />
+                                  <div className="w-[60%] h-3 bg-white/5 rounded-full mx-auto" />
+
+                                  <div className="grid grid-cols-2 gap-3 mt-8">
+                                    <div className="h-16 bg-white/5 rounded-xl border border-white/5" />
+                                    <div className="h-16 bg-white/5 rounded-xl border border-white/5" />
+                                  </div>
+                                </div>
+                                <p className="text-gray-500/50 text-[10px] absolute bottom-8 uppercase tracking-[0.2em] font-bold">Image à intégrer</p>
                               </div>
-                            </div>
+                            )}
 
                             {/* Screen glare effect (subtle) */}
-                            <div className="absolute top-0 right-0 w-full h-[50%] bg-gradient-to-br from-white/10 to-transparent skew-y-12 transform origin-top-right mix-blend-overlay pointer-events-none" />
+                            {!activeMockup.video && <div className="absolute top-0 right-0 w-full h-[50%] bg-gradient-to-br from-white/10 to-transparent skew-y-12 transform origin-top-right mix-blend-overlay pointer-events-none" />}
 
                             {/* Bottom home indicator */}
                             <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-[100px] h-[4px] bg-white/30 rounded-full backdrop-blur-md z-20" />
-
-                            <p className="text-gray-500/50 text-[10px] absolute bottom-8 uppercase tracking-[0.2em] font-bold">Image à intégrer</p>
                           </div>
                         </div>
                       </div>
@@ -346,28 +359,42 @@ export default function CoachOnboarding() {
                         {/* Screen surface */}
                         <div className="w-full h-full bg-slate-900 rounded-t-lg rounded-b-sm overflow-hidden relative ring-[0.5px] ring-white/10">
                           {/* Dynamic content inside screen with forced crossfade */}
-                          <div key={activeMockup.label} className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-950 flex flex-col items-center justify-center p-8 z-10 animate-fade-in shadow-inner">
-                            <div className="flex items-center gap-8 w-full max-w-sm mx-auto mb-10">
-                              <div className="bg-white/5 p-6 rounded-3xl backdrop-blur-md border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.3)] shrink-0">
-                                <ActiveMockupIcon className="w-20 h-20 text-cyan-400/90 drop-shadow-md" />
-                              </div>
-                              <div className="text-left w-full flex-1">
-                                <h3 className="text-white font-bold text-2xl mb-4 leading-tight">{activeMockup.label}</h3>
-                                <div className="w-16 h-1 bg-cyan-500 rounded-full mb-6 shadow-[0_0_10px_rgba(6,182,212,0.6)]" />
+                          <div key={activeMockup.label} className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-950 flex flex-col items-center justify-center z-10 animate-fade-in shadow-inner">
 
-                                {/* Mockup UI skeleton lines */}
-                                <div className="space-y-3 opacity-60">
-                                  <div className="w-full h-3 bg-white/10 rounded-full" />
-                                  <div className="w-3/4 h-3 bg-white/5 rounded-full" />
-                                  <div className="w-1/2 h-3 bg-white/5 rounded-full" />
+                            {activeMockup.video ? (
+                              <video
+                                src={activeMockup.video}
+                                autoPlay
+                                loop
+                                muted
+                                playsInline
+                                className="w-full h-full object-cover animate-fade-in"
+                              />
+                            ) : (
+                              <div className="flex flex-col items-center justify-center h-full w-full p-8">
+                                <div className="flex items-center gap-8 w-full max-w-sm mx-auto mb-10">
+                                  <div className="bg-white/5 p-6 rounded-3xl backdrop-blur-md border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.3)] shrink-0">
+                                    <ActiveMockupIcon className="w-20 h-20 text-cyan-400/90 drop-shadow-md" />
+                                  </div>
+                                  <div className="text-left w-full flex-1">
+                                    <h3 className="text-white font-bold text-2xl mb-4 leading-tight">{activeMockup.label}</h3>
+                                    <div className="w-16 h-1 bg-cyan-500 rounded-full mb-6 shadow-[0_0_10px_rgba(6,182,212,0.6)]" />
+
+                                    {/* Mockup UI skeleton lines */}
+                                    <div className="space-y-3 opacity-60">
+                                      <div className="w-full h-3 bg-white/10 rounded-full" />
+                                      <div className="w-3/4 h-3 bg-white/5 rounded-full" />
+                                      <div className="w-1/2 h-3 bg-white/5 rounded-full" />
+                                    </div>
+                                  </div>
                                 </div>
+                                <p className="text-gray-500/50 text-[10px] absolute bottom-4 uppercase tracking-[0.2em] font-bold">Image à intégrer</p>
                               </div>
-                            </div>
+                            )}
 
                             {/* Screen glare effect */}
-                            <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-tr from-white/10 via-transparent to-transparent opacity-30 pointer-events-none mix-blend-overlay" />
+                            {!activeMockup.video && <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-tr from-white/10 via-transparent to-transparent opacity-30 pointer-events-none mix-blend-overlay" />}
 
-                            <p className="text-gray-500/50 text-[10px] absolute bottom-4 uppercase tracking-[0.2em] font-bold">Image à intégrer</p>
                           </div>
                         </div>
 
