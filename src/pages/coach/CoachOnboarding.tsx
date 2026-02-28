@@ -108,7 +108,7 @@ export default function CoachOnboarding() {
         ],
         mockups: {
           1: { type: 'laptop', label: 'Vue Biométrie Client', icon: Activity, video: '/assets/onboarding/suivi-biometrique.mov' },
-          2: { type: 'laptop', label: 'Créateur de Programme', icon: Dumbbell },
+          2: { type: 'laptop', label: 'Créateur de Programme', icon: Dumbbell, video: '/assets/onboarding/bibliotheque-entrainement.mov' },
           3: { type: 'smartphone', label: 'App Client Personnalisée', icon: Settings }
         }
       },
