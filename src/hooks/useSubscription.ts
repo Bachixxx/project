@@ -48,9 +48,9 @@ export function useSubscription() {
 
       return {
         type: isPaid ? 'paid' : 'free',
-        clientLimit: isPaid ? 999999 : coachData.client_limit, // Unlimited if paid
+        clientLimit: 999999, // Unlimited for everyone (trial or paid)
         currentClients: currentClients || 0,
-        canAddClient: isPaid || (currentClients || 0) < coachData.client_limit,
+        canAddClient: true, // Unlimited clients
         subscriptionEnd: coachData.subscription_end_date,
         hasBranding: coachData.has_branding || false,
         brandingSubscriptionId: coachData.branding_subscription_id,

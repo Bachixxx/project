@@ -1,27 +1,46 @@
-import React from 'react';
-import { AlertTriangle } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Clock } from 'lucide-react';
 import { useSubscription } from '../hooks/useSubscription';
+import { useAuth } from '../contexts/AuthContext';
+import { Link } from 'react-router-dom';
 
 export function SubscriptionAlert() {
   const { subscriptionInfo } = useSubscription();
+  const { user } = useAuth();
+  const [daysRemaining, setDaysRemaining] = useState<number | null>(null);
 
-  if (!subscriptionInfo || subscriptionInfo.type === 'paid') {
+  useEffect(() => {
+    if (user?.created_at && subscriptionInfo?.type === 'free') {
+      const createdAt = new Date(user.created_at);
+      const now = new Date();
+      const diffTime = Math.abs(now.getTime() - createdAt.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      const remaining = Math.max(0, 14 - diffDays);
+      setDaysRemaining(remaining);
+    }
+  }, [user, subscriptionInfo]);
+
+  if (!subscriptionInfo || subscriptionInfo.type === 'paid' || daysRemaining === null) {
     return null;
   }
 
-  const remainingClients = subscriptionInfo.clientLimit - subscriptionInfo.currentClients;
-
   return (
-    <div className="bg-yellow-500/10 backdrop-blur-lg border border-yellow-500/20 rounded-lg p-4 mb-6">
+    <div className="bg-primary-500/10 backdrop-blur-lg border border-primary-500/20 rounded-lg p-4 mb-6">
       <div className="flex items-start gap-3">
-        <AlertTriangle className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
-        <div>
-          <h3 className="font-medium text-yellow-500">Limitations du compte gratuit</h3>
-          <p className="text-yellow-500/80 text-sm mt-1">
-            Vous pouvez ajouter {remainingClients} client{remainingClients !== 1 ? 's' : ''} supplémentaire{remainingClients !== 1 ? 's' : ''} avec votre compte gratuit.
-            Passez à un abonnement payant pour obtenir des clients illimités et accéder à toutes les fonctionnalités.
+        <Clock className="w-5 h-5 text-primary-500 flex-shrink-0 mt-0.5" />
+        <div className="flex-1">
+          <h3 className="font-medium text-primary-500">Période d'essai gratuit</h3>
+          <p className="text-primary-400 text-sm mt-1">
+            Il vous reste {daysRemaining} jour{daysRemaining !== 1 ? 's' : ''} d'essai gratuit pour profiter de toutes les fonctionnalités.
+            Aucune limite de clients pendant cette période.
           </p>
         </div>
+        <Link
+          to="/pricing"
+          className="text-sm font-medium text-primary-500 hover:text-primary-400 whitespace-nowrap hidden sm:block"
+        >
+          S'abonner
+        </Link>
       </div>
     </div>
   );
