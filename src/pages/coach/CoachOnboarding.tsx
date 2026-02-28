@@ -8,19 +8,28 @@ import {
   Dumbbell, MonitorPlay, CalendarDays, LayoutDashboard, Loader2
 } from 'lucide-react';
 
-// Types
-import { Database } from '../../types/supabase';
-type CoachProfile = Database['public']['Tables']['coaches']['Row'];
 
 // --- Helper component to handle video loading state ---
 const MockupVideoPlayer = ({ src, className }: { src: string, className?: string }) => {
   const [isLoading, setIsLoading] = useState(true);
+  const videoRef = React.useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    setIsLoading(true);
+    if (videoRef.current) {
+      videoRef.current.src = src;
+      videoRef.current.load();
+      videoRef.current.play().catch(e => console.error("Autoplay prevented:", e));
+    }
+  }, [src]);
+
+  const handleLoaded = () => setIsLoading(false);
 
   return (
-    <div className="relative w-full h-full">
+    <div className="relative w-full h-full bg-slate-900">
       {/* Loading Spinner Overlay */}
       {isLoading && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/80 backdrop-blur-sm z-20">
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/80 backdrop-blur-sm z-20 transition-opacity duration-300">
           <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-3 shadow-[0_0_15px_rgba(59,130,246,0.5)] rounded-full" />
           <span className="text-white/60 text-xs font-medium tracking-widest uppercase">Chargement...</span>
         </div>
@@ -28,13 +37,16 @@ const MockupVideoPlayer = ({ src, className }: { src: string, className?: string
 
       {/* Actual Video */}
       <video
-        src={src}
+        ref={videoRef}
         autoPlay
         loop
         muted
         playsInline
-        onCanPlay={() => setIsLoading(false)}
-        className={`${className} ${isLoading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-500`}
+        preload="auto"
+        onCanPlay={handleLoaded}
+        onLoadedData={handleLoaded}
+        onPlaying={handleLoaded}
+        className={`${className} ${isLoading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-500 object-cover w-full h-full`}
       />
     </div>
   );
