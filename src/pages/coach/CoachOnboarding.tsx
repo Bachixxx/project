@@ -12,18 +12,6 @@ import {
 // --- Helper component to handle video loading state ---
 const MockupVideoPlayer = ({ src, className }: { src: string, className?: string }) => {
   const [isLoading, setIsLoading] = useState(true);
-  const videoRef = React.useRef<HTMLVideoElement>(null);
-
-  useEffect(() => {
-    setIsLoading(true);
-    if (videoRef.current) {
-      videoRef.current.src = src;
-      videoRef.current.load();
-      videoRef.current.play().catch(e => console.error("Autoplay prevented:", e));
-    }
-  }, [src]);
-
-  const handleLoaded = () => setIsLoading(false);
 
   return (
     <div className="relative w-full h-full bg-slate-900">
@@ -37,16 +25,14 @@ const MockupVideoPlayer = ({ src, className }: { src: string, className?: string
 
       {/* Actual Video */}
       <video
-        ref={videoRef}
+        src={src}
         autoPlay
         loop
         muted
         playsInline
         preload="auto"
-        onCanPlay={handleLoaded}
-        onLoadedData={handleLoaded}
-        onPlaying={handleLoaded}
-        className={`${className} ${isLoading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-500 object-cover w-full h-full`}
+        onLoadedData={() => setIsLoading(false)}
+        className={`${className} ${isLoading ? 'opacity-0 scale-95' : 'opacity-100 scale-100'} transition-all duration-700 object-cover w-full h-full transform origin-center`}
       />
     </div>
   );
