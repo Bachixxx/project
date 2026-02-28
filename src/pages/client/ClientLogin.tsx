@@ -5,7 +5,6 @@ import { eyeOff } from 'react-icons-kit/feather/eyeOff';
 import { eye } from 'react-icons-kit/feather/eye';
 import { LogIn, ChevronLeft, User, Mail, Lock, Activity, Users } from 'lucide-react';
 import { useClientAuth } from '../../contexts/ClientAuthContext';
-
 import { Capacitor } from '@capacitor/core';
 
 function ClientLogin() {
@@ -58,67 +57,78 @@ function ClientLogin() {
   const isNative = Capacitor.isNativePlatform();
 
   return (
-    <div className="min-h-screen bg-[#0f172a] p-4 flex flex-col font-sans selection:bg-green-500/30 relative overflow-hidden">
+    <div className="min-h-screen bg-slate-950 p-4 flex flex-col font-sans selection:bg-green-500/30 relative overflow-x-hidden">
 
-      {/* Background Gradients (Green/Teal for Clients) */}
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-green-500/10 rounded-full blur-[128px] pointer-events-none" />
-      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-teal-500/10 rounded-full blur-[128px] pointer-events-none" />
+      {/* Dynamic Background Gradients (Green/Teal for Clients) */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] bg-emerald-600/10 rounded-full blur-[120px] mix-blend-screen opacity-50 animate-pulse-slow"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-teal-600/10 rounded-full blur-[100px] mix-blend-screen opacity-50 animate-pulse-slow delay-1000"></div>
+        <div className="absolute top-[40%] left-[30%] w-[40%] h-[40%] bg-green-600/5 rounded-full blur-[150px] mix-blend-screen opacity-50"></div>
+        {/* Subtle grid pattern overlay */}
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAwIDEwIEwgNDAgMTAgTSAxMCAwIEwgMTAgNDAiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgyNTUsIDI1NSwgMjU1LCAwLjAyKSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] opacity-50 pointer-events-none"></div>
+      </div>
 
       {/* Header */}
       {!isNative && (
-        <div className="relative z-10 flex items-center justify-between mb-8 max-w-7xl mx-auto w-full pt-4">
+        <div className="relative z-10 flex items-center justify-between mb-8 max-w-7xl mx-auto w-full pt-4 px-4 md:px-6">
           <Link
             to="/"
-            className="group flex items-center text-gray-400 hover:text-white transition-colors"
+            className="group flex items-center text-slate-400 hover:text-white transition-colors"
           >
-            <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center mr-3 group-hover:bg-white/10 transition-colors border border-white/5">
-              <ChevronLeft className="w-5 h-5" />
+            <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center mr-3 group-hover:bg-white/10 transition-colors border border-white/5">
+              <ChevronLeft className="w-4 h-4" />
             </div>
-            <span className="font-medium">Retour à l'accueil</span>
+            <span className="font-medium text-sm">Retour à l'accueil</span>
           </Link>
 
-          <div className="text-2xl font-bold bg-gradient-to-r from-green-400 to-teal-400 bg-clip-text text-transparent flex items-center gap-2 opacity-80 grayscale sm:grayscale-0 transition-all">
+          <div className="text-xl font-bold text-white flex items-center gap-2 group cursor-default">
             {/* Client Brand Logo (Optional, using text for now) */}
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-500 to-teal-500 flex items-center justify-center text-white shadow-lg shadow-green-500/25">
-              <Users className="w-5 h-5" />
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-500 to-teal-400 p-[1px] group-hover:shadow-[0_0_20px_rgba(16,185,129,0.4)] transition-shadow">
+              <div className="w-full h-full bg-slate-900 rounded-[7px] flex items-center justify-center">
+                <Users className="w-4 h-4 text-emerald-400" />
+              </div>
             </div>
-            Espace Client
+            <span className="tracking-tight hidden sm:block text-slate-200">Espace Client</span>
           </div>
         </div>
       )}
 
-      <div className="flex-1 flex items-center justify-center relative z-10 pb-20">
-        <div className="max-w-md w-full animate-fade-in relative">
+      <div className="flex-1 flex items-center justify-center relative z-10 pb-20 mt-8">
+        <div className="w-full max-w-[26rem] mx-auto animate-fade-in relative px-2">
 
           {/* Glass Card */}
-          <div className="glass-card p-8 rounded-3xl border border-white/10 shadow-2xl relative overflow-hidden backdrop-blur-xl bg-white/5">
+          <div className="relative rounded-[2.5rem] bg-slate-900/60 backdrop-blur-2xl border border-white/10 p-1 flex flex-col shadow-[0_30px_60px_rgba(0,0,0,0.5)] transform z-10 group overflow-hidden">
 
-            {/* Inner Glow */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-green-500/5 rounded-full blur-[80px] pointer-events-none" />
+            {/* Animated gradient border container */}
+            <div className="absolute inset-0 bg-gradient-to-b from-green-500/20 via-transparent to-transparent opacity-50 pointer-events-none"></div>
 
-            <div className="relative">
-              <div className="text-center mb-8">
+            <div className="relative bg-slate-950/50 rounded-[2.4rem] p-8 md:p-10 h-full flex flex-col">
+
+              {/* Inner Top Glow */}
+              <div className="absolute top-0 inset-x-0 h-40 bg-gradient-to-b from-green-500/10 to-transparent pointer-events-none rounded-t-[2.4rem]"></div>
+
+              <div className="text-center mb-8 relative z-10 mt-2">
                 <div className="w-16 h-16 bg-gradient-to-br from-green-500/10 to-teal-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-white/5 shadow-inner">
-                  <User className="w-8 h-8 text-green-400" />
+                  <User className="w-8 h-8 text-emerald-400" />
                 </div>
-                <h2 className="text-3xl font-bold text-white mb-2">Bonjour !</h2>
-                <p className="text-gray-400">Accédez à votre programme et suivez vos progrès</p>
+                <h2 className="text-3xl font-bold md:text-4xl text-white mb-2 tracking-tight">Bonjour !</h2>
+                <p className="text-slate-400 font-light text-sm">Accédez à votre programme et suivez vos progrès</p>
               </div>
 
               {error && (
-                <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm mb-6 flex items-start gap-3 animate-slide-in">
+                <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm mb-6 flex items-start gap-3 animate-slide-in relative z-10 backdrop-blur-md">
                   <Activity className="w-5 h-5 shrink-0 mt-0.5" />
                   <p>{error}</p>
                 </div>
               )}
 
-              <form onSubmit={handleSubmit} className="space-y-5">
+              <form onSubmit={handleSubmit} className="space-y-5 relative z-10 w-full max-w-[22rem] mx-auto">
                 <div className="space-y-1.5">
-                  <label htmlFor="email" className="text-xs font-semibold text-gray-400 uppercase tracking-wider ml-1">
+                  <label htmlFor="email" className="text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-1">
                     Email
                   </label>
-                  <div className="relative group">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-green-400 transition-colors pointer-events-none">
+                  <div className="relative group/input">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within/input:text-emerald-400 transition-colors pointer-events-none z-10">
                       <Mail className="w-5 h-5" />
                     </div>
                     <input
@@ -127,18 +137,18 @@ function ClientLogin() {
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full bg-slate-900/50 border border-white/10 rounded-xl pl-12 pr-4 py-3.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500/50 transition-all font-medium"
+                      className="w-full bg-slate-950/60 border border-white/5 rounded-2xl pl-12 pr-4 py-4 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 focus:bg-slate-900/80 transition-all font-medium shadow-inner"
                       placeholder="client@exemple.com"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label htmlFor="password" className="text-xs font-semibold text-gray-400 uppercase tracking-wider ml-1">
+                  <label htmlFor="password" className="text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-1">
                     Mot de passe
                   </label>
-                  <div className="relative group">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-green-400 transition-colors pointer-events-none">
+                  <div className="relative group/input">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within/input:text-emerald-400 transition-colors pointer-events-none z-10">
                       <Lock className="w-5 h-5" />
                     </div>
                     <input
@@ -147,21 +157,21 @@ function ClientLogin() {
                       required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full bg-slate-900/50 border border-white/10 rounded-xl pl-12 pr-12 py-3.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500/50 transition-all font-medium"
+                      className="w-full bg-slate-950/60 border border-white/5 rounded-2xl pl-12 pr-12 py-4 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 focus:bg-slate-900/80 transition-all font-medium shadow-inner"
                       placeholder="••••••••"
                     />
                     <button
                       type="button"
                       onClick={handlePasswordToggle}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors p-1"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors p-2 rounded-full hover:bg-white/5 z-10"
                     >
                       <Icon icon={passwordIcon} size={18} />
                     </button>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-end">
-                  <Link to="/forgot-password" className="text-sm font-medium text-green-400 hover:text-green-300 transition-colors">
+                <div className="flex items-center justify-end pt-1 pb-2">
+                  <Link to="/forgot-password" className="text-sm font-medium text-emerald-400 hover:text-emerald-300 transition-colors">
                     Mot de passe oublié ?
                   </Link>
                 </div>
@@ -169,31 +179,35 @@ function ClientLogin() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-4 px-6 bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white font-bold rounded-xl shadow-lg shadow-green-500/25 transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100 flex items-center justify-center gap-2"
+                  className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-bold text-base text-center shadow-[0_0_30px_rgba(16,185,129,0.3)] transition-all transform hover:-translate-y-0.5 hover:shadow-[0_0_40px_rgba(16,185,129,0.5)] relative overflow-hidden group/btn disabled:opacity-50 disabled:pointer-events-none"
                 >
-                  {loading ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      <span>Connexion...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>Se connecter</span>
-                      <ChevronLeft className="w-5 h-5 rotate-180" />
-                    </>
-                  )}
+                  <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-[100%] group-hover/btn:animate-[shimmer_1.5s_infinite]"></div>
+
+                  <div className="relative z-10 flex items-center justify-center gap-2">
+                    {loading ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        <span>Connexion...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Se connecter</span>
+                        <ChevronLeft className="w-5 h-5 rotate-180" />
+                      </>
+                    )}
+                  </div>
                 </button>
               </form>
 
-              <div className="mt-8 pt-6 border-t border-white/5 text-center">
-                <p className="text-sm text-gray-400">
+              <div className="mt-8 pt-6 border-t border-white/5 text-center relative z-10">
+                <p className="text-sm text-slate-400 font-light">
                   Pas encore de compte ?{' '}
-                  <Link to="/client/check-email" className="font-semibold text-green-400 hover:text-green-300 transition-colors">
+                  <Link to="/client/check-email" className="font-medium text-emerald-400 hover:text-emerald-300 transition-colors">
                     Activez votre accès
                   </Link>
                 </p>
-                <div className="mt-4">
-                  <Link to="/login" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-sm font-medium text-gray-300 hover:text-white transition-all border border-white/5 hover:border-white/10">
+                <div className="mt-6 flex justify-center">
+                  <Link to="/login" className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 border border-white/5 hover:border-white/10 hover:bg-slate-800 text-sm font-medium text-slate-300 hover:text-white transition-all shadow-sm">
                     Accéder à l'espace Coach
                   </Link>
                 </div>
