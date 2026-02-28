@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { startOfWeek, endOfWeek } from 'date-fns';
 
 export interface WeightEntry {
     date: string;
@@ -12,6 +13,7 @@ export interface ClientDashboardData {
     nextSession: any;
     activeProgram: any;
     weeklyWorkouts: number;
+    weeklyWorkoutsData: any[];
     weightProgress: number | null;
     programProgress: number;
     recentLogs: any[];
@@ -101,7 +103,8 @@ export function useClientDashboard() {
                     .from('workout_sessions')
                     .select('id, date, duration_minutes, volume_load')
                     .eq('client_id', client.id)
-                    .gte('date', new Date(new Date().setDate(new Date().getDate() - 7)).toISOString()),
+                    .gte('date', startOfWeek(new Date(), { weekStartsOn: 1 }).toISOString())
+                    .lte('date', endOfWeek(new Date(), { weekStartsOn: 1 }).toISOString()),
 
                 // Weight Logs (Last 30 days)
                 supabase
@@ -168,6 +171,7 @@ export function useClientDashboard() {
                 nextSession: nextSessionRes.data,
                 activeProgram: activeProgramRes.data,
                 weeklyWorkouts: workoutsRes.data?.length || 0,
+                weeklyWorkoutsData: workoutsRes.data || [],
                 weightProgress,
                 programProgress: activeProgramRes.data?.progress || 0,
                 recentLogs: recentLogsRes.data || [],

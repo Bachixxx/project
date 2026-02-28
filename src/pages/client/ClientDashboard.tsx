@@ -58,11 +58,14 @@ export default function ClientDashboard() {
     );
   }
 
-  const { client, nextSession, stats, weeklyWorkouts, currentWeight } = data;
+  const { client, nextSession, stats, weeklyWorkouts, currentWeight, weeklyWorkoutsData } = data;
 
   const days = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
-  // Provide a placeholder visualization showing current weeklyWorkouts scaled
-  const currentWeekCount = weeklyWorkouts || 0;
+
+  // Create a Set of days with workouts (0 = Sunday, 1 = Monday, etc.)
+  const daysWithWorkouts = new Set(
+    (weeklyWorkoutsData || []).map((w: any) => new Date(w.date).getDay())
+  );
 
   return (
     <div className="min-h-screen bg-[#0f172a] text-slate-100 font-sans pb-32 w-full relative overflow-x-hidden">
@@ -105,7 +108,9 @@ export default function ClientDashboard() {
             </div>
             <div className="flex items-end justify-between h-32 gap-3 mt-4">
               {days.map((day, i) => {
-                const isCompleted = i < currentWeekCount;
+                // Map i (0=Mon...6=Sun) to JS getDay() format (0=Sun, 1=Mon...6=Sat)
+                const jsDayOfWeek = i === 6 ? 0 : i + 1;
+                const isCompleted = daysWithWorkouts.has(jsDayOfWeek);
                 const heightPercentage = isCompleted ? '80%' : '20%';
                 return (
                   <div key={i} className="flex flex-col items-center gap-2 flex-1 group h-full justify-end">
