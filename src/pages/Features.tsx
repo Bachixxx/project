@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Dumbbell, Users, Calendar, LineChart, Shield, Smartphone, MessageSquare, CheckCircle, ArrowRight, Menu, X, Timer, CreditCard, Layout, Zap } from 'lucide-react';
+import { Dumbbell, Users, Calendar, LineChart, Shield, Smartphone, MessageSquare, CheckCircle, ArrowRight, Menu, X, Timer, CreditCard, Layout, Zap, Instagram, Twitter, Linkedin } from 'lucide-react';
 
 function Features() {
     const [scrolled, setScrolled] = useState(false);
@@ -125,8 +125,8 @@ function Features() {
                         {/* Animated background pill component */}
                         <div
                             className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] rounded-full transition-all duration-500 ease-spring pointer-events-none ${activeTab === 'coach'
-                                    ? 'left-1.5 bg-gradient-to-r from-blue-600/40 to-cyan-600/40 border border-blue-500/50 shadow-[0_0_20px_rgba(56,189,248,0.3)]'
-                                    : 'left-[calc(50%+2px)] bg-gradient-to-r from-purple-600/40 to-pink-600/40 border border-purple-500/50 shadow-[0_0_20px_rgba(168,85,247,0.3)]'
+                                ? 'left-1.5 bg-gradient-to-r from-blue-600/40 to-cyan-600/40 border border-blue-500/50 shadow-[0_0_20px_rgba(56,189,248,0.3)]'
+                                : 'left-[calc(50%+2px)] bg-gradient-to-r from-purple-600/40 to-pink-600/40 border border-purple-500/50 shadow-[0_0_20px_rgba(168,85,247,0.3)]'
                                 }`}
                         >
                         </div>
@@ -449,8 +449,8 @@ function FeatureCard({ feature, index }: { feature: any, index: number }) {
                                 key={idx}
                                 onClick={() => setCarouselIndex(idx)}
                                 className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-300 ${idx === carouselIndex
-                                        ? `bg-${feature.color}-500/20 text-${feature.color}-300 border border-${feature.color}-500/30`
-                                        : 'bg-slate-800 text-slate-500 border border-slate-700 hover:bg-slate-700'
+                                    ? `bg-${feature.color}-500/20 text-${feature.color}-300 border border-${feature.color}-500/30`
+                                    : 'bg-slate-800 text-slate-500 border border-slate-700 hover:bg-slate-700'
                                     }`}
                             >
                                 {item.label || `Onglet ${idx + 1}`}
