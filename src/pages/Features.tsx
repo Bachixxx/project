@@ -492,15 +492,15 @@ function FeatureCard({ feature, index }: { feature: any, index: number }) {
 
                     {/* Mobile Floating Overlay */}
                     {currentImage.mobile && (
-                        <div className={`absolute -bottom-10 h-64 -translate-x-1/2 shadow-2xl overflow-hidden hidden md:block animate-slide-in-bottom duration-500 transition-all 
-                        ${index % 2 === 1 ? 'left-10 hover:-translate-y-2 group-hover:rotate-2' : 'left-[calc(100%-40px)] hover:-translate-y-2 group-hover:-rotate-2'}
+                        <div className={`absolute -bottom-8 h-[280px] z-20 shadow-[0_20px_50px_rgba(0,0,0,0.6)] rounded-[1.5rem] hidden md:block animate-slide-in-bottom duration-500 transition-all 
+                        ${index % 2 === 1 ? '-right-6 hover:-translate-y-2 group-hover:-rotate-2' : '-left-6 hover:-translate-y-2 group-hover:rotate-2'}
                         `}>
                             {/* iPhone Frame CSS Minimal */}
-                            <div className="h-full aspect-[9/19.5] border-[4px] border-slate-800 bg-black rounded-3xl relative p-0.5">
-                                <div className="absolute top-0 inset-x-0 h-4 flex justify-center py-1.5 z-20">
-                                    <div className="w-12 h-3 bg-black rounded-b-lg"></div>
+                            <div className="h-full aspect-[9/19.5] border-[4px] border-slate-800 bg-black rounded-[1.5rem] relative p-0.5 shadow-2xl overflow-hidden">
+                                <div className="absolute top-0 inset-x-0 h-4 flex justify-center py-1 z-20">
+                                    <div className="w-12 h-2.5 bg-black rounded-b-md"></div>
                                 </div>
-                                <div className="w-full h-full rounded-[1.25rem] overflow-hidden bg-slate-900 relative">
+                                <div className="w-full h-full rounded-2xl overflow-hidden bg-slate-900 relative">
                                     <img
                                         key={`mobile-${carouselIndex}`}
                                         src={currentImage.mobile}
