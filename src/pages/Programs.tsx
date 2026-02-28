@@ -80,8 +80,6 @@ function ProgramsPage() {
 
   // useEffect for fetching removed, hook handles it.
 
-  const canCreateProgram = subscriptionInfo?.type === 'paid' || (programs?.length || 0) < 5;
-
   const filteredPrograms = programs.filter(program =>
     program.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     program.description?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -98,36 +96,17 @@ function ProgramsPage() {
         </div>
         <button
           onClick={() => {
-            if (!canCreateProgram) {
-              alert('Vous avez atteint la limite de 5 programmes pour le plan gratuit. Passez à la version Pro pour créer des programmes illimités.');
-              return;
-            }
             setSelectedProgram(null);
             setIsModalOpen(true);
           }}
-          className={`primary-button flex items-center justify-center gap-2 ${!canCreateProgram ? 'opacity-50 cursor-not-allowed' : ''
-            }`}
-          disabled={!canCreateProgram}
+          className="primary-button flex items-center justify-center gap-2"
         >
           <Plus className="w-5 h-5" />
           <span>Créer un programme</span>
         </button>
       </div>
 
-      {subscriptionInfo?.type === 'free' && (
-        <div className="glass-card p-4 border-l-4 border-yellow-500 bg-yellow-500/5">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
-            <div>
-              <h3 className="font-medium text-yellow-500">Limitations du compte gratuit</h3>
-              <p className="text-gray-400 text-sm mt-1">
-                Vous pouvez créer jusqu'à 5 programmes avec votre compte gratuit.
-                Vous avez créé {programs.length} programme{programs.length !== 1 ? 's' : ''}.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
+
 
       {(error || queryError) && (
         <div className="glass-card p-4 border-l-4 border-red-500 bg-red-500/5 text-white">
@@ -264,9 +243,6 @@ function ProgramsPage() {
             } catch (error: any) {
               console.error('Error saving program:', error);
               setError('Failed to save program. Please try again.');
-              if (error.message && error.message.includes('Free plan is limited')) {
-                alert('Vous avez atteint la limite de 5 programmes pour le plan gratuit. Passez à la version Pro pour créer des programmes illimités.');
-              }
             }
           }}
         />
