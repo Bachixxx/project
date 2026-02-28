@@ -182,8 +182,8 @@ function Pricing() {
                         {/* Animated background pill component */}
                         <div
                             className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] rounded-full transition-all duration-500 ease-spring pointer-events-none ${billingInterval === 'month'
-                                    ? 'left-1.5 bg-gradient-to-r from-blue-600/40 to-cyan-600/40 border border-blue-500/50 shadow-[0_0_20px_rgba(56,189,248,0.3)]'
-                                    : 'left-[calc(50%+2px)] bg-gradient-to-r from-blue-600/40 to-cyan-600/40 border border-blue-500/50 shadow-[0_0_20px_rgba(56,189,248,0.3)]'
+                                ? 'left-1.5 bg-gradient-to-r from-blue-600/40 to-cyan-600/40 border border-blue-500/50 shadow-[0_0_20px_rgba(56,189,248,0.3)]'
+                                : 'left-[calc(50%+2px)] bg-gradient-to-r from-blue-600/40 to-cyan-600/40 border border-blue-500/50 shadow-[0_0_20px_rgba(56,189,248,0.3)]'
                                 }`}
                         >
                         </div>
@@ -199,16 +199,16 @@ function Pricing() {
                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-blue-500/20 rounded-full blur-[120px] pointer-events-none"></div>
 
                     {/* Pro Tier (Highlighted Ultimate Card) */}
-                    <div className="relative rounded-[2.5rem] bg-slate-900/60 backdrop-blur-2xl border border-white/10 p-1 flex flex-col shadow-[0_30px_60px_rgba(0,0,0,0.5)] transform animate-fade-in z-10 group overflow-hidden">
+                    <div className="relative rounded-[2.5rem] bg-slate-900/60 backdrop-blur-2xl border border-white/10 p-1 flex flex-col shadow-[0_30px_60px_rgba(0,0,0,0.5)] transform animate-fade-in z-10 group">
 
                         {/* Animated gradient border container */}
-                        <div className="absolute inset-0 bg-gradient-to-b from-blue-500/30 via-transparent to-transparent opacity-50 pointer-events-none"></div>
+                        <div className="absolute inset-0 bg-gradient-to-b from-blue-500/30 via-transparent to-transparent opacity-50 pointer-events-none rounded-[2.5rem]"></div>
 
                         <div className="relative bg-slate-950/50 rounded-[2.4rem] p-8 md:p-12 h-full flex flex-col">
                             {/* Inner Top Glow */}
                             <div className="absolute top-0 inset-x-0 h-40 bg-gradient-to-b from-blue-500/10 to-transparent pointer-events-none rounded-t-[2.4rem]"></div>
 
-                            <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-blue-500 to-cyan-400 px-6 py-1.5 rounded-full text-xs font-bold text-white tracking-widest uppercase shadow-[0_0_20px_rgba(56,189,248,0.5)] flex items-center gap-2 z-20">
+                            <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-blue-500 to-cyan-400 px-6 py-1.5 rounded-full text-xs font-bold text-white tracking-widest uppercase shadow-[0_0_20px_rgba(56,189,248,0.5)] flex items-center gap-2 z-20 whitespace-nowrap">
                                 <Sparkles className="w-3.5 h-3.5" />
                                 14 Jours Offerts
                             </div>
