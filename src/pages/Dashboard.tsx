@@ -198,6 +198,7 @@ function Dashboard() {
           icon={Users}
           color="blue"
           trend={stats.newClientsThisMonth > 0 ? stats.newClientsThisMonth : undefined}
+          to="/clients"
         />
         <StatCard
           title={t('dashboard.stats.activePrograms', language)}
@@ -205,6 +206,7 @@ function Dashboard() {
           subValue={`${stats.avgProgramCompletion}% de complétion`}
           icon={Activity}
           color="purple"
+          to="/programs"
         />
         <StatCard
           title={t('dashboard.stats.upcomingSessions', language)}
@@ -212,6 +214,7 @@ function Dashboard() {
           subValue="7 prochains jours"
           icon={CalendarIcon}
           color="emerald"
+          to="/calendar"
         />
         <StatCard
           title={t('dashboard.stats.monthlyRevenue', language)}
@@ -221,6 +224,7 @@ function Dashboard() {
           color="amber"
           trend={stats.monthlyGrowth}
           isMoney
+          to="/monthly-revenue"
         />
       </div>
 
@@ -436,9 +440,10 @@ interface StatCardProps {
   color: 'blue' | 'purple' | 'emerald' | 'amber';
   trend?: number;
   isMoney?: boolean;
+  to?: string;
 }
 
-function StatCard({ title, value, subValue, icon: Icon, color, trend, isMoney }: StatCardProps) {
+function StatCard({ title, value, subValue, icon: Icon, color, trend, isMoney, to }: StatCardProps) {
   const colors = {
     blue: 'from-blue-500 to-cyan-500',
     purple: 'from-purple-500 to-pink-500',
@@ -453,8 +458,8 @@ function StatCard({ title, value, subValue, icon: Icon, color, trend, isMoney }:
     amber: 'bg-amber-500/10 text-amber-400',
   };
 
-  return (
-    <div className="glass-card p-6 relative overflow-hidden group">
+  const innerContent = (
+    <>
       <div className={`absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity`}>
         <Icon className="w-24 h-24" />
       </div>
@@ -479,6 +484,20 @@ function StatCard({ title, value, subValue, icon: Icon, color, trend, isMoney }:
       </div>
 
       <div className={`absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r ${colors[color]} opacity-0 group-hover:opacity-100 transition-opacity`} />
+    </>
+  );
+
+  if (to) {
+    return (
+      <Link to={to} className="glass-card p-6 relative overflow-hidden group block hover:bg-white/5 transition-colors cursor-pointer touch-target h-full">
+        {innerContent}
+      </Link>
+    );
+  }
+
+  return (
+    <div className="glass-card p-6 relative overflow-hidden group h-full">
+      {innerContent}
     </div>
   );
 }
