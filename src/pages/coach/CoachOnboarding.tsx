@@ -5,18 +5,45 @@ import { useAuth } from '../../contexts/AuthContext';
 import {
   ChevronRight, ChevronLeft, Check, Sparkles,
   Users, Activity, CreditCard, Settings, Camera,
-  Dumbbell, MonitorPlay, CalendarDays, LayoutDashboard
+  Dumbbell, MonitorPlay, CalendarDays, LayoutDashboard, Loader2
 } from 'lucide-react';
-import { t } from '../../i18n';
 
-// Components
-import Loading from '../../components/Loading';
+// Types
+import { Database } from '../../types/supabase';
+type CoachProfile = Database['public']['Tables']['coaches']['Row'];
+
+// --- Helper component to handle video loading state ---
+const MockupVideoPlayer = ({ src, className }: { src: string, className?: string }) => {
+  const [isLoading, setIsLoading] = useState(true);
+
+  return (
+    <div className="relative w-full h-full">
+      {/* Loading Spinner Overlay */}
+      {isLoading && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/80 backdrop-blur-sm z-20">
+          <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-3 shadow-[0_0_15px_rgba(59,130,246,0.5)] rounded-full" />
+          <span className="text-white/60 text-xs font-medium tracking-widest uppercase">Chargement...</span>
+        </div>
+      )}
+
+      {/* Actual Video */}
+      <video
+        src={src}
+        autoPlay
+        loop
+        muted
+        playsInline
+        onCanPlay={() => setIsLoading(false)}
+        className={`${className} ${isLoading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-500`}
+      />
+    </div>
+  );
+};
 
 export default function CoachOnboarding() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
-  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
   // State for forms
@@ -300,12 +327,8 @@ export default function CoachOnboarding() {
                           <div key={activeMockup.label} className="absolute inset-0 bg-gradient-to-b from-slate-800 to-slate-950 flex flex-col items-center justify-center text-center animate-fade-in z-10">
 
                             {activeMockup.video ? (
-                              <video
+                              <MockupVideoPlayer
                                 src={activeMockup.video}
-                                autoPlay
-                                loop
-                                muted
-                                playsInline
                                 className="w-full h-full object-cover animate-fade-in"
                               />
                             ) : (
@@ -362,12 +385,8 @@ export default function CoachOnboarding() {
                           <div key={activeMockup.label} className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-950 flex flex-col items-center justify-center z-10 animate-fade-in shadow-inner">
 
                             {activeMockup.video ? (
-                              <video
+                              <MockupVideoPlayer
                                 src={activeMockup.video}
-                                autoPlay
-                                loop
-                                muted
-                                playsInline
                                 className="w-full h-full object-cover animate-fade-in"
                               />
                             ) : (
