@@ -128,9 +128,9 @@ function Home() {
             Ouverture Prochaine
           </div>
           <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tighter mb-8 leading-[1.1] animate-slide-in">
-            Coach. <br className="sm:hidden" />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">Scale.</span> <br className="sm:hidden" />
-            Dominez.
+            Inspirez. <br className="sm:hidden" />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">Suivez.</span> <br className="sm:hidden" />
+            Évoluez.
           </h1>
           <p className="text-lg md:text-xl text-slate-400 mb-10 max-w-2xl mx-auto leading-relaxed animate-slide-in delay-100 font-light">
             L'écosystème haut de gamme conçu pour les coachs sportifs ambitieux.
