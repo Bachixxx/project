@@ -107,7 +107,7 @@ export default function CoachOnboarding() {
           { id: 3, icon: <Settings className="w-5 h-5 text-purple-400" />, title: "À votre Image", desc: "Application client personnalisée avec votre logo et un message de bienvenue unique." }
         ],
         mockups: {
-          1: { type: 'laptop', label: 'Vue Biométrie Client', icon: Activity, video: '/assets/onboarding/Suivi Biométrique 360.mov' },
+          1: { type: 'laptop', label: 'Vue Biométrie Client', icon: Activity, video: '/assets/onboarding/suivi-biometrique.mov' },
           2: { type: 'laptop', label: 'Créateur de Programme', icon: Dumbbell },
           3: { type: 'smartphone', label: 'App Client Personnalisée', icon: Settings }
         }
