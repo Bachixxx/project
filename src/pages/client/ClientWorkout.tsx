@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Play, Calendar, CheckCircle, Clock, Dumbbell, Award } from 'lucide-react';
+import { Play, Calendar, CheckCircle, Clock, Dumbbell, Award, ChevronLeft, RotateCcw } from 'lucide-react';
 import { useClientAuth } from '../../contexts/ClientAuthContext';
 import { supabase } from '../../lib/supabase';
-import { PageHero } from '../../components/client/shared/PageHero';
 
 function ClientWorkout() {
   const { clientProgramId } = useParams();
@@ -174,16 +173,36 @@ function ClientWorkout() {
   const sortedSessions = program.program.program_sessions.sort((a: any, b: any) => a.order_index - b.order_index);
 
   return (
-    <div className="min-h-screen bg-[#0f172a] text-white pb-24 font-sans">
+    <div className="min-h-screen bg-slate-950 text-white pb-32 font-sans relative overflow-hidden">
 
-      {/* Page Hero */}
-      <PageHero
-        title={program.program.name}
-        subtitle={`Par ${program.program.coach?.full_name || 'Coach'}`}
-        backgroundImage="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=2070&auto=format&fit=crop"
-        showBackButton={true}
-        headerContent={
-          <div className="flex items-center gap-2 mb-2">
+      {/* Dynamic Ambient Background */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-[30%] left-[-10%] w-[40%] h-[40%] bg-emerald-600/10 blur-[120px] rounded-full animate-pulse-slow"></div>
+        <div className="absolute bottom-[-10%] right-[-5%] w-[50%] h-[50%] bg-teal-600/10 blur-[140px] rounded-full animate-pulse-slow" style={{ animationDelay: '2s' }}></div>
+      </div>
+
+      {/* Massive Background Image (Native Hero Vibe) */}
+      <div className="absolute top-0 left-0 right-0 h-[45vh] min-h-[400px]">
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-40 mix-blend-luminosity grayscale-[10%] pointer-events-none"
+          style={{ backgroundImage: `url('https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=2070&auto=format&fit=crop')` }}
+        ></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent pointer-events-none"></div>
+        <div className="absolute top-0 inset-x-0 h-40 bg-gradient-to-b from-slate-950/80 to-transparent pointer-events-none"></div>
+
+        {/* Floating Header */}
+        <div className="absolute top-0 w-full px-4 pt-4 pb-2 z-10 flex items-center justify-between mt-[env(safe-area-inset-top)]">
+          <button
+            onClick={() => navigate(-1)}
+            className="w-10 h-10 rounded-full bg-slate-900/60 backdrop-blur-md border border-white/10 flex items-center justify-center text-white hover:bg-white/10 transition-colors shadow-lg active:scale-95"
+          >
+            <ChevronLeft className="w-5 h-5 ml-[-2px]" />
+          </button>
+        </div>
+
+        {/* Floating Title Container */}
+        <div className="absolute bottom-24 left-0 right-0 px-6 z-10 text-center flex flex-col items-center">
+          <div className="flex items-center gap-2 mb-3">
             <span className="px-2 py-1 bg-white/10 backdrop-blur-md border border-white/20 rounded-lg text-xs font-bold text-white uppercase tracking-wider">
               Programme
             </span>
@@ -193,166 +212,173 @@ function ClientWorkout() {
               </span>
             )}
           </div>
-        }
-      />
-
-      <div className="max-w-2xl mx-auto px-4 -mt-12 relative z-30 space-y-6">
-
-        {/* Stats Row */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-[#1e293b]/80 backdrop-blur-xl border border-white/5 p-4 rounded-2xl flex items-center gap-3">
-            <div className="p-2.5 bg-blue-500/10 rounded-xl">
-              <Calendar className="w-5 h-5 text-blue-400" />
-            </div>
-            <div>
-              <p className="text-xs text-gray-400 font-medium">Durée</p>
-              <p className="text-lg font-bold">{program.program.duration_weeks} semaines</p>
-            </div>
-          </div>
-          <div className="bg-[#1e293b]/80 backdrop-blur-xl border border-white/5 p-4 rounded-2xl flex items-center gap-3">
-            <div className="p-2.5 bg-purple-500/10 rounded-xl">
-              <Dumbbell className="w-5 h-5 text-purple-400" />
-            </div>
-            <div>
-              <p className="text-xs text-gray-400 font-medium">Séances</p>
-              <p className="text-lg font-bold">{sortedSessions.length} total</p>
-            </div>
-          </div>
+          <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight text-shadow-lg mb-1">{program.program.name}</h1>
+          <p className="text-emerald-400 font-bold uppercase tracking-widest text-xs">Par {program.program.coach?.full_name || 'Coach'}</p>
         </div>
+      </div>
 
-        {/* Description */}
-        {program.program.description && (
-          <div className="bg-[#1e293b]/50 border border-white/5 p-5 rounded-2xl">
-            <h3 className="text-sm font-bold text-gray-300 uppercase tracking-wider mb-2">À propos</h3>
-            <p className="text-gray-400 text-sm leading-relaxed">{program.program.description}</p>
+      {/* The Native "Sheet" Content Container */}
+      <div className="relative z-20 mt-[35vh] bg-slate-950 rounded-t-[3rem] px-4 pt-8 min-h-[65vh] shadow-[0_-10px_40px_rgba(0,0,0,0.5)] border-t border-white/5">
+        <div className="max-w-3xl mx-auto space-y-6 pb-24">
+
+          {/* Stats Row */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-slate-900/50 backdrop-blur-xl border border-white/5 p-4 rounded-2xl flex items-center gap-3 shadow-lg border-t-white/10">
+              <div className="p-2.5 bg-emerald-500/10 backdrop-blur-sm rounded-xl border border-emerald-500/20">
+                <Calendar className="w-5 h-5 text-emerald-400" />
+              </div>
+              <div>
+                <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">Durée</p>
+                <p className="text-lg font-bold text-white">{program.program.duration_weeks} semaines</p>
+              </div>
+            </div>
+            <div className="bg-slate-900/50 backdrop-blur-xl border border-white/5 p-4 rounded-2xl flex items-center gap-3 shadow-lg border-t-white/10">
+              <div className="p-2.5 bg-teal-500/10 backdrop-blur-sm rounded-xl border border-teal-500/20">
+                <Dumbbell className="w-5 h-5 text-teal-400" />
+              </div>
+              <div>
+                <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">Séances</p>
+                <p className="text-lg font-bold text-white">{sortedSessions.length} total</p>
+              </div>
+            </div>
           </div>
-        )}
 
-        {/* Sessions List */}
-        <div>
-          <h3 className="text-lg font-bold text-white mb-4 px-1 flex items-center gap-2">
-            <Award className="w-5 h-5 text-yellow-500" />
-            Votre Parcours
-          </h3>
+          {/* Description */}
+          {program.program.description && (
+            <div className="bg-slate-900/30 backdrop-blur-lg border border-white/5 p-5 rounded-3xl shadow-lg relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 blur-3xl rounded-full pointer-events-none"></div>
+              <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">À propos</h3>
+              <p className="text-slate-300 text-sm leading-relaxed relative z-10">{program.program.description}</p>
+            </div>
+          )}
 
-          <div className="space-y-4">
-            {sortedSessions.map((item: any, index: number) => {
-              const session = item.session;
-              const status = sessionsStatus[session.id]; // { status, scheduled_date }
-              const isCompleted = status?.status === 'completed';
-              const isScheduled = status?.status === 'scheduled';
+          {/* Sessions List */}
+          <div>
+            <h3 className="text-lg font-bold text-white mb-4 px-1 flex items-center gap-2">
+              <Award className="w-5 h-5 text-yellow-500" />
+              Votre Parcours
+            </h3>
 
-              return (
-                <div
-                  key={session.id}
-                  className={`relative group bg-[#1e293b] border ${isCompleted ? 'border-green-500/30' : 'border-white/5'} hover:border-blue-500/30 rounded-2xl p-5 transition-all duration-300`}
-                >
-                  {/* Connector Line */}
-                  {index < sortedSessions.length - 1 && (
-                    <div className="absolute left-[2.25rem] bottom-[-20px] w-0.5 h-[20px] bg-white/5 -z-10" />
-                  )}
+            <div className="space-y-4">
+              {sortedSessions.map((item: any, index: number) => {
+                const session = item.session;
+                const status = sessionsStatus[session.id]; // { status, scheduled_date }
+                const isCompleted = status?.status === 'completed';
+                const isScheduled = status?.status === 'scheduled';
 
-                  <div className="flex items-start gap-4">
-                    {/* Number / Status Icon */}
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border ${isCompleted ? 'bg-green-500/20 border-green-500/30 text-green-400' :
-                      'bg-white/5 border-white/5 text-gray-400'
-                      }`}>
-                      {isCompleted ? <CheckCircle className="w-6 h-6" /> : <span className="text-lg font-bold">{index + 1}</span>}
-                    </div>
+                return (
+                  <div
+                    key={session.id}
+                    className={`relative group bg-slate-900/60 backdrop-blur-xl border ${isCompleted ? 'border-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.1)]' : 'border-white/5'} hover:border-emerald-500/30 rounded-3xl p-5 transition-all duration-300 border-t-white/10`}
+                  >
+                    {/* Subtle Hover Gradient */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded-3xl"></div>
 
-                    <div className="flex-1 min-w-0">
-                      <div className="flex justify-between items-start mb-1">
-                        <h4 className={`font-bold text-lg truncate pr-2 ${isCompleted ? 'text-gray-300' : 'text-white'}`}>
-                          {session.name}
-                        </h4>
-                        {isCompleted && (
-                          <span className="text-xs font-mono text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full">Fait</span>
-                        )}
-                        {program.scheduling_type === 'coach_led' && !isScheduled && !isCompleted && (
-                          <span className="text-xs font-medium text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full whitespace-nowrap">Non planifié</span>
-                        )}
+                    {/* Connector Line */}
+                    {index < sortedSessions.length - 1 && (
+                      <div className="absolute left-[2.25rem] bottom-[-20px] w-[2px] h-[20px] bg-slate-800 shadow-[0_0_5px_rgba(255,255,255,0.05)] -z-10" />
+                    )}
+
+                    <div className="flex items-start gap-4 relative z-10">
+                      {/* Number / Status Icon */}
+                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border backdrop-blur-md ${isCompleted ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.3)]' :
+                        'bg-white/5 border-white/10 text-slate-400'
+                        }`}>
+                        {isCompleted ? <CheckCircle className="w-6 h-6" /> : <span className="text-lg font-bold">{index + 1}</span>}
                       </div>
 
-                      <p className="text-sm text-gray-500 line-clamp-2 mb-3">
-                        {session.description || 'Séance complète'}
-                      </p>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-start mb-1">
+                          <h4 className={`font-bold text-lg truncate pr-2 ${isCompleted ? 'text-slate-300' : 'text-white'}`}>
+                            {session.name}
+                          </h4>
+                          {isCompleted && (
+                            <span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.2)]">Fait</span>
+                          )}
+                          {program.scheduling_type === 'coach_led' && !isScheduled && !isCompleted && (
+                            <span className="text-xs font-medium text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full whitespace-nowrap">Non planifié</span>
+                          )}
+                        </div>
 
-                      <div className="flex items-center gap-4 text-xs text-gray-400 mb-4">
-                        <div className="flex items-center gap-1.5">
-                          <Clock className="w-3.5 h-3.5" />
-                          <span>{session.duration_minutes} min</span>
+                        <p className="text-sm text-slate-400 line-clamp-2 mb-3">
+                          {session.description || 'Séance complète'}
+                        </p>
+
+                        <div className="flex items-center gap-4 text-xs font-medium text-slate-400 mb-4">
+                          <div className="flex items-center gap-1.5 bg-white/5 border border-white/5 px-2 py-1 rounded-lg backdrop-blur-sm">
+                            <Clock className="w-3.5 h-3.5" />
+                            <span>{session.duration_minutes} min</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 bg-white/5 border border-white/5 px-2 py-1 rounded-lg backdrop-blur-sm">
+                            <Dumbbell className="w-3.5 h-3.5" />
+                            <span>{session.session_exercises[0]?.count || 0} exos</span>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1.5">
-                          <Dumbbell className="w-3.5 h-3.5" />
-                          <span>{session.session_exercises[0]?.count || 0} exos</span>
-                        </div>
+
+                        {/* Action Button */}
+                        {isCompleted ? (
+                          <button
+                            onClick={() => {
+                              if (program.scheduling_type === 'coach_led' && (!isScheduled || status?.status === 'completed')) {
+                                alert("Cette séance doit être planifiée par votre coach avant de pouvoir la refaire.");
+                                return;
+                              }
+                              handleStartSession(session);
+                            }}
+                            disabled={startingSessionId === session.id || (program.scheduling_type === 'coach_led' && !isScheduled)}
+                            className="w-full py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-sm font-medium transition-all flex items-center justify-center gap-2 border border-white/5 backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
+                          >
+                            {startingSessionId === session.id ? (
+                              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            ) : (
+                              <>
+                                <RotateCcw className="w-4 h-4" />
+                                Refaire la séance
+                              </>
+                            )}
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              if (program.scheduling_type === 'coach_led' && !isScheduled) {
+                                alert("En attente de planification par votre coach.");
+                                return;
+                              }
+                              handleStartSession(session);
+                            }}
+                            disabled={startingSessionId === session.id || (program.scheduling_type === 'coach_led' && !isScheduled)}
+                            className="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white text-sm font-bold shadow-lg shadow-emerald-500/20 group-hover:shadow-[0_0_20px_rgba(16,185,129,0.5)] transition-all flex items-center justify-center gap-2 disabled:from-slate-800 disabled:to-slate-800 disabled:shadow-none disabled:cursor-not-allowed disabled:text-slate-500 group active:scale-[0.98] border border-emerald-400/30 disabled:border-white/5"
+                          >
+                            {startingSessionId === session.id ? (
+                              <div className="w-4 h-4 border-2 border-slate-500 border-t-white rounded-full animate-spin" />
+                            ) : (
+                              <>
+                                {program.scheduling_type === 'coach_led' && !isScheduled ? (
+                                  <Clock className="w-4 h-4 drop-shadow-md" />
+                                ) : (
+                                  <Play className="w-4 h-4 fill-current drop-shadow-md group-disabled:fill-slate-500 group-disabled:drop-shadow-none" />
+                                )}
+                                <span className="drop-shadow-md group-disabled:drop-shadow-none">
+                                  {program.scheduling_type === 'coach_led' && !isScheduled ? 'En attente' : (isScheduled ? 'Reprendre' : 'Commencer')}
+                                </span>
+                              </>
+                            )}
+                          </button>
+                        )}
                       </div>
-
-                      {/* Action Button */}
-                      {isCompleted ? (
-                        <button
-                          onClick={() => {
-                            if (program.scheduling_type === 'coach_led' && (!isScheduled || status?.status === 'completed')) {
-                              alert("Cette séance doit être planifiée par votre coach avant de pouvoir la refaire.");
-                              return;
-                            }
-                            handleStartSession(session);
-                          }}
-                          disabled={startingSessionId === session.id || (program.scheduling_type === 'coach_led' && !isScheduled)}
-                          className="w-full py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 text-sm font-medium transition-all flex items-center justify-center gap-2 border border-white/5 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {startingSessionId === session.id ? (
-                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                          ) : (
-                            <>
-                              <RotateCcw className="w-4 h-4" />
-                              Refaire la séance
-                            </>
-                          )}
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => {
-                            if (program.scheduling_type === 'coach_led' && !isScheduled) {
-                              alert("En attente de planification par votre coach.");
-                              return;
-                            }
-                            handleStartSession(session);
-                          }}
-                          disabled={startingSessionId === session.id || (program.scheduling_type === 'coach_led' && !isScheduled)}
-                          className="w-full py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white text-sm font-bold shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2 disabled:from-gray-600 disabled:to-gray-700 disabled:shadow-none disabled:cursor-not-allowed disabled:text-gray-400 group"
-                        >
-                          {startingSessionId === session.id ? (
-                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                          ) : (
-                            <>
-                              {program.scheduling_type === 'coach_led' && !isScheduled ? (
-                                <Clock className="w-4 h-4" />
-                              ) : (
-                                <Play className="w-4 h-4 fill-current group-disabled:fill-gray-400" />
-                              )}
-                              {program.scheduling_type === 'coach_led' && !isScheduled ? 'En attente' : (isScheduled ? 'Reprendre' : 'Commencer')}
-                            </>
-                          )}
-                        </button>
-                      )}
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
-        </div>
 
+          {/* Sticky Action Bar for Next Session (Optional, can be used if we want a global Start button) */}
+          {/* We keep the individual buttons inside the session cards for now, as that's how the logic is tightly bound. */}
+
+        </div>
       </div>
     </div>
-  );
-}
-
-// Helper icon
-function RotateCcw({ className }: { className?: string }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74-2.74L3 12" /><path d="M3 3v9h9" /></svg>
   );
 }
 

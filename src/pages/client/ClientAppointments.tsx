@@ -6,8 +6,6 @@ import { Calendar as CalendarIcon, Play, CheckCircle, X, FileText, Video, Extern
 import { useClientAuth } from '../../contexts/ClientAuthContext';
 import { supabase } from '../../lib/supabase';
 import { createCheckoutSession } from '../../lib/stripe';
-import { PageHero } from '../../components/client/shared/PageHero';
-import { NavRail } from '../../components/client/shared/NavRail';
 
 function ClientAppointments() {
   const { client } = useClientAuth();
@@ -640,254 +638,293 @@ function ClientAppointments() {
 
 
   return (
-    <div className="min-h-screen bg-[#0f172a] text-white font-sans pb-24">
-      {/* Hero Section with Integrated Tabs */}
-      <PageHero
-        title="Agenda"
-        subtitle="Gérez votre planning et vos inscriptions."
-        backgroundImage="https://images.unsplash.com/photo-1506784983877-45594efa4cbe?q=80&w=2068&auto=format&fit=crop"
-        className="pb-0"
-        headerContent={
-          <div className="bg-white/10 backdrop-blur-md rounded-full px-4 py-1 border border-white/10 text-xs font-medium text-white/80">
-            {activeTab === 'personal' ? 'Planning Personnel' : 'Séances Collectives'}
-          </div>
-        }
-      >
-        <NavRail
-          tabs={[
-            { id: 'personal', label: 'Mon calendrier', icon: User },
-            { id: 'group', label: 'Séances de groupe', icon: Users }
-          ]}
-          activeTab={activeTab}
-          onTabChange={(id) => setActiveTab(id as any)}
-          variant="embedded"
-        />
-      </PageHero>
+    <div className="min-h-screen bg-[#0f172a] text-white font-sans pb-24 relative overflow-hidden">
 
-      {/* Week Navigation - Sticky */}
-      <div className="sticky top-0 z-30 bg-[#0f172a]/80 backdrop-blur-xl border-b border-white/5 py-4 px-4 md:px-8">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <button
-            onClick={() => navigateWeek('prev')}
-            className="w-10 h-10 rounded-full flex items-center justify-center bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-colors border border-white/5"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
+      {/* Dynamic Ambient Background */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-[20%] left-[-10%] w-[40%] h-[40%] bg-blue-600/10 blur-[120px] rounded-full animate-pulse-slow"></div>
+        <div className="absolute bottom-[-10%] right-[-5%] w-[50%] h-[50%] bg-emerald-600/10 blur-[140px] rounded-full animate-pulse-slow" style={{ animationDelay: '2s' }}></div>
+      </div>
 
-          <div className="flex flex-col items-center">
-            <span className="text-white font-bold text-lg capitalize">
-              {format(weekDays[0], 'MMMM yyyy', { locale: fr })}
+      {/* Massive Background Image (Native Hero Vibe) */}
+      <div className="absolute top-0 left-0 right-0 h-[40vh] min-h-[350px]">
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-40 mix-blend-luminosity grayscale-[10%] pointer-events-none"
+          style={{ backgroundImage: `url('https://images.unsplash.com/photo-1506784983877-45594efa4cbe?q=80&w=2068&auto=format&fit=crop')` }}
+        ></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0f172a] via-[#0f172a]/80 to-transparent pointer-events-none"></div>
+        <div className="absolute top-0 inset-x-0 h-40 bg-gradient-to-b from-[#0f172a]/80 to-transparent pointer-events-none"></div>
+
+        {/* Floating Title Container */}
+        <div className="absolute bottom-20 left-0 right-0 px-6 z-10 text-center flex flex-col items-center">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="px-2 py-1 bg-white/10 backdrop-blur-md border border-white/20 rounded-lg text-xs font-bold text-white uppercase tracking-wider">
+              Planning
             </span>
-            <div className="flex items-center gap-2 text-xs text-white/50 font-medium uppercase tracking-wide">
-              <span>Semaine {format(weekDays[0], 'w')}</span>
-            </div>
           </div>
-
-          <button
-            onClick={() => navigateWeek('next')}
-            className="w-10 h-10 rounded-full flex items-center justify-center bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-colors border border-white/5"
-          >
-            <ChevronRight className="w-5 h-5" />
-          </button>
+          <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight text-shadow-lg mb-1">AGENDA</h1>
+          <p className="text-blue-400 font-bold uppercase tracking-widest text-[10px] md:text-xs">Gérez vos inscriptions</p>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 md:px-8 py-8 relative z-10">
+      {/* The Native "Sheet" Content Container */}
+      <div className="relative z-20 mt-[30vh] bg-[#0f172a] rounded-t-[3rem] min-h-[70vh] shadow-[0_-10px_40px_rgba(0,0,0,0.5)] border-t border-white/5 pt-6 flex flex-col">
 
-        {/* Tutorial Card */}
-        {/* <TutorialCard
+        {/* Segmented Control Tabs */}
+        <div className="px-4 md:px-8 mb-4 max-w-7xl mx-auto flex justify-center w-full z-40">
+          <div className="inline-flex bg-slate-900/60 backdrop-blur-md p-1.5 rounded-2xl border border-white/5 w-full max-w-md shadow-inner">
+            <button
+              onClick={() => setActiveTab('personal')}
+              className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all duration-300 flex items-center justify-center gap-2 ${activeTab === 'personal'
+                  ? 'bg-[#0f172a] text-white shadow-md border border-white/10'
+                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+                }`}
+            >
+              <User className="w-4 h-4" />
+              <span className="hidden sm:inline">Mon calendrier</span>
+              <span className="sm:hidden">Privé</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('group')}
+              className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all duration-300 flex items-center justify-center gap-2 ${activeTab === 'group'
+                  ? 'bg-[#0f172a] text-white shadow-md border border-white/10'
+                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+                }`}
+            >
+              <Users className="w-4 h-4" />
+              <span className="hidden sm:inline">Séances collectives</span>
+              <span className="sm:hidden">Groupe</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Week Navigation - Sticky Inside Sheet */}
+        <div className="sticky top-0 z-30 bg-[#0f172a]/90 backdrop-blur-xl border-b border-white/5 py-3 px-4 md:px-8 w-full">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <button
+              onClick={() => navigateWeek('prev')}
+              className="w-10 h-10 rounded-full flex items-center justify-center bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-colors border border-white/5"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+
+            <div className="flex flex-col items-center">
+              <span className="text-white font-bold text-lg capitalize">
+                {format(weekDays[0], 'MMMM yyyy', { locale: fr })}
+              </span>
+              <div className="flex items-center gap-2 text-xs text-white/50 font-medium uppercase tracking-wide">
+                <span>Semaine {format(weekDays[0], 'w')}</span>
+              </div>
+            </div>
+
+            <button
+              onClick={() => navigateWeek('next')}
+              className="w-10 h-10 rounded-full flex items-center justify-center bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-colors border border-white/5"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 md:px-8 py-8 relative z-10">
+
+          {/* Tutorial Card */}
+          {/* <TutorialCard
           tutorialId="appointments_intro"
           title="Gérez votre agenda 📅"
           message="Réservez vos séances de coaching, consultez vos prochains créneaux et synchronisez-les avec votre agenda personnel."
           className="mb-8"
         /> */}
 
-        {
-          loading && !personalSessions.length && !groupSessions.length ? (
-            <div className="flex items-center justify-center p-12" >
-              <Loader className="w-8 h-8 text-white animate-spin" />
-            </div>
-          ) : (
-            <div className="space-y-8 relative">
-              {/* Timeline Line */}
-              <div className="absolute left-[19px] top-4 bottom-4 w-0.5 bg-gradient-to-b from-blue-500/50 via-white/10 to-transparent hidden md:block" />
+          {
+            loading && !personalSessions.length && !groupSessions.length ? (
+              <div className="flex items-center justify-center p-12" >
+                <Loader className="w-8 h-8 text-white animate-spin" />
+              </div>
+            ) : (
+              <div className="space-y-8 relative">
+                {/* Timeline Line */}
+                <div className="absolute left-[19px] top-4 bottom-4 w-0.5 bg-gradient-to-b from-blue-500/50 via-white/10 to-transparent hidden md:block" />
 
-              {weekDays.map((day, dayIndex) => {
-                const dayEvents = currentSessions.filter(event =>
-                  new Date(event.start).getDate() === day.getDate() &&
-                  new Date(event.start).getMonth() === day.getMonth() &&
-                  new Date(event.start).getFullYear() === day.getFullYear()
-                ).sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
+                {weekDays.map((day, dayIndex) => {
+                  const dayEvents = currentSessions.filter(event =>
+                    new Date(event.start).getDate() === day.getDate() &&
+                    new Date(event.start).getMonth() === day.getMonth() &&
+                    new Date(event.start).getFullYear() === day.getFullYear()
+                  ).sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
 
-                const isToday = new Date().toDateString() === day.toDateString();
-                const isPast = day < new Date(new Date().setHours(0, 0, 0, 0));
+                  const isToday = new Date().toDateString() === day.toDateString();
+                  const isPast = day < new Date(new Date().setHours(0, 0, 0, 0));
 
-                return (
-                  <div key={day.toISOString()} className={`relative ${dayEvents.length === 0 && !isToday ? 'opacity-50' : 'opacity-100'}`}>
+                  return (
+                    <div key={day.toISOString()} className={`relative ${dayEvents.length === 0 && !isToday ? 'opacity-50' : 'opacity-100'}`}>
 
-                    {/* Day Header */}
-                    <div className="flex items-center gap-4 mb-4">
-                      <div className={`
+                      {/* Day Header */}
+                      <div className="flex items-center gap-4 mb-4">
+                        <div className={`
                         w-10 h-10 rounded-full flex items-center justify-center shrink-0 z-10 border-2 
                         ${isToday ? 'bg-blue-600 border-blue-400 text-white shadow-lg shadow-blue-500/40' :
-                          dayEvents.length > 0 ? 'bg-[#0f172a] border-white/20 text-white' : 'bg-[#0f172a] border-white/10 text-white/40'}
+                            dayEvents.length > 0 ? 'bg-[#0f172a] border-white/20 text-white' : 'bg-[#0f172a] border-white/10 text-white/40'}
                       `}>
-                        <span className="text-sm font-bold">{format(day, 'd')}</span>
-                      </div>
-                      <div className="flex flex-col">
-                        <span className={`text-sm font-bold capitalize ${isToday ? 'text-blue-400' : 'text-white/80'}`}>
-                          {format(day, 'EEEE', { locale: fr })}
-                        </span>
-                        {dayEvents.length > 0 && (
-                          <span className="text-xs text-white/40">
-                            {dayEvents.length} événement{dayEvents.length > 1 ? 's' : ''}
+                          <span className="text-sm font-bold">{format(day, 'd')}</span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className={`text-sm font-bold capitalize ${isToday ? 'text-blue-400' : 'text-white/80'}`}>
+                            {format(day, 'EEEE', { locale: fr })}
                           </span>
+                          {dayEvents.length > 0 && (
+                            <span className="text-xs text-white/40">
+                              {dayEvents.length} événement{dayEvents.length > 1 ? 's' : ''}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Events List */}
+                      <div className="ml-14 space-y-3">
+                        {dayEvents.length > 0 ? (
+                          dayEvents.map(event => {
+                            let themeColor = 'blue';
+                            let icon = <Dumbbell className="w-6 h-6" />;
+                            let badgeText = 'Personnel';
+
+                            if (event.item_type === 'note') {
+                              themeColor = 'amber';
+                              icon = <StickyNote className="w-6 h-6" />;
+                              badgeText = 'Note';
+                            } else if (event.item_type === 'rest') {
+                              themeColor = 'indigo';
+                              icon = <Moon className="w-6 h-6" />;
+                              badgeText = 'Repos';
+                            } else if (event.item_type === 'metric') {
+                              themeColor = 'green';
+                              icon = <Activity className="w-6 h-6" />;
+                              badgeText = 'Biométrie';
+                            } else if (event.type === 'group') {
+                              themeColor = 'emerald';
+                              icon = <Users className="w-6 h-6" />;
+                              badgeText = 'Groupe';
+                            }
+
+                            return (
+                              <div
+                                key={event.id}
+                                onClick={() => handleSelectEvent(event)}
+                                className={`relative group bg-slate-900/60 backdrop-blur-xl border border-white/5 hover:border-${themeColor}-500/30 hover:-translate-y-1 transition-all duration-300 rounded-3xl p-4 overflow-hidden cursor-pointer border-t-white/10`}
+                              >
+                                <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded-3xl"></div>
+
+                                <div className="flex items-center gap-4 relative z-10">
+                                  {/* Left Icon/Thumbnail Widget */}
+                                  <div className={`w-14 h-14 shrink-0 rounded-2xl flex items-center justify-center border backdrop-blur-md
+                                  bg-${themeColor}-500/10 border-${themeColor}-500/30 text-${themeColor}-400 group-hover:shadow-[0_0_15px_rgba(var(--tw-colors-${themeColor}-500),0.3)] transition-shadow`}
+                                  >
+                                    {icon}
+                                  </div>
+
+                                  {/* Center Content */}
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <span className={`text-[10px] uppercase font-bold tracking-wider text-${themeColor}-400`}>
+                                        {badgeText}
+                                      </span>
+                                      {event.item_type === 'session' && (
+                                        <span className="text-white/40 text-xs flex items-center gap-1 font-medium">
+                                          <Clock className="w-3 h-3" />
+                                          {format(event.start, 'HH:mm')} - {format(event.end, 'HH:mm')}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <h4 className={`text-base font-bold text-white truncate group-hover:text-${themeColor}-300 transition-colors`}>
+                                      {event.title}
+                                    </h4>
+                                    {event.coach && event.item_type === 'session' && (
+                                      <p className="text-xs text-slate-400 line-clamp-1 mt-0.5">
+                                        Par {event.coach.full_name}
+                                      </p>
+                                    )}
+                                  </div>
+
+                                  {/* Right Action Icon */}
+                                  <div className="flex-shrink-0 flex items-center justify-center">
+                                    {event.item_type === 'metric' ? (
+                                      <div className="bg-green-500/20 text-green-400 p-2 rounded-full">
+                                        <CheckCircle className="w-5 h-5" />
+                                      </div>
+                                    ) : (event.registered || event.type === 'personal') && event.item_type === 'session' ? (
+                                      <div className={`p-2.5 rounded-full bg-${themeColor}-500/20 text-${themeColor}-400 shadow-lg shadow-${themeColor}-500/10`}>
+                                        <Play className="w-5 h-5 fill-current" />
+                                      </div>
+                                    ) : event.item_type !== 'session' ? (
+                                      <div className={`p-2 rounded-full text-${themeColor}-400/50 group-hover:bg-${themeColor}-500/10 group-hover:text-${themeColor}-400 transition-colors`}>
+                                        <ChevronRight className="w-5 h-5" />
+                                      </div>
+                                    ) : (
+                                      <div className="px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-bold text-white/80 uppercase tracking-wider">
+                                        Infos
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })
+                        ) : (
+                          isToday && (
+                            <div className="p-4 rounded-xl border border-dashed border-white/10 bg-white/5 flex items-center justify-center text-white/40 text-sm">
+                              Aucun événement prévu aujourd'hui
+                            </div>
+                          )
                         )}
+
+                        {/* Spacer for empty days to maintain rhythm but take less space */}
+                        {dayEvents.length === 0 && !isToday && <div className="h-4" />}
                       </div>
                     </div>
+                  );
+                })}
+              </div>
+            )
+          }
 
-                    {/* Events List */}
-                    <div className="ml-14 space-y-3">
-                      {dayEvents.length > 0 ? (
-                        dayEvents.map(event => (
-                          <div
-                            key={event.id}
-                            onClick={() => handleSelectEvent(event)}
-                            className={`
-                              group relative overflow-hidden rounded-2xl p-4 border transition-all cursor-pointer
-                              ${event.item_type === 'note'
-                                ? 'bg-gradient-to-br from-amber-900/20 to-amber-900/5 border-amber-500/20 hover:border-amber-500/40'
-                                : event.item_type === 'rest'
-                                  ? 'bg-gradient-to-br from-indigo-900/20 to-indigo-900/5 border-indigo-500/20 hover:border-indigo-500/40'
-                                  : event.item_type === 'metric'
-                                    ? 'bg-gradient-to-br from-green-900/20 to-green-900/5 border-green-500/20 hover:border-green-500/40'
-                                    : event.type === 'personal'
-                                      ? 'bg-gradient-to-br from-blue-900/20 to-blue-900/5 border-blue-500/20 hover:border-blue-500/40'
-                                      : 'bg-gradient-to-br from-emerald-900/20 to-emerald-900/5 border-emerald-500/20 hover:border-emerald-500/40'
-                              }
-                            `}
-                          >
-                            <div className="flex justify-between items-start gap-4">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <span className={`text-xs font-bold px-2 py-0.5 rounded-md 
-                                    ${event.item_type === 'note' ? 'bg-amber-500/20 text-amber-300'
-                                      : event.item_type === 'rest' ? 'bg-indigo-500/20 text-indigo-300'
-                                        : event.item_type === 'metric' ? 'bg-green-500/20 text-green-300'
-                                          : event.type === 'personal' ? 'bg-blue-500/20 text-blue-300'
-                                            : 'bg-emerald-500/20 text-emerald-300'
-                                    }`}>
-                                    {event.item_type === 'note' ? 'Note'
-                                      : event.item_type === 'rest' ? 'Repos'
-                                        : event.item_type === 'metric' ? 'Pesée / Biométrie'
-                                          : event.type === 'personal' ? 'Personnel'
-                                            : 'Groupe'}
-                                  </span>
-                                  {event.item_type === 'session' && (
-                                    <span className="text-white/40 text-xs flex items-center gap-1">
-                                      <Clock className="w-3 h-3" />
-                                      {format(event.start, 'HH:mm')} - {format(event.end, 'HH:mm')}
-                                    </span>
-                                  )}
-                                </div>
-                                <h4 className={`text-lg font-bold text-white transition-colors mb-1
-                                  ${event.item_type === 'note' ? 'group-hover:text-amber-400'
-                                    : event.item_type === 'rest' ? 'group-hover:text-indigo-400'
-                                      : event.item_type === 'metric' ? 'group-hover:text-green-400'
-                                        : event.type === 'personal' ? 'group-hover:text-blue-400'
-                                          : 'group-hover:text-emerald-400'
-                                  }`}>
-                                  {event.title}
-                                </h4>
-                                {event.coach && event.item_type === 'session' && (
-                                  <div className="flex items-center gap-2 text-sm text-white/60">
-                                    <User className="w-3.5 h-3.5" />
-                                    <span>{event.coach.full_name}</span>
-                                  </div>
-                                )}
-                              </div>
+        </div>
 
-                              <div className="flex flex-col items-end gap-2">
-                                {event.item_type === 'note' ? (
-                                  <div className="w-8 h-8 rounded-full flex items-center justify-center bg-amber-500/20 text-amber-400">
-                                    <StickyNote className="w-4 h-4" />
-                                  </div>
-                                ) : event.item_type === 'rest' ? (
-                                  <div className="w-8 h-8 rounded-full flex items-center justify-center bg-indigo-500/20 text-indigo-400">
-                                    <Moon className="w-4 h-4" />
-                                  </div>
-                                ) : event.item_type === 'metric' ? (
-                                  <div className="border border-green-500/30 px-3 py-1.5 rounded-xl bg-green-500/10 text-xs font-medium text-green-400 hover:bg-green-500/20 transition-colors whitespace-nowrap">
-                                    Remplir mes mesures
-                                  </div>
-                                ) : (event.registered || event.type === 'personal') ? (
-                                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${event.type === 'personal' ? 'bg-blue-500/20 text-blue-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
-                                    <Play className="w-4 h-4 fill-current" />
-                                  </div>
-                                ) : (
-                                  <div className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-medium text-white/60">
-                                    S'inscrire
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        isToday && (
-                          <div className="p-4 rounded-xl border border-dashed border-white/10 bg-white/5 flex items-center justify-center text-white/40 text-sm">
-                            Aucun événement prévu aujourd'hui
-                          </div>
-                        )
-                      )}
-
-                      {/* Spacer for empty days to maintain rhythm but take less space */}
-                      {dayEvents.length === 0 && !isToday && <div className="h-4" />}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+        {
+          isModalOpen && selectedSession && (
+            <SessionModal
+              session={selectedSession}
+              exercises={sessionExercises}
+              groups={exerciseGroups}
+              loadingExercises={loadingExercises}
+              onClose={() => {
+                setIsModalOpen(false);
+                setSessionExercises([]);
+                setExerciseGroups([]);
+              }}
+              onRegister={handleRegister}
+              onUnregister={handleUnregister}
+              onStartTraining={() => {
+                if (selectedSession.source === 'appointment') {
+                  navigate(`/client/live-workout/appointment/${selectedSession.id}`);
+                } else {
+                  navigate(`/client/live-workout/${selectedSession.id}`);
+                }
+              }}
+              registering={registering}
+            />
           )
         }
 
-      </div>
-
-      {
-        isModalOpen && selectedSession && (
-          <SessionModal
-            session={selectedSession}
-            exercises={sessionExercises}
-            groups={exerciseGroups}
-            loadingExercises={loadingExercises}
-            onClose={() => {
-              setIsModalOpen(false);
-              setSessionExercises([]);
-              setExerciseGroups([]);
-            }}
-            onRegister={handleRegister}
-            onUnregister={handleUnregister}
-            onStartTraining={() => {
-              if (selectedSession.source === 'appointment') {
-                navigate(`/client/live-workout/appointment/${selectedSession.id}`);
-              } else {
-                navigate(`/client/live-workout/${selectedSession.id}`);
-              }
-            }}
-            registering={registering}
+        {selectedNote && (
+          <NoteModal
+            note={selectedNote}
+            onClose={() => setSelectedNote(null)}
+            onSave={handleUpdateSession}
           />
-        )
-      }
-
-      {selectedNote && (
-        <NoteModal
-          note={selectedNote}
-          onClose={() => setSelectedNote(null)}
-          onSave={handleUpdateSession}
-        />
-      )}
+        )}
 
 
+      </div>
     </div>
   );
 }
