@@ -48,47 +48,82 @@ export function StatsRail({ level, xp, streak, weight, onWeightClick }: StatsRai
 
     return (
         <div className="w-full overflow-x-auto no-scrollbar pb-4 pt-2 px-6 flex gap-3">
-            {stats.map((stat, i) => (
-                <motion.div
-                    key={stat.id}
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: i * 0.1 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={stat.onClick}
-                    className={`flex-none w-[150px] bg-slate-900/50 backdrop-blur-xl rounded-[1.5rem] p-4 flex flex-col justify-between border ${stat.borderColor || 'border-white/5'} shadow-xl ${stat.onClick ? 'cursor-pointer hover:bg-slate-800/60 active:scale-95 transition-all duration-300' : ''}`}
-                >
-                    <div className="flex justify-between items-start mb-3">
-                        <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">{stat.label}</span>
-                        <div className="flex items-center gap-1.5 text-white bg-white/5 px-2 py-1 rounded-md border border-white/5">
-                            {stat.icon && stat.icon}
-                            <span className="text-sm font-extrabold">{stat.value}</span>
-                        </div>
-                    </div>
-                    {/* Progress Bar or Subtext */}
-                    {stat.progress !== undefined ? (
-                        <div className="flex flex-col gap-1.5 w-full mt-2">
-                            <span className="text-[10px] text-slate-400 font-bold text-right tracking-tight">{stat.subtext}</span>
-                            <div className="w-full bg-slate-950/80 rounded-full h-2 overflow-hidden border border-white/5 shadow-inner">
-                                <div
-                                    className={`h-full rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.4)] relative overflow-hidden`}
-                                    style={{ width: `${stat.progress}%` }}
-                                >
-                                    {/* Subtle shimmer inside progress bar */}
-                                    <div className="absolute inset-x-0 top-0 h-1/2 bg-white/20"></div>
+            {stats.map((stat, i) => {
+                // Circular Progress calculations
+                const radius = 24;
+                const circumference = 2 * Math.PI * radius;
+                const strokeDashoffset = stat.progress !== undefined
+                    ? circumference - (stat.progress / 100) * circumference
+                    : circumference;
+
+                return (
+                    <motion.div
+                        key={stat.id}
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: i * 0.1 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={stat.onClick}
+                        className={`flex-none w-[140px] h-[140px] bg-slate-900/50 backdrop-blur-xl rounded-[1.5rem] p-4 flex flex-col justify-between border ${stat.borderColor || 'border-white/5'} shadow-xl ${stat.onClick ? 'cursor-pointer hover:bg-slate-800/60 active:scale-95 transition-all duration-300' : ''} relative overflow-hidden group`}
+                    >
+                        {/* Subtle Background Glow */}
+                        {stat.id === 'level' && (
+                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-emerald-500/20 rounded-full blur-xl z-0"></div>
+                        )}
+
+                        <div className="flex justify-between items-start z-10 relative">
+                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{stat.label}</span>
+                            {stat.id !== 'level' && (
+                                <div className="flex items-center justify-center w-6 h-6 bg-white/5 rounded-full border border-white/5 text-white">
+                                    {stat.icon}
                                 </div>
+                            )}
+                        </div>
+
+                        {/* Circular Level Indicator */}
+                        {stat.id === 'level' ? (
+                            <div className="flex flex-col items-center justify-center z-10 relative w-full h-full pt-2">
+                                <div className="relative w-[56px] h-[56px] flex items-center justify-center -ml-1">
+                                    {/* SVG Background Track */}
+                                    <svg className="absolute inset-0 w-full h-full -rotate-90">
+                                        <circle
+                                            cx="28"
+                                            cy="28"
+                                            r={radius}
+                                            fill="transparent"
+                                            className="stroke-slate-800/80"
+                                            strokeWidth="5"
+                                        />
+                                        {/* SVG Progress Ring */}
+                                        <circle
+                                            cx="28"
+                                            cy="28"
+                                            r={radius}
+                                            fill="transparent"
+                                            className="stroke-emerald-400 transition-all duration-1000 ease-out drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]"
+                                            strokeWidth="5"
+                                            strokeDasharray={circumference}
+                                            strokeDashoffset={strokeDashoffset}
+                                            strokeLinecap="round"
+                                        />
+                                    </svg>
+                                    <span className="text-xl font-black text-white">{stat.value}</span>
+                                </div>
+                                <span className="text-[9px] text-emerald-400 font-bold tracking-widest mt-2">{stat.subtext}</span>
                             </div>
-                        </div>
-                    ) : (
-                        <div className="w-full flex justify-end mt-4">
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
-                                {stat.id === 'streak' && 'En cours'}
-                                {stat.id === 'workouts' && 'Cette semaine'}
-                            </span>
-                        </div>
-                    )}
-                </motion.div>
-            ))}
+                        ) : (
+                            <div className="flex flex-col pb-1 z-10 relative">
+                                <span className="text-2xl font-black text-white tracking-tight leading-none mb-1">{stat.value}</span>
+                                <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500">
+                                    {stat.id === 'streak' && 'En cours'}
+                                    {stat.id === 'workouts' && 'Cettte semaine'}
+                                    {stat.id === 'weight' && 'Actuel'}
+                                </span>
+                            </div>
+                        )}
+                    </motion.div>
+                );
+            })}
             {/* Spacer for right padding */}
             <div className="w-4 flex-none" />
         </div>

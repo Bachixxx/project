@@ -6,10 +6,11 @@ interface DashboardHeroProps {
     clientName: string;
     nextSession: any | null;
     notificationsCount?: number;
+    heroImage?: string;
     welcomeMessage?: string;
 }
 
-export function DashboardHero({ clientName, nextSession, notificationsCount = 0, welcomeMessage }: DashboardHeroProps) {
+export function DashboardHero({ clientName, nextSession, notificationsCount = 0, heroImage, welcomeMessage }: DashboardHeroProps) {
     const navigate = useNavigate();
 
     const formatDate = (dateString: string) => {
@@ -25,9 +26,18 @@ export function DashboardHero({ clientName, nextSession, notificationsCount = 0,
     };
 
     return (
-        <div className="relative w-full pt-6 pb-2 shrink-0">
+        <div className="relative w-full shrink-0 min-h-[480px] flex flex-col justify-end pb-8">
+            {/* Massive Background Image with Premium Dark Overlay */}
+            <div
+                className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-40 mix-blend-luminosity grayscale-[30%] pointer-events-none"
+                style={{ backgroundImage: `url('${heroImage || "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?q=80&w=2070&auto=format&fit=crop"}')` }}
+            ></div>
+            {/* Multi-layered gradient for perfect text readability (Dark to transparent to Dark) */}
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-slate-950/20 pointer-events-none"></div>
+            <div className="absolute top-0 inset-x-0 h-40 bg-gradient-to-b from-slate-950/80 to-transparent pointer-events-none"></div>
+
             {/* Inner Content Container */}
-            <div className="relative z-20 w-full h-full max-w-5xl mx-auto px-4 md:px-6 mt-[env(safe-area-inset-top)]">
+            <div className="relative z-20 w-full max-w-5xl mx-auto px-4 md:px-6 mt-[env(safe-area-inset-top)] flex flex-col justify-between h-full pt-6">
 
                 {/* Top Nav (Greeting & Notifications) */}
                 <div className="flex justify-between items-start mb-6 w-full">
