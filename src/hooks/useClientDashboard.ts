@@ -90,12 +90,11 @@ export function useClientDashboard() {
                     .from('session_registrations')
                     .select(`
             id,
-            session:session_id(
+            session:scheduled_sessions!scheduled_session_id(
                 id,
                 title,
-                start,
-                duration,
-                type,
+                scheduled_date,
+                item_type,
                 coach:coaches(full_name, avatar_url)
             )
           `)
@@ -124,11 +123,12 @@ export function useClientDashboard() {
                     .gte('completed_at', startOfWeek(new Date(), { weekStartsOn: 1 }).toISOString())
                     .lte('completed_at', endOfWeek(new Date(), { weekStartsOn: 1 }).toISOString()),
 
-                // Weight Logs (Last 30 days)
+                // Body Scans replacing old Weight Logs (Last 30 days)
                 supabase
-                    .from('weight_logs')
+                    .from('body_scans')
                     .select('date, weight')
                     .eq('client_id', client.id)
+                    .not('weight', 'is', null)
                     .order('date', { ascending: true })
                     .limit(30),
 
@@ -139,7 +139,7 @@ export function useClientDashboard() {
             id,
             created_at,
             exercise_id,
-            sets,
+            set_number,
             reps,
             weight
           `)
@@ -176,14 +176,14 @@ export function useClientDashboard() {
                     .from('scheduled_sessions')
                     .select(`
                         id,
-                        date,
-                        template:workout_template_id(name)
+                        scheduled_date,
+                        session:sessions(name)
                     `)
                     .eq('client_id', client.id)
-                    .eq('client_program_id', activeProgram.id)
-                    .eq('completed', false)
-                    .gte('date', todayStr)
-                    .order('date', { ascending: true })
+                    .eq('item_type', 'session')
+                    .neq('status', 'completed')
+                    .gte('scheduled_date', todayStr)
+                    .order('scheduled_date', { ascending: true })
                     .limit(1)
                     .maybeSingle();
             }
@@ -208,11 +208,12 @@ export function useClientDashboard() {
             // Since we couldn't properly inner-join filter with PostgREST, filter valid future sessions in memory
             if (nextGroupRegistrationRes.data && nextGroupRegistrationRes.data.length > 0) {
                 const validGroupSessions = nextGroupRegistrationRes.data
-                    .filter((reg: any) => reg.session && new Date(reg.session.start) >= now)
+                    .filter((reg: any) => reg.session && new Date(reg.session.scheduled_date) >= now)
                     .map((reg: any) => ({
                         ...reg.session,
+                        start: reg.session.scheduled_date, // Map scheduled_date back to start for the UI
                         source: 'group',
-                        compareDate: new Date(reg.session.start)
+                        compareDate: new Date(reg.session.scheduled_date)
                     }))
                     .sort((a, b) => a.compareDate.getTime() - b.compareDate.getTime());
 
@@ -225,7 +226,7 @@ export function useClientDashboard() {
             if (nextProgramSessionRes.data) {
                 // Determine the start time. Scheduled sessions only have a 'date' (YYYY-MM-DD), not a time.
                 // We'll treat its comparison time as the start of that day, or 'now' if it's today so it shows up.
-                const sessionDateStr = nextProgramSessionRes.data.date;
+                const sessionDateStr = nextProgramSessionRes.data.scheduled_date;
                 const todayStr = now.toISOString().split('T')[0];
 
                 let compareDate = new Date(sessionDateStr);
@@ -237,7 +238,7 @@ export function useClientDashboard() {
 
                 candidates.push({
                     id: nextProgramSessionRes.data.id,
-                    title: nextProgramSessionRes.data.template?.name || 'Entraînement',
+                    title: nextProgramSessionRes.data.session?.name || 'Entraînement',
                     start: sessionDateStr, // Keep original date string for display
                     source: 'program',
                     compareDate: compareDate,
