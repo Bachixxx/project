@@ -80,7 +80,6 @@ export function useClientDashboard() {
             coach:coaches(full_name, avatar_url)
           `)
                     .eq('client_id', client.id)
-                    .eq('type', 'personal')
                     .gte('start', new Date().toISOString())
                     .order('start', { ascending: true })
                     .limit(1)
@@ -102,8 +101,7 @@ export function useClientDashboard() {
           `)
                     .eq('client_id', client.id)
                     .eq('status', 'registered')
-                    .gte('session.start', new Date().toISOString())
-                    // PostgREST ordering on joined tables might be tricky, we'll sort in memory if needed, but attempt it here
+                    // Removed .gte('session.start') as embedded filtering can cause PostgREST errors depending on the version. Filtered in-memory.
                     .order('created_at', { ascending: false }), // Best effort ordering before filtering
 
                 // Active Program
@@ -115,6 +113,7 @@ export function useClientDashboard() {
           `)
                     .eq('client_id', client.id)
                     .eq('status', 'active')
+                    .limit(1) // Prevent multi-row errors if DB is corrupt or holds duplicates
                     .maybeSingle(),
 
                 // Weekly Workouts (This week)
