@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 interface DashboardHeroProps {
     clientName: string;
     nextSession: any | null;
+    activeProgram?: any | null; // Added to know if they have a program to continue
     notificationsCount?: number;
     heroImage?: string;
     logoUrl?: string; // New
@@ -12,7 +13,7 @@ interface DashboardHeroProps {
     welcomeMessage?: string;
 }
 
-export function DashboardHero({ clientName, nextSession, notificationsCount = 0, heroImage, logoUrl, appName, welcomeMessage }: DashboardHeroProps) {
+export function DashboardHero({ clientName, nextSession, activeProgram, notificationsCount = 0, heroImage, logoUrl, appName, welcomeMessage }: DashboardHeroProps) {
     const navigate = useNavigate();
 
     const formatDate = (dateString: string) => {
@@ -21,10 +22,32 @@ export function DashboardHero({ clientName, nextSession, notificationsCount = 0,
     };
 
     const getSessionRoute = (session: any) => {
-        const isScheduled = session.type === 'scheduled';
-        return isScheduled
-            ? `/client/live-workout/${session.id}`
-            : `/client/live-workout/appointment/${session.id}`;
+        if (!session) return '/client/dashboard';
+
+        switch (session.source) {
+            case 'program':
+                // For program sessions, we route to the specific scheduled session
+                return `/client/live-workout/${session.id}`;
+            case 'appointment':
+            case 'group':
+                // For personal or group appointments, we route to the appointment runner
+                return `/client/live-workout/appointment/${session.id}`;
+            default:
+                // Fallback to legacy logic if source is missing
+                const isScheduled = session.type === 'scheduled';
+                return isScheduled
+                    ? `/client/live-workout/${session.id}`
+                    : `/client/live-workout/appointment/${session.id}`;
+        }
+    };
+
+    const getSessionTypeLabel = (session: any) => {
+        switch (session?.source) {
+            case 'program': return 'Programme en cours';
+            case 'group': return 'Séance Collective';
+            case 'appointment': return 'Séance Privée';
+            default: return 'Prochaine Séance';
+        }
     };
 
     return (
@@ -91,22 +114,32 @@ export function DashboardHero({ clientName, nextSession, notificationsCount = 0,
 
                             <div className="flex flex-col gap-2 relative z-10 mb-6 pb-6 border-b border-white/5">
                                 <div className="flex items-center gap-2 mb-1">
-                                    <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
-                                    <span className="text-[11px] font-bold uppercase tracking-widest text-emerald-400">Prochaine Séance</span>
+                                    <div className={`w-2 h-2 rounded-full animate-pulse ${nextSession.source === 'program' ? 'bg-cyan-400' :
+                                            nextSession.source === 'group' ? 'bg-emerald-400' : 'bg-blue-400'
+                                        }`}></div>
+                                    <span className={`text-[11px] font-bold uppercase tracking-widest ${nextSession.source === 'program' ? 'text-cyan-400' :
+                                            nextSession.source === 'group' ? 'text-emerald-400' : 'text-blue-400'
+                                        }`}>
+                                        {getSessionTypeLabel(nextSession)}
+                                    </span>
                                 </div>
                                 <h3 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight leading-tight">
-                                    {nextSession.type === 'scheduled' ? nextSession.session.name : nextSession.title}
+                                    {nextSession.title || nextSession.name}
                                 </h3>
 
                                 <div className="flex flex-wrap items-center gap-4 mt-3">
                                     <div className="flex items-center gap-1.5 text-slate-300 text-sm font-medium bg-white/5 px-3 py-1.5 rounded-full border border-white/5">
-                                        <Calendar className="w-4 h-4 text-emerald-500" />
-                                        <span>{formatDate(nextSession.start || nextSession.scheduled_date)}</span>
+                                        <Calendar className={`w-4 h-4 ${nextSession.source === 'program' ? 'text-cyan-500' :
+                                                nextSession.source === 'group' ? 'text-emerald-500' : 'text-blue-500'
+                                            }`} />
+                                        <span>{formatDate(nextSession.start || nextSession.date)}</span>
                                     </div>
-                                    <div className="flex items-center gap-1.5 text-slate-300 text-sm font-medium bg-white/5 px-3 py-1.5 rounded-full border border-white/5">
-                                        <Flame className="w-4 h-4 text-orange-500" />
-                                        <span>Focus</span>
-                                    </div>
+                                    {nextSession.source === 'program' && (
+                                        <div className="flex items-center gap-1.5 text-slate-300 text-sm font-medium bg-white/5 px-3 py-1.5 rounded-full border border-white/5">
+                                            <Flame className="w-4 h-4 text-orange-500" />
+                                            <span>Focus</span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -125,18 +158,41 @@ export function DashboardHero({ clientName, nextSession, notificationsCount = 0,
                             animate={{ opacity: 1, y: 0 }}
                             className="bg-slate-900/60 backdrop-blur-xl rounded-[2rem] p-8 border border-white/5 shadow-2xl flex flex-col items-center justify-center text-center relative overflow-hidden"
                         >
-                            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-emerald-500/5 pointer-events-none"></div>
-                            <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4 border border-white/10">
-                                <span className="text-2xl">🛋️</span>
-                            </div>
-                            <h3 className="text-xl font-bold text-white mb-2">Repos mérité</h3>
-                            <p className="text-slate-400 text-sm mb-6 max-w-xs mx-auto">Votre corps récupère. Explorez le catalogue pour planifier la suite.</p>
-                            <button
-                                onClick={() => navigate('/client/workouts')}
-                                className="w-full bg-white/10 hover:bg-white/15 text-white font-semibold px-6 py-4 rounded-xl border border-white/10 transition-colors active:scale-95"
-                            >
-                                Explorer le catalogue
-                            </button>
+                            {activeProgram ? (
+                                // Motivational Empty State: Has Active Program
+                                <>
+                                    <div className="absolute inset-0 bg-gradient-to-b from-transparent to-cyan-500/5 pointer-events-none"></div>
+                                    <div className="w-16 h-16 rounded-full bg-cyan-500/10 flex items-center justify-center mb-4 border border-cyan-500/20 shadow-[0_0_20px_rgba(34,211,238,0.2)]">
+                                        <Flame className="w-8 h-8 text-cyan-400" />
+                                    </div>
+                                    <h3 className="text-xl font-bold text-white mb-2">Prêt pour la suite ?</h3>
+                                    <p className="text-slate-400 text-sm mb-6 max-w-xs mx-auto">
+                                        Vous n'avez pas de séance prévue aujourd'hui, mais votre programme <strong>{activeProgram.program?.name}</strong> vous attend.
+                                    </p>
+                                    <button
+                                        onClick={() => navigate(`/client/workouts/${activeProgram.id}`)}
+                                        className="w-full bg-gradient-to-r from-cyan-600 to-blue-500 hover:from-cyan-500 hover:to-blue-400 text-white font-bold px-6 py-4 rounded-xl shadow-[0_0_20px_rgba(34,211,238,0.2)] transition-all active:scale-[0.98]"
+                                    >
+                                        Continuer mon programme
+                                    </button>
+                                </>
+                            ) : (
+                                // True Empty State: No Program, No Sessions
+                                <>
+                                    <div className="absolute inset-0 bg-gradient-to-b from-transparent to-emerald-500/5 pointer-events-none"></div>
+                                    <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4 border border-white/10">
+                                        <span className="text-2xl">🛋️</span>
+                                    </div>
+                                    <h3 className="text-xl font-bold text-white mb-2">Repos mérité</h3>
+                                    <p className="text-slate-400 text-sm mb-6 max-w-xs mx-auto">Votre corps récupère. Explorez le catalogue pour planifier la suite.</p>
+                                    <button
+                                        onClick={() => navigate('/client/workouts')}
+                                        className="w-full bg-white/10 hover:bg-white/15 text-white font-semibold px-6 py-4 rounded-xl border border-white/10 transition-colors active:scale-[0.98]"
+                                    >
+                                        Explorer le catalogue
+                                    </button>
+                                </>
+                            )}
                         </motion.div>
                     )}
                 </div>

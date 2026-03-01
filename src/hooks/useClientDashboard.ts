@@ -58,11 +58,9 @@ export function useClientDashboard() {
             }
 
             // 2. Parallel Fetching
-            const nextWeek = new Date();
-            nextWeek.setDate(nextWeek.getDate() + 7);
-
             const [
-                nextSessionRes,
+                nextPersonalAppointmentRes,
+                nextGroupRegistrationRes,
                 activeProgramRes,
                 workoutsRes,
                 weightLogsRes,
@@ -70,7 +68,7 @@ export function useClientDashboard() {
                 allWorkoutsRes,
                 latestBodyScanRes
             ] = await Promise.all([
-                // Next Session
+                // Next Personal Appointment
                 supabase
                     .from('appointments')
                     .select(`
@@ -82,10 +80,31 @@ export function useClientDashboard() {
             coach:coaches(full_name, avatar_url)
           `)
                     .eq('client_id', client.id)
+                    .eq('type', 'personal')
                     .gte('start', new Date().toISOString())
                     .order('start', { ascending: true })
                     .limit(1)
                     .maybeSingle(),
+
+                // Next Group Registration
+                supabase
+                    .from('session_registrations')
+                    .select(`
+            id,
+            session:session_id(
+                id,
+                title,
+                start,
+                duration,
+                type,
+                coach:coaches(full_name, avatar_url)
+            )
+          `)
+                    .eq('client_id', client.id)
+                    .eq('status', 'registered')
+                    .gte('session.start', new Date().toISOString())
+                    // PostgREST ordering on joined tables might be tricky, we'll sort in memory if needed, but attempt it here
+                    .order('created_at', { ascending: false }), // Best effort ordering before filtering
 
                 // Active Program
                 supabase
@@ -146,7 +165,92 @@ export function useClientDashboard() {
                     .maybeSingle()
             ]);
 
+            // 2.5 Fetch Next Program Session (requires activeProgram internal ID)
+            let nextProgramSessionRes: any = { data: null };
+            const activeProgram = activeProgramRes.data;
+
+            if (activeProgram) {
+                // Get today's start and end to find the next valid scheduled session
+                const todayStr = new Date().toISOString().split('T')[0];
+
+                nextProgramSessionRes = await supabase
+                    .from('scheduled_sessions')
+                    .select(`
+                        id,
+                        date,
+                        template:workout_template_id(name)
+                    `)
+                    .eq('client_id', client.id)
+                    .eq('client_program_id', activeProgram.id)
+                    .eq('completed', false)
+                    .gte('date', todayStr)
+                    .order('date', { ascending: true })
+                    .limit(1)
+                    .maybeSingle();
+            }
+
             // 3. Process Data
+
+            // Normalize and compare dates to find the absolute next session
+            let nextSession = null;
+            const now = new Date();
+            const candidates: any[] = [];
+
+            // 1. Personal Appointment
+            if (nextPersonalAppointmentRes.data) {
+                candidates.push({
+                    ...nextPersonalAppointmentRes.data,
+                    source: 'appointment',
+                    compareDate: new Date(nextPersonalAppointmentRes.data.start)
+                });
+            }
+
+            // 2. Group Registration
+            // Since we couldn't properly inner-join filter with PostgREST, filter valid future sessions in memory
+            if (nextGroupRegistrationRes.data && nextGroupRegistrationRes.data.length > 0) {
+                const validGroupSessions = nextGroupRegistrationRes.data
+                    .filter((reg: any) => reg.session && new Date(reg.session.start) >= now)
+                    .map((reg: any) => ({
+                        ...reg.session,
+                        source: 'group',
+                        compareDate: new Date(reg.session.start)
+                    }))
+                    .sort((a, b) => a.compareDate.getTime() - b.compareDate.getTime());
+
+                if (validGroupSessions.length > 0) {
+                    candidates.push(validGroupSessions[0]);
+                }
+            }
+
+            // 3. Program Session
+            if (nextProgramSessionRes.data) {
+                // Determine the start time. Scheduled sessions only have a 'date' (YYYY-MM-DD), not a time.
+                // We'll treat its comparison time as the start of that day, or 'now' if it's today so it shows up.
+                const sessionDateStr = nextProgramSessionRes.data.date;
+                const todayStr = now.toISOString().split('T')[0];
+
+                let compareDate = new Date(sessionDateStr);
+                // If it's today, set the compare time to slightly in the future so it's prioritized
+                // but doesn't immediately expire.
+                if (sessionDateStr === todayStr) {
+                    compareDate = new Date(now.getTime() + 60000); // Now + 1 min
+                }
+
+                candidates.push({
+                    id: nextProgramSessionRes.data.id,
+                    title: nextProgramSessionRes.data.template?.name || 'Entraînement',
+                    start: sessionDateStr, // Keep original date string for display
+                    source: 'program',
+                    compareDate: compareDate,
+                    type: 'scheduled'
+                });
+            }
+
+            // Elect the closest upcoming session
+            if (candidates.length > 0) {
+                candidates.sort((a, b) => a.compareDate.getTime() - b.compareDate.getTime());
+                nextSession = candidates[0];
+            }
 
             // User requested to ONLY use biometrics (body_scans) for weight
             const latestScan = latestBodyScanRes.data;
@@ -182,8 +286,8 @@ export function useClientDashboard() {
 
             return {
                 client,
-                nextSession: nextSessionRes.data,
-                activeProgram: activeProgramRes.data,
+                nextSession: nextSession,
+                activeProgram: activeProgram,
                 weeklyWorkouts: weeklyWorkoutsSet.size,
                 weeklyWorkoutsData: workoutsRes.data || [],
                 weightProgress,
