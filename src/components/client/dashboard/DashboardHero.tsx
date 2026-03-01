@@ -7,10 +7,12 @@ interface DashboardHeroProps {
     nextSession: any | null;
     notificationsCount?: number;
     heroImage?: string;
+    logoUrl?: string; // New
+    appName?: string; // New
     welcomeMessage?: string;
 }
 
-export function DashboardHero({ clientName, nextSession, notificationsCount = 0, heroImage, welcomeMessage }: DashboardHeroProps) {
+export function DashboardHero({ clientName, nextSession, notificationsCount = 0, heroImage, logoUrl, appName, welcomeMessage }: DashboardHeroProps) {
     const navigate = useNavigate();
 
     const formatDate = (dateString: string) => {
@@ -41,21 +43,31 @@ export function DashboardHero({ clientName, nextSession, notificationsCount = 0,
 
                 {/* Top Nav (Greeting & Notifications) */}
                 <div className="flex justify-between items-start mb-6 w-full">
-                    <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                    >
-                        {welcomeMessage ? (
-                            <h1 className="text-2xl font-bold tracking-tight text-white">
+                    <div className="flex flex-col">
+                        {/* Brand Header */}
+                        <div className="flex items-center gap-2 mb-2">
+                            {logoUrl ? (
+                                <img src={logoUrl} alt={appName || 'Coach Logo'} className="w-8 h-8 rounded-full border border-white/10 shadow-[0_0_10px_rgba(255,255,255,0.1)] object-cover" />
+                            ) : (
+                                <div className="w-8 h-8 rounded-full border border-white/10 bg-slate-800/80 flex items-center justify-center shadow-lg">
+                                    <span className="text-white text-xs font-bold font-serif italic">C</span>
+                                </div>
+                            )}
+                            <span className="text-xs font-bold text-slate-400 tracking-widest uppercase">{appName || 'COACHENCY PRO'}</span>
+                        </div>
+
+                        {/* Welcome */}
+                        <h1 className="text-3xl font-black text-white tracking-tight flex items-center gap-2">
+                            Bonjour {clientName.split(' ')[0]}.
+                        </h1>
+
+                        {/* Custom Welcome Message */}
+                        {welcomeMessage && (
+                            <p className="text-slate-300 text-sm mt-1 max-w-[280px] leading-snug">
                                 {welcomeMessage}
-                            </h1>
-                        ) : (
-                            <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-                                Bonjour, {clientName.split(' ')[0]} <span className="animate-wave">👋</span>
-                            </h1>
+                            </p>
                         )}
-                        <p className="text-emerald-400 text-sm font-medium mt-1">Prêt à dominer votre journée ?</p>
-                    </motion.div>
+                    </div>
 
                     <button className="relative w-10 h-10 bg-slate-900/60 backdrop-blur-md border border-white/10 rounded-full flex items-center justify-center text-slate-300 hover:text-white hover:bg-white/10 transition-colors shadow-lg active:scale-95">
                         <Bell className="w-5 h-5" />
