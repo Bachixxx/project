@@ -67,12 +67,14 @@ export function QuickActionsRail() {
                         transition={{ delay: 0.2 + (i * 0.05) }}
                         whileTap={{ scale: 0.9 }}
                         onClick={action.action}
-                        className="flex flex-col items-center gap-2 flex-none group"
+                        className="flex flex-col items-center gap-3 flex-none group focus:outline-none"
                     >
-                        <div className={`w-16 h-16 rounded-full ${action.bgColor} flex items-center justify-center border ${action.borderColor} group-active:scale-95 transition-transform`}>
+                        <div className={`w-20 h-20 rounded-[1.5rem] bg-slate-900/60 backdrop-blur-md flex items-center justify-center border border-white/5 shadow-lg group-active:scale-95 group-active:bg-slate-800/80 transition-all duration-300 relative overflow-hidden`}>
+                            {/* Subtle inner glow matching the icon color */}
+                            <div className={`absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-300 ${action.bgColor.replace('/20', '')}`}></div>
                             {action.icon}
                         </div>
-                        <span className="text-[10px] font-semibold uppercase tracking-tighter text-slate-400">{action.label}</span>
+                        <span className="text-[11px] font-bold uppercase tracking-tight text-slate-400 group-hover:text-slate-300 transition-colors">{action.label}</span>
                     </motion.button>
                 ))}
                 {/* Spacer */}

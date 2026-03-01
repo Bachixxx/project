@@ -6,11 +6,10 @@ interface DashboardHeroProps {
     clientName: string;
     nextSession: any | null;
     notificationsCount?: number;
-    heroImage?: string;
     welcomeMessage?: string;
 }
 
-export function DashboardHero({ clientName, nextSession, notificationsCount = 0, heroImage, welcomeMessage }: DashboardHeroProps) {
+export function DashboardHero({ clientName, nextSession, notificationsCount = 0, welcomeMessage }: DashboardHeroProps) {
     const navigate = useNavigate();
 
     const formatDate = (dateString: string) => {
@@ -26,20 +25,29 @@ export function DashboardHero({ clientName, nextSession, notificationsCount = 0,
     };
 
     return (
-        <div className="relative h-[420px] w-full overflow-hidden shrink-0">
-            {/* Dynamic Background (Edge to Edge) */}
-            <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url('${heroImage || "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=2070&auto=format&fit=crop"}')` }}></div>
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0f172a]/40 to-[#0f172a]"></div>
+        <div className="relative w-full pt-6 pb-2 shrink-0">
+            {/* Inner Content Container */}
+            <div className="relative z-20 w-full h-full max-w-5xl mx-auto px-4 md:px-6 mt-[env(safe-area-inset-top)]">
 
-            {/* Inner Content Container (Max Width for Responsiveness) */}
-            <div className="relative z-20 w-full h-full max-w-5xl mx-auto">
-                {/* Top Nav */}
-                <div className="absolute top-0 left-0 w-full p-6 pt-[calc(env(safe-area-inset-top)+1rem)] flex justify-between items-center z-20">
-                    <div className="w-10 h-10 rounded-full border-2 border-blue-500/50 overflow-hidden bg-white/10 hidden">
-                        {/* Optional generic avatar container */}
-                    </div>
-                    <div className="flex-1"></div> {/* Spacer */}
-                    <button className="relative w-10 h-10 bg-white/5 backdrop-blur-md border border-white/10 rounded-full flex items-center justify-center text-white hover:bg-white/10 transition-colors">
+                {/* Top Nav (Greeting & Notifications) */}
+                <div className="flex justify-between items-start mb-6 w-full">
+                    <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                    >
+                        {welcomeMessage ? (
+                            <h1 className="text-2xl font-bold tracking-tight text-white">
+                                {welcomeMessage}
+                            </h1>
+                        ) : (
+                            <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+                                Bonjour, {clientName.split(' ')[0]} <span className="animate-wave">👋</span>
+                            </h1>
+                        )}
+                        <p className="text-emerald-400 text-sm font-medium mt-1">Prêt à dominer votre journée ?</p>
+                    </motion.div>
+
+                    <button className="relative w-10 h-10 bg-slate-900/60 backdrop-blur-md border border-white/10 rounded-full flex items-center justify-center text-slate-300 hover:text-white hover:bg-white/10 transition-colors shadow-lg active:scale-95">
                         <Bell className="w-5 h-5" />
                         {notificationsCount > 0 && (
                             <span className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-[#0f172a]" />
@@ -47,70 +55,65 @@ export function DashboardHero({ clientName, nextSession, notificationsCount = 0,
                     </button>
                 </div>
 
-                {/* Greeting */}
-                <div className="absolute bottom-40 left-6 right-6 z-10">
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 }}
-                    >
-                        {welcomeMessage ? (
-                            <h1 className="text-4xl font-extrabold tracking-tight text-white mb-2">
-                                {welcomeMessage}
-                            </h1>
-                        ) : (
-                            <h1 className="text-4xl font-extrabold tracking-tight text-white mb-2">
-                                Bonjour, {clientName.split(' ')[0]}
-                            </h1>
-                        )}
-                        <p className="text-slate-300 font-medium">Prêt pour votre séance de force ?</p>
-                    </motion.div>
-                </div>
-
-                {/* Next Session Card (Glassmorphic) */}
-                <div className="absolute bottom-4 left-4 right-4 z-20">
+                {/* Next Session Card (Massive Glassmorphic Focus) */}
+                <div className="w-full relative z-20">
                     {nextSession ? (
                         <motion.div
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: 0.4 }}
-                            className="bg-white/5 backdrop-blur-xl border border-white/10 p-5 rounded-xl flex items-center justify-between shadow-xl"
+                            initial={{ opacity: 0, scale: 0.98, y: 10 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            transition={{ delay: 0.1, type: "spring", stiffness: 300, damping: 25 }}
+                            className="bg-slate-900/70 backdrop-blur-2xl border border-white/10 p-6 md:p-8 rounded-[2rem] flex flex-col justify-between shadow-[0_20px_40px_rgba(0,0,0,0.4)] relative overflow-hidden group"
                         >
-                            <div className="flex flex-col gap-1 flex-1 min-w-0 pr-4">
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-blue-400">Prochaine Séance</span>
-                                <h3 className="text-lg font-bold text-white truncate">
+                            {/* Decorative Animated Glow inside the card */}
+                            <div className="absolute -top-24 -right-24 w-48 h-48 bg-emerald-500/20 rounded-full blur-[50px] group-hover:bg-emerald-400/30 transition-colors duration-700 pointer-events-none"></div>
+
+                            <div className="flex flex-col gap-2 relative z-10 mb-6 pb-6 border-b border-white/5">
+                                <div className="flex items-center gap-2 mb-1">
+                                    <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+                                    <span className="text-[11px] font-bold uppercase tracking-widest text-emerald-400">Prochaine Séance</span>
+                                </div>
+                                <h3 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight leading-tight">
                                     {nextSession.type === 'scheduled' ? nextSession.session.name : nextSession.title}
                                 </h3>
-                                <div className="flex items-center gap-3 mt-1">
-                                    <div className="flex items-center gap-1 text-slate-300 text-xs">
-                                        <Calendar className="w-3.5 h-3.5" />
-                                        <span className="truncate">{formatDate(nextSession.start || nextSession.scheduled_date)}</span>
+
+                                <div className="flex flex-wrap items-center gap-4 mt-3">
+                                    <div className="flex items-center gap-1.5 text-slate-300 text-sm font-medium bg-white/5 px-3 py-1.5 rounded-full border border-white/5">
+                                        <Calendar className="w-4 h-4 text-emerald-500" />
+                                        <span>{formatDate(nextSession.start || nextSession.scheduled_date)}</span>
                                     </div>
-                                    <div className="flex items-center gap-1 text-slate-300 text-xs">
-                                        <Flame className="w-3.5 h-3.5" />
-                                        <span>-- kcal</span>
+                                    <div className="flex items-center gap-1.5 text-slate-300 text-sm font-medium bg-white/5 px-3 py-1.5 rounded-full border border-white/5">
+                                        <Flame className="w-4 h-4 text-orange-500" />
+                                        <span>Focus</span>
                                     </div>
                                 </div>
                             </div>
+
                             <button
                                 onClick={() => navigate(getSessionRoute(nextSession))}
-                                className="bg-white text-blue-600 font-bold px-5 py-3 rounded-full shadow-lg hover:scale-105 transition-transform active:scale-95 text-sm shrink-0 whitespace-nowrap"
+                                className="relative w-full overflow-hidden bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 font-extrabold px-6 py-4 md:py-5 rounded-2xl shadow-[0_0_30px_rgba(16,185,129,0.3)] hover:shadow-[0_0_40px_rgba(16,185,129,0.5)] active:scale-[0.98] transition-all flex items-center justify-center gap-2 group/btn"
                             >
-                                Démarrer
+                                <span className="relative z-10 text-lg">Démarrer Entraînement</span>
+                                {/* Shimmer Effect */}
+                                <div className="absolute inset-0 -translate-x-full group-hover/btn:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-12 z-0"></div>
                             </button>
                         </motion.div>
                     ) : (
                         <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            className="bg-white/5 backdrop-blur-md rounded-xl p-5 border border-white/10 shadow-xl"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="bg-slate-900/60 backdrop-blur-xl rounded-[2rem] p-8 border border-white/5 shadow-2xl flex flex-col items-center justify-center text-center relative overflow-hidden"
                         >
-                            <p className="text-slate-300 text-sm font-medium">Aucune séance prévue aujourd'hui.</p>
+                            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-emerald-500/5 pointer-events-none"></div>
+                            <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4 border border-white/10">
+                                <span className="text-2xl">🛋️</span>
+                            </div>
+                            <h3 className="text-xl font-bold text-white mb-2">Repos mérité</h3>
+                            <p className="text-slate-400 text-sm mb-6 max-w-xs mx-auto">Votre corps récupère. Explorez le catalogue pour planifier la suite.</p>
                             <button
                                 onClick={() => navigate('/client/workouts')}
-                                className="mt-3 text-blue-400 font-bold text-sm hover:text-blue-300 transition-colors"
+                                className="w-full bg-white/10 hover:bg-white/15 text-white font-semibold px-6 py-4 rounded-xl border border-white/10 transition-colors active:scale-95"
                             >
-                                Voir le catalogue &rarr;
+                                Explorer le catalogue
                             </button>
                         </motion.div>
                     )}

@@ -56,29 +56,32 @@ export function StatsRail({ level, xp, streak, weight, onWeightClick }: StatsRai
                     transition={{ delay: i * 0.1 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={stat.onClick}
-                    className={`flex-none w-[160px] bg-white/5 backdrop-blur-md rounded-2xl p-4 flex flex-col justify-between border ${stat.borderColor || 'border-white/10'} shadow-lg ${stat.onClick ? 'cursor-pointer hover:bg-white/10 transition-colors' : ''}`}
+                    className={`flex-none w-[150px] bg-slate-900/50 backdrop-blur-xl rounded-[1.5rem] p-4 flex flex-col justify-between border ${stat.borderColor || 'border-white/5'} shadow-xl ${stat.onClick ? 'cursor-pointer hover:bg-slate-800/60 active:scale-95 transition-all duration-300' : ''}`}
                 >
-                    <div className="flex justify-between items-start mb-2">
-                        <span className="text-xs text-slate-400 font-medium">{stat.label}</span>
-                        <div className="flex items-center gap-1 text-white">
+                    <div className="flex justify-between items-start mb-3">
+                        <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">{stat.label}</span>
+                        <div className="flex items-center gap-1.5 text-white bg-white/5 px-2 py-1 rounded-md border border-white/5">
                             {stat.icon && stat.icon}
-                            <span className="text-lg font-extrabold">{stat.value}</span>
+                            <span className="text-sm font-extrabold">{stat.value}</span>
                         </div>
                     </div>
                     {/* Progress Bar or Subtext */}
                     {stat.progress !== undefined ? (
-                        <div className="flex flex-col gap-1 w-full">
-                            <span className="text-[10px] text-slate-400 font-medium text-right">{stat.subtext}</span>
-                            <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                        <div className="flex flex-col gap-1.5 w-full mt-2">
+                            <span className="text-[10px] text-slate-400 font-bold text-right tracking-tight">{stat.subtext}</span>
+                            <div className="w-full bg-slate-950/80 rounded-full h-2 overflow-hidden border border-white/5 shadow-inner">
                                 <div
-                                    className={`h-full rounded-full ${stat.progressColor} shadow-[0_0_10px_rgba(255,255,255,0.2)]`}
+                                    className={`h-full rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.4)] relative overflow-hidden`}
                                     style={{ width: `${stat.progress}%` }}
-                                ></div>
+                                >
+                                    {/* Subtle shimmer inside progress bar */}
+                                    <div className="absolute inset-x-0 top-0 h-1/2 bg-white/20"></div>
+                                </div>
                             </div>
                         </div>
                     ) : (
-                        <div className="w-full flex justify-end">
-                            <span className="text-[10px] text-slate-500">
+                        <div className="w-full flex justify-end mt-4">
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
                                 {stat.id === 'streak' && 'En cours'}
                                 {stat.id === 'workouts' && 'Cette semaine'}
                             </span>
@@ -87,7 +90,7 @@ export function StatsRail({ level, xp, streak, weight, onWeightClick }: StatsRai
                 </motion.div>
             ))}
             {/* Spacer for right padding */}
-            <div className="w-2 flex-none" />
+            <div className="w-4 flex-none" />
         </div>
     );
 }

@@ -68,21 +68,26 @@ export default function ClientDashboard() {
   );
 
   return (
-    <div className="min-h-screen bg-[#0f172a] text-slate-100 font-sans pb-32 w-full relative overflow-x-hidden">
+    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans pb-32 w-full relative overflow-x-hidden selection:bg-emerald-500/30">
+
+      {/* Dynamic Background Gradients */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <div className="absolute top-[-10%] left-[-20%] w-[80%] h-[60%] bg-emerald-600/10 rounded-full blur-[120px] mix-blend-screen opacity-40 animate-pulse-slow"></div>
+        <div className="absolute bottom-[10%] right-[-20%] w-[70%] h-[70%] bg-teal-600/10 rounded-full blur-[100px] mix-blend-screen opacity-30 animate-pulse-slow delay-1000"></div>
+      </div>
 
       {/* 1. Immersive Hero Section */}
       <DashboardHero
         clientName={client.full_name || 'Client'}
         nextSession={nextSession}
-        notificationsCount={2} // Mocked for now, pending notification system
-        heroImage={branding?.dashboardHeroImage}
+        notificationsCount={2} // Mocked for now
         welcomeMessage={branding?.welcomeMessage}
       />
 
-      <div className="flex flex-col -mt-4 relative z-10 w-full max-w-5xl mx-auto">
+      <div className="flex flex-col relative z-10 w-full max-w-5xl mx-auto">
 
         {/* 2. Stats Rail (Horizontal Scroll) */}
-        <div>
+        <div className="mt-4">
           <StatsRail
             level={stats?.level || 1}
             xp={stats?.xp || 0}
@@ -93,32 +98,51 @@ export default function ClientDashboard() {
         </div>
 
         {/* 3. Quick Actions Rail */}
-        <div className="mt-2">
+        <div className="mt-4">
           <QuickActionsRail />
         </div>
 
-        {/* 4. Weekly Activity Chart Card */}
-        <div className="px-4 py-4 w-full">
-          <div className="bg-white/5 backdrop-blur-md p-6 rounded-2xl border border-blue-500/10 shadow-xl">
-            <div className="flex justify-between items-start mb-6">
+        {/* 4. Weekly Activity Chart Card (Gamified) */}
+        <div className="px-4 py-6 w-full">
+          <div className="bg-slate-900/60 backdrop-blur-2xl p-6 md:p-8 rounded-[2rem] border border-white/10 shadow-[0_20px_40px_rgba(0,0,0,0.3)] relative overflow-hidden group">
+            {/* Subtle top border glow */}
+            <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent opacity-50"></div>
+
+            <div className="flex justify-between items-start mb-8 relative z-10">
               <div>
-                <h4 className="text-lg font-bold text-white tracking-tight">Cette Semaine</h4>
-                <p className="text-sm text-slate-400">{weeklyWorkouts} séances terminées</p>
+                <h4 className="text-xl font-extrabold text-white tracking-tight">Cette Semaine</h4>
+                <p className="text-sm text-emerald-400 font-medium mt-1">{weeklyWorkouts} séances terminées <span className="opacity-70">/ 7</span></p>
               </div>
             </div>
-            <div className="flex items-end justify-between h-32 gap-3 mt-4">
+            <div className="flex items-end justify-between h-36 gap-2 md:gap-4 relative z-10">
               {days.map((day, i) => {
                 // Map i (0=Mon...6=Sun) to JS getDay() format (0=Sun, 1=Mon...6=Sat)
                 const jsDayOfWeek = i === 6 ? 0 : i + 1;
                 const isCompleted = daysWithWorkouts.has(jsDayOfWeek);
-                const heightPercentage = isCompleted ? '80%' : '20%';
+                const isToday = new Date().getDay() === jsDayOfWeek;
+                const heightPercentage = isCompleted ? '85%' : isToday ? '15%' : '20%';
+
                 return (
-                  <div key={i} className="flex flex-col items-center gap-2 flex-1 group h-full justify-end">
-                    <div
-                      className={`w-full rounded-full transition-all duration-500 ease-out ${isCompleted ? 'bg-blue-600 shadow-[0_0_15px_rgba(37,99,235,0.4)]' : 'bg-slate-800 group-hover:bg-slate-700'}`}
-                      style={{ height: heightPercentage }}
-                    ></div>
-                    <span className="text-[10px] font-bold text-slate-500">{day}</span>
+                  <div key={i} className="flex flex-col items-center gap-3 flex-1 h-full justify-end group/bar cursor-pointer">
+                    <div className="w-full relative flex items-end justify-center rounded-xl transition-all duration-700 h-full">
+                      <div
+                        className={`w-full max-w-[40px] rounded-xl transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${isCompleted
+                          ? 'bg-gradient-to-t from-emerald-600 to-teal-400 shadow-[0_0_20px_rgba(16,185,129,0.5)]'
+                          : isToday
+                            ? 'bg-slate-700/80 border border-slate-600'
+                            : 'bg-slate-800/50 group-hover/bar:bg-slate-700 border border-transparent group-hover/bar:border-white/5'
+                          } relative overflow-hidden`}
+                        style={{ height: heightPercentage }}
+                      >
+                        {/* Glass reflection on completed bars */}
+                        {isCompleted && (
+                          <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/20 to-transparent"></div>
+                        )}
+                      </div>
+                    </div>
+                    <span className={`text-[11px] font-bold ${isToday ? 'text-emerald-400' : isCompleted ? 'text-white' : 'text-slate-500'}`}>
+                      {day}
+                    </span>
                   </div>
                 );
               })}
