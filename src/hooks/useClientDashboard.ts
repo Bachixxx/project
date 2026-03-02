@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
-import { useAuth } from '../contexts/AuthContext';
+import { useClientAuth } from '../contexts/ClientAuthContext';
 import { startOfWeek, endOfWeek } from 'date-fns';
 
 export interface WeightEntry {
@@ -29,33 +29,12 @@ export interface ClientDashboardData {
 }
 
 export function useClientDashboard() {
-    const { user } = useAuth();
-
-    // We need to find the client ID associated with this user ID
-    // Assuming the auth user is the client account owner
+    const { client } = useClientAuth();
 
     const query = useQuery({
-        queryKey: ['clientDashboard', user?.id],
+        queryKey: ['clientDashboard', client?.id],
         queryFn: async (): Promise<ClientDashboardData> => {
-            if (!user?.email) throw new Error('User not authenticated');
-
-            // 1. Get Client Profile
-            const { data: clients, error: clientError } = await supabase
-                .from('clients')
-                .select('*')
-                .eq('auth_id', user.id)
-                .limit(1);
-
-            const client = clients?.[0];
-
-            if (clientError) throw clientError;
-
-            // If no client profile is found, return null or a specific flag
-            // This prevents the 406 error and allows the UI to handle "Account not fully set up"
-            if (!client) {
-                console.warn('Client profile not found for user:', user.email);
-                return null as any; // or handle this state in the UI components
-            }
+            if (!client) throw new Error('Client not authenticated');
 
             // 2. Parallel Fetching
             const [
@@ -298,7 +277,7 @@ export function useClientDashboard() {
                 stats
             };
         },
-        enabled: !!user?.email,
+        enabled: !!client?.id,
     });
 
     return {
