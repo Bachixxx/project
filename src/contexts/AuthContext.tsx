@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { User, Session } from '@supabase/supabase-js';
+import { User } from '@supabase/supabase-js';
 
 // Define the shape of the context
 interface AuthContextType {
@@ -34,25 +34,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.error('Session error:', error);
         }
         setUser(null);
-      } else {
-        setUser(session?.user ?? null);
-
-        // OneSignal Login for Coach
+        // Check if user is a coach
         if (session?.user) {
-          // @ts-ignore
-          if (window.OneSignalDeferred) {
+          const { data: coachData, error: coachError } = await supabase
+            .from('coaches')
+            .select('id')
+            .eq('id', session.user.id)
+            .maybeSingle();
+
+          if (coachData && !coachError) {
+            setUser(session.user);
+            // OneSignal Login for Coach
             // @ts-ignore
-            window.OneSignalDeferred.push(function (OneSignal) {
-              OneSignal.login(session.user.id);
-              OneSignal.User.addTag("role", "coach");
-            });
+            if (window.OneSignalDeferred) {
+              // @ts-ignore
+              window.OneSignalDeferred.push(function (OneSignal) {
+                OneSignal.login(session.user.id);
+                OneSignal.User.addTag("role", "coach");
+              });
+            }
+          } else {
+            console.log("Logged-in user is not a coach, clearing user context");
+            setUser(null);
           }
+        } else {
+          setUser(null);
         }
       }
       setLoading(false);
-    }).catch(async (error) => {
+    }).catch(async () => {
       console.log('Authentication session recovery failed, user will need to re-authenticate');
-      // Clear any invalid tokens
+      // If session recovery fails completely, wipe tokens
       await supabase.auth.signOut();
       setUser(null);
       setLoading(false);
@@ -70,8 +82,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsPasswordRecovery(true);
       }
 
-      setUser(session?.user ?? null);
-      setLoading(false);
+      if (session?.user) {
+        // Must verify again on state change
+        supabase
+          .from('coaches')
+          .select('id')
+          .eq('id', session.user.id)
+          .maybeSingle()
+          .then(({ data: coachData, error: coachError }) => {
+            if (coachData && !coachError) {
+              setUser(session.user);
+            } else {
+              setUser(null);
+            }
+            setLoading(false);
+          });
+      } else {
+        setUser(null);
+        setLoading(false);
+      }
     });
 
     return () => subscription.unsubscribe();
