@@ -1,13 +1,10 @@
 import { useState, useEffect } from 'react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Defs, LinearGradient, Stop } from 'recharts';
-import { Award, Target, ArrowUpRight, Activity, Calendar, Plus, X, Dumbbell, Search, TrendingUp, BarChart3, Zap } from 'lucide-react';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { Target, Activity, Plus, X, Dumbbell, Search, TrendingUp, BarChart3, Zap } from 'lucide-react';
 import { useClientAuth } from '../../contexts/ClientAuthContext';
 import { supabase } from '../../lib/supabase';
-import { TutorialCard } from '../../components/client/TutorialCard';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Drawer } from 'vaul';
-import { PageHero } from '../../components/client/shared/PageHero';
-import { NavRail } from '../../components/client/shared/NavRail';
 
 interface WorkoutLog {
   id: string;
@@ -248,8 +245,8 @@ function ClientProgress() {
 
   if (loading && !workoutLogs.length && !exercises.length) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-[#0f172a]">
-        <div className="w-16 h-16 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin"></div>
+      <div className="flex items-center justify-center min-h-screen bg-slate-950">
+        <div className="loading loading-lg text-primary-500"></div>
       </div>
     );
   }
@@ -268,220 +265,259 @@ function ClientProgress() {
 
 
   return (
-    <div className="min-h-screen bg-[#0f172a] text-white font-sans pb-24">
-      <PageHero
-        title="Mes Progrès"
-        subtitle="Suivez l'évolution de vos performances."
-        backgroundImage="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=2070&auto=format&fit=crop"
-        className="pb-4"
-        headerContent={
-          <div className="bg-white/10 backdrop-blur-md rounded-full px-4 py-1 border border-white/10 text-xs font-medium text-white/80">
-            {activeTab === 'summary' ? 'Vue d\'ensemble' : 'Analyse détaillée'}
+    <div className="min-h-screen bg-slate-950 text-white font-sans pb-32 relative overflow-hidden">
+
+      {/* Dynamic Ambient Background */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-600/10 blur-[120px] rounded-full animate-pulse-slow"></div>
+        <div className="absolute bottom-[-10%] right-[-5%] w-[50%] h-[50%] bg-blue-600/10 blur-[140px] rounded-full animate-pulse-slow" style={{ animationDelay: '2s' }}></div>
+        <div className="absolute top-[40%] left-[60%] w-[30%] h-[30%] bg-emerald-900/20 blur-[100px] rounded-full animate-pulse-slow" style={{ animationDelay: '4s' }}></div>
+      </div>
+
+      {/* Massive Background Image (Native Hero Vibe) */}
+      <div className="absolute top-0 left-0 right-0 h-[45vh] min-h-[400px]">
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-40 mix-blend-luminosity grayscale-[30%] pointer-events-none"
+          style={{ backgroundImage: `url('https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=2070&auto=format&fit=crop')` }}
+        ></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-slate-950/20 pointer-events-none"></div>
+        <div className="absolute top-0 inset-x-0 h-40 bg-gradient-to-b from-slate-950/80 to-transparent pointer-events-none"></div>
+
+        {/* Floating Title Container */}
+        <div className="absolute top-24 left-0 right-0 px-6 z-10 flex flex-col items-center justify-center text-center">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="px-3 py-1 bg-white/10 backdrop-blur-md border border-white/20 rounded-full text-[10px] font-bold text-white uppercase tracking-widest">
+              Analyses
+            </span>
           </div>
-        }
-      >
-        <NavRail
-          tabs={[
-            { id: 'summary', label: 'Synthèse', icon: BarChart3 },
-            { id: 'performance', label: 'Performances', icon: TrendingUp }
-          ]}
-          activeTab={activeTab}
-          onTabChange={(id) => setActiveTab(id as any)}
-          variant="embedded"
-        />
-      </PageHero>
+          <h1 className="text-3xl font-black text-white tracking-widest uppercase text-shadow-lg mb-2">PROGRÈS</h1>
+          <p className="text-slate-300 text-sm font-medium">Suivez l'évolution de vos perfs.</p>
+        </div>
+      </div>
 
-      <div className="max-w-7xl mx-auto px-4 mt-8 relative z-20 space-y-8">
+      {/* The Native "Sheet" Content Container */}
+      <div className="relative z-20 mt-[30vh] bg-slate-950 rounded-t-[3rem] px-4 pt-8 pb-32 min-h-[70vh] shadow-[0_-10px_40px_rgba(0,0,0,0.5)] border-t border-white/5 flex flex-col">
 
-        {activeTab === 'summary' && (
-          <div className="space-y-8 animate-fade-in">
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-              {/* KPI 1 */}
-              <div className="bg-gradient-to-br from-blue-500/20 to-blue-600/5 border border-blue-500/20 rounded-2xl p-5 flex flex-col justify-between aspect-square md:aspect-auto md:h-32">
-                <div className="flex justify-between items-start">
-                  <span className="text-blue-200 text-xs font-bold uppercase tracking-wider">Volume total</span>
-                  <Activity className="w-5 h-5 text-blue-400" />
+        {/* Segmented Control Tabs */}
+        <div className="px-4 md:px-8 mb-6 max-w-3xl mx-auto flex justify-center w-full z-40">
+          <div className="flex items-center gap-1 bg-slate-900/60 backdrop-blur-md p-1.5 rounded-2xl border border-white/5 w-full">
+            <button
+              onClick={() => setActiveTab('summary')}
+              className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${activeTab === 'summary'
+                ? 'bg-slate-800 text-white shadow-md border border-white/10'
+                : 'text-slate-400 hover:text-white hover:bg-white/5'
+                }`}
+            >
+              <BarChart3 className={`w-4 h-4 ${activeTab === 'summary' ? 'text-emerald-400' : ''}`} />
+              <span className="hidden sm:inline">Synthèse</span>
+              <span className="sm:hidden">Synthèse</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('performance')}
+              className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${activeTab === 'performance'
+                ? 'bg-slate-800 text-white shadow-md border border-white/10'
+                : 'text-slate-400 hover:text-white hover:bg-white/5'
+                }`}
+            >
+              <TrendingUp className={`w-4 h-4 ${activeTab === 'performance' ? 'text-emerald-400' : ''}`} />
+              <span className="hidden sm:inline">Performances</span>
+              <span className="sm:hidden">Perfs</span>
+            </button>
+          </div>
+        </div>
+
+        <div className="max-w-3xl mx-auto w-full px-2 mt-4 relative z-20 space-y-8">
+
+          {activeTab === 'summary' && (
+            <div className="space-y-8 animate-fade-in">
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* KPI 1 */}
+                <div className="bg-gradient-to-br from-blue-500/20 to-blue-600/5 border border-blue-500/20 rounded-2xl p-5 flex flex-col justify-between aspect-square md:aspect-auto md:h-32">
+                  <div className="flex justify-between items-start">
+                    <span className="text-blue-200 text-xs font-bold uppercase tracking-wider">Volume total</span>
+                    <Activity className="w-5 h-5 text-blue-400" />
+                  </div>
+                  <div>
+                    <span className="text-2xl md:text-3xl font-bold text-white">{(totalVolumeAllTime / 1000).toFixed(1)}k</span>
+                    <span className="text-sm text-blue-200 ml-1">kg</span>
+                  </div>
                 </div>
-                <div>
-                  <span className="text-2xl md:text-3xl font-bold text-white">{(totalVolumeAllTime / 1000).toFixed(1)}k</span>
-                  <span className="text-sm text-blue-200 ml-1">kg</span>
+
+                {/* KPI 2 */}
+                <div className="bg-gradient-to-br from-emerald-500/20 to-emerald-600/5 border border-emerald-500/20 rounded-2xl p-5 flex flex-col justify-between aspect-square md:aspect-auto md:h-32">
+                  <div className="flex justify-between items-start">
+                    <span className="text-emerald-200 text-xs font-bold uppercase tracking-wider">Séances (Total)</span>
+                    <Dumbbell className="w-5 h-5 text-emerald-400" />
+                  </div>
+                  <div>
+                    <span className="text-2xl md:text-3xl font-bold text-white">{totalSessionsAllTime}</span>
+                  </div>
+                </div>
+
+                {/* KPI 3 */}
+                <div className="bg-gradient-to-br from-purple-500/20 to-purple-600/5 border border-purple-500/20 rounded-2xl p-5 flex flex-col justify-between col-span-2 lg:col-span-1 md:h-32">
+                  <div className="flex justify-between items-start">
+                    <span className="text-purple-200 text-xs font-bold uppercase tracking-wider">Ce mois-ci</span>
+                    <Zap className="w-5 h-5 text-purple-400" />
+                  </div>
+                  <div>
+                    <span className="text-2xl md:text-3xl font-bold text-white">{sessionsThisMonth}</span>
+                    <span className="text-sm text-purple-200 ml-1">entraînements</span>
+                  </div>
                 </div>
               </div>
 
-              {/* KPI 2 */}
-              <div className="bg-gradient-to-br from-emerald-500/20 to-emerald-600/5 border border-emerald-500/20 rounded-2xl p-5 flex flex-col justify-between aspect-square md:aspect-auto md:h-32">
-                <div className="flex justify-between items-start">
-                  <span className="text-emerald-200 text-xs font-bold uppercase tracking-wider">Séances (Total)</span>
-                  <Dumbbell className="w-5 h-5 text-emerald-400" />
+              {/* Goals Section */}
+              <div>
+                <div className="flex items-center gap-3 mb-4 px-2">
+                  <div className="p-2 bg-yellow-500/20 rounded-lg">
+                    <Target className="w-5 h-5 text-yellow-400" />
+                  </div>
+                  <h2 className="text-xl font-bold text-white">Objectifs</h2>
                 </div>
-                <div>
-                  <span className="text-2xl md:text-3xl font-bold text-white">{totalSessionsAllTime}</span>
-                </div>
-              </div>
 
-              {/* KPI 3 */}
-              <div className="bg-gradient-to-br from-purple-500/20 to-purple-600/5 border border-purple-500/20 rounded-2xl p-5 flex flex-col justify-between col-span-2 lg:col-span-1 md:h-32">
-                <div className="flex justify-between items-start">
-                  <span className="text-purple-200 text-xs font-bold uppercase tracking-wider">Ce mois-ci</span>
-                  <Zap className="w-5 h-5 text-purple-400" />
-                </div>
-                <div>
-                  <span className="text-2xl md:text-3xl font-bold text-white">{sessionsThisMonth}</span>
-                  <span className="text-sm text-purple-200 ml-1">entraînements</span>
-                </div>
+                {goals.length > 0 ? (
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {goals.map((goal: any, index: number) => (
+                      <div key={index} className="bg-white/5 border border-white/10 p-5 rounded-2xl relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-white/10 transition-colors" />
+
+                        <div className="flex justify-between items-start mb-4 relative z-10">
+                          <h4 className="font-bold text-lg text-white">{goal.name}</h4>
+                          <span className={`text-xs font-bold px-2 py-1 rounded-lg ${goal.progress >= 100 ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'}`}>
+                            {goal.progress >= 100 ? 'Complété' : 'En cours'}
+                          </span>
+                        </div>
+
+                        <div className="space-y-1 relative z-10">
+                          <div className="flex justify-between text-xs text-gray-400">
+                            <span>Progression</span>
+                            <span>{goal.progress}%</span>
+                          </div>
+                          <div className="h-2 bg-black/40 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full rounded-full transition-all duration-1000 ease-out ${goal.progress >= 100 ? 'bg-green-500' : 'bg-blue-500'}`}
+                              style={{ width: `${Math.min(100, goal.progress)}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-8 rounded-2xl border border-dashed border-white/10 text-center text-gray-500">
+                    Aucun objectif défini
+                  </div>
+                )}
               </div>
             </div>
+          )}
 
-            {/* Goals Section */}
-            <div>
-              <div className="flex items-center gap-3 mb-4 px-2">
-                <div className="p-2 bg-yellow-500/20 rounded-lg">
-                  <Target className="w-5 h-5 text-yellow-400" />
-                </div>
-                <h2 className="text-xl font-bold text-white">Objectifs</h2>
+          {activeTab === 'performance' && (
+            <div className="space-y-8 animate-fade-in">
+              <div className="flex justify-between items-center">
+                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-blue-400" />
+                  Évolution
+                </h2>
+                <button
+                  onClick={() => setIsSelectorOpen(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-white font-medium rounded-lg text-sm transition-colors border border-white/10"
+                >
+                  <Plus className="w-4 h-4" />
+                  Ajouter
+                </button>
               </div>
 
-              {goals.length > 0 ? (
-                <div className="grid gap-4 md:grid-cols-2">
-                  {goals.map((goal: any, index: number) => (
-                    <div key={index} className="bg-white/5 border border-white/10 p-5 rounded-2xl relative overflow-hidden group">
-                      <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-white/10 transition-colors" />
+              {selectedExercises.length > 0 ? (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {selectedExercises.map(exerciseId => {
+                    const exercise = exercises.find(e => e.id === exerciseId);
+                    const data = getExerciseData(exerciseId);
 
-                      <div className="flex justify-between items-start mb-4 relative z-10">
-                        <h4 className="font-bold text-lg text-white">{goal.name}</h4>
-                        <span className={`text-xs font-bold px-2 py-1 rounded-lg ${goal.progress >= 100 ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'}`}>
-                          {goal.progress >= 100 ? 'Complété' : 'En cours'}
-                        </span>
-                      </div>
+                    if (!exercise) return null;
 
-                      <div className="space-y-1 relative z-10">
-                        <div className="flex justify-between text-xs text-gray-400">
-                          <span>Progression</span>
-                          <span>{goal.progress}%</span>
-                        </div>
-                        <div className="h-2 bg-black/40 rounded-full overflow-hidden">
-                          <div
-                            className={`h-full rounded-full transition-all duration-1000 ease-out ${goal.progress >= 100 ? 'bg-green-500' : 'bg-blue-500'}`}
-                            style={{ width: `${Math.min(100, goal.progress)}%` }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                    return (
+                      <ExerciseChartCard
+                        key={exerciseId}
+                        exercise={exercise}
+                        data={data}
+                        onClose={() => toggleExercise(exerciseId)}
+                      />
+                    );
+                  })}
                 </div>
               ) : (
-                <div className="p-8 rounded-2xl border border-dashed border-white/10 text-center text-gray-500">
-                  Aucun objectif défini
+                <div onClick={() => setIsSelectorOpen(true)} className="cursor-pointer border-2 border-dashed border-white/10 rounded-3xl p-12 flex flex-col items-center justify-center hover:bg-white/5 transition-colors group">
+                  <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <Plus className="w-8 h-8 text-white/40" />
+                  </div>
+                  <p className="text-white font-medium">Créer votre premier graphique</p>
+                  <p className="text-sm text-gray-500 mt-1">Sélectionnez un exercice pour voir votre progression</p>
                 </div>
               )}
             </div>
-          </div>
-        )}
+          )}
 
-        {activeTab === 'performance' && (
-          <div className="space-y-8 animate-fade-in">
-            <div className="flex justify-between items-center">
-              <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-blue-400" />
-                Évolution
-              </h2>
-              <button
-                onClick={() => setIsSelectorOpen(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-white font-medium rounded-lg text-sm transition-colors border border-white/10"
-              >
-                <Plus className="w-4 h-4" />
-                Ajouter
-              </button>
-            </div>
+          {/* Exercise Selector Drawer (Shared) */}
+          <Drawer.Root open={isSelectorOpen} onOpenChange={setIsSelectorOpen} shouldScaleBackground>
+            <Drawer.Portal>
+              <Drawer.Overlay className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50" />
+              <Drawer.Content className="bg-[#1e293b] flex flex-col rounded-t-[10px] h-[85vh] mt-24 fixed bottom-0 left-0 right-0 z-[60] border-t border-white/10 outline-none">
+                <div className="p-4 bg-[#1e293b] rounded-t-[10px] flex-1">
+                  <div aria-hidden className="mx-auto w-12 h-1.5 flex-shrink-0 rounded-full bg-gray-600 mb-8" />
+                  <div className="max-w-md mx-auto h-full flex flex-col">
+                    <Drawer.Title className="text-2xl font-bold text-white mb-4">Sélectionner un exercice</Drawer.Title>
 
-            {selectedExercises.length > 0 ? (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {selectedExercises.map(exerciseId => {
-                  const exercise = exercises.find(e => e.id === exerciseId);
-                  const data = getExerciseData(exerciseId);
+                    <div className="relative mb-6">
+                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Rechercher un exercice..."
+                        className="w-full pl-12 pr-4 py-3 bg-black/20 border border-white/10 rounded-xl text-white outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
 
-                  if (!exercise) return null;
-
-                  return (
-                    <ExerciseChartCard
-                      key={exerciseId}
-                      exercise={exercise}
-                      data={data}
-                      onClose={() => toggleExercise(exerciseId)}
-                    />
-                  );
-                })}
-              </div>
-            ) : (
-              <div onClick={() => setIsSelectorOpen(true)} className="cursor-pointer border-2 border-dashed border-white/10 rounded-3xl p-12 flex flex-col items-center justify-center hover:bg-white/5 transition-colors group">
-                <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <Plus className="w-8 h-8 text-white/40" />
-                </div>
-                <p className="text-white font-medium">Créer votre premier graphique</p>
-                <p className="text-sm text-gray-500 mt-1">Sélectionnez un exercice pour voir votre progression</p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Exercise Selector Drawer (Shared) */}
-        <Drawer.Root open={isSelectorOpen} onOpenChange={setIsSelectorOpen} shouldScaleBackground>
-          <Drawer.Portal>
-            <Drawer.Overlay className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50" />
-            <Drawer.Content className="bg-[#1e293b] flex flex-col rounded-t-[10px] h-[85vh] mt-24 fixed bottom-0 left-0 right-0 z-[60] border-t border-white/10 outline-none">
-              <div className="p-4 bg-[#1e293b] rounded-t-[10px] flex-1">
-                <div aria-hidden className="mx-auto w-12 h-1.5 flex-shrink-0 rounded-full bg-gray-600 mb-8" />
-                <div className="max-w-md mx-auto h-full flex flex-col">
-                  <Drawer.Title className="text-2xl font-bold text-white mb-4">Sélectionner un exercice</Drawer.Title>
-
-                  <div className="relative mb-6">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      type="text"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Rechercher un exercice..."
-                      className="w-full pl-12 pr-4 py-3 bg-black/20 border border-white/10 rounded-xl text-white outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div className="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
-                    {filteredExercises.map(exercise => {
-                      const isSelected = selectedExercises.includes(exercise.id);
-                      return (
-                        <button
-                          key={exercise.id}
-                          onClick={() => toggleExercise(exercise.id)}
-                          className={`w-full text-left p-4 rounded-xl border transition-all flex items-center justify-between group ${isSelected
-                            ? 'bg-blue-500/10 border-blue-500/50'
-                            : 'bg-white/5 border-white/5 hover:bg-white/10'
-                            }`}
-                        >
-                          <div>
-                            <h4 className={`font-bold ${isSelected ? 'text-blue-400' : 'text-white'}`}>{exercise.name}</h4>
-                            <span className="text-xs text-gray-500">
-                              {exercise.track_weight && "Poids • "}{exercise.track_reps && "Reps • "}{exercise.track_distance && "Distance"}
-                            </span>
-                          </div>
-                          <div className={`w-6 h-6 rounded-full border flex items-center justify-center transition-colors ${isSelected
-                            ? 'bg-blue-500 border-blue-500 text-white'
-                            : 'border-gray-500 text-transparent group-hover:border-gray-400'
-                            }`}>
-                            <Activity className="w-3 h-3" />
-                          </div>
-                        </button>
-                      );
-                    })}
-                    {filteredExercises.length === 0 && (
-                      <p className="text-center text-gray-500 py-8">Aucun exercice trouvé.</p>
-                    )}
+                    <div className="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+                      {filteredExercises.map(exercise => {
+                        const isSelected = selectedExercises.includes(exercise.id);
+                        return (
+                          <button
+                            key={exercise.id}
+                            onClick={() => toggleExercise(exercise.id)}
+                            className={`w-full text-left p-4 rounded-xl border transition-all flex items-center justify-between group ${isSelected
+                              ? 'bg-blue-500/10 border-blue-500/50'
+                              : 'bg-white/5 border-white/5 hover:bg-white/10'
+                              }`}
+                          >
+                            <div>
+                              <h4 className={`font-bold ${isSelected ? 'text-blue-400' : 'text-white'}`}>{exercise.name}</h4>
+                              <span className="text-xs text-gray-500">
+                                {exercise.track_weight && "Poids • "}{exercise.track_reps && "Reps • "}{exercise.track_distance && "Distance"}
+                              </span>
+                            </div>
+                            <div className={`w-6 h-6 rounded-full border flex items-center justify-center transition-colors ${isSelected
+                              ? 'bg-blue-500 border-blue-500 text-white'
+                              : 'border-gray-500 text-transparent group-hover:border-gray-400'
+                              }`}>
+                              <Activity className="w-3 h-3" />
+                            </div>
+                          </button>
+                        );
+                      })}
+                      {filteredExercises.length === 0 && (
+                        <p className="text-center text-gray-500 py-8">Aucun exercice trouvé.</p>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </Drawer.Content>
-          </Drawer.Portal>
-        </Drawer.Root>
+              </Drawer.Content>
+            </Drawer.Portal>
+          </Drawer.Root>
 
+        </div>
       </div>
     </div>
   );
