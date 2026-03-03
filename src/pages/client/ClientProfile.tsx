@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Mail, Phone, Calendar, Weight, Ruler, Edit, Save, X, Shield, Settings, Bell, LogOut, ChevronRight, Trash2 } from 'lucide-react';
+import { User, Mail, Phone, Calendar, Ruler, Edit, Save, X, Shield, Settings, Bell, LogOut, ChevronRight, Trash2 } from 'lucide-react';
 import { TutorialCard } from '../../components/client/TutorialCard';
 import { useClientAuth } from '../../contexts/ClientAuthContext';
 import { supabase } from '../../lib/supabase';
@@ -29,7 +29,6 @@ function ClientProfile() {
   const [formData, setFormData] = useState({
     phone: '',
     height: '',
-    weight: '',
     gender: '',
     date_of_birth: '',
     fitness_goals: [] as string[],
@@ -62,7 +61,6 @@ function ClientProfile() {
           setFormData({
             phone: parsed.phone || '',
             height: parsed.height || '',
-            weight: parsed.weight || '',
             gender: parsed.gender || '',
             date_of_birth: parsed.date_of_birth ? new Date(parsed.date_of_birth).toISOString().split('T')[0] : '',
             fitness_goals: parsed.fitness_goals || [],
@@ -92,7 +90,6 @@ function ClientProfile() {
         setFormData({
           phone: data.phone || '',
           height: data.height || '',
-          weight: data.weight || '',
           gender: data.gender || '',
           date_of_birth: data.date_of_birth ? new Date(data.date_of_birth).toISOString().split('T')[0] : '',
           fitness_goals: data.fitness_goals || [],
@@ -196,7 +193,6 @@ function ClientProfile() {
         .update({
           phone: formData.phone,
           height: formData.height ? parseFloat(formData.height) : null,
-          weight: formData.weight ? parseFloat(formData.weight) : null,
           gender: formData.gender,
           date_of_birth: formData.date_of_birth || null,
           fitness_goals: formData.fitness_goals,
@@ -426,21 +422,7 @@ function ClientProfile() {
                       </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-blue-300 ml-1">{t('profile.fields.weight')}</label>
-                      <div className="relative">
-                        <Weight className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
-                        <input
-                          type="number"
-                          name="weight"
-                          value={formData.weight}
-                          onChange={handleChange}
-                          step="0.1"
-                          placeholder="70"
-                          className="w-full pl-12 pr-4 py-3 bg-black/20 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder-gray-600"
-                        />
-                      </div>
-                    </div>
+
 
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-blue-300 ml-1">{t('profile.fields.gender')}</label>

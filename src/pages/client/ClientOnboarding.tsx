@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // Removed useAuth since we use useClientAuth
-import { useClientAuth } from '../../contexts/ClientAuthContext'; // Updated import
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useClientAuth } from '../../contexts/ClientAuthContext';
 import { supabase } from '../../lib/supabase';
-import { ChevronRight, Check, Activity, Target, FileText, User, ChevronLeft } from 'lucide-react';
+import { ChevronRight, Check, Activity, Target, FileText, User } from 'lucide-react';
 
 export default function ClientOnboarding() {
     const { client, refreshClient } = useClientAuth(); // Using client from context
@@ -59,6 +59,26 @@ export default function ClientOnboarding() {
                 .eq('id', client.id);
 
             if (error) throw error;
+
+            // Also create an initial body scan entry so the progress chart has a starting point
+            if (formData.weight) {
+                const weight = parseFloat(formData.weight);
+                const height = parseFloat(formData.height);
+                let bmi = null;
+                if (weight && height) {
+                    const heightInMeters = height / 100;
+                    bmi = parseFloat((weight / (heightInMeters * heightInMeters)).toFixed(2));
+                }
+
+                const { error: scanError } = await supabase.from('body_scans').insert({
+                    client_id: client.id,
+                    date: new Date().toISOString().split('T')[0],
+                    weight: weight,
+                    height: height || null,
+                    bmi: bmi
+                });
+                if (scanError) console.error("Error creating initial body scan:", scanError);
+            }
 
             await refreshClient();
             navigate('/client/dashboard');

@@ -148,6 +148,15 @@ export function AddBodyScanModal({ isOpen, onClose, onSuccess }: AddBodyScanModa
 
             if (insertError) throw insertError;
 
+            // Sync weight to clients table for easy access in Profile/Display
+            if (weight) {
+                const { error: clientUpdateError } = await supabase
+                    .from('clients')
+                    .update({ weight })
+                    .eq('id', client.id);
+                if (clientUpdateError) console.error("Error updating client weight", clientUpdateError);
+            }
+
             queryClient.invalidateQueries({ queryKey: ['clientDashboard'] });
             onSuccess();
             onClose();

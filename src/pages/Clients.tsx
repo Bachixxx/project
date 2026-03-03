@@ -28,7 +28,6 @@ interface ClientFormData {
   date_of_birth: string;
   gender: string;
   height: number | string;
-  weight: number | string;
   fitness_goals: string[];
   medical_conditions: string[];
   notes: string;
@@ -173,10 +172,10 @@ function ClientsPage() {
                     {client.full_name}
                   </h3>
                   <div className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-1 ${client.status === 'active'
-                      ? 'bg-green-500/10 text-green-400 border border-green-500/20'
-                      : client.status === 'inactive'
-                        ? 'bg-gray-500/10 text-gray-400 border border-gray-500/20'
-                        : 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'
+                    ? 'bg-green-500/10 text-green-400 border border-green-500/20'
+                    : client.status === 'inactive'
+                      ? 'bg-gray-500/10 text-gray-400 border border-gray-500/20'
+                      : 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'
                     }`}>
                     {client.status.charAt(0).toUpperCase() + client.status.slice(1)}
                   </div>
@@ -250,8 +249,7 @@ function ClientsPage() {
               // Sanitize numeric fields
               const sanitizedData = {
                 ...clientData,
-                height: clientData.height === '' ? null : parseFloat(clientData.height.toString()),
-                weight: clientData.weight === '' ? null : parseFloat(clientData.weight.toString()),
+                height: clientData.height === '' ? undefined : parseFloat(clientData.height.toString()),
               };
 
               if (selectedClient) {
@@ -294,7 +292,6 @@ function ClientModal({ client, onClose, onSave }: { client: Client | null, onClo
     date_of_birth: client?.date_of_birth || '',
     gender: client?.gender || 'male',
     height: client?.height || '',
-    weight: client?.weight || '',
     fitness_goals: client?.fitness_goals || [],
     medical_conditions: client?.medical_conditions || [],
     notes: client?.notes || '',
@@ -401,25 +398,13 @@ function ClientModal({ client, onClose, onSave }: { client: Client | null, onClo
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">{t('clients.form.height')}</label>
             <input
               type="number"
               name="height"
               value={formData.height || ''}
-              onChange={handleChange}
-              step="0.1"
-              className="input-field"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">{t('clients.form.weight')}</label>
-            <input
-              type="number"
-              name="weight"
-              value={formData.weight || ''}
               onChange={handleChange}
               step="0.1"
               className="input-field"
