@@ -645,6 +645,7 @@ function CalendarPage() {
               console.error('Error saving appointment:', error);
             }
           }}
+          user={user}
         />
       )}
     </div>
@@ -655,7 +656,7 @@ import { ResponsiveModal } from '../components/ResponsiveModal';
 
 // ... existing imports and code
 
-function AppointmentModal({ appointment, selectedSlot, clients, onClose, onSave }: any) {
+function AppointmentModal({ appointment, selectedSlot, clients, onClose, onSave, user }: any) {
   // ... existing state and logic ...
   const getValidDate = (dateValue: any) => {
     if (!dateValue) {
@@ -701,11 +702,14 @@ function AppointmentModal({ appointment, selectedSlot, clients, onClose, onSave 
 
   const fetchSessions = async () => {
     try {
+      if (!user?.id) return;
+
       const { data, error } = await supabase
         .from('sessions')
         .select('id, name, duration_minutes')
-        .eq('session_type', 'private') // Use 'private' templates as base? Or maybe we need a 'template' type? 
-        // Assuming 'private' means created by coach for general use, while 'scheduled' uses them.
+        .eq('coach_id', user.id)
+        .eq('is_template', true)
+        .is('archived_at', null)
         .order('name');
 
       if (error) throw error;
