@@ -638,60 +638,61 @@ function ClientAppointments() {
 
 
   return (
-    <div className="min-h-screen bg-[#0f172a] text-white font-sans pb-24 relative overflow-hidden">
+    <div className="min-h-screen bg-slate-950 text-white font-sans pb-32 relative overflow-hidden">
 
       {/* Dynamic Ambient Background */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-[20%] left-[-10%] w-[40%] h-[40%] bg-blue-600/10 blur-[120px] rounded-full animate-pulse-slow"></div>
-        <div className="absolute bottom-[-10%] right-[-5%] w-[50%] h-[50%] bg-emerald-600/10 blur-[140px] rounded-full animate-pulse-slow" style={{ animationDelay: '2s' }}></div>
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-emerald-600/10 blur-[120px] rounded-full animate-pulse-slow"></div>
+        <div className="absolute bottom-[-10%] right-[-5%] w-[50%] h-[50%] bg-teal-600/10 blur-[140px] rounded-full animate-pulse-slow" style={{ animationDelay: '2s' }}></div>
+        <div className="absolute top-[40%] left-[60%] w-[30%] h-[30%] bg-blue-900/20 blur-[100px] rounded-full animate-pulse-slow" style={{ animationDelay: '4s' }}></div>
       </div>
 
       {/* Massive Background Image (Native Hero Vibe) */}
-      <div className="absolute top-0 left-0 right-0 h-[40vh] min-h-[350px]">
+      <div className="absolute top-0 left-0 right-0 h-[45vh] min-h-[400px]">
         <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-40 mix-blend-luminosity grayscale-[10%] pointer-events-none"
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-40 mix-blend-luminosity grayscale-[30%] pointer-events-none"
           style={{ backgroundImage: `url('https://images.unsplash.com/photo-1506784983877-45594efa4cbe?q=80&w=2068&auto=format&fit=crop')` }}
         ></div>
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0f172a] via-[#0f172a]/80 to-transparent pointer-events-none"></div>
-        <div className="absolute top-0 inset-x-0 h-40 bg-gradient-to-b from-[#0f172a]/80 to-transparent pointer-events-none"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-slate-950/20 pointer-events-none"></div>
+        <div className="absolute top-0 inset-x-0 h-40 bg-gradient-to-b from-slate-950/80 to-transparent pointer-events-none"></div>
 
         {/* Floating Title Container */}
-        <div className="absolute bottom-20 left-0 right-0 px-6 z-10 text-center flex flex-col items-center">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="px-2 py-1 bg-white/10 backdrop-blur-md border border-white/20 rounded-lg text-xs font-bold text-white uppercase tracking-wider">
+        <div className="absolute top-24 left-0 right-0 px-6 z-10 flex flex-col items-center justify-center text-center">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="px-3 py-1 bg-white/10 backdrop-blur-md border border-white/20 rounded-full text-[10px] font-bold text-white uppercase tracking-widest">
               Planning
             </span>
           </div>
-          <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight text-shadow-lg mb-1">AGENDA</h1>
-          <p className="text-blue-400 font-bold uppercase tracking-widest text-[10px] md:text-xs">Gérez vos inscriptions</p>
+          <h1 className="text-3xl font-black text-white tracking-widest uppercase text-shadow-lg mb-2">AGENDA</h1>
+          <p className="text-slate-300 text-sm font-medium">Gérez vos inscriptions</p>
         </div>
       </div>
 
       {/* The Native "Sheet" Content Container */}
-      <div className="relative z-20 mt-[30vh] bg-[#0f172a] rounded-t-[3rem] min-h-[70vh] shadow-[0_-10px_40px_rgba(0,0,0,0.5)] border-t border-white/5 pt-6 flex flex-col">
+      <div className="relative z-20 mt-[30vh] bg-slate-950 rounded-t-[3rem] px-4 pt-8 pb-32 min-h-[70vh] shadow-[0_-10px_40px_rgba(0,0,0,0.5)] border-t border-white/5 flex flex-col">
 
         {/* Segmented Control Tabs */}
-        <div className="px-4 md:px-8 mb-4 max-w-7xl mx-auto flex justify-center w-full z-40">
-          <div className="inline-flex bg-slate-900/60 backdrop-blur-md p-1.5 rounded-2xl border border-white/5 w-full max-w-md shadow-inner">
+        <div className="px-4 md:px-8 mb-6 max-w-3xl mx-auto flex justify-center w-full z-40">
+          <div className="flex items-center gap-1 bg-slate-900/60 backdrop-blur-md p-1.5 rounded-2xl border border-white/5 w-full">
             <button
               onClick={() => setActiveTab('personal')}
-              className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all duration-300 flex items-center justify-center gap-2 ${activeTab === 'personal'
-                  ? 'bg-[#0f172a] text-white shadow-md border border-white/10'
-                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+              className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${activeTab === 'personal'
+                ? 'bg-slate-800 text-white shadow-md border border-white/10'
+                : 'text-slate-400 hover:text-white hover:bg-white/5'
                 }`}
             >
-              <User className="w-4 h-4" />
+              <User className={`w-4 h-4 ${activeTab === 'personal' ? 'text-emerald-400' : ''}`} />
               <span className="hidden sm:inline">Mon calendrier</span>
               <span className="sm:hidden">Privé</span>
             </button>
             <button
               onClick={() => setActiveTab('group')}
-              className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all duration-300 flex items-center justify-center gap-2 ${activeTab === 'group'
-                  ? 'bg-[#0f172a] text-white shadow-md border border-white/10'
-                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+              className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${activeTab === 'group'
+                ? 'bg-slate-800 text-white shadow-md border border-white/10'
+                : 'text-slate-400 hover:text-white hover:bg-white/5'
                 }`}
             >
-              <Users className="w-4 h-4" />
+              <Users className={`w-4 h-4 ${activeTab === 'group' ? 'text-emerald-400' : ''}`} />
               <span className="hidden sm:inline">Séances collectives</span>
               <span className="sm:hidden">Groupe</span>
             </button>
@@ -699,8 +700,8 @@ function ClientAppointments() {
         </div>
 
         {/* Week Navigation - Sticky Inside Sheet */}
-        <div className="sticky top-0 z-30 bg-[#0f172a]/90 backdrop-blur-xl border-b border-white/5 py-3 px-4 md:px-8 w-full">
-          <div className="max-w-7xl mx-auto flex items-center justify-between">
+        <div className="sticky top-[72px] md:top-0 z-30 bg-slate-950/95 backdrop-blur-xl border-b border-white/5 py-4 w-full">
+          <div className="max-w-3xl mx-auto flex items-center justify-between px-2">
             <button
               onClick={() => navigateWeek('prev')}
               className="w-10 h-10 rounded-full flex items-center justify-center bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-colors border border-white/5"
@@ -726,7 +727,7 @@ function ClientAppointments() {
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 md:px-8 py-8 relative z-10">
+        <div className="max-w-3xl mx-auto w-full py-8 relative z-10">
 
           {/* Tutorial Card */}
           {/* <TutorialCard
