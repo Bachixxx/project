@@ -249,6 +249,7 @@ function ClientAppointments() {
           session: s.session,
           coach: s.coach,
           type: 'group',
+          item_type: 'session',
           source: 'scheduled_session',
           registered: true,
           session_id: s.session_id
@@ -326,6 +327,7 @@ function ClientAppointments() {
         session: s.session,
         coach: s.coach,
         type: 'group',
+        item_type: 'session',
         source: 'scheduled_session',
         registered: registrationMap.has(s.id),
         registrationStatus: registrationMap.get(s.id),
@@ -348,6 +350,7 @@ function ClientAppointments() {
           notes: a.notes,
           coach: a.coach,
           type: isMyPrivate ? 'personal' : 'group',
+          item_type: 'session',
           source: 'appointment',
           price: a.price,
           payment_method: a.payment_method,
