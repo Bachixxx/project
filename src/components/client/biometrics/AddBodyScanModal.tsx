@@ -62,8 +62,6 @@ export function AddBodyScanModal({ isOpen, onClose, onSuccess }: AddBodyScanModa
         segmental_fat_left_leg: '',
     });
 
-    if (!isOpen) return null;
-
     useEffect(() => {
         if (isOpen && client?.id) {
             fetchLatestScan();
@@ -250,7 +248,7 @@ export function AddBodyScanModal({ isOpen, onClose, onSuccess }: AddBodyScanModa
         }
     };
 
-
+    if (!isOpen) return null;
 
     return createPortal(
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#09090b]">
