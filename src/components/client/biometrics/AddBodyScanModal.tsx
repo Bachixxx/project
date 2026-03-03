@@ -149,7 +149,7 @@ export function AddBodyScanModal({ isOpen, onClose, onSuccess }: AddBodyScanModa
         setFormData(prev => {
             const newData = { ...prev, [name]: value };
 
-            // Auto-calculate BMI
+            // Auto-calculate BMI & BMR
             if (name === 'weight' || name === 'height') {
                 const w = parseFloat(name === 'weight' ? value : prev.weight);
                 const h = parseFloat(name === 'height' ? value : prev.height);
@@ -157,6 +157,27 @@ export function AddBodyScanModal({ isOpen, onClose, onSuccess }: AddBodyScanModa
                     const heightInMeters = h / 100;
                     const bmi = (w / (heightInMeters * heightInMeters)).toFixed(2);
                     newData.bmi = bmi;
+
+                    // Calculate BMR using Mifflin-St Jeor
+                    if (client?.date_of_birth && client?.gender) {
+                        const dob = new Date(client.date_of_birth);
+                        const today = new Date();
+                        let age = today.getFullYear() - dob.getFullYear();
+                        const m = today.getMonth() - dob.getMonth();
+                        if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+                            age--;
+                        }
+
+                        if (age > 0) {
+                            let calculatedBmr = (10 * w) + (6.25 * h) - (5 * age);
+                            if (client.gender === 'male') {
+                                calculatedBmr += 5;
+                            } else if (client.gender === 'female') {
+                                calculatedBmr -= 161;
+                            }
+                            newData.bmr = Math.round(calculatedBmr).toString();
+                        }
+                    }
                 }
             }
             return newData;
