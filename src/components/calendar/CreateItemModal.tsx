@@ -107,28 +107,36 @@ export function CreateItemModal({ isOpen, onClose, date, clientId, onCreate, onU
     ];
 
     return (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
-            <div className="bg-[#1e293b] border border-white/10 rounded-2xl max-w-md w-full overflow-hidden shadow-2xl">
-                <div className="p-6">
-                    <div className="flex justify-between items-center mb-6">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fade-in">
+            {/* Modal Container */}
+            <div className="bg-[#0f172a] border border-white/10 rounded-3xl max-w-md w-full overflow-hidden shadow-[0_0_40px_rgba(0,0,0,0.5)] ring-1 ring-white/5 animate-scale-in">
+                <div className="p-6 sm:p-8">
+                    {/* Header */}
+                    <div className="flex justify-between items-start mb-6">
                         <div>
-                            <h2 className="text-2xl font-bold text-white">{itemToEdit ? 'Modifier' : 'Ajouter'}</h2>
-                            <p className="text-gray-400 text-sm flex items-center gap-1 mt-1">
-                                <Calendar className="w-4 h-4" />
-                                {format(date, 'd MMMM yyyy', { locale: fr })}
-                            </p>
+                            <h2 className="text-2xl font-bold text-white tracking-tight">
+                                {itemToEdit ? 'Modifier' : 'Ajouter un élément'}
+                            </h2>
+                            <div className="flex items-center gap-2 mt-2">
+                                <div className="p-1.5 rounded-md bg-blue-500/10 text-blue-400">
+                                    <Calendar className="w-3.5 h-3.5" />
+                                </div>
+                                <p className="text-gray-400 text-sm font-medium">
+                                    {format(date, 'd MMMM yyyy', { locale: fr })}
+                                </p>
+                            </div>
                         </div>
                         <button
                             onClick={onClose}
-                            className="text-gray-400 hover:text-white transition-colors p-1 hover:bg-white/10 rounded-lg"
+                            className="text-gray-400 hover:text-white transition-all p-2 hover:bg-white/10 rounded-full"
                         >
                             <X className="w-5 h-5" />
                         </button>
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-6">
-                        {/* Type Selection - Disable if editing? Maybe allow changing type for simple items */}
-                        <div className="grid grid-cols-4 gap-2">
+                        {/* Type Selection - Segmented Control Style */}
+                        <div className="flex bg-[#1e293b] p-1.5 rounded-2xl border border-white/5 relative">
                             {types.map((t) => (
                                 <button
                                     key={t.id}
@@ -144,49 +152,60 @@ export function CreateItemModal({ isOpen, onClose, date, clientId, onCreate, onU
                                         }
                                     }}
                                     className={`
-                    flex flex-col items-center gap-2 p-3 rounded-xl border transition-all
-                    ${type === t.id
-                                            ? `${t.color}/20 border-${t.color.replace('bg-', '')} text-white ring-1 ring-${t.color.replace('bg-', '')}`
-                                            : 'bg-white/5 border-transparent text-gray-400 hover:bg-white/10 hover:text-white'}
-                  `}
+                                        flex-1 flex flex-col items-center gap-1.5 py-3 rounded-xl transition-all duration-300 relative z-10
+                                        ${type === t.id
+                                            ? 'text-white'
+                                            : 'text-gray-500 hover:text-gray-300'}
+                                    `}
                                 >
-                                    <t.icon className={`w-6 h-6 ${type === t.id ? `text-${t.color.replace('bg-', '')}` : ''}`} />
-                                    <span className="text-xs font-medium">{t.label}</span>
+                                    {type === t.id && (
+                                        <div className={`absolute inset-0 rounded-xl shadow-lg border border-white/10 z-0 bg-[#0f172a]`}></div>
+                                    )}
+                                    <t.icon className={`w-5 h-5 relative z-10 ${type === t.id ? `text-${t.color.replace('bg-', '')}` : ''} transition-colors`} />
+                                    <span className={`text-[11px] font-semibold relative z-10 transition-colors uppercase tracking-wider ${type === t.id ? 'text-white' : ''}`}>{t.label}</span>
                                 </button>
                             ))}
                         </div>
 
                         {/* Builder CTA */}
                         {type === 'session' && (
-                            <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 flex items-center justify-between group cursor-pointer hover:bg-blue-500/20 transition-colors" onClick={handleOpenBuilder}>
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center">
-                                        <Dumbbell className="w-5 h-5" />
+                            <div
+                                className="group relative bg-[#1e293b] border border-blue-500/10 rounded-2xl p-4 flex items-center justify-between cursor-pointer hover:bg-[#1e293b]/80 transition-all hover:border-blue-500/30 overflow-hidden"
+                                onClick={handleOpenBuilder}
+                            >
+                                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                <div className="flex items-center gap-4 relative z-10">
+                                    <div className="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                                        <Dumbbell className="w-6 h-6" />
                                     </div>
                                     <div>
-                                        <h3 className="font-bold text-white text-sm">{itemToEdit ? "Modifier dans le constructeur" : "Créer une séance complète"}</h3>
-                                        <p className="text-xs text-blue-200">Constructeur d'exercices & sets</p>
+                                        <h3 className="font-bold text-white text-sm tracking-wide">{itemToEdit ? "Modifier la séance" : "Créer une séance"}</h3>
+                                        <p className="text-xs text-slate-400 mt-1">Éditeur avancé d'exercices</p>
                                     </div>
                                 </div>
-                                <div className="px-3 py-1.5 bg-blue-500 text-white text-xs font-bold rounded-lg shadow-lg shadow-blue-500/20">
-                                    Ouvrir
+                                <div className="relative z-10 px-4 py-2 bg-blue-500/10 text-blue-400 group-hover:bg-blue-500 group-hover:text-white transition-colors text-xs font-bold rounded-xl whitespace-nowrap">
+                                    {itemToEdit ? 'Ouvrir' : 'Nouveau'}
                                 </div>
                             </div>
                         )}
 
                         {/* Import from Library Button */}
                         {!itemToEdit && type === 'session' && (
-                            <div className="bg-purple-500/10 border border-purple-500/20 rounded-xl p-4 flex items-center justify-between group cursor-pointer hover:bg-purple-500/20 transition-colors mt-2" onClick={() => setShowSessionSelector(true)}>
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center">
+                            <div
+                                className="group relative bg-[#1e293b] border border-purple-500/10 rounded-2xl p-4 flex items-center justify-between cursor-pointer hover:bg-[#1e293b]/80 transition-all hover:border-purple-500/30 overflow-hidden mt-3"
+                                onClick={() => setShowSessionSelector(true)}
+                            >
+                                <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                <div className="flex items-center gap-4 relative z-10">
+                                    <div className="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                                         <BookOpen className="w-5 h-5" />
                                     </div>
                                     <div>
-                                        <h3 className="font-bold text-white text-sm">Importer de la bibliothèque</h3>
-                                        <p className="text-xs text-purple-200">Choisir un template existant</p>
+                                        <h3 className="font-bold text-white text-sm tracking-wide">Bibliothèque</h3>
+                                        <p className="text-xs text-slate-400 mt-1">Importer un template</p>
                                     </div>
                                 </div>
-                                <div className="px-3 py-1.5 bg-purple-500 text-white text-xs font-bold rounded-lg shadow-lg shadow-purple-500/20">
+                                <div className="relative z-10 px-4 py-2 bg-purple-500/10 text-purple-400 group-hover:bg-purple-500 group-hover:text-white transition-colors text-xs font-bold rounded-xl whitespace-nowrap">
                                     Choisir
                                 </div>
                             </div>
@@ -194,10 +213,10 @@ export function CreateItemModal({ isOpen, onClose, date, clientId, onCreate, onU
 
                         {/* Divider */}
                         {!itemToEdit && type === 'session' && (
-                            <div className="relative flex items-center py-2">
-                                <div className="flex-grow border-t border-white/10"></div>
-                                <span className="flex-shrink-0 mx-4 text-gray-500 text-xs uppercase">Ou ajout rapide</span>
-                                <div className="flex-grow border-t border-white/10"></div>
+                            <div className="relative flex items-center py-1">
+                                <div className="flex-grow border-t border-white/5"></div>
+                                <span className="flex-shrink-0 mx-4 text-slate-500 text-[10px] font-bold tracking-widest uppercase">Ou ajout rapide</span>
+                                <div className="flex-grow border-t border-white/5"></div>
                             </div>
                         )}
 
@@ -205,65 +224,67 @@ export function CreateItemModal({ isOpen, onClose, date, clientId, onCreate, onU
                         {type !== 'rest' && (
                             <div className="space-y-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-300 mb-2">Titre</label>
+                                    <label className="block text-xs font-bold tracking-wide text-slate-400 uppercase mb-2 ml-1">Titre</label>
                                     <input
                                         type="text"
                                         value={title}
                                         onChange={(e) => setTitle(e.target.value)}
-                                        placeholder={type === 'session' ? "Ex: Haut du corps" : "Titre de la note"}
+                                        placeholder={type === 'session' ? "Ex: Renforcement Haut du corps" : "Titre de l'élément"}
                                         required
                                         autoFocus
-                                        className="w-full rounded-xl bg-white/5 border border-white/10 text-white p-3 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                                        className="w-full rounded-2xl bg-[#1e293b] border border-white/5 text-white p-4 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all placeholder:text-slate-600"
                                     />
                                 </div>
 
                                 {(type === 'note' || type === 'session' || type === 'metric') && (
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-300 mb-2">
+                                        <label className="block text-xs font-bold tracking-wide text-slate-400 uppercase mb-2 ml-1">
                                             {type === 'session' ? 'Description (Optionnel)' : 'Contenu'}
                                         </label>
                                         <textarea
                                             value={content}
                                             onChange={(e) => setContent(e.target.value)}
-                                            rows={4}
-                                            className="w-full rounded-xl bg-white/5 border border-white/10 text-white p-3 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors resize-none"
+                                            rows={3}
+                                            placeholder={type === 'session' ? "Détails supplémentaires..." : "Saisissez les informations..."}
+                                            className="w-full rounded-2xl bg-[#1e293b] border border-white/5 text-white p-4 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all resize-none placeholder:text-slate-600"
                                         />
                                     </div>
                                 )}
                             </div>
                         )}
 
-                        <div className="flex justify-between items-center pt-4 border-t border-white/10">
+                        {/* Actions */}
+                        <div className="flex justify-between items-center pt-6 mt-4">
                             {itemToEdit ? (
                                 <button
                                     type="button"
                                     onClick={handleDelete}
-                                    className="px-4 py-2 rounded-xl text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors font-medium text-sm"
+                                    className="px-4 py-2.5 rounded-xl text-red-400 hover:text-white hover:bg-red-500 transition-colors font-bold text-sm tracking-wide"
                                 >
                                     Supprimer
                                 </button>
                             ) : <div></div>}
 
-                            <div className="flex gap-3">
+                            <div className="flex gap-3 w-full sm:w-auto">
                                 <button
                                     type="button"
                                     onClick={onClose}
-                                    className="px-4 py-2 rounded-xl text-gray-300 hover:text-white hover:bg-white/5 transition-colors font-medium"
+                                    className="flex-1 sm:flex-none px-5 py-3 rounded-xl text-slate-300 hover:text-white hover:bg-white/5 transition-colors font-bold text-sm"
                                 >
                                     Annuler
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={loading || (!title && type !== 'rest')}
-                                    className="px-6 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl hover:from-blue-700 hover:to-cyan-700 shadow-lg shadow-blue-500/20 font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="flex-1 sm:flex-none px-8 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-500 shadow-[0_0_20px_rgba(37,99,235,0.3)] transition-all font-bold text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600 disabled:shadow-none"
                                 >
-                                    {loading ? 'Enregistrement...' : (itemToEdit ? 'Modifier' : (type === 'session' ? 'Créer Simple' : 'Créer'))}
+                                    {loading ? 'Patientez...' : (itemToEdit ? 'Enregistrer' : 'Créer')}
                                 </button>
                             </div>
                         </div>
                     </form>
                 </div>
-            </div >
+            </div>
 
             {showSessionSelector && (
                 <SessionSelector
@@ -278,6 +299,6 @@ export function CreateItemModal({ isOpen, onClose, date, clientId, onCreate, onU
                     onClose={() => setShowSessionSelector(false)}
                 />
             )}
-        </div >
+        </div>
     );
 }
