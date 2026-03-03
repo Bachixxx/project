@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Save, Scale, AlertCircle, ChevronDown, ChevronUp, Activity, Droplets, Bone, Dumbbell } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
@@ -63,6 +63,88 @@ export function AddBodyScanModal({ isOpen, onClose, onSuccess }: AddBodyScanModa
     });
 
     if (!isOpen) return null;
+
+    useEffect(() => {
+        if (isOpen && client?.id) {
+            fetchLatestScan();
+        } else if (!isOpen) {
+            // Reset to empty when closed
+            setFormData({
+                weight: '',
+                height: client?.height?.toString() || '',
+                bmi: '',
+                body_fat_percent: '',
+                skeletal_muscle_mass: '',
+                total_body_water_percent: '',
+                bone_mass: '',
+                visceral_fat_level: '',
+                bmr: '',
+                metabolic_age: '',
+                segmental_muscle_right_arm: '',
+                segmental_muscle_left_arm: '',
+                segmental_muscle_trunk: '',
+                segmental_muscle_right_leg: '',
+                segmental_muscle_left_leg: '',
+                segmental_fat_right_arm: '',
+                segmental_fat_left_arm: '',
+                segmental_fat_trunk: '',
+                segmental_fat_right_leg: '',
+                segmental_fat_left_leg: '',
+            });
+            setActiveSection('general');
+            setError(null);
+        }
+    }, [isOpen, client?.id]);
+
+    const fetchLatestScan = async () => {
+        try {
+            const { data, error } = await supabase
+                .from('body_scans')
+                .select('*')
+                .eq('client_id', client?.id)
+                .order('date', { ascending: false })
+                .limit(1)
+                .single();
+
+            if (error && error.code !== 'PGRST116') {
+                console.error("Error fetching latest scan:", error);
+                return;
+            }
+
+            if (data) {
+                setFormData({
+                    weight: data.weight?.toString() || '',
+                    height: data.height?.toString() || client?.height?.toString() || '',
+                    bmi: data.bmi?.toString() || '',
+                    body_fat_percent: data.body_fat_percent?.toString() || '',
+                    skeletal_muscle_mass: data.skeletal_muscle_mass?.toString() || '',
+                    total_body_water_percent: data.total_body_water_percent?.toString() || '',
+                    bone_mass: data.bone_mass?.toString() || '',
+                    visceral_fat_level: data.visceral_fat_level?.toString() || '',
+                    bmr: data.bmr?.toString() || '',
+                    metabolic_age: data.metabolic_age?.toString() || '',
+                    segmental_muscle_right_arm: data.segmental_muscle_right_arm?.toString() || '',
+                    segmental_muscle_left_arm: data.segmental_muscle_left_arm?.toString() || '',
+                    segmental_muscle_trunk: data.segmental_muscle_trunk?.toString() || '',
+                    segmental_muscle_right_leg: data.segmental_muscle_right_leg?.toString() || '',
+                    segmental_muscle_left_leg: data.segmental_muscle_left_leg?.toString() || '',
+                    segmental_fat_right_arm: data.segmental_fat_right_arm?.toString() || '',
+                    segmental_fat_left_arm: data.segmental_fat_left_arm?.toString() || '',
+                    segmental_fat_trunk: data.segmental_fat_trunk?.toString() || '',
+                    segmental_fat_right_leg: data.segmental_fat_right_leg?.toString() || '',
+                    segmental_fat_left_leg: data.segmental_fat_left_leg?.toString() || '',
+                });
+            } else {
+                setFormData(prev => ({
+                    ...prev,
+                    height: client?.height?.toString() || '',
+                    weight: client?.weight?.toString() || ''
+                }));
+            }
+        } catch (err) {
+            console.error("Error fetching latest scan:", err);
+        }
+    };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
