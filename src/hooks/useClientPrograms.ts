@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
-import { useAuth } from '../contexts/AuthContext';
+import { useClientAuth } from '../contexts/ClientAuthContext';
 
 export interface ClientProgram {
     id: string;
@@ -21,21 +21,12 @@ export interface ClientProgram {
 }
 
 export function useClientPrograms() {
-    const { user } = useAuth();
+    const { client } = useClientAuth();
 
     const query = useQuery({
-        queryKey: ['clientPrograms', user?.id],
+        queryKey: ['clientPrograms', client?.id],
         queryFn: async (): Promise<ClientProgram[]> => {
-            // 1. Get Client ID
-            const { data: clients, error: clientError } = await supabase
-                .from('clients')
-                .select('id')
-                .eq('auth_id', user?.id)
-                .limit(1);
-
-            const client = clients?.[0];
-
-            if (clientError || !client) throw Error('Client not found');
+            if (!client) throw Error('Client not authenticated');
 
             // 2. Fetch Programs
             const { data, error } = await supabase
@@ -63,7 +54,7 @@ export function useClientPrograms() {
             if (error) throw error;
             return data as any[];
         },
-        enabled: !!user?.email,
+        enabled: !!client?.id,
     });
 
     return {
