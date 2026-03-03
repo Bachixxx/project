@@ -147,17 +147,27 @@ function ClientProgress() {
 
       // Fetch weight history for physical progress
       const { data: weightData, error: weightError } = await supabase
-        .from('client_weight_history')
+        .from('body_scans')
         .select('weight, date')
         .eq('client_id', clientData.id)
+        .not('weight', 'is', null)
         .order('date', { ascending: true });
 
       if (weightError) console.error('Error fetching weight history', weightError);
 
-      const formattedWeightData = (weightData || []).map(w => ({
+      let formattedWeightData = (weightData || []).map(w => ({
         weight: Number(w.weight),
         date: w.date
       }));
+
+      // If no body scans are found, use the initial weight from the client profile as the starting point
+      if (formattedWeightData.length === 0 && clientData.weight) {
+        formattedWeightData = [{
+          weight: Number(clientData.weight),
+          date: new Date().toISOString()
+        }];
+      }
+
       setWeightHistory(formattedWeightData);
 
       // 3. Update Cache
@@ -398,27 +408,37 @@ function ClientProgress() {
                         <span className="text-lg leading-none">+</span>
                         <span>{(weightHistory[weightHistory.length - 1].weight - weightHistory[0].weight).toFixed(1)}kg</span>
                       </div>
+                    ) : weightHistory.length >= 2 ? (
+                      <div className="bg-slate-500/10 text-slate-400 text-xs font-bold px-3 py-1.5 rounded-full border border-slate-500/20 flex items-center gap-1">
+                        <span>Maintenu</span>
+                      </div>
                     ) : null}
                   </div>
 
                   <div className="flex items-center justify-between relative z-10 bg-slate-950/50 rounded-2xl p-4 border border-white/5">
                     <div className="text-center flex-1">
-                      <span className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Départ</span>
+                      <span className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                        {weightHistory.length < 2 ? 'Poids Enregistré' : 'Départ'}
+                      </span>
                       <span className="text-2xl font-black text-slate-300">
                         {weightHistory.length > 0 ? weightHistory[0].weight : '--'}
                         <span className="text-sm text-slate-500 ml-1 font-medium">kg</span>
                       </span>
                     </div>
-                    <div className="w-8 h-[1px] bg-white/10 mx-2 relative">
-                      <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-white/20"></div>
-                    </div>
-                    <div className="text-center flex-1">
-                      <span className="block text-[10px] font-bold text-emerald-500 uppercase tracking-wider mb-1">Actuel</span>
-                      <span className="text-3xl font-black text-white">
-                        {weightHistory.length > 0 ? weightHistory[weightHistory.length - 1].weight : '--'}
-                        <span className="text-base text-emerald-500 ml-1 font-medium">kg</span>
-                      </span>
-                    </div>
+                    {weightHistory.length >= 2 && (
+                      <>
+                        <div className="w-8 h-[1px] bg-white/10 mx-2 relative">
+                          <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-white/20"></div>
+                        </div>
+                        <div className="text-center flex-1">
+                          <span className="block text-[10px] font-bold text-emerald-500 uppercase tracking-wider mb-1">Actuel</span>
+                          <span className="text-3xl font-black text-white">
+                            {weightHistory[weightHistory.length - 1].weight}
+                            <span className="text-base text-emerald-500 ml-1 font-medium">kg</span>
+                          </span>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
 
