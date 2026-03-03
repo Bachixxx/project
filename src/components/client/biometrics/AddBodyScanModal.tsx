@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Save, Scale, AlertCircle, ChevronDown, ChevronUp, Activity, Droplets, Bone, Dumbbell } from 'lucide-react';
+import { X, Save, Scale, AlertCircle, ChevronDown, ChevronUp, Activity, Droplets, Bone, Dumbbell, Info } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import { useClientAuth } from '../../../contexts/ClientAuthContext';
 import { useQueryClient } from '@tanstack/react-query';
@@ -12,11 +12,20 @@ interface AddBodyScanModalProps {
     onSuccess: () => void;
 }
 
-const InputField = ({ label, name, placeholder, value, onChange, color = "blue", type = "number", step = "0.1", icon: Icon }: any) => (
-    <div className="space-y-1.5">
+const InputField = ({ label, name, placeholder, value, onChange, color = "blue", type = "number", step = "0.1", icon: Icon, tooltip }: any) => (
+    <div className="space-y-1.5 relative group">
         <label className={`text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 text-${color}-400`}>
             {Icon && <Icon className="w-3 h-3" />}
             {label}
+            {tooltip && (
+                <div className="relative flex items-center">
+                    <Info className="w-3 h-3 text-gray-500 hover:text-white transition-colors cursor-help" />
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-gray-900 border border-white/10 rounded-lg text-xs text-gray-300 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 pointer-events-none shadow-xl">
+                        {tooltip}
+                        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                    </div>
+                </div>
+            )}
         </label>
         <input
             type={type}
@@ -328,7 +337,17 @@ export function AddBodyScanModal({ isOpen, onClose, onSuccess }: AddBodyScanModa
                     </div>
                     <div className="grid grid-cols-2 gap-4 mt-4">
                         <InputField value={formData.visceral_fat_level} onChange={handleChange} label="G. Viscérale" name="visceral_fat_level" placeholder="Niveau" color="purple" icon={Activity} step="1" />
-                        <InputField value={formData.bmr} onChange={handleChange} label="BMR (kcal)" name="bmr" placeholder="kcal" color="orange" icon={Activity} step="1" />
+                        <InputField
+                            value={formData.bmr}
+                            onChange={handleChange}
+                            label="BMR (kcal)"
+                            name="bmr"
+                            placeholder="kcal"
+                            color="orange"
+                            icon={Activity}
+                            step="1"
+                            tooltip="Calculé automatiquement via la formule de Mifflin-St Jeor (sexe, âge, poids, taille) pour estimer vos calories brûlées au repos."
+                        />
                     </div>
                 </section>
 
