@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Target, Activity, Plus, X, Dumbbell, Search, TrendingUp, BarChart3, Zap } from 'lucide-react';
+import { Target, Activity, Plus, X, Dumbbell, Search, TrendingUp, BarChart3, Flame, Trophy } from 'lucide-react';
 import { useClientAuth } from '../../contexts/ClientAuthContext';
 import { supabase } from '../../lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -44,6 +44,7 @@ function ClientProgress() {
   const [selectedExercises, setSelectedExercises] = useState<string[]>([]);
   const [isSelectorOpen, setIsSelectorOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [weightHistory, setWeightHistory] = useState<{ weight: number, date: string }[]>([]);
 
   const filteredExercises = exercises.filter(ex =>
     ex.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -73,9 +74,10 @@ function ClientProgress() {
 
       if (cachedData) {
         try {
-          const { logs, exercises: cachedExercises } = JSON.parse(cachedData);
+          const { logs, exercises: cachedExercises, weightHistory: cachedWeightHistory } = JSON.parse(cachedData);
           setWorkoutLogs(logs || []);
           setExercises(cachedExercises || []);
+          if (cachedWeightHistory) setWeightHistory(cachedWeightHistory);
           // Note: selectedExercises effect will run when exercises updates
         } catch (e) {
           console.error("Error parsing progress cache", e);
@@ -143,10 +145,26 @@ function ClientProgress() {
         setExercises([]);
       }
 
+      // Fetch weight history for physical progress
+      const { data: weightData, error: weightError } = await supabase
+        .from('client_weight_history')
+        .select('weight, date')
+        .eq('client_id', clientData.id)
+        .order('date', { ascending: true });
+
+      if (weightError) console.error('Error fetching weight history', weightError);
+
+      const formattedWeightData = (weightData || []).map(w => ({
+        weight: Number(w.weight),
+        date: w.date
+      }));
+      setWeightHistory(formattedWeightData);
+
       // 3. Update Cache
       localStorage.setItem(cacheKey, JSON.stringify({
         logs: formattedLogs,
         exercises: currentExercises,
+        weightHistory: formattedWeightData,
         timestamp: new Date().getTime()
       }));
 
@@ -205,32 +223,7 @@ function ClientProgress() {
       .sort((a, b) => a.rawDate.getTime() - b.rawDate.getTime());
   };
 
-  const calculateGoalProgress = () => {
-    const clientData = client as any;
-    if (!clientData?.fitness_goals || workoutLogs.length === 0) return [];
 
-    return clientData.fitness_goals.slice(0, 3).map((goal: string, index: number) => {
-      // Calculate active days this month
-      const uniqueDaysThisMonth = new Set(
-        workoutLogs
-          .filter(log => {
-            const logDate = new Date(log.completed_at);
-            const now = new Date();
-            return logDate.getMonth() === now.getMonth() && logDate.getFullYear() === now.getFullYear();
-          })
-          .map(log => new Date(log.completed_at).toDateString())
-      ).size;
-
-      // Simple progress calculation based on active days (mock logic for goals)
-      const progress = Math.min(100, (uniqueDaysThisMonth * 10) + (index * 20) + 10);
-
-      return {
-        name: goal,
-        target: "En cours",
-        progress
-      };
-    });
-  };
 
   const toggleExercise = (exerciseId: string) => {
     setSelectedExercises(prev => {
@@ -251,10 +244,9 @@ function ClientProgress() {
     );
   }
 
-  const goals = calculateGoalProgress();
-
   // Calculate Global KPIs for Synthesis Tab
-  const totalVolumeAllTime = workoutLogs.reduce((acc, log) => acc + (log.weight * log.reps), 0);
+  const clientGoals = ((client as any)?.fitness_goals || []).slice(0, 3) as string[];
+
   const totalSessionsAllTime = new Set(workoutLogs.map(l => l.completed_at.split('T')[0])).size;
   const currentMonth = new Date().getMonth();
   const sessionsThisMonth = new Set(
@@ -330,86 +322,151 @@ function ClientProgress() {
 
           {activeTab === 'summary' && (
             <div className="space-y-8 animate-fade-in">
-              <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-                {/* KPI 1 */}
-                <div className="bg-gradient-to-br from-blue-500/20 to-blue-600/5 border border-blue-500/20 rounded-2xl p-5 flex flex-col justify-between aspect-square md:aspect-auto md:h-32">
-                  <div className="flex justify-between items-start">
-                    <span className="text-blue-200 text-xs font-bold uppercase tracking-wider">Volume total</span>
-                    <Activity className="w-5 h-5 text-blue-400" />
-                  </div>
-                  <div>
-                    <span className="text-2xl md:text-3xl font-bold text-white">{(totalVolumeAllTime / 1000).toFixed(1)}k</span>
-                    <span className="text-sm text-blue-200 ml-1">kg</span>
-                  </div>
-                </div>
+              {/* 1. Gamification Hero Card */}
+              <div className="bg-gradient-to-br from-slate-900 via-slate-900/90 to-blue-900/20 backdrop-blur-xl border border-white/10 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-2xl">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-[80px] -mr-32 -mt-32"></div>
 
-                {/* KPI 2 */}
-                <div className="bg-gradient-to-br from-emerald-500/20 to-emerald-600/5 border border-emerald-500/20 rounded-2xl p-5 flex flex-col justify-between aspect-square md:aspect-auto md:h-32">
-                  <div className="flex justify-between items-start">
-                    <span className="text-emerald-200 text-xs font-bold uppercase tracking-wider">Séances (Total)</span>
-                    <Dumbbell className="w-5 h-5 text-emerald-400" />
-                  </div>
-                  <div>
-                    <span className="text-2xl md:text-3xl font-bold text-white">{totalSessionsAllTime}</span>
-                  </div>
-                </div>
+                <div className="flex flex-col md:flex-row gap-6 items-center justify-between relative z-10">
+                  <div className="flex items-center gap-6 w-full md:w-auto">
+                    {/* Level Badge */}
+                    <div className="relative group cursor-default">
+                      <div className="absolute inset-0 bg-blue-500/20 rounded-full blur-xl group-hover:bg-blue-500/30 transition-all duration-500"></div>
+                      <div className="w-24 h-24 rounded-full bg-gradient-to-b from-slate-800 to-slate-950 p-[2px] relative z-10 shadow-xl overflow-hidden group-hover:scale-105 transition-transform duration-500">
+                        <div className="w-full h-full rounded-full bg-slate-950/80 backdrop-blur-sm flex flex-col items-center justify-center border border-white/5 relative">
+                          <div className="absolute top-0 inset-x-0 h-1/2 bg-gradient-to-b from-white/10 to-transparent"></div>
+                          <Trophy className="w-6 h-6 text-yellow-400 mb-1" />
+                          <span className="text-2xl font-black text-white leading-none">{(client as any)?.level || 1}</span>
+                        </div>
+                      </div>
+                    </div>
 
-                {/* KPI 3 */}
-                <div className="bg-gradient-to-br from-purple-500/20 to-purple-600/5 border border-purple-500/20 rounded-2xl p-5 flex flex-col justify-between col-span-2 lg:col-span-1 md:h-32">
-                  <div className="flex justify-between items-start">
-                    <span className="text-purple-200 text-xs font-bold uppercase tracking-wider">Ce mois-ci</span>
-                    <Zap className="w-5 h-5 text-purple-400" />
+                    {/* XP & Identity */}
+                    <div className="flex-1">
+                      <h2 className="text-2xl font-bold text-white mb-1">Niveau Actuel</h2>
+                      <p className="text-sm text-slate-400 mb-3">Continue sur cette lancée !</p>
+                      <div className="w-full bg-slate-950/50 rounded-full h-3 border border-white/5 overflow-hidden relative">
+                        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20"></div>
+                        <div
+                          className="bg-gradient-to-r from-blue-500 to-purple-500 h-full rounded-full relative shadow-[0_0_15px_rgba(59,130,246,0.5)] transition-all duration-1000 ease-out"
+                          style={{ width: `${Math.min(100, (((client as any)?.xp || 0) % 1000) / 10)}%` }}
+                        >
+                          <div className="absolute top-0 inset-x-0 h-1/2 bg-gradient-to-b from-white/30 to-transparent rounded-full"></div>
+                        </div>
+                      </div>
+                      <div className="flex justify-between items-center mt-1.5 px-1">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">XP</span>
+                        <span className="text-[10px] font-bold text-blue-400 font-mono">{(client as any)?.xp || 0} / {(((client as any)?.level || 1) * 1000)}</span>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-2xl md:text-3xl font-bold text-white">{sessionsThisMonth}</span>
-                    <span className="text-sm text-purple-200 ml-1">entraînements</span>
+
+                  {/* The Streak */}
+                  <div className="w-full md:w-auto bg-slate-950/50 rounded-2xl p-4 border border-white/5 flex flex-row md:flex-col items-center justify-between md:justify-center gap-4 min-w-[140px]">
+                    <div className="flex flex-col items-start md:items-center">
+                      <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Assiduité</span>
+                      <div className="flex items-center gap-2">
+                        <Flame className={`w-8 h-8 ${((client as any)?.current_streak || 0) > 0 ? 'text-orange-500 animate-pulse' : 'text-slate-600'}`} />
+                        <span className="text-3xl font-black text-white">{(client as any)?.current_streak || 0}</span>
+                      </div>
+                    </div>
+                    <div className="bg-orange-500/10 text-orange-400 text-[10px] font-bold uppercase tracking-wider py-1 px-3 rounded-full border border-orange-500/20">
+                      Jours d'affilée
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Goals Section */}
-              <div>
-                <div className="flex items-center gap-3 mb-4 px-2">
-                  <div className="p-2 bg-yellow-500/20 rounded-lg">
-                    <Target className="w-5 h-5 text-yellow-400" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* 2. Physical Transformation (Health Dashboard) */}
+                <div className="bg-slate-900/50 backdrop-blur-md border border-white/5 rounded-3xl p-6 relative overflow-hidden group">
+                  <div className="absolute top-[-50%] right-[-50%] w-full h-full bg-emerald-500/5 rounded-full blur-[60px] group-hover:bg-emerald-500/10 transition-colors duration-500"></div>
+                  <div className="flex items-start justify-between mb-6 relative z-10">
+                    <div>
+                      <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                        <TrendingUp className="w-5 h-5 text-emerald-400" />
+                        Évolution Poids
+                      </h3>
+                      <p className="text-xs text-slate-400 mt-1">Comparaison dernier relevé</p>
+                    </div>
+                    {weightHistory.length >= 2 && weightHistory[0].weight - weightHistory[weightHistory.length - 1].weight > 0 ? (
+                      <div className="bg-emerald-500/10 text-emerald-400 text-xs font-bold px-3 py-1.5 rounded-full border border-emerald-500/20 flex items-center gap-1">
+                        <span className="text-lg leading-none">-</span>
+                        <span>{(weightHistory[0].weight - weightHistory[weightHistory.length - 1].weight).toFixed(1)}kg</span>
+                      </div>
+                    ) : weightHistory.length >= 2 && weightHistory[weightHistory.length - 1].weight - weightHistory[0].weight > 0 ? (
+                      <div className="bg-blue-500/10 text-blue-400 text-xs font-bold px-3 py-1.5 rounded-full border border-blue-500/20 flex items-center gap-1">
+                        <span className="text-lg leading-none">+</span>
+                        <span>{(weightHistory[weightHistory.length - 1].weight - weightHistory[0].weight).toFixed(1)}kg</span>
+                      </div>
+                    ) : null}
                   </div>
-                  <h2 className="text-xl font-bold text-white">Objectifs</h2>
+
+                  <div className="flex items-center justify-between relative z-10 bg-slate-950/50 rounded-2xl p-4 border border-white/5">
+                    <div className="text-center flex-1">
+                      <span className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Départ</span>
+                      <span className="text-2xl font-black text-slate-300">
+                        {weightHistory.length > 0 ? weightHistory[0].weight : '--'}
+                        <span className="text-sm text-slate-500 ml-1 font-medium">kg</span>
+                      </span>
+                    </div>
+                    <div className="w-8 h-[1px] bg-white/10 mx-2 relative">
+                      <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-white/20"></div>
+                    </div>
+                    <div className="text-center flex-1">
+                      <span className="block text-[10px] font-bold text-emerald-500 uppercase tracking-wider mb-1">Actuel</span>
+                      <span className="text-3xl font-black text-white">
+                        {weightHistory.length > 0 ? weightHistory[weightHistory.length - 1].weight : '--'}
+                        <span className="text-base text-emerald-500 ml-1 font-medium">kg</span>
+                      </span>
+                    </div>
+                  </div>
                 </div>
 
-                {goals.length > 0 ? (
-                  <div className="grid gap-4 md:grid-cols-2">
-                    {goals.map((goal: any, index: number) => (
-                      <div key={index} className="bg-white/5 border border-white/10 p-5 rounded-2xl relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-white/10 transition-colors" />
+                {/* 3. Recent Activity & Consistency */}
+                <div className="bg-slate-900/50 backdrop-blur-md border border-white/5 rounded-3xl p-6 flex flex-col justify-between relative overflow-hidden group">
+                  <div className="absolute top-[-50%] right-[-50%] w-full h-full bg-purple-500/5 rounded-full blur-[60px] group-hover:bg-purple-500/10 transition-colors duration-500"></div>
+                  <div className="flex justify-between items-start relative z-10 mb-6">
+                    <div>
+                      <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                        <Activity className="w-5 h-5 text-purple-400" />
+                        Activité du mois
+                      </h3>
+                      <p className="text-xs text-slate-400 mt-1">Séances complétées en {new Date().toLocaleDateString('fr-FR', { month: 'long' })}</p>
+                    </div>
+                    <div className="p-3 bg-slate-950 rounded-2xl border border-white/5 shadow-inner">
+                      <Dumbbell className="w-6 h-6 text-purple-400/80" />
+                    </div>
+                  </div>
+                  <div className="relative z-10 flex items-end justify-between">
+                    <div>
+                      <span className="text-5xl font-black text-white tracking-tighter">{sessionsThisMonth}</span>
+                      <span className="text-lg text-purple-400 ml-2 font-medium">séances</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">Total à vie</span>
+                      <span className="text-xl font-bold text-slate-300">{totalSessionsAllTime}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-                        <div className="flex justify-between items-start mb-4 relative z-10">
-                          <h4 className="font-bold text-lg text-white">{goal.name}</h4>
-                          <span className={`text-xs font-bold px-2 py-1 rounded-lg ${goal.progress >= 100 ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'}`}>
-                            {goal.progress >= 100 ? 'Complété' : 'En cours'}
-                          </span>
-                        </div>
-
-                        <div className="space-y-1 relative z-10">
-                          <div className="flex justify-between text-xs text-gray-400">
-                            <span>Progression</span>
-                            <span>{goal.progress}%</span>
-                          </div>
-                          <div className="h-2 bg-black/40 rounded-full overflow-hidden">
-                            <div
-                              className={`h-full rounded-full transition-all duration-1000 ease-out ${goal.progress >= 100 ? 'bg-green-500' : 'bg-blue-500'}`}
-                              style={{ width: `${Math.min(100, goal.progress)}%` }}
-                            />
-                          </div>
-                        </div>
+              {/* Quick Goals Summary if any */}
+              {clientGoals.length > 0 && (
+                <div className="bg-slate-900/30 border border-white/5 rounded-3xl p-6 animate-fade-in" style={{ animationDelay: '0.1s' }}>
+                  <div className="flex items-center gap-2 mb-4">
+                    <Target className="w-5 h-5 text-blue-400" />
+                    <h3 className="text-lg font-bold text-white">Mes Objectifs</h3>
+                  </div>
+                  <div className="space-y-3">
+                    {clientGoals.map((goal: string, index: number) => (
+                      <div key={index} className="bg-slate-950/50 rounded-xl p-3 border border-white/5 flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)]"></div>
+                        <span className="text-sm text-slate-200 font-medium">{goal}</span>
                       </div>
                     ))}
                   </div>
-                ) : (
-                  <div className="p-8 rounded-2xl border border-dashed border-white/10 text-center text-gray-500">
-                    Aucun objectif défini
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           )}
 
