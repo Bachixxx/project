@@ -637,7 +637,7 @@ function DraggableEvent({ event, clients, startHour, hourHeight, onClick }: { ev
         height: `${heightPixels}px`,
       }}
       className={`absolute left-1 right-1 p-[1px] rounded-xl transition-all duration-200 cursor-pointer 
-        ${isDragging ? 'opacity-90 scale-[1.05] z-50 shadow-2xl shadow-blue-500/20' : 'opacity-100 hover:scale-[1.02] hover:z-30 shadow-lg shadow-black/20'}
+        ${isDragging ? 'opacity-90 scale-[1.05] z-50 shadow-2xl shadow-blue-500/20 pointer-events-none' : 'opacity-100 hover:scale-[1.02] hover:z-30 shadow-lg shadow-black/20'}
       `}
       {...listeners}
       {...attributes}
