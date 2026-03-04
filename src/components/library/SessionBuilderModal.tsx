@@ -228,14 +228,15 @@ export function SessionBuilderModal({ session, onClose, onSave }: SessionBuilder
             isOpen={true}
             onClose={onClose}
             title={session ? 'Modifier la séance' : 'Créer une séance'}
-            maxWidth="!max-w-[95vw] !h-[90vh] !max-h-[90vh]"
+            maxWidth="sm:max-w-3xl lg:max-w-5xl"
+            position="right"
             footer={
-                <div className="flex justify-end gap-4 w-full">
-                    <button type="button" onClick={onClose} className="text-gray-400 hover:text-white transition-colors">Annuler</button>
+                <div className="flex justify-end gap-3 w-full">
+                    <button type="button" onClick={onClose} className="px-5 py-2.5 rounded-xl text-slate-300 hover:text-white hover:bg-white/5 transition-colors font-bold text-sm">Annuler</button>
                     <button
                         type="button"
                         onClick={() => onSave(formData, blocks, standaloneExercises)}
-                        className="primary-button flex items-center gap-2"
+                        className="px-6 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-500 shadow-[0_0_20px_rgba(37,99,235,0.3)] transition-all font-bold text-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         disabled={blocks.length === 0 && standaloneExercises.length === 0}
                     >
                         <Save className="w-4 h-4" /> Sauvegarder
@@ -243,36 +244,36 @@ export function SessionBuilderModal({ session, onClose, onSave }: SessionBuilder
                 </div>
             }
         >
-            <div className="flex flex-col lg:flex-row h-full gap-6">
+            <div className="flex flex-col lg:flex-row h-full gap-8 pb-4">
                 {/* Sidebar: Metadata */}
-                <div className="w-full lg:w-1/3 space-y-6 overflow-y-auto custom-scrollbar p-1">
+                <div className="w-full lg:w-1/3 space-y-6">
                     <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">Nom de la séance</label>
+                        <label className="block text-[10px] font-bold text-blue-400 mb-2 tracking-wider uppercase">Nom de la séance</label>
                         <input
                             type="text"
                             value={formData.name}
                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                            className="input-field"
+                            className="w-full bg-[#1e293b] border border-white/5 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:bg-[#0f172a] focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 transition-all outline-none"
                             placeholder="Ex: Pectoraux Explosifs"
                         />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-2">Durée (min)</label>
+                            <label className="block text-[10px] font-bold text-blue-400 mb-2 tracking-wider uppercase">Durée (min)</label>
                             <input
                                 type="number"
                                 value={formData.duration_minutes}
                                 onChange={(e) => setFormData({ ...formData, duration_minutes: parseInt(e.target.value) || 0 })}
-                                className="input-field"
+                                className="w-full bg-[#1e293b] border border-white/5 rounded-xl px-4 py-3 text-white focus:bg-[#0f172a] focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 transition-all outline-none"
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-2">Difficulté</label>
+                            <label className="block text-[10px] font-bold text-blue-400 mb-2 tracking-wider uppercase">Difficulté</label>
                             <select
                                 value={formData.difficulty_level}
                                 onChange={(e) => setFormData({ ...formData, difficulty_level: e.target.value })}
-                                className="input-field cursor-pointer"
+                                className="w-full bg-[#1e293b] border border-white/5 rounded-xl px-4 py-3 text-white focus:bg-[#0f172a] focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 transition-all outline-none cursor-pointer appearance-none"
                             >
                                 <option value="Débutant">Débutant</option>
                                 <option value="Intermédiaire">Intermédiaire</option>
@@ -282,12 +283,12 @@ export function SessionBuilderModal({ session, onClose, onSave }: SessionBuilder
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">Description</label>
+                        <label className="block text-[10px] font-bold text-blue-400 mb-2 tracking-wider uppercase">Description</label>
                         <textarea
                             value={formData.description}
                             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                             rows={4}
-                            className="input-field"
+                            className="w-full bg-[#1e293b] border border-white/5 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:bg-[#0f172a] focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 transition-all outline-none resize-none"
                             placeholder="Objectifs, matériel nécessaire..."
                         />
                     </div>
@@ -305,13 +306,6 @@ export function SessionBuilderModal({ session, onClose, onSave }: SessionBuilder
                             setShowExerciseModal(true);
                         }}
                     />
-
-                    {/* Empty state hint if nothing exists */}
-                    {blocks.length === 0 && standaloneExercises.length === 0 && (
-                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                            <p className="text-gray-500 text-sm">Ajoutez des blocs pour structurer votre séance.</p>
-                        </div>
-                    )}
                 </div>
             </div>
 

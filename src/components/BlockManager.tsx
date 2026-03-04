@@ -704,31 +704,54 @@ export function BlockManager({
                         </DragOverlay>
                     </DndContext>
                 ) : (
-                    /* Empty State - Only if truly empty */
-                    <div className="text-center py-12 border-2 border-dashed border-white/10 rounded-xl">
-                        <Dumbbell className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-                        <h3 className="text-lg font-medium text-white mb-2">La séance est vide</h3>
-                        <p className="text-gray-500 text-sm max-w-sm mx-auto mb-6">
-                            Commencez par ajouter un bloc pour structurer votre séance ou ajoutez simplement des exercices.
+                    /* Premium Empty State */
+                    <div className="flex flex-col items-center justify-center py-12 px-4">
+                        <div className="w-16 h-16 bg-[#1e293b] rounded-2xl flex items-center justify-center mb-6 border border-white/10 shadow-[0_0_30px_rgba(255,255,255,0.05)]">
+                            <Dumbbell className="w-8 h-8 text-white/50" />
+                        </div>
+                        <h3 className="text-2xl font-bold text-white mb-3 tracking-tight">La séance est vide</h3>
+                        <p className="text-slate-400 text-center max-w-md mb-10 leading-relaxed text-sm">
+                            Construisez une séance parfaite. Ajoutez des blocs pour structurer l'entraînement ou intégrez directement des exercices libres.
                         </p>
-                        <div className="flex justify-center gap-4">
-                            <button
-                                onClick={() => onShowExercisePicker(null)}
-                                className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors text-sm font-medium"
-                            >
-                                Ajouter un exercice
-                            </button>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-4xl">
+                            {/* Action Card 1: New Block (Primary) */}
                             <button
                                 onClick={() => setShowCreateModal(true)}
-                                className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors text-sm font-medium"
+                                className="group relative overflow-hidden bg-gradient-to-b from-[#1e293b] to-[#0f172a] rounded-2xl p-6 border border-white/5 hover:border-blue-500/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_10px_40px_rgba(59,130,246,0.15)] flex flex-col items-center text-center"
                             >
-                                Ajouter un bloc
+                                <div className="absolute inset-0 bg-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                <div className="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center mb-4 border border-blue-500/20 group-hover:scale-110 transition-transform">
+                                    <Plus className="w-6 h-6 text-blue-400" />
+                                </div>
+                                <h4 className="text-white font-bold mb-1">Nouveau Bloc</h4>
+                                <p className="text-xs text-slate-400">Circuit, AMRAP ou Standard</p>
                             </button>
+
+                            {/* Action Card 2: Quick Exercise */}
+                            <button
+                                onClick={() => onShowExercisePicker(null)}
+                                className="group relative overflow-hidden bg-gradient-to-b from-[#1e293b] to-[#0f172a] rounded-2xl p-6 border border-white/5 hover:border-emerald-500/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_10px_40px_rgba(16,185,129,0.1)] flex flex-col items-center text-center"
+                            >
+                                <div className="absolute inset-0 bg-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                <div className="w-12 h-12 bg-emerald-500/10 rounded-xl flex items-center justify-center mb-4 border border-emerald-500/20 group-hover:scale-110 transition-transform">
+                                    <Dumbbell className="w-6 h-6 text-emerald-400" />
+                                </div>
+                                <h4 className="text-white font-bold mb-1">Exercice Rapide</h4>
+                                <p className="text-xs text-slate-400">Ajout sans structure</p>
+                            </button>
+
+                            {/* Action Card 3: Library */}
                             <button
                                 onClick={() => setShowLibraryModal(true)}
-                                className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg transition-colors text-sm font-medium border border-white/10"
+                                className="group relative overflow-hidden bg-gradient-to-b from-[#1e293b] to-[#0f172a] rounded-2xl p-6 border border-white/5 hover:border-purple-500/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_10px_40px_rgba(168,85,247,0.1)] flex flex-col items-center text-center"
                             >
-                                Importer depuis la bibliothèque
+                                <div className="absolute inset-0 bg-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                <div className="w-12 h-12 bg-purple-500/10 rounded-xl flex items-center justify-center mb-4 border border-purple-500/20 group-hover:scale-110 transition-transform">
+                                    <Save className="w-6 h-6 text-purple-400" />
+                                </div>
+                                <h4 className="text-white font-bold mb-1">Bibliothèque</h4>
+                                <p className="text-xs text-slate-400">Importer un modèle</p>
                             </button>
                         </div>
                     </div>
