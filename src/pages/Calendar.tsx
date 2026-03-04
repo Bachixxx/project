@@ -181,9 +181,9 @@ function CalendarPage() {
 
     if (!over) return;
 
-    // Parse the droppable area ID, e.g., "2026-03-02-09:30"
+    // Parse the droppable area ID, e.g., "2026-03-02|09:30"
     const overId = String(over.id);
-    const [dateString, timeString] = overId.split('-');
+    const [dateString, timeString] = overId.split('|');
     if (!dateString || !timeString) return;
 
     const aptId = String(active.id);
@@ -372,7 +372,7 @@ function CalendarPage() {
                         return (
                           <DroppableSlot
                             key={i}
-                            id={`${format(day, 'yyyy-MM-dd')}-${format(timeValue, 'HH:mm')}`}
+                            id={`${format(day, 'yyyy-MM-dd')}|${format(timeValue, 'HH:mm')}`}
                             onClick={() => {
                               setSelectedSlot({ start: timeValue, end: addMinutes(timeValue, 60) });
                               setIsModalOpen(true);
@@ -616,7 +616,7 @@ function DroppableSlot({ id, onClick }: { id: string, onClick: () => void }) {
       onClick={onClick}
       className={`absolute w-full h-[32px] cursor-pointer transition-colors z-0 hover:bg-white/5 ${isOver ? 'bg-white/10 ring-1 ring-white/20' : ''}`}
       style={{
-        top: `${(parseInt(id.split('-')[3].split(':')[1] || '0') === 30 ? 32 : 0) + (parseInt(id.split('-')[3].split(':')[0] || '0') - 6 /* START_HOUR */) * 64}px`
+        top: `${(parseInt(id.split('|')[1]?.split(':')[1] || '0') === 30 ? 32 : 0) + (parseInt(id.split('|')[1]?.split(':')[0] || '0') - 6 /* START_HOUR */) * 64}px`
       }}
     />
   );
