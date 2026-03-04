@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { format, startOfWeek, addDays, isSameDay, startOfDay, addMinutes, isToday } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import {
-  DndContext,
+DndContext,
   pointerWithin,
   PointerSensor,
   useSensor,
   useSensors,
-  DragOverlay,
 } from '@dnd-kit/core';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
 
@@ -413,17 +411,6 @@ function CalendarPage() {
             </div>
           </div>
 
-          <DragOverlay>
-            {activeEvent ? (
-              <DraggableEvent
-                event={activeEvent}
-                clients={clients}
-                startHour={START_HOUR}
-                hourHeight={HOUR_HEIGHT}
-                isOverlay
-              />
-            ) : null}
-          </DragOverlay>
         </DndContext>
       </div>
 
@@ -620,7 +607,7 @@ function DroppableSlot({ id, onClick }: { id: string, onClick: () => void }) {
   );
 }
 
-function DraggableEvent({ event, clients, startHour, hourHeight, isOverlay, onClick }: { event: Appointment, clients: Client[], startHour: number, hourHeight: number, isOverlay?: boolean, onClick?: () => void }) {
+function DraggableEvent({ event, clients, startHour, hourHeight, onClick }: { event: Appointment, clients: Client[], startHour: number, hourHeight: number, onClick?: () => void }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: event.id,
     data: event
@@ -630,7 +617,7 @@ function DraggableEvent({ event, clients, startHour, hourHeight, isOverlay, onCl
   const topPixels = ((startDate.getHours() - startHour) * 60 + startDate.getMinutes()) * (hourHeight / 60);
   const heightPixels = event.duration * (hourHeight / 60);
 
-  const style = transform && !isOverlay ? {
+  const style = transform ? {
     transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
     zIndex: 50,
   } : undefined;
@@ -645,22 +632,20 @@ function DraggableEvent({ event, clients, startHour, hourHeight, isOverlay, onCl
       ref={setNodeRef}
       style={{
         ...style,
-        ...(isOverlay ? {} : { top: `${topPixels}px` }),
+        top: `${topPixels}px`,
         height: `${heightPixels}px`,
-        width: isOverlay ? '100%' : undefined,
       }}
-      className={`
-        ${isOverlay ? 'opacity-80 scale-105 pointer-events-none shadow-2xl z-50' : 'absolute left-1 right-1 cursor-grab active:cursor-grabbing hover:scale-[1.02] hover:z-30 cursor-pointer shadow-lg shadow-black/20'}
-        ${isDragging && !isOverlay ? 'opacity-0' : 'opacity-100'}
-        p-[1px] rounded-xl transition-all duration-200
+      className={`absolute left-1 right-1 p-[1px] rounded-xl transition-all duration-200 cursor-pointer 
+        ${isDragging ? 'opacity-90 scale-[1.05] z-50 shadow-2xl shadow-blue-500/20' : 'opacity-100 hover:scale-[1.02] hover:z-30 shadow-lg shadow-black/20'}
       `}
-      {...(isOverlay ? {} : listeners)}
-      {...(isOverlay ? {} : attributes)}
+      {...listeners}
+      {...attributes}
       onClick={!isDragging ? onClick : undefined}
     >
-      <div className={`w-full h-full rounded-[11px] p-2 flex flex-col gap-1 overflow-hidden backdrop-blur-md border border-white/20 bg-gradient-to-br ${isPrivate
-        ? 'from-blue-600/80 to-indigo-600/80'
-        : 'from-emerald-600/80 to-teal-600/80'
+      <div className={`w-full h-full rounded-[11px] p-2 flex flex-col gap-1 overflow-hidden backdrop-blur-md border bg-gradient-to-br transition-colors
+        ${isDragging
+          ? (isPrivate ? 'border-blue-400/50 from-blue-500/90 to-indigo-500/90' : 'border-emerald-400/50 from-emerald-500/90 to-teal-500/90')
+          : (isPrivate ? 'border-white/20 from-blue-600/80 to-indigo-600/80' : 'border-white/20 from-emerald-600/80 to-teal-600/80')
         }`}>
         <div className="flex items-center gap-1.5 opacity-90">
           <Clock className="w-3 h-3 flex-shrink-0" />
