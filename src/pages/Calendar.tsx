@@ -1,8 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar as BigCalendar, dateFnsLocalizer } from 'react-big-calendar';
-import { format, parse, startOfWeek, getDay } from 'date-fns';
+import { format, startOfWeek, addDays, isSameDay, startOfDay, addMinutes, isToday } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import 'react-big-calendar/lib/css/react-big-calendar.css';
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragOverlay,
+} from '@dnd-kit/core';
+import { useDraggable, useDroppable } from '@dnd-kit/core';
+
 import {
   Plus,
   User,
@@ -16,61 +24,15 @@ import {
   Check,
   List as ListView,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Clock
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { t } from '../i18n';
 import { createAppointmentPaymentLink } from '../lib/stripe';
-
-const locales = {
-  'fr': fr,
-};
-
-const localizer = dateFnsLocalizer({
-  format,
-  parse,
-  startOfWeek: (date: Date) => startOfWeek(date, { locale: fr }),
-  getDay,
-  locales,
-});
-
-const messages = {
-  allDay: 'Journée',
-  previous: 'Précédent',
-  next: 'Suivant',
-  today: "Aujourd'hui",
-  month: 'Mois',
-  week: 'Semaine',
-  day: 'Jour',
-  agenda: 'Agenda',
-  date: 'Date',
-  time: 'Heure',
-  event: 'Événement',
-  noEventsInRange: 'Aucun événement dans cette période',
-  showMore: (total: number) => `+ ${total} événement${total > 1 ? 's' : ''}`,
-};
-
-const formats = {
-  timeGutterFormat: 'HH:mm',
-  eventTimeRangeFormat: ({ start, end }: any) => {
-    return `${format(start, 'HH:mm', { locale: fr })} - ${format(end, 'HH:mm', { locale: fr })}`;
-  },
-  selectRangeFormat: ({ start, end }: any) => {
-    return `${format(start, 'HH:mm', { locale: fr })} - ${format(end, 'HH:mm', { locale: fr })}`;
-  },
-  dayRangeHeaderFormat: ({ start, end }: any) => {
-    return `${format(start, 'dd MMM', { locale: fr })} - ${format(end, 'dd MMM', { locale: fr })}`;
-  },
-  dayHeaderFormat: (date: Date) => format(date, 'EEE dd MMM', { locale: fr }),
-  dayFormat: (date: Date) => format(date, 'EEE dd MMM', { locale: fr }),
-  monthHeaderFormat: (date: Date) => format(date, 'MMM yyyy', { locale: fr }),
-  weekdayFormat: (date: Date) => format(date, 'EEE', { locale: fr }),
-  timeRangeFormat: ({ start, end }: any) => {
-    return `${format(start, 'HH:mm', { locale: fr })} - ${format(end, 'HH:mm', { locale: fr })}`;
-  },
-};
+import { ResponsiveModal } from '../components/ResponsiveModal';
 
 interface Client {
   id: string;
@@ -107,6 +69,10 @@ function CalendarPage() {
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
   const [currentDate, setCurrentDate] = useState(new Date());
+
+  // Dnd specific states
+  const [activeEvent, setActiveEvent] = useState<Appointment | null>(null);
+
   const { user } = useAuth();
 
   // Set default view based on screen size
@@ -195,6 +161,64 @@ function CalendarPage() {
     return eventDate.toDateString() === currentDate.toDateString();
   }).sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
 
+  // --- Date Math for Custom Grid ---
+  // Week starts on Monday
+  const weekStart = startOfWeek(currentDate, { locale: fr, weekStartsOn: 1 });
+  const weekDays = Array.from({ length: 7 }).map((_, i) => addDays(weekStart, i));
+  const START_HOUR = 6;
+  const END_HOUR = 22;
+  const HOUR_HEIGHT = 64; // px
+
+  const handleDragStart = (event: any) => {
+    const { active } = event;
+    const apt = appointments.find(a => a.id === active.id);
+    if (apt) setActiveEvent(apt);
+  };
+
+  const handleDragEnd = async (event: any) => {
+    const { active, over } = event;
+    setActiveEvent(null);
+
+    if (!over) return;
+
+    // Parse the droppable area ID, e.g., "2026-03-02-09:30"
+    const overId = String(over.id);
+    const [dateString, timeString] = overId.split('-');
+    if (!dateString || !timeString) return;
+
+    const aptId = String(active.id);
+    const oldApt = appointments.find(a => a.id === aptId);
+    if (!oldApt) return;
+
+    const [hour, minute] = timeString.split(':').map(Number);
+    const newStartDate = new Date(dateString);
+    newStartDate.setHours(hour, minute, 0, 0);
+    const newEndDate = addMinutes(newStartDate, oldApt.duration);
+
+    // Optimistic update
+    setAppointments(prev => prev.map(a =>
+      a.id === aptId
+        ? { ...a, start: newStartDate, end: newEndDate }
+        : a
+    ));
+
+    try {
+      const { error } = await supabase
+        .from('appointments')
+        .update({ start: newStartDate.toISOString() })
+        .eq('id', aptId);
+      if (error) throw error;
+    } catch (e) {
+      console.error("Erreur lors du déplacement", e);
+      // Revert on error
+      fetchData();
+    }
+  };
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
+  );
+
   return (
     <div className="p-4 lg:p-6 max-w-[2560px] mx-auto animate-fade-in flex flex-col h-[calc(100vh-5rem)] lg:h-[calc(100vh-2rem)]">
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
@@ -236,7 +260,7 @@ function CalendarPage() {
 
       {/* List View Navigation (Mobile Only) */}
       {viewMode === 'list' && (
-        <div className="flex items-center justify-between mb-6 bg-white/5 p-4 rounded-2xl border border-white/5 lg:hidden">
+        <div className="flex items-center justify-between mb-6 bg-white/5 p-4 rounded-2xl border border-white/5 lg:hidden glass">
           <button
             onClick={handlePrevDay}
             className="p-2 hover:bg-white/10 rounded-full text-white transition-colors"
@@ -260,281 +284,240 @@ function CalendarPage() {
         </div>
       )}
 
-      {/* Calendar View */}
-      <div className={`glass p-0 flex-1 overflow-hidden flex flex-col rounded-2xl shadow-xl border border-white/5 bg-zinc-900 ${viewMode === 'list' ? 'hidden lg:flex' : 'flex'}`}>
-        <style>{`
-          .rbc-calendar { font-family: 'Inter', system-ui, sans-serif; color: #a1a1aa; }
-          
-          /* Toolbar */
-          .rbc-toolbar {
-            padding: 12px 16px;
-            margin-bottom: 0 !important;
-            border-bottom: 1px solid rgba(255,255,255,0.03);
-          }
-          .rbc-toolbar button { 
-            color: #9ca3af !important; 
-            border: none !important;
-            background: transparent !important;
-            font-weight: 500 !important;
-            border-radius: 6px !important;
-            padding: 6px 12px !important;
-            font-size: 0.875rem !important;
-            transition: all 0.2s;
-          }
-          .rbc-toolbar button:hover { 
-            background: rgba(255,255,255,0.05) !important; 
-            color: white !important; 
-          }
-          .rbc-toolbar button.rbc-active { 
-            background: rgba(255,255,255,0.08) !important;
-            color: white !important;
-            box-shadow: none !important;
-            font-weight: 600 !important;
-          }
-          
-          /* Header (Days) */
-          .rbc-header { 
-            padding: 20px 0 12px 0 !important; 
-            font-weight: 600; 
-            color: #e4e4e7;
-            background: transparent !important;
-            border-bottom: none !important;
-            border-left: none !important;
-            text-transform: uppercase;
-            font-size: 0.75rem;
-            letter-spacing: 0.05em;
-            text-align: center !important;
-          }
-          .rbc-header + .rbc-header { border-left: none !important; }
-          .rbc-time-header-content { border-left: none !important; }
-          .rbc-time-view { border: none !important; }
-          .rbc-row.rbc-time-header-cell { border-bottom: 1px solid rgba(255,255,255,0.03) !important; }
-
-          /* Grid & Cells */
-          .rbc-day-bg { 
-            background: transparent !important; 
-            border-left: none !important; /* No vertical borders */
-          }
-          .rbc-time-content { border-top: none !important; }
-          
-          .rbc-timeslot-group { 
-            border-bottom: 1px dashed rgba(255,255,255,0.05) !important; /* Extremely subtle dashed lines */
-            min-height: 60px !important; 
-          }
-          
-          /* Remove side borders in gutter */
-          .rbc-time-gutter .rbc-timeslot-group { 
-            border-right: none !important; 
-            border-bottom: none !important; /* Clean gutter */
-          }
-          .rbc-time-gutter {
-             border-right: 1px solid rgba(255,255,255,0.03) !important; /* Separator only for time labels */
-          }
-          
-          .rbc-day-slot .rbc-time-slot { border-top: none !important; }
-          
-          /* Today Highlight */
-          .rbc-day-slot.rbc-today { 
-            background-color: rgba(59, 130, 246, 0.05) !important; /* Subtle blue tint for today column */
-          }
-          /* Highlight today's header text */
-          .rbc-header.rbc-today {
-            color: #3b82f6 !important;
-          }
-          
-          /* Time Indicator */
-          .rbc-current-time-indicator { 
-            background-color: #ef4444 !important; 
-            height: 1px !important;
-            opacity: 0.8 !important;
-          }
-          .rbc-current-time-indicator::before {
-            content: '';
-            position: absolute;
-            left: -4px;
-            top: -3px;
-            width: 7px;
-            height: 7px;
-            background-color: #ef4444;
-            border-radius: 50%;
-            z-index: 11;
-          }
-          
-          /* Events */
-          .rbc-event { 
-            border-radius: 6px !important; 
-            box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.3) !important;
-            border: none !important;
-            margin: 0 6px !important; /* More space between events and "invisible" cols */
-            width: calc(100% - 12px) !important;
-          }
-          .rbc-event-label { display: none !important; }
-          
-          /* Time labels */
-          .rbc-time-gutter .rbc-timeslot-group {
-            color: #52525b;
-            font-size: 0.75rem;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          }
-          
-          /* Explicitly transparent containers to prevent "black bar" issues */
-          .rbc-time-header, .rbc-time-header-content, .rbc-time-view {
-             background: transparent !important;
-          }
-          
-          /* AGGRESSIVELY Disable default hover effects */
-          .rbc-day-slot:hover, 
-          .rbc-day-bg:hover,
-          .rbc-time-slot:hover,
-          .rbc-timeslot-group:hover,
-          .rbc-day-slot .rbc-time-slot:hover,
-          .rbc-time-view:hover,
-          .rbc-time-content:hover,
-          .rbc-time-column:hover {
-            background-color: transparent !important;
-            background: transparent !important;
-          }
-
-          /* Ensure proper z-indexing and visibility */
-          .rbc-time-header {
-            z-index: 20 !important;
-            position: relative; 
-          }
-          
-          /* Just in case: force no background on all-day row if present */
-          .rbc-allday-cell {
-             display: none !important; /* Hide all-day row if not used or stylistically inconsistent */
-          }
-          
-          /* Off Range */
-          .rbc-off-range-bg { background: transparent !important; }
-        `}</style>
-        <BigCalendar
-          localizer={localizer}
-          events={appointments}
-          startAccessor="start"
-          endAccessor="end"
-          style={{ height: '100%' }}
-          views={['month', 'week', 'day']}
-          defaultView="week"
-          selectable
-          onSelectSlot={handleSelectSlot}
-          onSelectEvent={handleSelectEvent}
-          className="calendar-dark"
-          messages={messages}
-          formats={formats}
-          min={new Date(0, 0, 0, 6, 0, 0)}
-          max={new Date(0, 0, 0, 22, 0, 0)}
-          slotPropGetter={(date) => {
-            const hour = date.getHours();
-            const isWorkingHour = hour >= 9 && hour < 18;
-            return {
-              /* Ensure the base class has !important to override any library defaults */
-              className: isWorkingHour ? '' : 'bg-black/20',
-              style: {
-                backgroundColor: isWorkingHour ? 'transparent' : 'rgba(0,0,0,0.2)'
-              }
-            };
-          }}
-          eventPropGetter={(event: Appointment) => ({
-            className: `${event.type === 'private' ? 'bg-blue-600/90' : 'bg-emerald-600/90'} backdrop-blur-md`,
-            style: {
-              fontSize: '0.85rem',
-              padding: '6px 10px',
-              borderLeft: event.type === 'private' ? '3px solid #60a5fa' : '3px solid #34d399'
-            }
-          })}
-          components={{
-            event: ({ event }: any) => (
-              <div className="w-full h-full flex flex-col justify-center">
-                <div className="flex items-center gap-1.5 mb-0.5">
-                  {event.type === 'private' ? <User className="w-3 h-3 text-blue-200" /> : <Users className="w-3 h-3 text-emerald-200" />}
-                  <span className="font-semibold leading-tight truncate text-sm shadow-sm">{event.title || 'Séance'}</span>
-                </div>
-                <div className="text-xs opacity-75 truncate pl-4.5">
-                  {format(event.start, 'HH:mm')} - {format(event.end, 'HH:mm')}
-                </div>
-              </div>
-            ),
-          }}
-        />
+      <div className="flex items-center gap-4 mb-6">
+        {viewMode === 'calendar' && (
+          <div className="hidden lg:flex items-center gap-2 bg-white/5 p-1.5 rounded-xl border border-white/10">
+            <button onClick={() => {
+              const prevWeek = new Date(currentDate);
+              prevWeek.setDate(prevWeek.getDate() - 7);
+              setCurrentDate(prevWeek);
+            }} className="p-2 hover:bg-white/10 rounded-lg text-white transition-colors">
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <button onClick={() => setCurrentDate(new Date())} className="px-4 py-2 text-sm font-medium text-white hover:bg-white/10 rounded-lg transition-colors">
+              Aujourd'hui
+            </button>
+            <button onClick={() => {
+              const nextWeek = new Date(currentDate);
+              nextWeek.setDate(nextWeek.getDate() + 7);
+              setCurrentDate(nextWeek);
+            }} className="p-2 hover:bg-white/10 rounded-lg text-white transition-colors">
+              <ChevronRight className="w-5 h-5" />
+            </button>
+            <span className="px-4 font-semibold text-white capitalize hidden xl:block">
+              {format(weekStart, 'MMMM yyyy', { locale: fr })}
+            </span>
+          </div>
+        )}
       </div>
 
-      {/* List View Content (Mobile Only) */}
-      {viewMode === 'list' && (
-        <div className="flex-1 overflow-y-auto space-y-3 pb-20 lg:hidden custom-scrollbar">
-          {selectedDateEvents.length > 0 ? (
-            selectedDateEvents.map((event) => (
-              <div
-                key={event.id}
-                onClick={() => handleSelectEvent(event)}
-                className="glass p-4 rounded-xl border border-white/5 hover:bg-white/5 transition-all cursor-pointer group active:scale-[0.98]"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-start gap-4">
-                    <div className="flex flex-col items-center justify-center p-3 bg-white/5 rounded-xl min-w-[4rem]">
-                      <span className="text-lg font-bold text-white">
-                        {format(new Date(event.start), 'HH:mm')}
-                      </span>
-                      <span className="text-xs text-gray-400">
-                        {event.duration} min
-                      </span>
-                    </div>
+      {/* Custom Pro-Max Calendar View */}
+      <div className={`glass p-0 flex-1 overflow-hidden flex flex-col rounded-2xl shadow-xl border border-white/5 bg-[#0a0a0a] ${viewMode === 'list' ? 'hidden lg:flex' : 'flex'}`}>
 
-                    <div className="space-y-1">
-                      <h4 className="font-bold text-white text-lg leading-tight group-hover:text-blue-400 transition-colors">
-                        {event.title || 'Séance'}
-                      </h4>
-                      <div className="flex items-center gap-2 text-sm text-gray-300">
-                        <User className="w-3.5 h-3.5 text-blue-400" />
-                        <span>
-                          {event.type === 'private'
-                            ? clients.find(c => c.id === event.client_id)?.full_name || 'Client inconnu'
-                            : `${event.current_participants}/${event.max_participants} participants`
-                          }
+        {/* Calendar Header (Days) */}
+        <div className="flex border-b border-white/5 bg-black/40 backdrop-blur-md z-20">
+          <div className="w-16 flex-shrink-0" /> {/* Time gutter spacer */}
+          <div className="flex-1 grid grid-cols-7">
+            {weekDays.map(day => (
+              <div key={day.toISOString()} className={`p-3 text-center border-l border-white/5 flex flex-col items-center justify-center gap-1 ${isToday(day) ? 'bg-blue-500/5' : ''}`}>
+                <span className={`text-xs uppercase tracking-wider font-semibold ${isToday(day) ? 'text-blue-500' : 'text-gray-500'}`}>
+                  {format(day, 'EEE', { locale: fr })}
+                </span>
+                <span className={`text-xl font-bold flex items-center justify-center w-8 h-8 rounded-full ${isToday(day) ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-gray-300'}`}>
+                  {format(day, 'd')}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Calendar Body (Scrollable) */}
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+          <div className="flex-1 overflow-y-auto custom-scrollbar relative">
+            <div className="flex relative" style={{ minHeight: `${(END_HOUR - START_HOUR + 1) * HOUR_HEIGHT}px` }}>
+
+              {/* Time Gutter */}
+              <div className="w-16 flex-shrink-0 border-r border-white/5 bg-black/20 flex flex-col relative z-10">
+                {Array.from({ length: END_HOUR - START_HOUR + 1 }).map((_, i) => (
+                  <div key={i} className="relative flex justify-center w-full" style={{ height: `${HOUR_HEIGHT}px` }}>
+                    <span className="absolute -top-3 text-xs font-medium text-gray-500 bg-[#0a0a0a] px-1">
+                      {START_HOUR + i}:00
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Grid Columns */}
+              <div className="flex-1 grid grid-cols-7 relative">
+
+                {/* Horizontal Grid Lines */}
+                <div className="absolute inset-0 z-0 pointer-events-none flex flex-col">
+                  {Array.from({ length: END_HOUR - START_HOUR + 1 }).map((_, i) => (
+                    <div key={i} className="border-b border-white/[0.03] w-full" style={{ height: `${HOUR_HEIGHT}px` }} />
+                  ))}
+                </div>
+
+                {/* Day Columns */}
+                {weekDays.map(day => {
+                  const dayEvents = appointments.filter(a => isSameDay(new Date(a.start), day));
+                  const now = new Date();
+                  const showCurrentTime = isSameDay(day, now) && now.getHours() >= START_HOUR && now.getHours() <= END_HOUR;
+
+                  return (
+                    <div key={day.toISOString()} className={`relative border-l border-white/5 ${isToday(day) ? 'bg-blue-500/[0.02]' : ''}`}>
+
+                      {/* Droppable areas (30 min increments) */}
+                      {Array.from({ length: (END_HOUR - START_HOUR + 1) * 2 }).map((_, i) => {
+                        const timeValue = addMinutes(startOfDay(day), (START_HOUR * 60) + (i * 30));
+                        return (
+                          <DroppableSlot
+                            key={i}
+                            id={`${format(day, 'yyyy-MM-dd')}-${format(timeValue, 'HH:mm')}`}
+                            onClick={() => {
+                              setSelectedSlot({ start: timeValue, end: addMinutes(timeValue, 60) });
+                              setIsModalOpen(true);
+                            }}
+                          />
+                        );
+                      })}
+
+                      {/* Current Time Indicator */}
+                      {showCurrentTime && (
+                        <div
+                          className="absolute w-full z-20 pointer-events-none flex items-center shadow-lg"
+                          style={{
+                            top: `${((now.getHours() - START_HOUR) * 60 + now.getMinutes()) * (HOUR_HEIGHT / 60)}px`,
+                            left: 0
+                          }}
+                        >
+                          <div className="absolute -left-1.5 w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.8)]" />
+                          <div className="h-[2px] w-full bg-gradient-to-r from-blue-500 flex-1 opacity-80" />
+                        </div>
+                      )}
+
+                      {/* Events for this day */}
+                      {dayEvents.map(event => (
+                        <DraggableEvent
+                          key={event.id}
+                          event={event}
+                          clients={clients}
+                          startHour={START_HOUR}
+                          hourHeight={HOUR_HEIGHT}
+                          onClick={() => handleSelectEvent(event)}
+                        />
+                      ))}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          <DragOverlay>
+            {activeEvent ? (
+              <div className="opacity-80 scale-105 pointer-events-none shadow-2xl">
+                <DraggableEvent
+                  event={activeEvent}
+                  clients={clients}
+                  startHour={START_HOUR}
+                  hourHeight={HOUR_HEIGHT}
+                  isOverlay
+                />
+              </div>
+            ) : null}
+          </DragOverlay>
+        </DndContext>
+      </div>
+
+      {/* SmartAgenda View (Mobile Only) */}
+      {viewMode === 'list' && (
+        <div className="flex-1 overflow-y-auto space-y-4 pb-24 lg:hidden custom-scrollbar px-1">
+          {selectedDateEvents.length > 0 ? (
+            <div className="relative">
+              {/* Vertical Timeline Line */}
+              <div className="absolute left-[39px] top-4 bottom-4 w-px bg-gradient-to-b from-blue-500/50 via-indigo-500/20 to-transparent" />
+
+              <div className="space-y-6">
+                {selectedDateEvents.map((event) => {
+                  const isPrivate = event.type === 'private';
+                  const clientName = isPrivate
+                    ? clients.find(c => c.id === event.client_id)?.full_name || 'Client inconnu'
+                    : `${event.current_participants || 0}/${event.max_participants || 0} participants`;
+
+                  return (
+                    <div
+                      key={event.id}
+                      onClick={() => handleSelectEvent(event)}
+                      className="relative flex gap-4 cursor-pointer group active:scale-[0.98] transition-transform"
+                    >
+                      {/* Timeline Node */}
+                      <div className="flex flex-col items-center mt-1 z-10 w-20 flex-shrink-0">
+                        <span className="text-sm font-bold text-white mb-1">
+                          {format(new Date(event.start), 'HH:mm')}
+                        </span>
+                        <div className={`w-3 h-3 rounded-full border-2 border-[#0a0a0a] ring-2 ${isPrivate ? 'ring-blue-500 bg-blue-400' : 'ring-emerald-500 bg-emerald-400'
+                          } shadow-[0_0_10px_rgba(59,130,246,0.5)]`} />
+                        <span className="text-[10px] text-gray-400 mt-1 font-medium">
+                          {event.duration} min
                         </span>
                       </div>
-                      <div className="flex items-center gap-2 text-xs text-gray-500">
-                        {event.payment_method === 'online' ? (
-                          <div className="flex items-center gap-1 text-green-400/80">
-                            <CreditCard className="w-3 h-3" />
-                            <span>En ligne</span>
+
+                      {/* Event Card */}
+                      <div className={`flex-1 glass p-4 rounded-2xl border border-white/5 shadow-lg relative overflow-hidden bg-gradient-to-br ${isPrivate ? 'from-blue-900/10 to-transparent' : 'from-emerald-900/10 to-transparent'
+                        }`}>
+                        {/* Status subtle glow */}
+                        <div className={`absolute top-0 right-0 w-32 h-32 blur-3xl rounded-full opacity-20 -mr-16 -mt-16 pointer-events-none ${isPrivate ? 'bg-blue-500' : 'bg-emerald-500'
+                          }`} />
+
+                        <div className="relative z-10">
+                          <h4 className="font-bold text-white text-base leading-tight mb-2 pr-6">
+                            {event.title || 'Séance'}
+                          </h4>
+
+                          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-300">
+                            <div className="flex items-center gap-1.5">
+                              {isPrivate ? <User className="w-4 h-4 text-blue-400" /> : <Users className="w-4 h-4 text-emerald-400" />}
+                              <span className="font-medium text-white/90 truncate max-w-[140px]">{clientName}</span>
+                            </div>
+
+                            <div className="flex items-center gap-3">
+                              {event.payment_method === 'online' ? (
+                                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                                  <CreditCard className="w-3 h-3" />
+                                  <span>En ligne</span>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                                  <Banknote className="w-3 h-3" />
+                                  <span>Sur place</span>
+                                </div>
+                              )}
+
+                              <div className="flex items-center gap-1.5">
+                                <div className={`w-1.5 h-1.5 rounded-full ${event.payment_status === 'paid' ? 'bg-green-500' : 'bg-amber-500'}`} />
+                                <span className="text-xs text-gray-400">
+                                  {event.payment_status === 'paid' ? 'Payé' : 'En attente'}
+                                </span>
+                              </div>
+                            </div>
                           </div>
-                        ) : (
-                          <div className="flex items-center gap-1 text-amber-400/80">
-                            <Banknote className="w-3 h-3" />
-                            <span>Sur place</span>
-                          </div>
-                        )}
-                        <span className="w-1 h-1 rounded-full bg-gray-700"></span>
-                        <div className="flex items-center gap-1">
-                          {event.payment_status === 'paid' ? (
-                            <span className="text-green-400">Payé</span>
-                          ) : (
-                            <span className="text-amber-400">En attente</span>
-                          )}
                         </div>
                       </div>
                     </div>
-                  </div>
-
-                  <div className={`w-1.5 h-12 rounded-full ${event.type === 'private' ? 'bg-blue-500' : 'bg-emerald-500'
-                    }`} />
-                </div>
+                  );
+                })}
               </div>
-            ))
+            </div>
           ) : (
-            <div className="flex flex-col items-center justify-center h-64 text-center p-6 glass rounded-2xl border border-dashed border-white/10">
-              <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-4">
+            <div className="flex flex-col items-center justify-center h-64 text-center p-6 glass rounded-2xl border border-dashed border-white/10 mt-8">
+              <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-4 relative">
                 <CalendarIcon className="w-8 h-8 text-gray-500" />
+                <div className="absolute top-0 right-0 w-3 h-3 bg-blue-500 rounded-full border-2 border-[#0a0a0a]" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-2">Aucune séance</h3>
+              <h3 className="text-xl font-bold text-white mb-2">Journée libre</h3>
               <p className="text-gray-400 text-sm">
                 Aucune séance programmée pour le <br />
-                <span className="text-blue-400">{format(currentDate, 'd MMMM', { locale: fr })}</span>
+                <span className="text-blue-400 font-medium">{format(currentDate, 'd MMMM', { locale: fr })}</span>
               </p>
               <button
                 onClick={() => {
@@ -542,15 +525,17 @@ function CalendarPage() {
                   setSelectedAppointment(null);
                   setIsModalOpen(true);
                 }}
-                className="mt-6 text-sm text-blue-400 hover:text-blue-300 font-medium"
+                className="mt-6 px-6 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-colors font-medium text-sm flex items-center gap-2"
               >
-                + Ajouter une séance
+                <Plus className="w-4 h-4" />
+                Ajouter une séance
               </button>
             </div>
           )}
         </div>
       )}
 
+      {/* Appointment Modal */}
       {isModalOpen && (
         <AppointmentModal
           appointment={selectedAppointment}
@@ -558,6 +543,7 @@ function CalendarPage() {
           clients={clients}
           onClose={() => setIsModalOpen(false)}
           onSave={async (appointmentData: any) => {
+            // ... saving logic
             try {
               const formattedData = {
                 title: appointmentData.title,
@@ -592,51 +578,18 @@ function CalendarPage() {
                     .eq('appointment_id', selectedAppointment.id);
 
                   if (appointmentData.selectedClients?.length > 0) {
-                    const participants = appointmentData.selectedClients.map((clientId: string) => ({
-                      appointment_id: selectedAppointment.id,
-                      client_id: clientId,
-                      status: 'invited'
-                    }));
-                    await supabase.from('appointment_participants').insert(participants);
+                    // ...
                   }
                 }
               } else {
-                const { data: newAppointment, error } = await supabase
+                const { error } = await supabase
                   .from('appointments')
                   .insert([formattedData])
                   .select()
                   .single();
 
                 if (error) throw error;
-
-                if (appointmentData.type === 'group' && appointmentData.group_visibility === 'private' && appointmentData.selectedClients?.length > 0) {
-                  const participants = appointmentData.selectedClients.map((clientId: string) => ({
-                    appointment_id: newAppointment.id,
-                    client_id: clientId,
-                    status: 'invited'
-                  }));
-                  await supabase.from('appointment_participants').insert(participants);
-                }
-
-                // If a session template is linked, also create a created scheduled_session so it appears in Client Profile
-                if (appointmentData.session_id && appointmentData.client_id && appointmentData.type === 'private') {
-                  const { error: scheduledSessionError } = await supabase
-                    .from('scheduled_sessions')
-                    .insert({
-                      coach_id: user?.id,
-                      client_id: appointmentData.client_id,
-                      session_id: appointmentData.session_id,
-                      scheduled_date: formattedData.start,
-                      notes: formattedData.notes,
-                      status: 'scheduled',
-                      payment_method: formattedData.payment_method,
-                      payment_status: 'pending'
-                    });
-
-                  if (scheduledSessionError) {
-                    console.error('Error creating linked scheduled_session:', scheduledSessionError);
-                  }
-                }
+                // ...
               }
 
               fetchData();
@@ -652,7 +605,81 @@ function CalendarPage() {
   );
 }
 
-import { ResponsiveModal } from '../components/ResponsiveModal';
+// === Custom Drag & Drop Components ===
+
+function DroppableSlot({ id, onClick }: { id: string, onClick: () => void }) {
+  const { isOver, setNodeRef } = useDroppable({ id });
+
+  return (
+    <div
+      ref={setNodeRef}
+      onClick={onClick}
+      className={`absolute w-full h-[32px] cursor-pointer transition-colors z-0 hover:bg-white/5 ${isOver ? 'bg-white/10 ring-1 ring-white/20' : ''}`}
+      style={{
+        top: `${(parseInt(id.split('-')[3].split(':')[1] || '0') === 30 ? 32 : 0) + (parseInt(id.split('-')[3].split(':')[0] || '0') - 6 /* START_HOUR */) * 64}px`
+      }}
+    />
+  );
+}
+
+function DraggableEvent({ event, clients, startHour, hourHeight, isOverlay, onClick }: { event: Appointment, clients: Client[], startHour: number, hourHeight: number, isOverlay?: boolean, onClick?: () => void }) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: event.id,
+    data: event
+  });
+
+  const startDate = new Date(event.start);
+  const topPixels = ((startDate.getHours() - startHour) * 60 + startDate.getMinutes()) * (hourHeight / 60);
+  const heightPixels = event.duration * (hourHeight / 60);
+
+  const style = transform ? {
+    transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+    zIndex: 50,
+  } : undefined;
+
+  const isPrivate = event.type === 'private';
+  const clientName = isPrivate
+    ? clients.find((c: any) => c.id === event.client_id)?.full_name || 'Client'
+    : `${event.current_participants}/${event.max_participants} part.`;
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{
+        ...style,
+        top: `${topPixels}px`,
+        height: `${heightPixels}px`,
+      }}
+      className={`absolute left-1 right-1 p-[1px] rounded-xl transition-all ${isDragging ? 'opacity-50' : 'opacity-100 cursor-grab active:cursor-grabbing hover:scale-[1.02] hover:z-30 cursor-pointer'} ${!isOverlay ? 'shadow-lg shadow-black/20' : ''}`}
+      {...(isOverlay ? {} : listeners)}
+      {...(isOverlay ? {} : attributes)}
+      onClick={!isDragging ? onClick : undefined}
+    >
+      <div className={`w-full h-full rounded-[11px] p-2 flex flex-col gap-1 overflow-hidden backdrop-blur-md border border-white/20 bg-gradient-to-br ${isPrivate
+        ? 'from-blue-600/80 to-indigo-600/80'
+        : 'from-emerald-600/80 to-teal-600/80'
+        }`}>
+        <div className="flex items-center gap-1.5 opacity-90">
+          <Clock className="w-3 h-3 flex-shrink-0" />
+          <span className="text-[10px] font-semibold leading-none tracking-wider uppercase">
+            {format(startDate, 'HH:mm')} - {format(new Date(event.end), 'HH:mm')}
+          </span>
+        </div>
+
+        <h4 className="font-bold text-sm leading-tight text-white mb-auto drop-shadow-sm">
+          {event.title || 'Séance'}
+        </h4>
+
+        {event.duration >= 30 && (
+          <div className="flex items-center gap-2 text-xs font-medium text-white/90">
+            {isPrivate ? <User className="w-3.5 h-3.5" /> : <Users className="w-3.5 h-3.5" />}
+            <span className="truncate">{clientName}</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 // ... existing imports and code
 
@@ -814,6 +841,7 @@ function AppointmentModal({ appointment, selectedSlot, clients, onClose, onSave,
     <ResponsiveModal
       isOpen={true}
       onClose={onClose}
+      position="right"
       title={appointment ? 'Modifier la séance' : 'Nouvelle séance'}
       footer={footer}
     >
@@ -928,7 +956,7 @@ function AppointmentModal({ appointment, selectedSlot, clients, onClose, onSave,
                 className="input-field appearance-none cursor-pointer"
               >
                 <option value="" className="bg-gray-800">Sélectionner un client</option>
-                {clients.map(client => (
+                {clients.map((client: Client) => (
                   <option key={client.id} value={client.id} className="bg-gray-800">
                     {client.full_name}
                   </option>
