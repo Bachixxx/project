@@ -1,14 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { format, startOfWeek, addDays, isSameDay, startOfDay, addMinutes, isToday } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import {
-  DndContext,
-  pointerWithin,
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core';
-import { useDraggable, useDroppable } from '@dnd-kit/core';
+// removed toast and second fr import
 
 import {
   Plus,
@@ -69,8 +62,7 @@ function CalendarPage() {
   const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
   const [currentDate, setCurrentDate] = useState(new Date());
 
-  // Dnd specific states
-  const [activeEvent, setActiveEvent] = useState<Appointment | null>(null);
+  // Removed duplicate loading state
 
   const { user } = useAuth();
 
@@ -131,12 +123,6 @@ function CalendarPage() {
     }
   };
 
-  const handleSelectSlot = ({ start, end }: any) => {
-    setSelectedAppointment(null);
-    setSelectedSlot({ start, end });
-    setIsModalOpen(true);
-  };
-
   const handleSelectEvent = (event: Appointment) => {
     setSelectedAppointment(event);
     setSelectedSlot(null);
@@ -168,25 +154,21 @@ function CalendarPage() {
   const END_HOUR = 22;
   const HOUR_HEIGHT = 64; // px
 
-  const handleDragStart = (event: any) => {
-    const { active } = event;
-    const apt = appointments.find(a => a.id === active.id);
-    if (apt) setActiveEvent(apt);
+  const [draggedEventId, setDraggedEventId] = useState<string | null>(null);
+
+  const handleDragStart = (eventId: string) => {
+    setDraggedEventId(eventId);
   };
 
-  const handleDragEnd = async (event: any) => {
-    const { active, over } = event;
-    setActiveEvent(null);
-
-    if (!over) return;
+  const handleDrop = async (eventId: string, slotId: string) => {
+    setDraggedEventId(null);
+    if (!eventId || !slotId) return;
 
     // Parse the droppable area ID, e.g., "2026-03-02|09:30"
-    const overId = String(over.id);
-    const [dateString, timeString] = overId.split('|');
+    const [dateString, timeString] = slotId.split('|');
     if (!dateString || !timeString) return;
 
-    const aptId = String(active.id);
-    const oldApt = appointments.find(a => a.id === aptId);
+    const oldApt = appointments.find(a => a.id === eventId);
     if (!oldApt) return;
 
     const [hour, minute] = timeString.split(':').map(Number);
@@ -196,7 +178,7 @@ function CalendarPage() {
 
     // Optimistic update
     setAppointments(prev => prev.map(a =>
-      a.id === aptId
+      a.id === eventId
         ? { ...a, start: newStartDate, end: newEndDate }
         : a
     ));
@@ -204,8 +186,12 @@ function CalendarPage() {
     try {
       const { error } = await supabase
         .from('appointments')
-        .update({ start: newStartDate.toISOString() })
-        .eq('id', aptId);
+        .update({
+          start_time: newStartDate.toISOString(),
+          end_time: newEndDate.toISOString() // Also updating end_time properly
+        })
+        .eq('id', eventId);
+
       if (error) throw error;
     } catch (e) {
       console.error("Erreur lors du déplacement", e);
@@ -213,10 +199,6 @@ function CalendarPage() {
       fetchData();
     }
   };
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
-  );
 
   return (
     <div className="p-4 lg:p-6 max-w-[2560px] mx-auto animate-fade-in flex flex-col h-[calc(100vh-5rem)] lg:h-[calc(100vh-2rem)]">
@@ -331,88 +313,89 @@ function CalendarPage() {
         </div>
 
         {/* Calendar Body (Scrollable) */}
-        <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-          <div className="flex-1 overflow-y-auto custom-scrollbar relative">
-            <div className="flex relative" style={{ minHeight: `${(END_HOUR - START_HOUR + 1) * HOUR_HEIGHT}px` }}>
+        <div className="flex-1 overflow-y-auto custom-scrollbar relative">
+          <div className="flex relative" style={{ minHeight: `${(END_HOUR - START_HOUR + 1) * HOUR_HEIGHT}px` }}>
 
-              {/* Time Gutter */}
-              <div className="w-16 flex-shrink-0 border-r border-white/5 bg-black/20 flex flex-col relative z-10">
+            {/* Time Gutter */}
+            <div className="w-16 flex-shrink-0 border-r border-white/5 bg-black/20 flex flex-col relative z-10">
+              {Array.from({ length: END_HOUR - START_HOUR + 1 }).map((_, i) => (
+                <div key={i} className="relative flex justify-center w-full" style={{ height: `${HOUR_HEIGHT}px` }}>
+                  <span className="absolute -top-3 text-xs font-medium text-gray-500 bg-[#0a0a0a] px-1">
+                    {START_HOUR + i}:00
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {/* Grid Columns */}
+            <div className="flex-1 grid grid-cols-7 relative">
+
+              {/* Horizontal Grid Lines */}
+              <div className="absolute inset-0 z-0 pointer-events-none flex flex-col">
                 {Array.from({ length: END_HOUR - START_HOUR + 1 }).map((_, i) => (
-                  <div key={i} className="relative flex justify-center w-full" style={{ height: `${HOUR_HEIGHT}px` }}>
-                    <span className="absolute -top-3 text-xs font-medium text-gray-500 bg-[#0a0a0a] px-1">
-                      {START_HOUR + i}:00
-                    </span>
-                  </div>
+                  <div key={i} className="border-b border-white/[0.03] w-full" style={{ height: `${HOUR_HEIGHT}px` }} />
                 ))}
               </div>
 
-              {/* Grid Columns */}
-              <div className="flex-1 grid grid-cols-7 relative">
+              {/* Day Columns */}
+              {weekDays.map(day => {
+                const dayEvents = appointments.filter(a => isSameDay(new Date(a.start), day));
+                const now = new Date();
+                const showCurrentTime = isSameDay(day, now) && now.getHours() >= START_HOUR && now.getHours() <= END_HOUR;
 
-                {/* Horizontal Grid Lines */}
-                <div className="absolute inset-0 z-0 pointer-events-none flex flex-col">
-                  {Array.from({ length: END_HOUR - START_HOUR + 1 }).map((_, i) => (
-                    <div key={i} className="border-b border-white/[0.03] w-full" style={{ height: `${HOUR_HEIGHT}px` }} />
-                  ))}
-                </div>
+                return (
+                  <div key={day.toISOString()} className={`relative border-l border-white/5 ${isToday(day) ? 'bg-blue-500/[0.02]' : ''}`}>
 
-                {/* Day Columns */}
-                {weekDays.map(day => {
-                  const dayEvents = appointments.filter(a => isSameDay(new Date(a.start), day));
-                  const now = new Date();
-                  const showCurrentTime = isSameDay(day, now) && now.getHours() >= START_HOUR && now.getHours() <= END_HOUR;
-
-                  return (
-                    <div key={day.toISOString()} className={`relative border-l border-white/5 ${isToday(day) ? 'bg-blue-500/[0.02]' : ''}`}>
-
-                      {/* Droppable areas (30 min increments) */}
-                      {Array.from({ length: (END_HOUR - START_HOUR + 1) * 2 }).map((_, i) => {
-                        const timeValue = addMinutes(startOfDay(day), (START_HOUR * 60) + (i * 30));
-                        return (
-                          <DroppableSlot
-                            key={i}
-                            id={`${format(day, 'yyyy-MM-dd')}|${format(timeValue, 'HH:mm')}`}
-                            onClick={() => {
-                              setSelectedSlot({ start: timeValue, end: addMinutes(timeValue, 60) });
-                              setIsModalOpen(true);
-                            }}
-                          />
-                        );
-                      })}
-
-                      {/* Current Time Indicator */}
-                      {showCurrentTime && (
-                        <div
-                          className="absolute w-full z-20 pointer-events-none flex items-center shadow-lg"
-                          style={{
-                            top: `${((now.getHours() - START_HOUR) * 60 + now.getMinutes()) * (HOUR_HEIGHT / 60)}px`,
-                            left: 0
+                    {/* Droppable areas (30 min increments) */}
+                    {Array.from({ length: (END_HOUR - START_HOUR + 1) * 2 }).map((_, i) => {
+                      const timeValue = addMinutes(startOfDay(day), (START_HOUR * 60) + (i * 30));
+                      return (
+                        <DroppableSlot
+                          key={i}
+                          id={`${format(day, 'yyyy-MM-dd')}|${format(timeValue, 'HH:mm')}`}
+                          onClick={() => {
+                            setSelectedSlot({ start: timeValue, end: addMinutes(timeValue, 60) });
+                            setIsModalOpen(true);
                           }}
-                        >
-                          <div className="absolute -left-1.5 w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.8)]" />
-                          <div className="h-[2px] w-full bg-gradient-to-r from-blue-500 flex-1 opacity-80" />
-                        </div>
-                      )}
-
-                      {/* Events for this day */}
-                      {dayEvents.map(event => (
-                        <DraggableEvent
-                          key={event.id}
-                          event={event}
-                          clients={clients}
-                          startHour={START_HOUR}
-                          hourHeight={HOUR_HEIGHT}
-                          onClick={() => handleSelectEvent(event)}
+                          onDrop={handleDrop}
                         />
-                      ))}
-                    </div>
-                  );
-                })}
-              </div>
+                      );
+                    })}
+
+                    {/* Current Time Indicator */}
+                    {showCurrentTime && (
+                      <div
+                        className="absolute w-full z-20 pointer-events-none flex items-center shadow-lg"
+                        style={{
+                          top: `${((now.getHours() - START_HOUR) * 60 + now.getMinutes()) * (HOUR_HEIGHT / 60)}px`,
+                          left: 0
+                        }}
+                      >
+                        <div className="absolute -left-1.5 w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.8)]" />
+                        <div className="h-[2px] w-full bg-gradient-to-r from-blue-500 flex-1 opacity-80" />
+                      </div>
+                    )}
+
+                    {/* Events for this day */}
+                    {dayEvents.map(event => (
+                      <DraggableEvent
+                        key={event.id}
+                        event={event}
+                        clients={clients}
+                        startHour={START_HOUR}
+                        hourHeight={HOUR_HEIGHT}
+                        onClick={() => handleSelectEvent(event)}
+                        onDragStart={handleDragStart}
+                        onDragEnd={() => setDraggedEventId(null)}
+                        isDragging={draggedEventId === event.id}
+                      />
+                    ))}
+                  </div>
+                );
+              })}
             </div>
           </div>
-
-        </DndContext>
+        </div>
       </div>
 
       {/* SmartAgenda View (Mobile Only) */}
@@ -593,13 +576,26 @@ function CalendarPage() {
 
 // === Custom Drag & Drop Components ===
 
-function DroppableSlot({ id, onClick }: { id: string, onClick: () => void }) {
-  const { isOver, setNodeRef } = useDroppable({ id });
+function DroppableSlot({ id, onClick, onDrop }: { id: string, onClick: () => void, onDrop: (eventId: string, slotId: string) => void }) {
+  const [isOver, setIsOver] = useState(false);
 
   return (
     <div
-      ref={setNodeRef}
       onClick={onClick}
+      onDragOver={(e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        if (!isOver) setIsOver(true);
+      }}
+      onDragLeave={() => setIsOver(false)}
+      onDrop={(e) => {
+        e.preventDefault();
+        setIsOver(false);
+        const eventId = e.dataTransfer.getData('text/plain');
+        if (eventId) {
+          onDrop(eventId, id);
+        }
+      }}
       className={`absolute w-full h-[32px] cursor-pointer transition-colors z-0 hover:bg-white/5 ${isOver ? 'bg-white/10 ring-1 ring-white/20' : ''}`}
       style={{
         top: `${(parseInt(id.split('|')[1]?.split(':')[1] || '0') === 30 ? 32 : 0) + (parseInt(id.split('|')[1]?.split(':')[0] || '0') - 6 /* START_HOUR */) * 64}px`
@@ -608,20 +604,29 @@ function DroppableSlot({ id, onClick }: { id: string, onClick: () => void }) {
   );
 }
 
-function DraggableEvent({ event, clients, startHour, hourHeight, onClick }: { event: Appointment, clients: Client[], startHour: number, hourHeight: number, onClick?: () => void }) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
-    id: event.id,
-    data: event
-  });
+function DraggableEvent({
+  event,
+  clients,
+  startHour,
+  hourHeight,
+  onClick,
+  isDragging,
+  onDragStart,
+  onDragEnd
+}: {
+  event: Appointment,
+  clients: Client[],
+  startHour: number,
+  hourHeight: number,
+  onClick?: () => void,
+  isDragging?: boolean,
+  onDragStart?: (id: string) => void,
+  onDragEnd?: () => void
+}) {
 
   const startDate = new Date(event.start);
   const topPixels = ((startDate.getHours() - startHour) * 60 + startDate.getMinutes()) * (hourHeight / 60);
   const heightPixels = event.duration * (hourHeight / 60);
-
-  const style = transform ? {
-    transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-    zIndex: 50,
-  } : undefined;
 
   const isPrivate = event.type === 'private';
   const clientName = isPrivate
@@ -630,18 +635,26 @@ function DraggableEvent({ event, clients, startHour, hourHeight, onClick }: { ev
 
   return (
     <div
-      ref={setNodeRef}
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.setData('text/plain', event.id);
+        e.dataTransfer.effectAllowed = 'move';
+        // Need to set timeout so browser renders ghost from opaque element before we set it semi-transparent
+        if (onDragStart) {
+          setTimeout(() => onDragStart(event.id), 0);
+        }
+      }}
+      onDragEnd={() => {
+        if (onDragEnd) onDragEnd();
+      }}
+      onClick={onClick}
       style={{
-        ...style,
         top: `${topPixels}px`,
         height: `${heightPixels}px`,
       }}
       className={`absolute left-1 right-1 p-[1px] rounded-xl transition-all duration-200 cursor-pointer 
-        ${isDragging ? 'opacity-90 scale-[1.05] z-50 shadow-2xl shadow-blue-500/20 pointer-events-none' : 'opacity-100 hover:scale-[1.02] hover:z-30 shadow-lg shadow-black/20'}
+        ${isDragging ? 'opacity-40 scale-[0.98] z-30 shadow-none' : 'opacity-100 hover:scale-[1.02] hover:z-30 shadow-lg shadow-black/20'}
       `}
-      {...listeners}
-      {...attributes}
-      onClick={!isDragging ? onClick : undefined}
     >
       <div className={`w-full h-full rounded-[11px] p-2 flex flex-col gap-1 overflow-hidden backdrop-blur-md border bg-gradient-to-br transition-colors
         ${isDragging
@@ -741,16 +754,16 @@ function AppointmentModal({ appointment, selectedSlot, clients, onClose, onSave,
       const { data, error } = await supabase
         .from('appointment_registrations')
         .select(`
-          id,
-          status,
-          registered_at,
-          client:clients (
-            id,
-            full_name,
-            email,
-            phone
-          )
-        `)
+      id,
+      status,
+      registered_at,
+      client:clients (
+      id,
+      full_name,
+      email,
+      phone
+      )
+      `)
         .eq('appointment_id', appointment.id)
         .in('status', ['registered', 'confirmed']);
 
