@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { format, startOfWeek, addDays, isSameDay, startOfDay, addMinutes, isToday } from 'date-fns';
 import { fr } from 'date-fns/locale';
-DndContext,
+import {
+  DndContext,
   pointerWithin,
   PointerSensor,
   useSensor,
