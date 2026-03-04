@@ -33,8 +33,19 @@ export function BlockModal({ block, onClose, onSave }: BlockModalProps) {
     ];
 
     return (
-        <ResponsiveModal isOpen={true} onClose={onClose} title={block ? "Modifier le bloc" : "Ajouter un bloc"}>
-            <form onSubmit={handleSubmit} className="space-y-6">
+        <ResponsiveModal
+            isOpen={true}
+            onClose={onClose}
+            title={block ? "Modifier le bloc" : "Ajouter un bloc"}
+            position="right"
+            footer={
+                <div className="flex justify-end gap-4 w-full">
+                    <button type="button" onClick={onClose} className="px-5 py-2.5 rounded-xl text-slate-300 hover:text-white hover:bg-white/5 transition-colors font-bold text-sm">Annuler</button>
+                    <button type="submit" form="block-form" className="primary-button">{block ? 'Sauvegarder' : 'Ajouter le bloc'}</button>
+                </div>
+            }
+        >
+            <form id="block-form" onSubmit={handleSubmit} className="space-y-6 pb-4">
                 {!block && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {types.map((t) => (
@@ -43,8 +54,8 @@ export function BlockModal({ block, onClose, onSave }: BlockModalProps) {
                                 type="button"
                                 onClick={() => setType(t.id as any)}
                                 className={`p-4 rounded-xl border-2 text-left transition-all ${type === t.id
-                                        ? `border-${t.color}-500 bg-${t.color}-500/10`
-                                        : 'border-white/5 bg-white/5 hover:bg-white/10 hover:border-white/10'
+                                    ? `border-${t.color}-500 bg-${t.color}-500/10`
+                                    : 'border-white/5 bg-white/5 hover:bg-white/10 hover:border-white/10'
                                     }`}
                             >
                                 <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 ${type === t.id ? `bg-${t.color}-500 text-white` : 'bg-white/10 text-gray-400'
@@ -96,10 +107,7 @@ export function BlockModal({ block, onClose, onSave }: BlockModalProps) {
                     </div>
                 )}
 
-                <div className="flex justify-end gap-4 pt-4">
-                    <button type="button" onClick={onClose} className="text-gray-400 hover:text-white transition-colors">Annuler</button>
-                    <button type="submit" className="primary-button">{block ? 'Sauvegarder' : 'Ajouter le bloc'}</button>
-                </div>
+                {/* Footer buttons moved to ResponsiveModal footer prop */}
             </form>
         </ResponsiveModal>
     );

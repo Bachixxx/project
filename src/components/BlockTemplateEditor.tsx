@@ -146,9 +146,18 @@ export function BlockTemplateEditor({ template, onClose, onSave }: BlockTemplate
             isOpen={true}
             onClose={onClose}
             title={template ? "Modifier le modèle" : "Créer un modèle"}
-            maxWidth="max-w-4xl" // Wider modal for inline editing
+            maxWidth="sm:max-w-3xl lg:max-w-4xl"
+            position="right"
+            footer={
+                <div className="flex justify-end gap-3 w-full">
+                    <button onClick={onClose} className="px-5 py-2.5 rounded-xl text-slate-300 hover:text-white hover:bg-white/5 transition-colors font-bold text-sm">Annuler</button>
+                    <button onClick={handleSave} className="px-6 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-500 shadow-[0_0_20px_rgba(37,99,235,0.3)] transition-all font-bold text-sm flex items-center gap-2">
+                        <Save className="w-4 h-4" /> Enregistrer le modèle
+                    </button>
+                </div>
+            }
         >
-            <div className="space-y-6 max-h-[80vh] overflow-y-auto pr-2 custom-scrollbar">
+            <div className="space-y-8 pb-4">
                 {/* Block Metadata */}
                 <div className="grid grid-cols-2 gap-4">
                     <div className="col-span-2">
@@ -302,12 +311,7 @@ export function BlockTemplateEditor({ template, onClose, onSave }: BlockTemplate
                     </DndContext>
                 </div>
 
-                <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
-                    <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">Annuler</button>
-                    <button onClick={handleSave} className="primary-button flex items-center gap-2">
-                        <Save className="w-4 h-4" /> Enregistrer le modèle
-                    </button>
-                </div>
+                {/* Footer buttons moved to ResponsiveModal footer prop */}
             </div>
 
             {showExercisePicker && (

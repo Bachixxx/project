@@ -9,6 +9,7 @@ interface ResponsiveModalProps {
     footer?: React.ReactNode;
     maxWidth?: string;
     noPadding?: boolean;
+    position?: 'center' | 'right';
 }
 
 export function ResponsiveModal({
@@ -18,12 +19,15 @@ export function ResponsiveModal({
     children,
     footer,
     maxWidth = 'max-w-2xl',
-    noPadding = false
+    noPadding = false,
+    position = 'center'
 }: ResponsiveModalProps) {
     if (!isOpen) return null;
 
+    const isRight = position === 'right';
+
     return (
-        <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center sm:p-4">
+        <div className={`fixed inset-0 z-[60] flex items-end ${isRight ? 'sm:items-stretch justify-center sm:justify-end sm:p-0' : 'sm:items-center justify-center sm:p-4'}`}>
             {/* Backdrop */}
             <div
                 className="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity"
@@ -34,10 +38,11 @@ export function ResponsiveModal({
             {/* Modal Content */}
             <div
                 className={`
-          relative w-full h-[95vh] sm:h-auto sm:max-h-[85vh] 
+          relative w-full h-[95vh] 
+          ${isRight ? 'sm:h-full sm:max-h-none' : 'sm:h-auto sm:max-h-[85vh]'} 
           bg-gray-900 sm:bg-gray-900/95 sm:backdrop-blur-xl 
-          border-t sm:border border-white/10 
-          rounded-t-2xl sm:rounded-2xl 
+          border-t sm:border-t-0 sm:border border-white/10 
+          ${isRight ? 'rounded-t-2xl sm:rounded-none sm:rounded-l-2xl sm:border-r-0 sm:border-y-0' : 'rounded-t-2xl sm:rounded-2xl'} 
           shadow-2xl flex flex-col
           transform transition-all animate-slide-in-bottom sm:animate-fade-in
           ${maxWidth}
@@ -64,7 +69,7 @@ export function ResponsiveModal({
 
                 {/* Footer (Optional) */}
                 {footer && (
-                    <div className="p-4 border-t border-white/10 shrink-0 bg-gray-900/50 sm:bg-transparent pb-[calc(1rem+env(safe-area-inset-bottom))] sm:pb-4">
+                    <div className="p-4 border-t border-white/10 shrink-0 bg-gray-900/95 sm:bg-transparent pb-[calc(1rem+env(safe-area-inset-bottom))] sm:pb-4">
                         {footer}
                     </div>
                 )}
