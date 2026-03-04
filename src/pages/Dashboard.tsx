@@ -472,7 +472,7 @@ function StatCard({ title, value, subValue, icon: Icon, color, trend, isMoney, t
           <div className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full ${trend >= 0 ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'
             }`}>
             {trend >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
-            {Math.abs(trend)}%
+            {Math.abs(Math.round(trend))}%
           </div>
         )}
       </div>
