@@ -3,7 +3,7 @@ import { format, startOfWeek, addDays, isSameDay, startOfDay, addMinutes, isToda
 import { fr } from 'date-fns/locale';
 import {
   DndContext,
-  closestCenter,
+  pointerWithin,
   PointerSensor,
   useSensor,
   useSensors,
@@ -332,7 +332,7 @@ function CalendarPage() {
         </div>
 
         {/* Calendar Body (Scrollable) */}
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+        <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
           <div className="flex-1 overflow-y-auto custom-scrollbar relative">
             <div className="flex relative" style={{ minHeight: `${(END_HOUR - START_HOUR + 1) * HOUR_HEIGHT}px` }}>
 
