@@ -415,15 +415,13 @@ function CalendarPage() {
 
           <DragOverlay>
             {activeEvent ? (
-              <div className="opacity-80 scale-105 pointer-events-none shadow-2xl">
-                <DraggableEvent
-                  event={activeEvent}
-                  clients={clients}
-                  startHour={START_HOUR}
-                  hourHeight={HOUR_HEIGHT}
-                  isOverlay
-                />
-              </div>
+              <DraggableEvent
+                event={activeEvent}
+                clients={clients}
+                startHour={START_HOUR}
+                hourHeight={HOUR_HEIGHT}
+                isOverlay
+              />
             ) : null}
           </DragOverlay>
         </DndContext>
@@ -632,7 +630,7 @@ function DraggableEvent({ event, clients, startHour, hourHeight, isOverlay, onCl
   const topPixels = ((startDate.getHours() - startHour) * 60 + startDate.getMinutes()) * (hourHeight / 60);
   const heightPixels = event.duration * (hourHeight / 60);
 
-  const style = transform ? {
+  const style = transform && !isOverlay ? {
     transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
     zIndex: 50,
   } : undefined;
@@ -647,10 +645,15 @@ function DraggableEvent({ event, clients, startHour, hourHeight, isOverlay, onCl
       ref={setNodeRef}
       style={{
         ...style,
-        top: `${topPixels}px`,
+        ...(isOverlay ? {} : { top: `${topPixels}px` }),
         height: `${heightPixels}px`,
+        width: isOverlay ? '100%' : undefined,
       }}
-      className={`absolute left-1 right-1 p-[1px] rounded-xl transition-all ${isDragging ? 'opacity-50' : 'opacity-100 cursor-grab active:cursor-grabbing hover:scale-[1.02] hover:z-30 cursor-pointer'} ${!isOverlay ? 'shadow-lg shadow-black/20' : ''}`}
+      className={`
+        ${isOverlay ? 'opacity-80 scale-105 pointer-events-none shadow-2xl z-50' : 'absolute left-1 right-1 cursor-grab active:cursor-grabbing hover:scale-[1.02] hover:z-30 cursor-pointer shadow-lg shadow-black/20'}
+        ${isDragging && !isOverlay ? 'opacity-0' : 'opacity-100'}
+        p-[1px] rounded-xl transition-all duration-200
+      `}
       {...(isOverlay ? {} : listeners)}
       {...(isOverlay ? {} : attributes)}
       onClick={!isDragging ? onClick : undefined}
