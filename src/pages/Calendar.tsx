@@ -59,6 +59,7 @@ function CalendarPage() {
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<{ start: Date; end: Date } | null>(null);
   const [loading, setLoading] = useState(true);
+
   const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
   const [currentDate, setCurrentDate] = useState(new Date());
 
@@ -186,10 +187,7 @@ function CalendarPage() {
     try {
       const { error } = await supabase
         .from('appointments')
-        .update({
-          start_time: newStartDate.toISOString(),
-          end_time: newEndDate.toISOString() // Also updating end_time properly
-        })
+        .update({ start: newStartDate.toISOString() })
         .eq('id', eventId);
 
       if (error) throw error;
