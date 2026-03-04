@@ -60,7 +60,7 @@ function Dashboard() {
   const clientProgress = data?.clientProgress || [];
   const upcomingAppointments = data?.upcomingAppointments || [];
   const coachCode = data?.coachCode || null;
-  const allPayments = data?.payments || [];
+  const allPayments = data?.allPayments || [];
 
   // Manual chart processing using the data from hook
   useEffect(() => {
