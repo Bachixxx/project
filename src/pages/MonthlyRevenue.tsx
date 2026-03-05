@@ -1,7 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronLeft, DollarSign, TrendingUp, Users, Calendar, ArrowUpRight, ArrowDownRight, Clock } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import {
+  ChevronLeft,
+  DollarSign,
+  TrendingUp,
+  Users,
+  Calendar,
+  ArrowUpRight,
+  ArrowDownRight,
+  Clock,
+  MoreHorizontal
+} from 'lucide-react';
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell
+} from 'recharts';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -85,7 +106,7 @@ function MonthlyRevenue() {
       // Calculate total revenue and payment stats
       const paidPayments = transformedTransactions.filter(t => t.status === 'paid');
       const pendingPayments = transformedTransactions.filter(t => t.status === 'pending');
-      
+
       const totalRevenue = paidPayments.reduce((sum, t) => sum + t.amount, 0);
       const totalPending = pendingPayments.reduce((sum, t) => sum + t.amount, 0);
 
@@ -146,7 +167,7 @@ function MonthlyRevenue() {
   const generateChartData = async () => {
     const months = [];
     const today = new Date();
-    
+
     for (let i = 11; i >= 0; i--) {
       const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
       const endDate = new Date(date.getFullYear(), date.getMonth() + 1, 0);
@@ -183,127 +204,207 @@ function MonthlyRevenue() {
     { name: 'En attente', value: stats.pendingPayments },
   ];
 
-  const COLORS = ['#22c55e', '#eab308'];
+  const COLORS = ['#10b981', '#f59e0b'];
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-4 sm:p-6 lg:p-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
+    <div className="p-6 max-w-[2000px] mx-auto space-y-8 animate-fade-in">
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
           <Link
             to="/dashboard"
-            className="inline-flex items-center text-white/80 hover:text-white mb-4"
+            className="inline-flex items-center text-sm text-gray-400 hover:text-white mb-2 transition-colors group"
           >
-            <ChevronLeft className="w-5 h-5 mr-1" />
+            <ChevronLeft className="w-4 h-4 mr-1 group-hover:-translate-x-1 transition-transform" />
             Retour au tableau de bord
           </Link>
-          <h1 className="text-2xl sm:text-3xl font-bold text-white">Revenus mensuels</h1>
+          <h1 className="text-3xl md:text-4xl font-bold text-white mb-2 tracking-tight">
+            Revenus Mensuels
+          </h1>
+          <p className="text-gray-400">
+            Aperçu financier détaillé et suivi des paiements
+          </p>
+        </div>
+      </div>
+
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 text-red-400 flex items-center gap-3">
+          <div className="p-2 bg-red-500/10 rounded-lg">
+            <TrendingUp className="w-5 h-5 text-red-500" />
+          </div>
+          <p className="text-sm font-medium">{error}</p>
+        </div>
+      )}
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Total Revenue */}
+        <div className="glass-card p-6 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+            <DollarSign className="w-24 h-24" />
+          </div>
+          <div className="flex items-start justify-between mb-4">
+            <div className="p-3 bg-emerald-500/10 text-emerald-400 rounded-xl ring-1 ring-white/10">
+              <DollarSign className="w-6 h-6" />
+            </div>
+            {stats.monthlyGrowth !== 0 && (
+              <div className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full ${stats.monthlyGrowth >= 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
+                {stats.monthlyGrowth >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+                {Math.abs(Math.round(stats.monthlyGrowth))}%
+              </div>
+            )}
+          </div>
+          <div>
+            <p className="text-sm font-medium text-gray-400 mb-1">Revenu total (mois)</p>
+            <h3 className="text-2xl font-bold text-white tracking-tight mb-1">{stats.totalRevenue.toLocaleString('fr-CH', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} CHF</h3>
+            <p className="text-xs text-gray-500">Paiements validés</p>
+          </div>
+          <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-teal-500 opacity-50 group-hover:opacity-100 transition-opacity" />
         </div>
 
-        {error && (
-          <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 mb-8 text-red-100">
-            {error}
+        {/* Pending Payments */}
+        <div className="glass-card p-6 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+            <Clock className="w-24 h-24" />
           </div>
-        )}
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white/5 border border-white/10 backdrop-blur-lg rounded-xl p-6 text-white">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-2 bg-white/10 rounded-lg">
-                <DollarSign className="w-6 h-6" />
-              </div>
-              <span className={`flex items-center text-sm ${stats.monthlyGrowth >= 0 ? 'text-green-300' : 'text-red-300'}`}>
-                <TrendingUp className="w-4 h-4 mr-1" />
-                {stats.monthlyGrowth.toFixed(1)}% vs mois dernier
-              </span>
+          <div className="flex items-start justify-between mb-4">
+            <div className="p-3 bg-amber-500/10 text-amber-400 rounded-xl ring-1 ring-white/10">
+              <Clock className="w-6 h-6" />
             </div>
-            <h3 className="text-sm text-white/80 mb-1">Revenu total</h3>
-            <p className="text-2xl font-bold">{stats.totalRevenue.toFixed(2)} CHF</p>
           </div>
-
-          <div className="bg-white/5 border border-white/10 backdrop-blur-lg rounded-xl p-6 text-white">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-2 bg-white/10 rounded-lg">
-                <Clock className="w-6 h-6" />
-              </div>
-            </div>
-            <h3 className="text-sm text-white/80 mb-1">Paiements en attente</h3>
-            <p className="text-2xl font-bold">{stats.pendingPayments.toFixed(2)} CHF</p>
+          <div>
+            <p className="text-sm font-medium text-gray-400 mb-1">En attente</p>
+            <h3 className="text-2xl font-bold text-white tracking-tight mb-1">{stats.pendingPayments.toLocaleString('fr-CH', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} CHF</h3>
+            <p className="text-xs text-gray-500">Paiements non validés</p>
           </div>
+          <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-amber-500 to-orange-500 opacity-50 group-hover:opacity-100 transition-opacity" />
+        </div>
 
-          <div className="bg-white/5 border border-white/10 backdrop-blur-lg rounded-xl p-6 text-white">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-2 bg-white/10 rounded-lg">
-                <Users className="w-6 h-6" />
-              </div>
-            </div>
-            <h3 className="text-sm text-white/80 mb-1">Clients actifs</h3>
-            <p className="text-2xl font-bold">{stats.activeClients}</p>
+        {/* Active Clients */}
+        <div className="glass-card p-6 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+            <Users className="w-24 h-24" />
           </div>
-
-          <div className="bg-white/5 border border-white/10 backdrop-blur-lg rounded-xl p-6 text-white">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-2 bg-white/10 rounded-lg">
-                <Calendar className="w-6 h-6" />
-              </div>
+          <div className="flex items-start justify-between mb-4">
+            <div className="p-3 bg-blue-500/10 text-blue-400 rounded-xl ring-1 ring-white/10">
+              <Users className="w-6 h-6" />
             </div>
-            <h3 className="text-sm text-white/80 mb-1">Revenu moyen par client</h3>
-            <p className="text-2xl font-bold">{stats.averageRevenue.toFixed(2)} CHF</p>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-gray-400 mb-1">Clients actifs (payants)</p>
+            <h3 className="text-2xl font-bold text-white tracking-tight mb-1">{stats.activeClients}</h3>
+            <p className="text-xs text-gray-500">Ayant généré du revenu</p>
+          </div>
+          <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-cyan-500 opacity-50 group-hover:opacity-100 transition-opacity" />
+        </div>
+
+        {/* Average Revenue */}
+        <div className="glass-card p-6 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+            <Calendar className="w-24 h-24" />
+          </div>
+          <div className="flex items-start justify-between mb-4">
+            <div className="p-3 bg-purple-500/10 text-purple-400 rounded-xl ring-1 ring-white/10">
+              <Calendar className="w-6 h-6" />
+            </div>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-gray-400 mb-1">Revenu moyen</p>
+            <h3 className="text-2xl font-bold text-white tracking-tight mb-1">{stats.averageRevenue.toLocaleString('fr-CH', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} CHF</h3>
+            <p className="text-xs text-gray-500">Par client actif</p>
+          </div>
+          <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500 to-pink-500 opacity-50 group-hover:opacity-100 transition-opacity" />
+        </div>
+      </div>
+
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+        {/* Left Column - Revenue Trend */}
+        <div className="lg:col-span-2 glass-card p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="text-lg font-semibold text-white">Tendance des Revenus</h3>
+              <p className="text-sm text-gray-400">Évolution sur les 12 derniers mois</p>
+            </div>
+          </div>
+          <div className="h-[350px] w-full mt-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorRevenueGraph" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#ffffff10" />
+                <XAxis
+                  dataKey="name"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: '#9ca3af', fontSize: 12 }}
+                  dy={10}
+                  padding={{ left: 10, right: 10 }}
+                />
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: '#9ca3af', fontSize: 12 }}
+                  tickFormatter={(val) => `${val} CHF`}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#1f2937',
+                    borderColor: '#374151',
+                    borderRadius: '0.75rem',
+                    color: '#fff',
+                    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)'
+                  }}
+                  itemStyle={{ color: '#10b981', fontWeight: 600 }}
+                  labelStyle={{ color: '#9ca3af', marginBottom: '4px' }}
+                  cursor={{ stroke: '#ffffff20', strokeWidth: 1 }}
+                  formatter={(value: number) => [`${value} CHF`, 'Chiffre d\'affaires']}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="revenue"
+                  stroke="#10b981"
+                  strokeWidth={3}
+                  fillOpacity={1}
+                  fill="url(#colorRevenueGraph)"
+                  animationDuration={1500}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 bg-white/5 border border-white/10 backdrop-blur-lg rounded-xl p-6">
-            <h2 className="text-xl font-semibold text-white mb-6">Tendance des revenus</h2>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                  <XAxis
-                    dataKey="name"
-                    stroke="rgba(255,255,255,0.6)"
-                    tick={{ fill: 'rgba(255,255,255,0.6)' }}
-                  />
-                  <YAxis
-                    stroke="rgba(255,255,255,0.6)"
-                    tick={{ fill: 'rgba(255,255,255,0.6)' }}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'rgba(255,255,255,0.1)',
-                      backdropFilter: 'blur(10px)',
-                      border: 'none',
-                      borderRadius: '0.5rem',
-                      color: 'white',
-                    }}
-                  />
-                  <Bar dataKey="revenue" fill="rgba(59, 130, 246, 0.8)" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
+        {/* Right Column - Distribution & Recent */}
+        <div className="space-y-8">
 
-          <div className="bg-white/5 border border-white/10 backdrop-blur-lg rounded-xl p-6">
-            <h2 className="text-xl font-semibold text-white mb-6">État des paiements</h2>
-            <div className="h-64">
+          {/* Payment Status Pie */}
+          <div className="glass-card p-6">
+            <h3 className="text-lg font-semibold text-white mb-6">Répartition</h3>
+            <div className="h-[220px] relative">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
                     data={paymentStatusData}
                     cx="50%"
                     cy="50%"
-                    labelLine={false}
-                    label={({ name, value }) => `${name}: ${value.toFixed(2)} CHF`}
+                    innerRadius={60}
                     outerRadius={80}
-                    fill="#8884d8"
+                    paddingAngle={5}
                     dataKey="value"
+                    stroke="none"
                   >
                     {paymentStatusData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -311,72 +412,117 @@ function MonthlyRevenue() {
                   </Pie>
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: 'rgba(255,255,255,0.1)',
-                      backdropFilter: 'blur(10px)',
-                      border: 'none',
+                      backgroundColor: '#1f2937',
+                      borderColor: '#374151',
                       borderRadius: '0.5rem',
-                      color: 'white',
+                      color: '#fff'
                     }}
+                    itemStyle={{ color: '#fff' }}
+                    formatter={(value: number) => [`${value} CHF`]}
                   />
                 </PieChart>
               </ResponsiveContainer>
-            </div>
-            <div className="mt-6 space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
-                  <span className="text-white/80">Payé</span>
-                </div>
-                <span className="text-white font-medium">{stats.paidPayments.toFixed(2)} CHF</span>
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none flex-col">
+                <span className="text-xs text-gray-400">Total</span>
+                <span className="text-xl font-bold text-white">{(stats.paidPayments + stats.pendingPayments).toLocaleString('fr-CH', { minimumFractionDigits: 0 })}</span>
               </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <div className="w-3 h-3 rounded-full bg-yellow-500 mr-2"></div>
-                  <span className="text-white/80">En attente</span>
+            </div>
+
+            <div className="mt-6 flex flex-col gap-3">
+              <div className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                  <span className="text-sm text-gray-300 font-medium">Validé</span>
                 </div>
-                <span className="text-white font-medium">{stats.pendingPayments.toFixed(2)} CHF</span>
+                <span className="text-sm font-bold text-white">{stats.paidPayments.toLocaleString('fr-CH')} CHF</span>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]" />
+                  <span className="text-sm text-gray-300 font-medium">En attente</span>
+                </div>
+                <span className="text-sm font-bold text-white">{stats.pendingPayments.toLocaleString('fr-CH')} CHF</span>
               </div>
             </div>
           </div>
 
-          <div className="lg:col-span-3 bg-white/5 border border-white/10 backdrop-blur-lg rounded-xl p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold text-white">Transactions récentes</h2>
-              <Link
-                to="/payments"
-                className="text-white/80 hover:text-white text-sm"
-              >
-                Voir tout
-              </Link>
+        </div>
+
+        {/* Full Width Transactions Table */}
+        <div className="lg:col-span-3 glass-card p-6">
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h3 className="text-lg font-semibold text-white">Transactions du mois en cours</h3>
+              <p className="text-sm text-gray-400">Basé sur les séances planifiées</p>
             </div>
-            <div className="space-y-4">
-              {transactions.slice(0, 5).map((transaction) => (
-                <div
-                  key={transaction.id}
-                  className="flex items-start justify-between p-4 bg-white/5 rounded-lg"
-                >
-                  <div>
-                    <p className="font-medium text-white">{transaction.client_name}</p>
-                    <p className="text-sm text-white/60">{transaction.program_name}</p>
-                    <p className="text-xs text-white/40">
-                      {new Date(transaction.date).toLocaleDateString('fr-FR')}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-medium text-white">{transaction.amount} CHF</p>
-                    <span className={`text-xs px-2 py-1 rounded-full ${
-                      transaction.status === 'paid'
-                        ? 'bg-green-500/20 text-green-100'
-                        : 'bg-yellow-500/20 text-yellow-100'
-                    }`}>
-                      {transaction.status === 'paid' ? 'Payé' : 'En attente'}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <Link to="/payments" className="text-sm text-primary-400 hover:text-primary-300 flex items-center gap-1">
+              Tous les paiements <ArrowUpRight className="w-4 h-4" />
+            </Link>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="text-left border-b border-white/10">
+                  <th className="pb-4 text-xs font-medium text-gray-400 uppercase tracking-wider">Date</th>
+                  <th className="pb-4 text-xs font-medium text-gray-400 uppercase tracking-wider">Client</th>
+                  <th className="pb-4 text-xs font-medium text-gray-400 uppercase tracking-wider">Programme / Info</th>
+                  <th className="pb-4 text-xs font-medium text-gray-400 uppercase tracking-wider text-right">Montant</th>
+                  <th className="pb-4 text-xs font-medium text-gray-400 uppercase tracking-wider text-center">Statut</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {transactions.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-8 text-center text-sm text-gray-500">
+                      Aucune transaction pour le moment ce mois-ci.
+                    </td>
+                  </tr>
+                ) : (
+                  transactions.map((transaction) => {
+                    const tDate = new Date(transaction.date);
+                    return (
+                      <tr key={transaction.id} className="group hover:bg-white/5 transition-colors">
+                        <td className="py-4 px-2">
+                          <span className="text-sm text-gray-300">
+                            {tDate.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
+                          </span>
+                        </td>
+                        <td className="py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center text-xs font-bold text-white">
+                              {transaction.client_name.charAt(0)}
+                            </div>
+                            <span className="font-medium text-white group-hover:text-primary-400 transition-colors">
+                              {transaction.client_name}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="py-4">
+                          <span className="text-sm text-gray-400">{transaction.program_name}</span>
+                        </td>
+                        <td className="py-4 text-right">
+                          <span className="text-sm font-bold text-white">
+                            {transaction.amount.toLocaleString('fr-CH', { minimumFractionDigits: 0 })} CHF
+                          </span>
+                        </td>
+                        <td className="py-4 text-center">
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${transaction.status === 'paid'
+                              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                              : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                            }`}>
+                            {transaction.status === 'paid' ? 'Payé' : 'En attente'}
+                          </span>
+                        </td>
+                      </tr>
+                    )
+                  })
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
+
       </div>
     </div>
   );
