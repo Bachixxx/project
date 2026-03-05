@@ -1,0 +1,6 @@
+User-agent: *
+Disallow: /admin/
+Disallow: /client/
+Disallow: /onboarding/
+
+Sitemap: https://coachency.app/sitemap.xml

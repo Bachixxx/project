@@ -5,6 +5,7 @@ import {
   Mail, MapPin, ArrowRight, CheckCircle, Star, Menu, X,
   Smartphone, ChevronDown, ChevronUp, Layers, CreditCard, Activity, Zap
 } from 'lucide-react';
+import SEO from '../components/SEO';
 
 function Home() {
   const [scrolled, setScrolled] = useState(false);
@@ -42,8 +43,23 @@ function Home() {
     }
   ];
 
+  const schemaData = {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    "name": "Coachency",
+    "image": "https://coachency.app/app-logo.jpg",
+    "description": "Le système opérationnel des coachs sportifs.",
+    "url": "https://coachency.app/"
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 selection:bg-blue-500/30 font-sans overflow-x-hidden relative">
+      <SEO
+        title="Coachency | L'App Tout-en-Un pour les Coachs Sportifs 🚀"
+        description="Gérez vos clients, créez des programmes et encaissez vos paiements. La plateforme tout-en-un qui fait décoller votre business de coaching. Rejoignez la liste d'attente !"
+        url="https://coachency.app/"
+        schema={schemaData}
+      />
 
       {/* Dynamic Background Gradients */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
@@ -497,6 +513,9 @@ function Home() {
               <ul className="space-y-4">
                 <li><Link to="/features" className="text-slate-400 hover:text-white transition-colors text-sm font-light">Fonctionnalités</Link></li>
                 <li><Link to="/pricing" className="text-slate-400 hover:text-white transition-colors text-sm font-light">Tarifs</Link></li>
+                <li><Link to="/geneve" className="text-slate-400 hover:text-white transition-colors text-sm font-light">Coach Sportif Genève</Link></li>
+                <li><Link to="/lausanne" className="text-slate-400 hover:text-white transition-colors text-sm font-light">Coach Sportif Lausanne</Link></li>
+                <li><Link to="/zurich" className="text-slate-400 hover:text-white transition-colors text-sm font-light">Coach Sportif Zurich</Link></li>
               </ul>
             </div>
 

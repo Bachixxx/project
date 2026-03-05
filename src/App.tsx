@@ -19,6 +19,7 @@ import { AdaptyProvider } from './contexts/AdaptyContext';
 
 // Static Import for Landing Page (Immediate LCP)
 import Home from './pages/Home';
+import CityLandingPage from './pages/CityLandingPage';
 
 // Public Pages (Lazy)
 // const Marketplace = lazy(() => import('./pages/Marketplace'));
@@ -145,6 +146,9 @@ function App() {
                               <Route path="/terms" element={<Terms />} />
                               <Route path="/privacy" element={<Privacy />} />
                               <Route path="/legal" element={<Legal />} />
+                              <Route path="/geneve" element={<CityLandingPage cityName="Genève" urlPath="geneve" />} />
+                              <Route path="/lausanne" element={<CityLandingPage cityName="Lausanne" urlPath="lausanne" />} />
+                              <Route path="/zurich" element={<CityLandingPage cityName="Zurich" urlPath="zurich" />} />
                               <Route path="/client/login" element={<ClientLogin />} />
                               <Route path="/client/check-email" element={<CheckEmail />} />
                               <Route path="/client/register" element={<ClientRegister />} />
