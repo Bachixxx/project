@@ -18,6 +18,7 @@ function BrandingSettings() {
     const { subscriptionInfo, loading: subLoading, subscribeToBranding } = useSubscription();
 
     const [saving, setSaving] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [settings, setSettings] = useState<BrandingSettings>({
         primaryColor: '#0ea5e9', // Default Sky-500
         logoUrl: '',
@@ -443,69 +444,151 @@ function BrandingSettings() {
                         >
                             <div
                                 id="preview-container"
-                                className="h-full flex flex-col"
+                                className="h-full flex flex-col relative w-full bg-slate-950 text-slate-100 font-sans overflow-x-hidden"
                                 style={previewStyle}
                             >
-                                {/* NEW: Immersive Hero Preview */}
-                                <div className="relative w-full h-48 flex flex-col justify-end p-4 z-10">
-                                    <div className="absolute inset-0 z-0">
-                                        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0f172a]/60 to-[#0f172a]" />
-                                        <img
-                                            src={settings.dashboardHeroImage || "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=2070&auto=format&fit=crop"}
-                                            alt="Hero"
-                                            className="w-full h-full object-cover opacity-60"
-                                        />
-                                    </div>
-                                    <div className="relative z-10">
-                                        <h4 className="text-lg font-bold">Bonjour, Thomas</h4>
-                                        <p className="text-xs text-gray-300">Prêt à transpirer ? 🔥</p>
-                                    </div>
-
-                                    {/* Logo Overlay */}
-                                    {settings.logoUrl && (
-                                        <div className="absolute top-12 right-4 w-8 h-8 rounded-lg bg-white/10 backdrop-blur-md border border-white/10 flex items-center justify-center p-1 z-20">
-                                            <img src={settings.logoUrl} className="w-full h-full object-contain" />
-                                        </div>
-                                    )}
+                                {/* Dynamic Background Gradients */}
+                                <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+                                    <div className="absolute top-[-10%] left-[-20%] w-[80%] h-[60%] bg-emerald-600/10 rounded-full blur-2xl mix-blend-screen opacity-40"></div>
+                                    <div className="absolute bottom-[10%] right-[-20%] w-[70%] h-[70%] bg-teal-600/10 rounded-full blur-2xl mix-blend-screen opacity-30"></div>
                                 </div>
 
+                                <div className="flex-1 overflow-y-auto w-full no-scrollbar pb-16">
+                                    {/* Immersive Hero Preview */}
+                                    <div className="relative w-full shrink-0 min-h-[320px] flex flex-col justify-end pb-4">
+                                        <div
+                                            className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-40 mix-blend-luminosity grayscale-[30%] pointer-events-none"
+                                            style={{ backgroundImage: `url('${settings.dashboardHeroImage || "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?q=80&w=2070&auto=format&fit=crop"}')` }}
+                                        ></div>
+                                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-slate-950/20 pointer-events-none"></div>
+                                        <div className="absolute top-0 inset-x-0 h-24 bg-gradient-to-b from-slate-950/80 to-transparent pointer-events-none"></div>
 
-                                {/* Stats Rail Preview */}
-                                <div className="px-4 -mt-2 relative z-10 flex gap-2 overflow-hidden mb-6 opacity-80">
-                                    <div className="w-24 h-20 rounded-xl bg-gradient-to-br from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 p-2">
-                                        <div className="text-xs text-gray-400">Niveau</div>
-                                        <div className="font-bold">12</div>
-                                    </div>
-                                    <div className="w-24 h-20 rounded-xl bg-gradient-to-br from-orange-500/20 to-red-500/20 border border-orange-500/30 p-2">
-                                        <div className="text-xs text-gray-400">Série</div>
-                                        <div className="font-bold">5 J</div>
-                                    </div>
-                                    <div className="w-24 h-20 rounded-xl bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border border-blue-500/30 p-2">
-                                        <div className="text-xs text-gray-400">Poids</div>
-                                        <div className="font-bold">75 kg</div>
-                                    </div>
-                                </div>
+                                        <div className="relative z-20 w-full px-4 mt-8 flex flex-col justify-between h-full">
+                                            {/* Top Nav */}
+                                            <div className="flex justify-between items-start mb-4 w-full">
+                                                <div className="flex flex-col">
+                                                    {/* Brand Header */}
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        {settings.logoUrl ? (
+                                                            <img src={settings.logoUrl} alt={settings.appName || 'Logo'} className="w-6 h-6 rounded-full border border-white/10 shadow-[0_0_10px_rgba(255,255,255,0.1)] object-cover" />
+                                                        ) : (
+                                                            <div className="w-6 h-6 rounded-full border border-white/10 bg-slate-800/80 flex items-center justify-center shadow-lg">
+                                                                <span className="text-white text-[10px] font-bold font-serif italic">C</span>
+                                                            </div>
+                                                        )}
+                                                        <span className="text-[10px] font-bold text-slate-400 tracking-widest uppercase truncate max-w-[120px]">{settings.appName || 'COACHENCY PRO'}</span>
+                                                    </div>
 
-                                {/* Next Session Preview */}
-                                <div className="px-4 mb-6">
-                                    <div className="w-full p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/10 relative overflow-hidden">
-                                        <div className="absolute top-0 right-0 p-3">
-                                            <div className="w-2 h-2 rounded-full bg-primary-500 shadow-[0_0_10px_rgb(var(--color-primary-500)/0.5)]"></div>
+                                                    {/* Welcome */}
+                                                    <h1 className="text-xl font-black text-white tracking-tight flex items-center gap-2">
+                                                        Bonjour Thomas.
+                                                    </h1>
+
+                                                    {/* Custom Welcome Message */}
+                                                    {settings.welcomeMessage && (
+                                                        <p className="text-slate-300 text-xs mt-1 max-w-[200px] leading-snug">
+                                                            {settings.welcomeMessage}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                                <div className="w-8 h-8 bg-slate-900/60 backdrop-blur-md border border-white/10 rounded-full flex items-center justify-center text-slate-300 shadow-lg relative">
+                                                    <div className="w-3.5 h-3.5 border-2 border-current rounded-t-full relative flex flex-col justify-end items-center"><div className="w-1 h-1 bg-current rounded-full translate-y-2"></div></div>
+                                                </div>
+                                            </div>
+
+                                            {/* Next Session Card */}
+                                            <div className="w-full relative z-20">
+                                                <div className="bg-slate-900/70 backdrop-blur-2xl border border-white/10 p-4 rounded-[1.5rem] flex flex-col justify-between shadow-[0_20px_40px_rgba(0,0,0,0.4)] relative overflow-hidden group">
+                                                    <div className="absolute -top-12 -right-12 w-24 h-24 bg-emerald-500/20 rounded-full blur-[30px] transition-colors duration-700 pointer-events-none"></div>
+
+                                                    <div className="flex flex-col gap-1 relative z-10 mb-3 pb-3 border-b border-white/5">
+                                                        <div className="flex items-center gap-1 mb-1">
+                                                            <div className="w-1.5 h-1.5 rounded-full bg-cyan-400"></div>
+                                                            <span className="text-[8px] font-bold uppercase tracking-widest text-cyan-400">
+                                                                Programme en cours
+                                                            </span>
+                                                        </div>
+                                                        <h3 className="text-lg font-extrabold text-white tracking-tight leading-tight">
+                                                            Pecs & Triceps
+                                                        </h3>
+                                                        <div className="flex items-center gap-1 mt-1">
+                                                            <div className="text-slate-300 text-[10px] bg-white/5 px-2 py-0.5 rounded-full border border-white/5 flex items-center gap-1">
+                                                                <div className="w-2.5 h-2.5 border border-current rounded-[2px] opacity-70"></div>
+                                                                Jeu. 15 Mars
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <button className="relative w-full overflow-hidden bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 font-extrabold py-2.5 rounded-xl text-sm shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all flex items-center justify-center">
+                                                        <span className="relative z-10">Démarrer Entraînement</span>
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <span className="inline-block px-2 py-0.5 bg-primary-500 text-[10px] font-bold rounded-md mb-2">NEXT</span>
-                                        <h3 className="font-bold text-sm mb-2">{settings.welcomeMessage}</h3>
-                                        <button className="w-full py-2 rounded-xl bg-white text-blue-900 text-xs font-bold">
-                                            COMMENCER
-                                        </button>
+                                    </div>
+
+                                    <div className="flex flex-col relative z-10 w-full px-4 gap-4 mt-2">
+                                        {/* Stats Rail Preview */}
+                                        <div className="flex gap-2 overflow-hidden">
+                                            <div className="w-24 shrink-0 rounded-[1.2rem] bg-slate-900/60 backdrop-blur-xl border border-white/10 p-3 shadow-lg">
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <span className="text-[10px] text-slate-400 font-medium tracking-wide uppercase">Niveau</span>
+                                                    <span className="text-sm">🏆</span>
+                                                </div>
+                                                <div className="flex items-end gap-1">
+                                                    <span className="text-xl font-black text-white tracking-tighter">12</span>
+                                                </div>
+                                            </div>
+                                            <div className="w-24 shrink-0 rounded-[1.2rem] bg-slate-900/60 backdrop-blur-xl border border-white/10 p-3 shadow-lg">
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <span className="text-[10px] text-slate-400 font-medium tracking-wide uppercase">Série</span>
+                                                    <span className="text-sm">🔥</span>
+                                                </div>
+                                                <div className="flex items-end gap-1">
+                                                    <span className="text-xl font-black text-white tracking-tighter">5</span>
+                                                    <span className="text-[10px] text-slate-400 font-bold mb-1">J</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Weekly chart preview */}
+                                        <div className="bg-slate-900/60 backdrop-blur-xl p-4 rounded-[1.5rem] border border-white/10 w-full relative overflow-hidden mb-4">
+                                            <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent opacity-50"></div>
+                                            <h4 className="text-[13px] font-extrabold text-white tracking-tight leading-none mb-1">Cette Semaine</h4>
+                                            <p className="text-[10px] text-emerald-400 font-medium mb-3">3 séances terminées <span className="opacity-70">/ 7</span></p>
+
+                                            <div className="flex items-end justify-between h-16 gap-1 relative z-10">
+                                                {['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((day, i) => {
+                                                    const isCompleted = i === 1 || i === 3;
+                                                    const isToday = i === 4;
+                                                    const heightPercentage = isCompleted ? '85%' : isToday ? '15%' : '20%';
+
+                                                    return (
+                                                        <div key={i} className="flex flex-col items-center gap-1.5 flex-1 h-full justify-end">
+                                                            <div className={`w-full max-w-[20px] rounded-lg relative overflow-hidden ${isCompleted ? 'bg-gradient-to-t from-emerald-600 to-teal-400' : isToday ? 'bg-slate-700/80 border border-slate-600' : 'bg-slate-800/50'}`} style={{ height: heightPercentage }}></div>
+                                                            <span className={`text-[8px] font-bold ${isToday ? 'text-emerald-400' : isCompleted ? 'text-white' : 'text-slate-500'}`}>{day}</span>
+                                                        </div>
+                                                    )
+                                                })}
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
 
                                 {/* Bottom Nav */}
-                                <div className="mt-auto h-16 bg-white/5 backdrop-blur-md border-t border-white/10 flex justify-around items-center px-2">
-                                    <div className="p-2 text-primary-500"><div className="w-6 h-6 bg-current rounded-md opacity-80" /></div>
-                                    <div className="p-2 text-gray-600"><div className="w-6 h-6 bg-current rounded-md opacity-30" /></div>
-                                    <div className="p-2 text-gray-600"><div className="w-6 h-6 bg-current rounded-md opacity-30" /></div>
-                                    <div className="p-2 text-gray-600"><div className="w-6 h-6 bg-current rounded-md opacity-30" /></div>
+                                <div className="absolute bottom-0 w-full h-[52px] bg-[#0f172a]/95 backdrop-blur-xl border-t border-white/5 flex justify-around items-center px-4 z-50">
+                                    <div className="p-2 text-emerald-400 flex flex-col items-center gap-1">
+                                        <div className="w-5 h-5 border-2 border-current rounded-[4px] opacity-90" />
+                                    </div>
+                                    <div className="p-2 text-slate-500 flex flex-col items-center gap-1">
+                                        <div className="w-5 h-5 border-2 border-current rounded-[4px] opacity-50" />
+                                    </div>
+                                    <div className="p-2 text-slate-500 flex flex-col items-center gap-1">
+                                        <div className="w-5 h-5 border-2 border-current rounded-[4px] opacity-50" />
+                                    </div>
+                                    <div className="p-2 text-slate-500 flex flex-col items-center gap-1">
+                                        <div className="w-5 h-5 border-2 border-current rounded-[4px] opacity-50" />
+                                    </div>
                                 </div>
                             </div>
                         </div>
