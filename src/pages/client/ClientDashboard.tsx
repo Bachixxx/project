@@ -81,6 +81,7 @@ export default function ClientDashboard() {
         clientName={client.full_name || 'Client'}
         nextSession={nextSession}
         notificationsCount={2} // Mocked for now
+        heroImage={branding?.dashboardHeroImage}
         logoUrl={branding?.logoUrl}
         appName={branding?.appName}
         welcomeMessage={branding?.welcomeMessage}
