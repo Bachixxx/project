@@ -202,10 +202,6 @@ function BrandingSettings() {
                             Logo personnalisé sur l'app client
                         </li>
                         <li className="flex items-center gap-3 text-sm text-gray-200">
-                            <div className="w-5 h-5 rounded-full bg-green-500/20 text-green-500 flex items-center justify-center"><Palette className="w-3 h-3" /></div>
-                            Couleurs de votre marque
-                        </li>
-                        <li className="flex items-center gap-3 text-sm text-gray-200">
                             <div className="w-5 h-5 rounded-full bg-green-500/20 text-green-500 flex items-center justify-center"><Smartphone className="w-3 h-3" /></div>
                             Message d'accueil personnalisé
                         </li>
@@ -223,19 +219,7 @@ function BrandingSettings() {
         );
     }
 
-    const colorPresets = [
-        '#0ea5e9', // Sky (Default)
-        '#ef4444', // Red
-        '#f97316', // Orange
-        '#eab308', // Yellow
-        '#22c55e', // Green
-        '#14b8a6', // Teal
-        '#06b6d4', // Cyan
-        '#6366f1', // Indigo
-        '#8b5cf6', // Violet
-        '#d946ef', // Fuchsia
-        '#f43f5e', // Rose
-    ];
+
 
     // Calculate dynamic style for preview
     const rgb = getRgbString(settings.primaryColor);
@@ -395,23 +379,7 @@ function BrandingSettings() {
                         </div>
                     </div>
 
-                    {/* Colors */}
-                    <div className="glass-card p-6">
-                        <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                            <Palette className="w-5 h-5 text-primary-400" />
-                            Couleurs
-                        </h3>
-                        <div className="grid grid-cols-6 gap-3">
-                            {colorPresets.map(color => (
-                                <button
-                                    key={color}
-                                    onClick={() => setSettings({ ...settings, primaryColor: color })}
-                                    className={`w-10 h-10 rounded-full border-2 transition-transform hover:scale-110 ${settings.primaryColor === color ? 'border-white ring-2 ring-white/20' : 'border-transparent'}`}
-                                    style={{ backgroundColor: color }}
-                                />
-                            ))}
-                        </div>
-                    </div>
+
 
                 </div>
 
