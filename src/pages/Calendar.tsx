@@ -203,7 +203,6 @@ function CalendarPage() {
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
         <div>
           <h1 className="text-3xl font-bold text-white mb-1">{t('calendar.title')}</h1>
-          <p className="text-gray-400 hidden lg:block">Gérez votre emploi du temps et vos séances</p>
         </div>
 
         {/* Mobile View Toggle & Date Navigation */}
