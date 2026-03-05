@@ -15,6 +15,12 @@ const SEO: React.FC<SEOProps> = ({ title, description, url, image = '/app-logo.j
             <title>{title}</title>
             <meta name="description" content={description} />
 
+            {/* Canonical & Hreflang */}
+            <link rel="canonical" href={url} />
+            <link rel="alternate" hrefLang="fr" href={url} />
+            <link rel="alternate" hrefLang="fr-CH" href={url} />
+            <link rel="alternate" hrefLang="x-default" href={url} />
+
             {/* Open Graph */}
             <meta property="og:title" content={title} />
             <meta property="og:description" content={description} />

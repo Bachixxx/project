@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Dumbbell, Users, Facebook, Twitter, Instagram, Linkedin,
-  Mail, MapPin, ArrowRight, CheckCircle, Star, Menu, X,
-  Smartphone, ChevronDown, ChevronUp, Layers, CreditCard, Activity, Zap
+  Dumbbell, Instagram, Linkedin, Twitter,
+  ArrowRight, CheckCircle, Smartphone, Menu, X,
+  ChevronDown, Layers, CreditCard, Activity, Zap
 } from 'lucide-react';
 import SEO from '../components/SEO';
 
@@ -45,8 +45,15 @@ function Home() {
 
   const schemaData = {
     "@context": "https://schema.org",
-    "@type": "LocalBusiness",
+    "@type": "SoftwareApplication",
     "name": "Coachency",
+    "applicationCategory": "HealthAndFitnessApplication",
+    "operatingSystem": "Web, iOS, Android",
+    "offers": {
+      "@type": "Offer",
+      "price": "29.90",
+      "priceCurrency": "CHF"
+    },
     "image": "https://coachency.app/app-logo.jpg",
     "description": "Le système opérationnel des coachs sportifs.",
     "url": "https://coachency.app/"

@@ -1,5 +1,5 @@
 [build]
-  command = "npm run build"
+  command = "npm run build && npx react-snap"
   publish = "dist"
   prerender = true
 
