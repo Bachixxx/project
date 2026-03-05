@@ -153,7 +153,7 @@ function CalendarPage() {
   const weekDays = Array.from({ length: 7 }).map((_, i) => addDays(weekStart, i));
   const START_HOUR = 6;
   const END_HOUR = 22;
-  const HOUR_HEIGHT = 64; // px
+  const HOUR_HEIGHT = 48; // px (Reduced from 64px to make it more compact)
 
   const [draggedEventId, setDraggedEventId] = useState<string | null>(null);
 
@@ -351,6 +351,8 @@ function CalendarPage() {
                         <DroppableSlot
                           key={i}
                           id={`${format(day, 'yyyy-MM-dd')}|${format(timeValue, 'HH:mm')}`}
+                          hourHeight={HOUR_HEIGHT}
+                          startHour={START_HOUR}
                           onClick={() => {
                             setSelectedSlot({ start: timeValue, end: addMinutes(timeValue, 60) });
                             setIsModalOpen(true);
@@ -574,7 +576,7 @@ function CalendarPage() {
 
 // === Custom Drag & Drop Components ===
 
-function DroppableSlot({ id, onClick, onDrop }: { id: string, onClick: () => void, onDrop: (eventId: string, slotId: string) => void }) {
+function DroppableSlot({ id, hourHeight, startHour, onClick, onDrop }: { id: string, hourHeight: number, startHour: number, onClick: () => void, onDrop: (eventId: string, slotId: string) => void }) {
   const [isOver, setIsOver] = useState(false);
 
   return (
@@ -594,9 +596,10 @@ function DroppableSlot({ id, onClick, onDrop }: { id: string, onClick: () => voi
           onDrop(eventId, id);
         }
       }}
-      className={`absolute w-full h-[32px] cursor-pointer transition-colors z-0 hover:bg-white/5 ${isOver ? 'bg-white/10 ring-1 ring-white/20' : ''}`}
+      className={`absolute w-full cursor-pointer transition-colors z-0 hover:bg-white/5 ${isOver ? 'bg-white/10 ring-1 ring-white/20' : ''}`}
       style={{
-        top: `${(parseInt(id.split('|')[1]?.split(':')[1] || '0') === 30 ? 32 : 0) + (parseInt(id.split('|')[1]?.split(':')[0] || '0') - 6 /* START_HOUR */) * 64}px`
+        height: `${hourHeight / 2}px`,
+        top: `${(parseInt(id.split('|')[1]?.split(':')[1] || '0') === 30 ? (hourHeight / 2) : 0) + (parseInt(id.split('|')[1]?.split(':')[0] || '0') - startHour) * hourHeight}px`
       }}
     />
   );
