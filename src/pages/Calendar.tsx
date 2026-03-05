@@ -200,10 +200,7 @@ function CalendarPage() {
 
   return (
     <div className="p-4 lg:p-6 max-w-[2560px] mx-auto animate-fade-in flex flex-col h-[calc(100vh-5rem)] lg:h-[calc(100vh-2rem)]">
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-white mb-1">{t('calendar.title')}</h1>
-        </div>
+      <div className="flex justify-end items-center mb-6 gap-4">
 
         {/* Mobile View Toggle & Date Navigation */}
         <div className="flex items-center gap-3 w-full lg:w-auto justify-between lg:justify-end">
