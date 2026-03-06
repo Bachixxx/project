@@ -208,15 +208,19 @@ Deno.serve(async (req) => {
 async function handleSuccessfulPayment(object: any) {
   const metadata = object.metadata || {};
   const { programId, clientId, coachId, appointmentId, paymentType } = metadata;
+
+  // Stripe Checkout Session uses `amount_total`, Payment Intent uses `amount`.
   const amountTotal = object.amount_total || object.amount || 0;
   const currency = object.currency || 'chf';
   const paymentIntentId = (object.payment_intent as string) || object.id;
+
+  console.log(`Executing handleSuccessfulPayment: type=${paymentType}, clientId=${clientId}, coachId=${coachId}, appointmentId=${appointmentId}`);
 
   // Handle Terminal Payments (Anonymous/Ad-hoc)
   if (paymentType === 'terminal') {
     console.log('Successfully processed Terminal Payment for coach:', coachId);
     const description = object.description;
-    await supabase.from('payments').insert({
+    const { error: terminalPayError } = await supabase.from('payments').insert({
       coach_id: coachId,
       amount: amountTotal / 100,
       status: 'paid',
@@ -226,6 +230,10 @@ async function handleSuccessfulPayment(object: any) {
       guest_name: (object as any).customer_details?.name || null,
       guest_email: (object as any).customer_details?.email || null
     });
+    if (terminalPayError) {
+      console.error('Error inserting terminal payment:', terminalPayError);
+      throw terminalPayError;
+    }
     return;
   }
 
@@ -236,6 +244,7 @@ async function handleSuccessfulPayment(object: any) {
 
   // Handle program purchase
   if (programId) {
+    console.log(`Processing program purchase: ${programId} for client ${clientId}`);
     const { data: existingProgram } = await supabase
       .from('client_programs')
       .select('id')
@@ -244,7 +253,7 @@ async function handleSuccessfulPayment(object: any) {
       .maybeSingle();
 
     if (!existingProgram) {
-      await supabase
+      const { error: programInsertError } = await supabase
         .from('client_programs')
         .insert({
           client_id: clientId,
@@ -254,21 +263,30 @@ async function handleSuccessfulPayment(object: any) {
           payment_status: 'paid',
           payment_amount: amountTotal / 100
         });
+      if (programInsertError) {
+        console.error('Error inserting client program:', programInsertError);
+        throw programInsertError;
+      }
     }
   }
 
   // Handle appointment payment
   if (appointmentId) {
-    console.log('Processing appointment payment:', appointmentId, 'for client:', clientId);
+    console.log(`Processing appointment payment: ${appointmentId} for client: ${clientId}`);
 
     // 1. Register the client (idempotent)
-    await supabase
+    const { error: regError } = await supabase
       .from('appointment_registrations')
       .upsert({
         appointment_id: appointmentId,
         client_id: clientId,
         status: 'registered'
       }, { onConflict: 'appointment_id,client_id' });
+
+    if (regError) {
+      console.error('Error upserting registration:', regError);
+      throw regError;
+    }
 
     // 2. Create or Update Payment Record
     const { data: existingPayment } = await supabase
@@ -279,22 +297,35 @@ async function handleSuccessfulPayment(object: any) {
       .maybeSingle();
 
     if (existingPayment) {
-      await supabase.from('payments').update({
+      console.log('Updating existing payment record:', existingPayment.id);
+      const { error: updateError } = await supabase.from('payments').update({
         status: 'paid',
         payment_method: 'stripe',
         payment_date: new Date().toISOString(),
-        amount: amountTotal / 100
+        amount: amountTotal / 100,
+        coach_id: coachId,
+        notes: `[DBG] obj=${object.object} amt=${amountTotal} cid=${clientId} coa=${coachId} apt=${appointmentId} (Updated)`
       }).eq('id', existingPayment.id);
+      if (updateError) {
+        console.error('Error updating existing payment:', updateError);
+        throw updateError;
+      }
     } else {
-      await supabase.from('payments').insert({
+      console.log('Inserting new payment record');
+      const { error: insertError } = await supabase.from('payments').insert({
         appointment_id: appointmentId,
         client_id: clientId,
+        coach_id: coachId,
         amount: amountTotal / 100,
         status: 'paid',
         payment_method: 'stripe',
         payment_date: new Date().toISOString(),
-        notes: `Paid via ${object.object === 'payment_intent' ? 'Native App' : 'Stripe Checkout'}`
+        notes: `[DBG] obj=${object.object} amt=${amountTotal} cid=${clientId} coa=${coachId} apt=${appointmentId} (New)`
       });
+      if (insertError) {
+        console.error('Error inserting payment record:', insertError);
+        throw insertError;
+      }
     }
   }
 
