@@ -11,7 +11,7 @@ interface Payment {
   client_id: string | null;
   amount: number;
   status: 'pending' | 'paid';
-  payment_method: 'cash' | 'transfer' | 'online';
+  payment_method: 'cash' | 'transfer' | 'online' | 'stripe';
   payment_date: string | null;
   notes: string;
   created_at: string;
@@ -258,7 +258,7 @@ function PaymentsPage() {
                 <div className="flex items-center gap-4 flex-1">
                   <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-lg ${payment.status === 'paid' ? 'bg-green-500/20 text-green-400 shadow-green-500/10' : 'bg-yellow-500/20 text-yellow-400 shadow-yellow-500/10'
                     }`}>
-                    {payment.payment_method === 'online' ? (
+                    {(payment.payment_method === 'online' || payment.payment_method === 'stripe') ? (
                       <CreditCard className="w-6 h-6" />
                     ) : payment.status === 'paid' ? (
                       <Check className="w-6 h-6" />
@@ -291,7 +291,7 @@ function PaymentsPage() {
                           : (payment.guest_email || 'Terminal')
                         }
                       </span>
-                      {payment.payment_method === 'online' && (
+                      {(payment.payment_method === 'online' || payment.payment_method === 'stripe') && (
                         <>
                           <span>•</span>
                           <span className="text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded text-xs border border-blue-500/20">
@@ -318,7 +318,7 @@ function PaymentsPage() {
 
                 {/* Actions */}
                 <div className="w-full md:w-auto flex justify-end">
-                  {payment.payment_method === 'online' && payment.status === 'paid' ? (
+                  {(payment.payment_method === 'online' || payment.payment_method === 'stripe') && payment.status === 'paid' ? (
                     <div className="px-4 py-2 rounded-lg bg-white/5 border border-white/5 text-gray-400 text-sm font-medium flex items-center gap-2 cursor-not-allowed opacity-50">
                       <Check className="w-4 h-4" /> Payé en ligne
                     </div>

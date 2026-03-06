@@ -7,6 +7,7 @@ import { useClientAuth } from '../../contexts/ClientAuthContext';
 
 interface Exercise {
   id: string;
+  exercise_id: string;
   name: string;
   description: string;
   sets: number;
@@ -306,29 +307,30 @@ function ClientLiveWorkout() {
 
       if (exercisesError) throw exercisesError;
 
-      const exerciseList = (exercisesData || []).map((se: any) => ({
-        id: se.exercise_id,
-        name: se.exercise_name,
-        description: se.exercise_description,
-        sets: se.sets,
-        reps: se.reps,
-        rest_time: se.rest_time,
-        instructions: se.instructions,
-        order_index: se.order_index,
-        tracking_type: se.tracking_type,
-        track_reps: se.track_reps,
-        track_weight: se.track_weight,
-        track_duration: se.track_duration,
-        track_distance: se.track_distance,
-        video_url: se.video_url,
-        duration_seconds: se.duration_seconds,
-        distance_meters: se.distance_meters,
-        group: se.group_id ? {
-          id: se.group_id,
-          type: se.group_type,
-          name: se.group_name,
-          duration_seconds: se.group_duration,
-          repetitions: se.group_repetitions
+      const exerciseList = (exercisesData || []).map((e: any) => ({
+        id: e.id, // This is the unique ID for the exercise in the session context
+        exercise_id: e.exercise_id, // This is the ID of the base exercise from the 'exercises' table
+        name: e.exercise_name,
+        description: e.exercise_description,
+        sets: e.sets,
+        reps: e.reps,
+        rest_time: e.rest_time,
+        instructions: e.instructions,
+        order_index: e.order_index,
+        tracking_type: e.tracking_type,
+        track_reps: e.track_reps,
+        track_weight: e.track_weight,
+        track_duration: e.track_duration,
+        track_distance: e.track_distance,
+        video_url: e.video_url,
+        duration_seconds: e.duration_seconds,
+        distance_meters: e.distance_meters,
+        group: e.group_id ? {
+          id: e.group_id,
+          type: e.group_type,
+          name: e.group_name,
+          duration_seconds: e.group_duration,
+          repetitions: e.group_repetitions
         } : null
       }));
 
@@ -344,15 +346,16 @@ function ClientLiveWorkout() {
       } else if (appointmentId) {
         currentLogsQuery = currentLogsQuery.eq('appointment_id', appointmentId);
       }
-      const { data: currentLogs, error: currentLogsError } = await currentLogsQuery;
+      const { data: currentLogsData, error: currentLogsError } = await currentLogsQuery;
       if (currentLogsError) console.error("Error fetching current logs:", currentLogsError);
+      const currentLogs = currentLogsData || [];
 
       // 2. Fetch HISTORICAL logs (Ghost Mode) - Priority 2
       // We need to fetch the LAST time these exercises were performed.
       // Strategy: Fetch all logs for these exercises for this client, ordered by date desc, limit ?
       // Optimization: It's hard to get "last row per group" efficiently in one simple query without RPC or complex SQL.
       // Simpler approach: Fetch the last 50 logs for these exercises (should cover recent history).
-      const exerciseIds = exerciseList.map((e: Exercise) => e.id);
+      const exerciseIds = exerciseList.map((e: Exercise) => e.exercise_id);
 
       let historicalLogs: any[] = [];
       if (exerciseIds.length > 0) {
@@ -381,7 +384,7 @@ function ClientLiveWorkout() {
           // If we have current session IDs, exclude them
           if (scheduledSessionId && l.scheduled_session_id === scheduledSessionId) return false;
           if (appointmentId && l.appointment_id === appointmentId) return false;
-          return l.exercise_id === ex.id;
+          return l.exercise_id === ex.exercise_id;
         });
 
         // If we found a last session, we want to try to match set-for-set? or just copy the last set's weight?
@@ -409,7 +412,7 @@ function ClientLiveWorkout() {
         initialCompleted[ex.id] = {
           sets: Array(numSets).fill(null).map((_, idx) => {
             // 1. Try Current Log (Restoration)
-            const currentLog = currentLogs?.find(l => l.exercise_id === ex.id && l.set_number === idx + 1);
+            const currentLog = currentLogs?.find(l => l.exercise_id === ex.exercise_id && l.set_number === idx + 1);
 
             if (currentLog) {
               return {
@@ -423,7 +426,7 @@ function ClientLiveWorkout() {
 
             // 2. Ghost Mode (Pre-fill)
             // Find matching set number in last session
-            const historyLog = lastSessionLogs.find(l => l.exercise_id === ex.id && l.set_number === idx + 1) || lastLogCandidate;
+            const historyLog = lastSessionLogs.find(l => l.exercise_id === ex.exercise_id && l.set_number === idx + 1) || lastLogCandidate;
 
             if (historyLog) {
               return {
@@ -484,7 +487,7 @@ function ClientLiveWorkout() {
       try {
         const logData: any = {
           client_id: client.id,
-          exercise_id: currentExercise.id,
+          exercise_id: currentExercise.exercise_id,
           set_number: setIndex + 1,
           reps: currentSet.reps,
           weight: currentSet.weight,
@@ -555,7 +558,7 @@ function ClientLiveWorkout() {
     } else {
       try {
         const matchQuery: any = {
-          exercise_id: currentExercise.id,
+          exercise_id: currentExercise.exercise_id,
           set_number: setIndex + 1
         };
         if (scheduledSessionId) matchQuery.scheduled_session_id = scheduledSessionId;
@@ -870,22 +873,28 @@ function ClientLiveWorkout() {
           </p>
         </div>
 
-        {/* Video Player Section */}
-        {currentExercise.video_url && (
-          <div className="px-6 mb-6 mt-4 shrink-0">
+        {/* Video Player Section or Spacer */}
+        <div className="px-6 mb-6 mt-4 shrink-0">
+          {currentExercise.video_url ? (
             <div className="relative aspect-video w-full overflow-hidden rounded-2xl bg-[#18181b] shadow-2xl ring-1 ring-white/10">
               <iframe
-                src={currentExercise.video_url.includes('youtube.com') || currentExercise.video_url.includes('youtu.be')
-                  ? currentExercise.video_url.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')
-                  : currentExercise.video_url}
+                src={(() => {
+                  const regExp = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|shorts)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i;
+                  const match = currentExercise.video_url.match(regExp);
+                  return match && match[1]
+                    ? `https://www.youtube.com/embed/${match[1]}?rel=0&modestbranding=1`
+                    : currentExercise.video_url;
+                })()}
                 title={currentExercise.name}
                 className="w-full h-full object-cover"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
               />
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="w-full aspect-video" />
+          )}
+        </div>
 
         {/* Block Timer (AMRAP / INTERVAL) */}
         {currentExercise?.group?.duration_seconds && (isAmrap || isInterval) && (
