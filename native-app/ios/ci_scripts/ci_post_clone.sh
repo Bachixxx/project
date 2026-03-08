@@ -1,11 +1,19 @@
 #!/bin/sh
 
-# On remonte à la racine du projet native-app
+# 1. Installer Node.js via Homebrew (nécessaire pour npm et expo)
+export HOMEBREW_NO_INSTALL_CLEANUP=1
+brew install node
+
+# 2. Vérifier que node et npm sont maintenant accessibles
+echo "Node version: $(node -v)"
+echo "NPM version: $(npm -v)"
+
+# 3. Aller à la racine du projet native-app
 cd ../../
 
-# Installer les dépendances JavaScript
+# 4. Installer les dépendances JS (nécessaire pour que le Podfile trouve expo/package.json)
 npm install
 
-# Aller dans le dossier ios et installer les Pods
+# 5. Installer les Pods
 cd ios
 pod install
