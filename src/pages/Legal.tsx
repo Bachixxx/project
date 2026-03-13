@@ -49,7 +49,7 @@ function Legal() {
                   Mentions légales
                 </h1>
                 <div className="text-sm text-blue-400 font-medium mt-1">
-                  Dernière mise à jour : 13 février 2025
+                  Dernière mise à jour : 13 mars 2025
                 </div>
               </div>
             </div>
