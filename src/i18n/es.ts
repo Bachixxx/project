@@ -265,4 +265,10 @@ export const es = {
     },
     manage: 'Gestionar mi suscripción',
   },
+  cookies: {
+    title: 'Cookies y Privacidad',
+    description: 'Utilizamos cookies para analizar el tráfico y mejorar tu experiencia. No se comparten datos personales con terceros.',
+    accept: 'Aceptar',
+    refuse: 'Rechazar',
+  }
 };

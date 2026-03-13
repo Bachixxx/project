@@ -325,5 +325,11 @@ export const fr = {
       data: '--',
       na: 'N/A',
     }
+  },
+  cookies: {
+    title: 'Cookies & Confidentialité',
+    description: 'Nous utilisons des cookies pour analyser le trafic et améliorer votre expérience. Aucune donnée personnelle n\'est partagée avec des tiers.',
+    accept: 'Accepter',
+    refuse: 'Refuser',
   }
 };

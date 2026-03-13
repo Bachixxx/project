@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Dumbbell, Menu, X, Check, X as XIcon, HelpCircle, ChevronDown, ChevronUp, Palette, Sparkles, CreditCard, Instagram, Twitter, Linkedin, ArrowRight } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
 import { useAdapty } from '../hooks/useAdapty';
+import SEO from '../components/SEO';
 
 function Pricing() {
     const [scrolled, setScrolled] = useState(false);
@@ -71,6 +72,23 @@ function Pricing() {
 
     return (
         <div className="min-h-screen bg-slate-950 text-slate-200 selection:bg-blue-500/30 font-sans overflow-x-hidden relative">
+            <SEO
+                title="Tarifs | Coachency - CHF 19.90/mois, Essai Gratuit 14 Jours"
+                description="Tarif transparent pour les coachs sportifs : CHF 19.90/mois ou CHF 199/an. Clients illimités, app native, suivi en direct, paiements intégrés. 14 jours d'essai gratuit, sans carte."
+                url="https://coachency.app/pricing"
+                schema={{
+                    '@context': 'https://schema.org',
+                    '@type': 'FAQPage',
+                    mainEntity: faqs.map(faq => ({
+                        '@type': 'Question',
+                        name: faq.question,
+                        acceptedAnswer: {
+                            '@type': 'Answer',
+                            text: faq.answer
+                        }
+                    }))
+                }}
+            />
 
             {/* Dynamic Background Gradients */}
             <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
