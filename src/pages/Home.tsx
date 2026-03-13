@@ -28,7 +28,7 @@ function Home() {
   const faqs = [
     {
       question: "Est-ce que Coachency est adapté aux coachs débutants ?",
-      answer: "Absolument. Nous proposons un essai gratuit de 14 jours pour tester toutes les fonctionnalités sans engagement. Ensuite, l'abonnement vous donne accès à tout (sauf options Branding & Terminal)."
+      answer: "Absolument. Nous proposons un essai gratuit de 14 jours pour tester toutes les fonctionnalités sans engagement et sans carte bancaire. Ensuite, l'abonnement Pro vous donne accès à tout (sauf options Branding & Terminal)."
     },
     {
       question: "Puis-je importer mes clients actuels ?",
@@ -543,23 +543,10 @@ function Home() {
             <h2 className="text-3xl md:text-5xl font-bold mb-6 tracking-tight">
               Simple, transparent, <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">sans surprise.</span>
             </h2>
-            <p className="text-slate-400 text-lg font-light">Un seul plan Pro. Tout inclus. Commencez gratuitement.</p>
+            <p className="text-slate-400 text-lg font-light">Un seul plan Pro. Tout inclus. 14 jours d'essai gratuit pour tester.</p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-            {/* Free */}
-            <div className="p-8 rounded-3xl bg-slate-900/40 border border-white/5">
-              <div className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Gratuit</div>
-              <div className="text-4xl font-bold text-white mb-1">CHF 0</div>
-              <div className="text-sm text-slate-500 mb-6">pour toujours</div>
-              <ul className="space-y-3 text-sm text-slate-400">
-                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-slate-500 shrink-0" /> Jusqu'à 5 clients</li>
-                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-slate-500 shrink-0" /> Jusqu'à 5 programmes</li>
-                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-slate-500 shrink-0" /> Bibliothèque d'exercices</li>
-                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-slate-500 shrink-0" /> Calendrier basique</li>
-              </ul>
-            </div>
-
+          <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
             {/* Pro Monthly - Featured */}
             <div className="p-8 rounded-3xl bg-slate-900 border border-blue-500/30 relative shadow-[0_0_40px_rgba(59,130,246,0.1)]">
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full text-xs font-bold text-white">POPULAIRE</div>
