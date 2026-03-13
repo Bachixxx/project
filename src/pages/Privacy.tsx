@@ -1,10 +1,16 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, ShieldCheck } from 'lucide-react';
+import SEO from '../components/SEO';
 
 function Privacy() {
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-start p-4 md:p-8 relative overflow-x-hidden font-sans selection:bg-blue-500/30">
+      <SEO
+        title="Politique de Confidentialité | Coachency"
+        description="Politique de confidentialité de Coachency conforme au RGPD et à la nLPD suisse. Protection des données personnelles, droits des utilisateurs, sous-traitants et durées de conservation."
+        url="https://coachency.app/privacy"
+      />
       {/* Dynamic Background Gradients */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
         <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] bg-blue-600/10 rounded-full blur-[120px] mix-blend-screen opacity-30 animate-pulse-slow"></div>

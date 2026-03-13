@@ -1,10 +1,16 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, FileText } from 'lucide-react';
+import SEO from '../components/SEO';
 
 function Terms() {
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-start p-4 md:p-8 relative overflow-x-hidden font-sans selection:bg-blue-500/30">
+      <SEO
+        title="Conditions d'Utilisation | Coachency"
+        description="Conditions générales d'utilisation de la plateforme Coachency. Informations sur la licence SaaS, les obligations, la facturation et la juridiction applicable (Genève, Suisse)."
+        url="https://coachency.app/terms"
+      />
       {/* Dynamic Background Gradients */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
         <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] bg-blue-600/10 rounded-full blur-[120px] mix-blend-screen opacity-30 animate-pulse-slow"></div>

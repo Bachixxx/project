@@ -9,7 +9,7 @@ interface SEOProps {
     schema?: any; // JSON-LD object
 }
 
-const SEO: React.FC<SEOProps> = ({ title, description, url, image = '/app-logo.jpg', schema }) => {
+const SEO: React.FC<SEOProps> = ({ title, description, url, image = 'https://coachency.app/logo.png', schema }) => {
     return (
         <Helmet>
             <title>{title}</title>

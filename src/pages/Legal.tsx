@@ -1,10 +1,16 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Scale } from 'lucide-react';
+import SEO from '../components/SEO';
 
 function Legal() {
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-start p-4 md:p-8 relative overflow-x-hidden font-sans selection:bg-blue-500/30">
+      <SEO
+        title="Mentions Légales | Coachency"
+        description="Mentions légales de Coachency.app. Éditeur : Jeremy Bächtold, Bellevue, Genève. Hébergement : Supabase / AWS Zurich (eu-central-2). Propriété intellectuelle et signalement de contenus."
+        url="https://coachency.app/legal"
+      />
       {/* Dynamic Background Gradients */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
         <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] bg-blue-600/10 rounded-full blur-[120px] mix-blend-screen opacity-30 animate-pulse-slow"></div>
