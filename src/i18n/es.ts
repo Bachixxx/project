@@ -269,4 +269,11 @@ export const es = {
     },
     manage: 'Gestionar mi suscripción',
   },
+  payment: {
+    successTitle: 'Pago exitoso',
+    successMessage: 'Gracias. Su pago ha sido registrado correctamente.',
+    cancelledTitle: 'Pago cancelado',
+    cancelledMessage: 'El pago no se realizó. No se ha cobrado ningún importe.',
+    backHome: 'Volver al inicio',
+  },
 };

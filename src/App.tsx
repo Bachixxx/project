@@ -34,6 +34,8 @@ const Upgrade = lazy(() => import('./pages/Upgrade'));
 const Terms = lazy(() => import('./pages/Terms'));
 const Privacy = lazy(() => import('./pages/Privacy'));
 const Legal = lazy(() => import('./pages/Legal'));
+const PaymentSuccess = lazy(() => import('./pages/PaymentSuccess'));
+const PaymentCancelled = lazy(() => import('./pages/PaymentCancelled'));
 
 // Client Public Pages
 const ClientLogin = lazy(() => import('./pages/client/ClientLogin'));
@@ -146,6 +148,8 @@ function App() {
                               <Route path="/terms" element={<Terms />} />
                               <Route path="/privacy" element={<Privacy />} />
                               <Route path="/legal" element={<Legal />} />
+                              <Route path="/payment-success" element={<PaymentSuccess />} />
+                              <Route path="/payment-cancelled" element={<PaymentCancelled />} />
                               <Route path="/geneve" element={<CityLandingPage cityName="Genève" urlPath="geneve" />} />
                               <Route path="/lausanne" element={<CityLandingPage cityName="Lausanne" urlPath="lausanne" />} />
                               <Route path="/zurich" element={<CityLandingPage cityName="Zurich" urlPath="zurich" />} />

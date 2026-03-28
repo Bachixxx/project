@@ -128,8 +128,8 @@ Deno.serve(async (req) => {
                 description: description || 'Terminal Payment',
                 mode: mode || 'payment'
             },
-            success_url: `${req.headers.get('origin')}/terminal?payment_status=success`,
-            cancel_url: `${req.headers.get('origin')}/terminal?payment_status=cancelled`,
+            success_url: `${req.headers.get('origin')}/payment-success`,
+            cancel_url: `${req.headers.get('origin')}/payment-cancelled`,
         };
 
         if (mode === 'subscription') {
