@@ -20,11 +20,14 @@ const getStripe = (): Stripe => {
   return _stripe;
 };
 
-const ALLOWED_ORIGINS = ['https://coachency.app', 'https://www.coachency.app'];
 function corsHeaders(req: Request) {
   const origin = req.headers.get('Origin') ?? '';
+  const allowed = origin === 'https://coachency.app'
+    || origin === 'https://www.coachency.app'
+    || origin === 'https://melodious-faun-62e372.netlify.app'
+    || origin.endsWith('--melodious-faun-62e372.netlify.app');
   return {
-    'Access-Control-Allow-Origin': ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0],
+    'Access-Control-Allow-Origin': allowed ? origin : 'https://coachency.app',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Client-Info, Apikey',
   };
