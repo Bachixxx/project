@@ -353,39 +353,26 @@ function ClientLiveWorkout() {
       console.log('LIVE WORKOUT EXERCISES DETAILS:', JSON.stringify(exerciseList, null, 2)); // FULL DEBUG LOG
 
       // --- STATE RESTORATION & GHOST MODE LOGIC ---
+      // Fetch current logs + historical logs in parallel
+      const exerciseIds = exerciseList.map((e: Exercise) => e.exercise_id);
 
-      // 1. Fetch CURRENT session logs (Reload Protection) - Priority 1
       let currentLogsQuery = supabase.from('workout_logs').select('*');
       if (scheduledSessionId) {
         currentLogsQuery = currentLogsQuery.eq('scheduled_session_id', scheduledSessionId);
       } else if (appointmentId) {
         currentLogsQuery = currentLogsQuery.eq('appointment_id', appointmentId);
       }
-      const { data: currentLogsData, error: currentLogsError } = await currentLogsQuery;
-      if (currentLogsError) console.error("Error fetching current logs:", currentLogsError);
-      const currentLogs = currentLogsData || [];
 
-      // 2. Fetch HISTORICAL logs (Ghost Mode) - Priority 2
-      // We need to fetch the LAST time these exercises were performed.
-      // Strategy: Fetch all logs for these exercises for this client, ordered by date desc, limit ?
-      // Optimization: It's hard to get "last row per group" efficiently in one simple query without RPC or complex SQL.
-      // Simpler approach: Fetch the last 50 logs for these exercises (should cover recent history).
-      const exerciseIds = exerciseList.map((e: Exercise) => e.exercise_id);
+      const [currentLogsRes, historyRes] = await Promise.all([
+        currentLogsQuery,
+        exerciseIds.length > 0
+          ? supabase.from('workout_logs').select('*').eq('client_id', client.id).in('exercise_id', exerciseIds).order('completed_at', { ascending: false }).limit(100)
+          : Promise.resolve({ data: [], error: null }),
+      ]);
 
-      let historicalLogs: any[] = [];
-      if (exerciseIds.length > 0) {
-        const { data: history, error: historyError } = await supabase
-          .from('workout_logs')
-          .select('*')
-          .eq('client_id', client.id)
-          .in('exercise_id', exerciseIds)
-          .order('completed_at', { ascending: false })
-          .limit(100); // Fetch enough recent logs to find the last session for each exercise
-
-        if (!historyError && history) {
-          historicalLogs = history;
-        }
-      }
+      if (currentLogsRes.error) console.error("Error fetching current logs:", currentLogsRes.error);
+      const currentLogs = currentLogsRes.data || [];
+      const historicalLogs = historyRes.data || [];
 
       const initialCompleted: Record<string, any> = {};
       exerciseList.forEach((ex: Exercise) => {
