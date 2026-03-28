@@ -482,22 +482,7 @@ function ClientAppointments() {
       return;
     }
 
-    // Gate: if online payment required but not completed, create checkout session
-    if (event.payment_method === 'online' && event.price > 0 && event.payment_status !== 'completed') {
-      try {
-        setRegistering(true);
-        await createCheckoutSession(undefined, client.id, event.id);
-        // Redirect happens automatically via Stripe
-      } catch (error: any) {
-        console.error('Payment initialization error:', error);
-        alert(error.message || 'Erreur lors de l\'initialisation du paiement');
-      } finally {
-        setRegistering(false);
-      }
-      return;
-    }
-
-    // Default: Session/Workout logic
+    // Default: Session/Workout logic (payment gate is handled by buttons in the modal)
     console.log('Session ID to fetch exercises:', event.session?.id);
     setSelectedSession(event);
     setIsModalOpen(true);
@@ -936,7 +921,20 @@ function ClientAppointments() {
               }}
               onRegister={handleRegister}
               onUnregister={handleUnregister}
-              onStartTraining={() => {
+              onStartTraining={async () => {
+                // If payment required but not completed, create checkout
+                if (selectedSession.payment_method === 'online' && selectedSession.price > 0 && selectedSession.payment_status !== 'completed') {
+                  try {
+                    setRegistering(true);
+                    await createCheckoutSession(undefined, client.id, selectedSession.id);
+                  } catch (error: any) {
+                    console.error('Payment error:', error);
+                    alert(error.message || 'Erreur lors de l\'initialisation du paiement');
+                  } finally {
+                    setRegistering(false);
+                  }
+                  return;
+                }
                 if (selectedSession.source === 'appointment') {
                   navigate(`/client/live-workout/appointment/${selectedSession.id}`);
                 } else {
