@@ -33,6 +33,7 @@ export interface SaveProgramParams {
     programData: Partial<Program>;
     selectedSessions: ProgramSession[];
     programId?: string;
+    knownUpdatedAt?: string;
 }
 
 export function useCoachPrograms() {
@@ -79,19 +80,29 @@ export function useCoachPrograms() {
     });
 
     const saveProgram = useMutation({
-        mutationFn: async ({ programData, selectedSessions, programId }: SaveProgramParams) => {
+        mutationFn: async ({ programData, selectedSessions, programId, knownUpdatedAt }: SaveProgramParams) => {
             let finalProgramId = programId;
 
             // Remove program_sessions and other non-column fields from programData
-            const { program_sessions, ...cleanProgramData } = programData as any;
+            const { program_sessions, updated_at, ...cleanProgramData } = programData as any;
 
             // 1. Create or Update Program
             if (programId) {
-                const { error } = await supabase
+                let query = supabase
                     .from('programs')
                     .update(cleanProgramData)
                     .eq('id', programId);
+
+                // Optimistic lock: only update if updated_at hasn't changed
+                if (knownUpdatedAt) {
+                    query = query.eq('updated_at', knownUpdatedAt);
+                }
+
+                const { data: updatedRows, error } = await query.select('id');
                 if (error) throw error;
+                if (!updatedRows || updatedRows.length === 0) {
+                    throw new Error('Ce programme a été modifié par quelqu\'un d\'autre. Veuillez rafraîchir la page.');
+                }
 
                 // Delete existing sessions to replace them
                 await supabase

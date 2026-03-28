@@ -279,6 +279,7 @@ export function useLiveWorkout(scheduledSessionId?: string, appointmentId?: stri
             const logData: any = {
                 client_id: client?.id,
                 exercise_id: currentEx.exercise_id,
+                exercise_name: currentEx.name,
                 set_number: setIndex + 1,
                 reps: currentSet.reps,
                 weight: currentSet.weight,

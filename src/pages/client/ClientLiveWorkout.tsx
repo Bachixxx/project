@@ -490,6 +490,7 @@ function ClientLiveWorkout() {
         const logData: any = {
           client_id: client.id,
           exercise_id: currentExercise.exercise_id,
+          exercise_name: currentExercise.name,
           set_number: setIndex + 1,
           reps: currentSet.reps,
           weight: currentSet.weight,
