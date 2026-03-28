@@ -7,6 +7,7 @@ const OneSignalNative = OneSignal as any;
 
 interface NotificationsContextType {
     permission: NotificationPermission;
+    initError: string | null;
     requestPermission: () => Promise<void>;
     subscribe: () => Promise<void>;
     login: (externalId: string) => Promise<void>;
@@ -18,6 +19,7 @@ const NotificationsContext = createContext<NotificationsContextType | null>(null
 
 export function NotificationsProvider({ children }: { children: React.ReactNode }) {
     const [permission, setPermission] = useState<NotificationPermission>('default');
+    const [initError, setInitError] = useState<string | null>(null);
 
     useEffect(() => {
         // Platform-specific initialization
@@ -49,8 +51,9 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
             // 3. Request Permission
             console.log('OneSignal Initialized. Requesting permission...');
             await requestPermission();
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error initializing Native OneSignal:', error);
+            setInitError(error.message || 'Erreur lors de l\'initialisation des notifications');
         }
     };
 
@@ -125,7 +128,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     };
 
     return (
-        <NotificationsContext.Provider value={{ permission, requestPermission, subscribe, login, logout, addTag }}>
+        <NotificationsContext.Provider value={{ permission, initError, requestPermission, subscribe, login, logout, addTag }}>
             {children}
         </NotificationsContext.Provider>
     );

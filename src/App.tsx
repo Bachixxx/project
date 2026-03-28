@@ -1,5 +1,5 @@
 import React, { Suspense, lazy } from 'react';
-import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import Layout from './components/Layout';
 import { AuthProvider } from './contexts/AuthContext';
 import { ClientAuthProvider } from './contexts/ClientAuthContext';
@@ -34,6 +34,8 @@ const Upgrade = lazy(() => import('./pages/Upgrade'));
 const Terms = lazy(() => import('./pages/Terms'));
 const Privacy = lazy(() => import('./pages/Privacy'));
 const Legal = lazy(() => import('./pages/Legal'));
+import PaymentSuccess from './pages/PaymentSuccess';
+import PaymentCancelled from './pages/PaymentCancelled';
 
 // Client Public Pages
 const ClientLogin = lazy(() => import('./pages/client/ClientLogin'));
@@ -43,13 +45,13 @@ const ClientOnboarding = lazy(() => import('./pages/client/ClientOnboarding'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const UpdatePassword = lazy(() => import('./pages/UpdatePassword'));
 
-// Coach Private Pages (Eagerly Loaded for Native Feel)
-import Dashboard from './pages/Dashboard';
-import Clients from './pages/Clients';
-import Calendar from './pages/Calendar';
-import Sessions from './pages/Sessions';
-import Programs from './pages/Programs';
-import Profile from './pages/Profile';
+// Coach Private Pages (Lazy Loaded)
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Clients = lazy(() => import('./pages/Clients'));
+const Calendar = lazy(() => import('./pages/Calendar'));
+const Sessions = lazy(() => import('./pages/Sessions'));
+const Programs = lazy(() => import('./pages/Programs'));
+const Profile = lazy(() => import('./pages/Profile'));
 
 // Less critical / Heavy pages can remain lazy to save some initial bundle
 const Exercises = lazy(() => import('./pages/Exercises'));
@@ -67,11 +69,11 @@ const Admin = lazy(() => import('./pages/Admin'));
 const BrandingSettings = lazy(() => import('./pages/BrandingSettings'));
 
 
-// Client Private Pages (Eagerly Loaded)
-import ClientDashboard from './pages/client/ClientDashboard';
-import ClientWorkouts from './pages/client/ClientWorkouts';
-import ClientAppointments from './pages/client/ClientAppointments';
-import ClientProgress from './pages/client/ClientProgress';
+// Client Private Pages (Lazy Loaded)
+const ClientDashboard = lazy(() => import('./pages/client/ClientDashboard'));
+const ClientWorkouts = lazy(() => import('./pages/client/ClientWorkouts'));
+const ClientAppointments = lazy(() => import('./pages/client/ClientAppointments'));
+const ClientProgress = lazy(() => import('./pages/client/ClientProgress'));
 
 // Less critical client pages
 const ClientProfile = lazy(() => import('./pages/client/ClientProfile'));
@@ -146,11 +148,13 @@ function App() {
                               <Route path="/terms" element={<Terms />} />
                               <Route path="/privacy" element={<Privacy />} />
                               <Route path="/legal" element={<Legal />} />
+                              <Route path="/payment-success" element={<PaymentSuccess />} />
+                              <Route path="/payment-cancelled" element={<PaymentCancelled />} />
                               <Route path="/geneve" element={<CityLandingPage cityName="Genève" urlPath="geneve" />} />
                               <Route path="/lausanne" element={<CityLandingPage cityName="Lausanne" urlPath="lausanne" />} />
                               <Route path="/zurich" element={<CityLandingPage cityName="Zurich" urlPath="zurich" />} />
                               <Route path="/client/login" element={<ClientLogin />} />
-                              <Route path="/client/check-email" element={<CheckEmail />} />
+                              <Route path="/client/check-email" element={<Navigate to="/client/register" replace />} />
                               <Route path="/client/register" element={<ClientRegister />} />
                               <Route path="/forgot-password" element={<ForgotPassword />} />
                               <Route path="/update-password" element={<UpdatePassword />} />

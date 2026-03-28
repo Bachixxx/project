@@ -109,7 +109,9 @@ function CalendarPage() {
         await supabase
           .from("appointments")
           .select("*")
-          .eq("coach_id", user?.id);
+          .eq("coach_id", user?.id)
+          .gte("start", new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString())
+          .limit(500);
 
       if (appointmentsError) throw appointmentsError;
 

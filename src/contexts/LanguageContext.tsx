@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { Language, getInitialLanguage } from '../i18n';
 
 interface LanguageContextType {
@@ -16,7 +16,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   }, [language]);
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage }}>
+    <LanguageContext.Provider value={useMemo(() => ({ language, setLanguage }), [language])}>
       {children}
     </LanguageContext.Provider>
   );

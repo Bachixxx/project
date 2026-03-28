@@ -85,29 +85,40 @@ function ClientAppointments() {
       // If no cache or cache empty, ensure loading is true
       if (!cachedData) setLoading(true);
 
-      // 2. Network Fetch
-      const { data: scheduledData, error: scheduledError } = await supabase
-        .from('scheduled_sessions')
-        .select(`
-          *,
-          session:sessions (
-            id,
-            name,
-            description,
-            duration_minutes,
-            difficulty_level,
-            session_type
-          ),
-          coach:coaches (full_name, email, phone)
-        `)
-        .eq('client_id', client.id)
-        .order('scheduled_date', { ascending: true });
+      // 2. Network Fetch — all independent queries in parallel
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-      if (scheduledError) throw scheduledError;
+      const sessionSelect = `*, session:sessions (id, name, description, duration_minutes, difficulty_level, session_type), coach:coaches (full_name, email, phone)`;
 
-      if (scheduledData && scheduledData.length > 0) {
-        console.log('First session sample:', JSON.stringify(scheduledData[0], null, 2));
-      }
+      const [
+        scheduledRes,
+        groupRes,
+        regAppointmentsRes,
+        sessionRegsRes,
+        publicAppointmentsRes,
+        myRegistrationsRes,
+        myAppointmentRegsRes,
+      ] = await Promise.all([
+        supabase.from('scheduled_sessions').select(sessionSelect).eq('client_id', client.id).order('scheduled_date', { ascending: true }),
+        supabase.from('scheduled_sessions').select(sessionSelect).gte('scheduled_date', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()).order('scheduled_date', { ascending: true }),
+        supabase.from('appointment_registrations').select(`appointment:appointments (id, title, start, duration, status, notes, session_id, payment_method, payment_status, payment_link, price, coach:coaches (full_name, email, phone), session:sessions (id, name, description, duration_minutes, difficulty_level))`).eq('client_id', client.id),
+        supabase.from('session_registrations').select('scheduled_session_id').eq('client_id', client.id),
+        supabase.from('appointments').select(`*, coach:coaches (full_name, email, phone), session:sessions (id, name, description, duration_minutes, difficulty_level)`).gte('start', thirtyDaysAgo.toISOString()).in('status', ['scheduled', 'confirmed']).order('start', { ascending: true }),
+        supabase.from('session_registrations').select('scheduled_session_id, status').eq('client_id', client.id),
+        supabase.from('appointment_registrations').select('appointment_id, status').eq('client_id', client.id),
+      ]);
+
+      if (scheduledRes.error) throw scheduledRes.error;
+      if (groupRes.error) throw groupRes.error;
+
+      const scheduledData = scheduledRes.data;
+      const availableGroupSessionsRaw = groupRes.data;
+      const myRegisteredAppointments = regAppointmentsRes.data || [];
+      const mySessionRegs = sessionRegsRes.data || [];
+      const publicAppointments = publicAppointmentsRes.data || [];
+      const myRegistrations = myRegistrationsRes.data || [];
+      const myAppointmentRegistrations = myAppointmentRegsRes.data || [];
 
       const formattedPersonalSessions = (scheduledData || []).map(s => {
         let title = s.title;
@@ -135,61 +146,12 @@ function ClientAppointments() {
         };
       });
 
-      setPersonalSessions(formattedPersonalSessions);
-
-      const { data: availableGroupSessionsRaw, error: groupError } = await supabase
-        .from('scheduled_sessions')
-        .select(`
-          *,
-          session:sessions (
-            id,
-            name,
-            description,
-            duration_minutes,
-            difficulty_level,
-            session_type
-          ),
-          coach:coaches (full_name, email, phone)
-        `)
-        .gte('scheduled_date', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
-        .order('scheduled_date', { ascending: true });
-
-      if (groupError) throw groupError;
-
       // Filter in JS to avoid inner join RLS issues
       const availableGroupSessions = (availableGroupSessionsRaw || []).filter(
         (s: any) => ['group', 'group_public'].includes(s.session?.session_type) && !s.client_id
       );
 
-      // --- FETCH REGISTERED APPOINTMENTS FOR "MY CALENDAR" ---
-      const { data: myRegisteredAppointments, error: myRegAppsError } = await supabase
-        .from('appointment_registrations')
-        .select(`
-          appointment:appointments (
-            id,
-            title,
-            start,
-            duration,
-            status,
-            notes,
-            session_id,
-            coach:coaches (full_name, email, phone),
-            session:sessions (
-              id,
-              name,
-              description,
-              duration_minutes,
-              difficulty_level
-            )
-          )
-        `)
-        .eq('client_id', client.id);
-
-      if (myRegAppsError) {
-        console.error('Error fetching registered appointments:', myRegAppsError);
-      }
-
-      const formattedRegisteredAppointments = (myRegisteredAppointments || []).map((reg: any) => {
+      const formattedRegisteredAppointments = myRegisteredAppointments.map((reg: any) => {
         const apt = reg.appointment;
         if (!apt) return null;
         return {
@@ -205,36 +167,16 @@ function ClientAppointments() {
           session: apt.session || { name: apt.title, duration_minutes: apt.duration },
           registered: true
         };
-      })
-        .filter(Boolean);
+      }).filter(Boolean);
 
-      // --- FETCH REGISTERED SCHEDULED SESSIONS (Group Sessions I joined) ---
-      const { data: mySessionRegs, error: mySessRegError } = await supabase
-        .from('session_registrations')
-        .select('scheduled_session_id')
-        .eq('client_id', client.id);
-
-      if (mySessRegError) console.error('Error fetching session registrations:', mySessRegError);
-
-      const registeredSessionIds = (mySessionRegs || []).map(r => r.scheduled_session_id);
-
+      // Batch 2: fetch registered sessions (depends on sessionRegsRes)
+      const registeredSessionIds = mySessionRegs.map(r => r.scheduled_session_id);
       let formattedRegisteredSessions: any[] = [];
 
       if (registeredSessionIds.length > 0) {
         const { data: registeredSessionsData, error: regSessError } = await supabase
           .from('scheduled_sessions')
-          .select(`
-            *,
-            session:sessions (
-              id,
-              name,
-              description,
-              duration_minutes,
-              difficulty_level,
-              session_type
-            ),
-            coach:coaches (full_name, email, phone)
-          `)
+          .select(sessionSelect)
           .in('id', registeredSessionIds);
 
         if (regSessError) console.error('Error fetching registered sessions:', regSessError);
@@ -256,65 +198,20 @@ function ClientAppointments() {
         }));
       }
 
-      // Merge ALL: personal (1-on-1) + registered appointments + registered group sessions
-      // Deduplicate by ID to be safe
       const allMySessions = [
         ...formattedPersonalSessions,
         ...formattedRegisteredAppointments,
         ...formattedRegisteredSessions
       ];
 
-      let currentPersonalSessions = Array.from(new Map(allMySessions.map(item => [item.id, item])).values());
-
-
-      // --- END FETCH REGISTERED APPOINTMENTS ---
-
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-      const { data: publicAppointments, error: appointmentsError } = await supabase
-        .from('appointments')
-        .select(`
-          *,
-          coach:coaches (full_name, email, phone),
-          session:sessions (
-            id,
-            name,
-            description,
-            duration_minutes,
-            difficulty_level
-          )
-        `)
-        .gte('start', thirtyDaysAgo.toISOString())
-        .in('status', ['scheduled', 'confirmed'])
-        .order('start', { ascending: true });
-
-      if (appointmentsError) {
-        console.error('Error fetching appointments:', appointmentsError);
-      }
-
-      const { data: myRegistrations, error: regError } = await supabase
-        .from('session_registrations')
-        .select('scheduled_session_id, status')
-        .eq('client_id', client.id);
-
-      if (regError) throw regError;
-
-      const { data: myAppointmentRegistrations, error: appointmentRegError } = await supabase
-        .from('appointment_registrations')
-        .select('appointment_id, status')
-        .eq('client_id', client.id);
-
-      if (appointmentRegError) {
-        console.error('Error fetching appointment registrations:', appointmentRegError);
-      }
+      const currentPersonalSessions = Array.from(new Map(allMySessions.map(item => [item.id, item])).values());
 
       const registrationMap = new Map(
-        (myRegistrations || []).map(r => [r.scheduled_session_id, r.status])
+        myRegistrations.map(r => [r.scheduled_session_id, r.status])
       );
 
       const appointmentRegistrationMap = new Map(
-        (myAppointmentRegistrations || []).map(r => [r.appointment_id, r.status])
+        myAppointmentRegistrations.map(r => [r.appointment_id, r.status])
       );
 
       const formattedGroupSessions = (availableGroupSessions || []).map(s => ({
@@ -354,6 +251,8 @@ function ClientAppointments() {
           source: 'appointment',
           price: a.price,
           payment_method: a.payment_method,
+          payment_status: a.payment_status,
+          payment_link: a.payment_link,
           max_participants: a.max_participants,
           current_participants: a.current_participants || 0,
           registered: appointmentRegistrationMap.has(a.id) && appointmentRegistrationMap.get(a.id) !== 'cancelled',
@@ -462,7 +361,7 @@ function ClientAppointments() {
     }
   };
 
-  const handleSelectEvent = (event) => {
+  const handleSelectEvent = async (event) => {
     console.log('Selected event:', event);
 
     // Handle special item types
@@ -480,7 +379,7 @@ function ClientAppointments() {
       return;
     }
 
-    // Default: Session/Workout logic
+    // Default: Session/Workout logic (payment gate is handled by buttons in the modal)
     console.log('Session ID to fetch exercises:', event.session?.id);
     setSelectedSession(event);
     setIsModalOpen(true);
@@ -542,11 +441,23 @@ function ClientAppointments() {
       } else {
         const { data: scheduledSession } = await supabase
           .from('scheduled_sessions')
-          .select('coach_id')
+          .select('coach_id, payment_method, price')
           .eq('id', sessionId)
           .maybeSingle();
 
         if (!scheduledSession) throw new Error('Session not found');
+
+        // Handle online payment for scheduled sessions
+        if (scheduledSession.payment_method === 'online' && scheduledSession.price > 0) {
+          try {
+            await createCheckoutSession(undefined, client.id, sessionId);
+            return; // Redirect to Stripe
+          } catch (error: any) {
+            console.error('Payment initialization error:', error);
+            alert(error.message || 'Erreur lors de l\'initialisation du paiement');
+            return;
+          }
+        }
 
         const { error } = await supabase
           .from('session_registrations')
@@ -907,7 +818,20 @@ function ClientAppointments() {
               }}
               onRegister={handleRegister}
               onUnregister={handleUnregister}
-              onStartTraining={() => {
+              onStartTraining={async () => {
+                // If payment required but not completed, create checkout
+                if (selectedSession.payment_method === 'online' && selectedSession.price > 0 && selectedSession.payment_status !== 'completed') {
+                  try {
+                    setRegistering(true);
+                    await createCheckoutSession(undefined, client.id, selectedSession.id);
+                  } catch (error: any) {
+                    console.error('Payment error:', error);
+                    alert(error.message || 'Erreur lors de l\'initialisation du paiement');
+                  } finally {
+                    setRegistering(false);
+                  }
+                  return;
+                }
                 if (selectedSession.source === 'appointment') {
                   navigate(`/client/live-workout/appointment/${selectedSession.id}`);
                 } else {
@@ -1179,13 +1103,22 @@ const SessionModal = ({ session, exercises, groups, loadingExercises, onClose, o
           </button>
 
           {session.type === 'personal' && session.status !== 'completed' && session.status !== 'cancelled' && (
-            <button
-              onClick={onStartTraining}
-              className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-xl shadow-lg shadow-blue-500/20 transition-all flex items-center gap-2"
-            >
-              <Play className="w-4 h-4" />
-              Commencer
-            </button>
+            session.payment_method === 'online' && session.price > 0 && session.payment_status !== 'completed' ? (
+              <button
+                onClick={onStartTraining}
+                className="px-6 py-2.5 bg-amber-600 hover:bg-amber-500 text-white text-sm font-medium rounded-xl shadow-lg shadow-amber-500/20 transition-all flex items-center gap-2"
+              >
+                Payer {session.price} CHF
+              </button>
+            ) : (
+              <button
+                onClick={onStartTraining}
+                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-xl shadow-lg shadow-blue-500/20 transition-all flex items-center gap-2"
+              >
+                <Play className="w-4 h-4" />
+                Commencer
+              </button>
+            )
           )}
 
           {session.type === 'group' && (
@@ -1215,7 +1148,7 @@ const SessionModal = ({ session, exercises, groups, loadingExercises, onClose, o
                     disabled={registering}
                     className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium rounded-xl shadow-lg shadow-emerald-500/20 transition-all"
                   >
-                    {registering ? '...' : "S'inscrire"}
+                    {registering ? '...' : (session.payment_method === 'online' && session.price > 0 ? `Payer ${session.price} CHF` : "S'inscrire")}
                   </button>
                 )
               )}

@@ -108,78 +108,22 @@ function SessionsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredSessions.length > 0 ? (
             filteredSessions.map((session) => (
-              <div key={session.id} className="glass-card group hover:bg-white/5 transition-all duration-300">
-                <div className="p-6">
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h3 className="text-xl font-bold text-white mb-1 group-hover:text-blue-400 transition-colors">{session.name}</h3>
-                      <div className="flex items-center gap-2 text-sm text-gray-400">
-                        <span className={`px-2 py-0.5 rounded text-xs font-medium border ${session.difficulty_level === 'Débutant' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
-                          session.difficulty_level === 'Intermédiaire' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' :
-                            'bg-red-500/10 text-red-400 border-red-500/20'
-                          }`}>
-                          {session.difficulty_level}
-                        </span>
-                        <span>•</span>
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" /> {session.duration_minutes} min
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        onClick={() => {
-                          setSelectedSession(session);
-                          setIsModalOpen(true);
-                        }}
-                        className="p-2 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors"
-                        title="Modifier"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={async () => {
-                          if (window.confirm('Êtes-vous sûr de vouloir supprimer cette séance ?')) {
-                            try {
-                              await deleteSession.mutateAsync(session.id);
-                            } catch (error) {
-                              console.error('Error deleting session:', error);
-                              setErrorDetails('Failed to delete session. Please try again.');
-                            }
-                          }
-                        }}
-                        className="p-2 hover:bg-red-500/10 rounded-lg text-gray-400 hover:text-red-400 transition-colors"
-                        title="Supprimer"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-
-                  <p className="text-gray-400 text-sm mb-6 line-clamp-2">{session.description || "Aucune description"}</p>
-
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between text-sm text-gray-500 mb-2">
-                      <span>Aperçu</span>
-                      <span className="text-xs bg-white/5 px-2 py-0.5 rounded">
-                        {(session.exercise_groups?.length || 0)} blocs • {(session.session_exercises?.length || 0)} exos
-                      </span>
-                    </div>
-                    {/* Quick preview of blocks */}
-                    <div className="space-y-1">
-                      {session.exercise_groups?.slice(0, 3).map((group: any) => (
-                        <div key={group.id} className="text-xs text-gray-300 flex items-center justify-between bg-white/5 px-2 py-1 rounded">
-                          <span>{group.name}</span>
-                          <span className="text-gray-500 uppercase text-[10px]">{group.type || 'Standard'}</span>
-                        </div>
-                      ))}
-                      {session.exercise_groups && session.exercise_groups.length > 3 && (
-                        <div className="text-xs text-gray-500 text-center">+ {session.exercise_groups.length - 3} autres blocs</div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <SessionCard
+                key={session.id}
+                session={session}
+                onEdit={() => { setSelectedSession(session); setIsModalOpen(true); }}
+                onDelete={async () => {
+                  if (window.confirm('Êtes-vous sûr de vouloir supprimer cette séance ?')) {
+                    try {
+                      await deleteSession.mutateAsync(session.id);
+                    } catch (error) {
+                      console.error('Error deleting session:', error);
+                      setErrorDetails('Impossible de supprimer la séance. Réessayez.');
+                    }
+                  }
+                }}
+                isDeleting={deleteSession.isPending}
+              />
             ))
           ) : (
             <div className="col-span-full text-center py-20 glass-card">
@@ -228,5 +172,50 @@ function SessionsPage() {
     </div>
   );
 }
+
+const SessionCard = React.memo(({ session, onEdit, onDelete, isDeleting }: { session: any; onEdit: () => void; onDelete: () => void; isDeleting: boolean }) => (
+  <div className="glass-card group hover:bg-white/5 transition-all duration-300">
+    <div className="p-6">
+      <div className="flex justify-between items-start mb-4">
+        <div>
+          <h3 className="text-xl font-bold text-white mb-1 group-hover:text-blue-400 transition-colors">{session.name}</h3>
+          <div className="flex items-center gap-2 text-sm text-gray-400">
+            <span className={`px-2 py-0.5 rounded text-xs font-medium border ${session.difficulty_level === 'Débutant' ? 'bg-green-500/10 text-green-400 border-green-500/20' : session.difficulty_level === 'Intermédiaire' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>
+              {session.difficulty_level}
+            </span>
+            <span>•</span>
+            <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {session.duration_minutes} min</span>
+          </div>
+        </div>
+        <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button onClick={onEdit} className="p-2 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors" title="Modifier">
+            <Edit className="w-4 h-4" />
+          </button>
+          <button onClick={onDelete} disabled={isDeleting} className="p-2 hover:bg-red-500/10 rounded-lg text-gray-400 hover:text-red-400 transition-colors disabled:opacity-50" title="Supprimer">
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+      <p className="text-gray-400 text-sm mb-6 line-clamp-2">{session.description || "Aucune description"}</p>
+      <div className="space-y-3">
+        <div className="flex items-center justify-between text-sm text-gray-500 mb-2">
+          <span>Aperçu</span>
+          <span className="text-xs bg-white/5 px-2 py-0.5 rounded">{(session.exercise_groups?.length || 0)} blocs • {(session.session_exercises?.length || 0)} exos</span>
+        </div>
+        <div className="space-y-1">
+          {session.exercise_groups?.slice(0, 3).map((group: any) => (
+            <div key={group.id} className="text-xs text-gray-300 flex items-center justify-between bg-white/5 px-2 py-1 rounded">
+              <span>{group.name}</span>
+              <span className="text-gray-500 uppercase text-[10px]">{group.type || 'Standard'}</span>
+            </div>
+          ))}
+          {session.exercise_groups && session.exercise_groups.length > 3 && (
+            <div className="text-xs text-gray-500 text-center">+ {session.exercise_groups.length - 3} autres blocs</div>
+          )}
+        </div>
+      </div>
+    </div>
+  </div>
+));
 
 export default SessionsPage;

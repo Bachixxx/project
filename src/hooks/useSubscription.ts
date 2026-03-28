@@ -28,7 +28,7 @@ export function useSubscription() {
       // Get coach subscription info
       const { data: coachData, error: coachError } = await supabase
         .from('coaches')
-        .select('*')
+        .select('subscription_type, subscription_end_date, has_branding, branding_subscription_id, has_terminal, terminal_subscription_id')
         .eq('id', user.id)
         .maybeSingle();
 
@@ -129,7 +129,7 @@ export function useSubscription() {
       if (!finalPriceId) {
         const { data: plan, error: planError } = await supabase
           .from('subscription_plans')
-          .select('*')
+          .select('stripe_price_id')
           .eq('interval', 'month')
           .eq('is_test', true)
           .single();

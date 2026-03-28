@@ -1,3 +1,4 @@
+import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -21,6 +22,8 @@ export interface Client {
 export function useCoachClients() {
     const { user } = useAuth();
     const queryClient = useQueryClient();
+    const [mutationError, setMutationError] = useState<string | null>(null);
+    const clearMutationError = useCallback(() => setMutationError(null), []);
 
     // 1. Fetch Clients
     const query = useQuery({
@@ -32,7 +35,8 @@ export function useCoachClients() {
                 .from('clients')
                 .select('*')
                 .eq('coach_id', user.id)
-                .order('full_name');
+                .order('full_name')
+                .limit(200);
 
             if (error) throw error;
             return data as Client[];
@@ -45,6 +49,22 @@ export function useCoachClients() {
         mutationFn: async (newClient: Partial<Client>) => {
             if (!user?.id) throw new Error("No user");
 
+            // Check if email already exists across ALL coaches
+            if (newClient.email) {
+                const { data: existing } = await supabase
+                    .from('clients')
+                    .select('id, coach_id')
+                    .eq('email', newClient.email)
+                    .maybeSingle();
+
+                if (existing && existing.coach_id !== user.id) {
+                    throw new Error('Ce client est déjà inscrit auprès d\'un autre coach.');
+                }
+                if (existing && existing.coach_id === user.id) {
+                    throw new Error('Vous avez déjà un client avec cet email.');
+                }
+            }
+
             const { data, error } = await supabase
                 .from('clients')
                 .insert([{ ...newClient, coach_id: user.id }])
@@ -55,10 +75,12 @@ export function useCoachClients() {
             return data;
         },
         onSuccess: () => {
-            // Invalidate and refetch
+            setMutationError(null);
             queryClient.invalidateQueries({ queryKey: ['clients', user?.id] });
-            // Also invalidate subscription info as client count changed
             queryClient.invalidateQueries({ queryKey: ['subscription'] });
+        },
+        onError: (err: any) => {
+            setMutationError(err.message || 'Erreur lors de la création du client');
         },
     });
 
@@ -85,10 +107,11 @@ export function useCoachClients() {
 
             return { previousClients };
         },
-        onError: (err, newTodo, context) => {
+        onError: (err: any, newTodo, context) => {
             if (context?.previousClients) {
                 queryClient.setQueryData(['clients', user?.id], context.previousClients);
             }
+            setMutationError(err.message || 'Erreur lors de la mise à jour du client');
         },
         onSettled: () => {
             queryClient.invalidateQueries({ queryKey: ['clients', user?.id] });
@@ -99,6 +122,8 @@ export function useCoachClients() {
         clients: query.data || [],
         isLoading: query.isLoading,
         error: query.error,
+        mutationError,
+        clearMutationError,
         createClient,
         updateClient,
     };

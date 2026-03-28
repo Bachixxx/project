@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 
 interface LiveSessionState {
     isActive: boolean;
@@ -32,15 +32,15 @@ export function LiveSessionProvider({ children }: { children: React.ReactNode })
         localStorage.setItem('coachency_live_session', JSON.stringify(sessionState));
     }, [sessionState]);
 
-    const startSession = (data: Omit<LiveSessionState, 'isActive' | 'startTime'>) => {
+    const startSession = useCallback((data: Omit<LiveSessionState, 'isActive' | 'startTime'>) => {
         setSessionState({
             ...data,
             isActive: true,
             startTime: new Date(),
         });
-    };
+    }, []);
 
-    const endSession = () => {
+    const endSession = useCallback(() => {
         setSessionState({
             isActive: false,
             clientId: null,
@@ -48,10 +48,12 @@ export function LiveSessionProvider({ children }: { children: React.ReactNode })
             startTime: null,
         });
         localStorage.removeItem('coachency_live_session');
-    };
+    }, []);
+
+    const value = useMemo(() => ({ sessionState, startSession, endSession }), [sessionState, startSession, endSession]);
 
     return (
-        <LiveSessionContext.Provider value={{ sessionState, startSession, endSession }}>
+        <LiveSessionContext.Provider value={value}>
             {children}
         </LiveSessionContext.Provider>
     );

@@ -9,17 +9,42 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL') || ''
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+function corsHeaders(req: Request) {
+  const origin = req.headers.get('Origin') ?? ''
+  const allowed = origin === 'https://coachency.app'
+    || origin === 'https://www.coachency.app'
+    || origin === 'https://melodious-faun-62e372.netlify.app'
+    || origin.endsWith('--melodious-faun-62e372.netlify.app')
+  return {
+    'Access-Control-Allow-Origin': allowed ? origin : 'https://coachency.app',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  }
 }
 
 serve(async (req: any) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response('ok', { headers: corsHeaders(req) })
   }
 
   try {
+    // Authenticate: accept user JWT or service role key (for internal calls from webhook/DB triggers)
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Missing Authorization header' }), {
+        headers: { ...corsHeaders(req), 'Content-Type': 'application/json' }, status: 401,
+      })
+    }
+    const token = authHeader.replace('Bearer ', '')
+    if (token !== supabaseServiceKey) {
+      const anonClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY') || '')
+      const { data: { user }, error: authError } = await anonClient.auth.getUser(token)
+      if (authError || !user) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          headers: { ...corsHeaders(req), 'Content-Type': 'application/json' }, status: 401,
+        })
+      }
+    }
+
     const { to, template_name, data, subject: overrideSubject, html: overrideHtml } = await req.json()
 
     if (!to) {
@@ -67,7 +92,7 @@ serve(async (req: any) => {
     return new Response(
       JSON.stringify({ success: true, id: emailData?.id }),
       {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
         status: 200,
       },
     )
@@ -90,7 +115,7 @@ serve(async (req: any) => {
     return new Response(
       JSON.stringify({ error: error.message }),
       {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
         status: 400,
       },
     )

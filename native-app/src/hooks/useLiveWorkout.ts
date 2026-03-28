@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { Alert } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/ClientAuthContext';
 
@@ -247,8 +248,9 @@ export function useLiveWorkout(scheduledSessionId?: string, appointmentId?: stri
             });
 
             setCompletedExercises(initialCompleted);
-        } catch (err) {
+        } catch (err: any) {
             console.error('Error fetching live session:', err);
+            Alert.alert('Erreur', err.message || 'Impossible de charger la séance');
         } finally {
             setIsLoading(false);
         }
@@ -277,6 +279,7 @@ export function useLiveWorkout(scheduledSessionId?: string, appointmentId?: stri
             const logData: any = {
                 client_id: client?.id,
                 exercise_id: currentEx.exercise_id,
+                exercise_name: currentEx.name,
                 set_number: setIndex + 1,
                 reps: currentSet.reps,
                 weight: currentSet.weight,

@@ -47,6 +47,8 @@ function ExercisesPage() {
   const [sourceFilter, setSourceFilter] = useState<'all' | 'mine' | 'system'>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
   const { user } = useAuth();
 
   const categories = [
@@ -69,7 +71,8 @@ function ExercisesPage() {
         .from('exercises')
         .select('*')
         .or(`coach_id.eq.${user?.id},coach_id.is.null`)
-        .order('name');
+        .order('name')
+        .limit(200);
 
       if (error) throw error;
       setExercises(data || []);
@@ -104,6 +107,8 @@ function ExercisesPage() {
   const handleDelete = async (id: string) => {
     if (!window.confirm(t('common.confirmDelete'))) return;
 
+    setDeleting(id);
+    setDeleteError(null);
     try {
       const { error } = await supabase
         .from('exercises')
@@ -112,13 +117,22 @@ function ExercisesPage() {
 
       if (error) throw error;
       fetchExercises();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting exercise:', error);
+      setDeleteError(error.message || "Impossible de supprimer l'exercice");
+    } finally {
+      setDeleting(null);
     }
   };
 
   return (
     <div className="p-6 max-w-[2000px] mx-auto space-y-8 animate-fade-in">
+      {deleteError && (
+        <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex items-center justify-between">
+          <span>{deleteError}</span>
+          <button onClick={() => setDeleteError(null)} className="text-red-400 hover:text-red-300 ml-4">✕</button>
+        </div>
+      )}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">{t('exercises.title')}</h1>
@@ -258,7 +272,8 @@ function ExercisesPage() {
                         </button>
                         <button
                           onClick={() => handleDelete(exercise.id)}
-                          className="p-1 hover:bg-red-500/20 rounded text-gray-400 hover:text-red-400 transition-colors"
+                          disabled={deleting === exercise.id}
+                          className="p-1 hover:bg-red-500/20 rounded text-gray-400 hover:text-red-400 transition-colors disabled:opacity-50"
                           title={t('common.delete')}
                         >
                           <Trash2 className="w-4 h-4" />

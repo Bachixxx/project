@@ -17,7 +17,8 @@ import {
   Edit2,
   Trash2,
   X,
-  Save
+  Save,
+  Bug
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -66,7 +67,7 @@ interface Exercise {
   created_at: string;
 }
 
-type AccountType = 'coaches' | 'clients' | 'waitlist' | 'exercises';
+type AccountType = 'coaches' | 'clients' | 'waitlist' | 'exercises' | 'bugs';
 
 function Admin() {
   const { user } = useAuth();
@@ -98,6 +99,8 @@ function Admin() {
   const [clients, setClients] = useState<Client[]>([]);
   const [waitlistEntries, setWaitlistEntries] = useState<WaitlistEntry[]>([]);
   const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [bugReports, setBugReports] = useState<any[]>([]);
+  const [selectedScreenshot, setSelectedScreenshot] = useState<string | null>(null);
 
   // UI State
   const [searchQuery, setSearchQuery] = useState('');
@@ -158,7 +161,8 @@ function Admin() {
         const { data, error } = await supabase
           .from('coaches')
           .select('*')
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: false })
+          .limit(100);
 
         if (error) throw error;
         setCoaches(data || []);
@@ -171,7 +175,8 @@ function Admin() {
               full_name
             )
           `)
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: false })
+          .limit(100);
 
         if (clientsError) throw clientsError;
 
@@ -194,10 +199,20 @@ function Admin() {
           .from('exercises')
           .select('*')
           .is('coach_id', null)
-          .order('name', { ascending: true });
+          .order('name', { ascending: true })
+          .limit(100);
 
         if (error) throw error;
         setExercises(data || []);
+      } else if (selectedTab === 'bugs') {
+        const { data, error } = await supabase
+          .from('bug_reports')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(100);
+
+        if (error) throw error;
+        setBugReports(data || []);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -481,6 +496,19 @@ function Admin() {
               </div>
               {selectedTab === 'exercises' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary-500" />}
             </button>
+            <button
+              onClick={() => setSelectedTab('bugs')}
+              className={`flex-1 px-6 py-4 text-sm font-medium transition-colors relative ${selectedTab === 'bugs'
+                ? 'text-amber-400'
+                : 'text-gray-400 hover:text-white hover:bg-white/5'
+                }`}
+            >
+              <div className="flex items-center justify-center">
+                <Bug className="w-5 h-5 mr-2" />
+                Bugs ({bugReports.length})
+              </div>
+              {selectedTab === 'bugs' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-amber-500" />}
+            </button>
           </div>
         </div>
 
@@ -627,8 +655,56 @@ function Admin() {
               </tbody>
             </table>
           </div>
+
+          {/* Bug Reports Section */}
+          {selectedTab === 'bugs' && (
+            <div className="space-y-4">
+              {bugReports.length === 0 ? (
+                <div className="text-center py-12 text-gray-500">
+                  <Bug className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                  <p>Aucun signalement</p>
+                </div>
+              ) : (
+                bugReports.map((report) => (
+                  <div key={report.id} className="bg-white/5 rounded-xl p-4 border border-white/5">
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${report.user_role === 'coach' ? 'bg-primary-500/20 text-primary-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
+                          {report.user_role || 'unknown'}
+                        </span>
+                        <span className="text-xs text-gray-500 font-mono">{report.page_url}</span>
+                      </div>
+                      <span className="text-xs text-gray-500">{new Date(report.created_at).toLocaleString('fr-CH')}</span>
+                    </div>
+                    <p className="text-white text-sm mb-3">{report.description}</p>
+                    <div className="flex items-center gap-4 text-xs text-gray-500">
+                      <span>{report.screen_size}</span>
+                      <span className="truncate max-w-[300px]">{report.user_agent}</span>
+                    </div>
+                    {report.screenshot && (
+                      <div className="mt-3">
+                        <img
+                          src={report.screenshot}
+                          alt="Screenshot"
+                          className="rounded-lg border border-white/10 max-h-40 cursor-pointer hover:opacity-80 transition-opacity"
+                          onClick={() => setSelectedScreenshot(report.screenshot)}
+                        />
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Screenshot Fullscreen Modal */}
+      {selectedScreenshot && (
+        <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 cursor-pointer" onClick={() => setSelectedScreenshot(null)}>
+          <img src={selectedScreenshot} alt="Screenshot" className="max-w-full max-h-full rounded-lg" />
+        </div>
+      )}
 
       {/* Ban Modal */}
       {showBanModal && selectedAccount && (

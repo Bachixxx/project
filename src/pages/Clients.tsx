@@ -154,72 +154,7 @@ function ClientsPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredClients.map((client) => (
-            <Link
-              key={client.id}
-              to={`/clients/${client.id}`}
-              className="glass-card p-6 group relative overflow-hidden"
-            >
-              <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                <ChevronRight className="w-5 h-5 text-primary-400" />
-              </div>
-
-              <div className="flex items-start gap-4 mb-6">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gray-700 to-gray-600 flex items-center justify-center text-xl font-bold text-white shadow-lg">
-                  {client.full_name.charAt(0)}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-lg text-white truncate pr-4">
-                    {client.full_name}
-                  </h3>
-                  <div className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-1 ${client.status === 'active'
-                    ? 'bg-green-500/10 text-green-400 border border-green-500/20'
-                    : client.status === 'inactive'
-                      ? 'bg-gray-500/10 text-gray-400 border border-gray-500/20'
-                      : 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'
-                    }`}>
-                    {client.status.charAt(0).toUpperCase() + client.status.slice(1)}
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-3 mb-6">
-                <div className="flex items-center gap-3 text-sm text-gray-400">
-                  <Mail className="w-4 h-4 text-primary-500" />
-                  <span className="truncate">{client.email}</span>
-                </div>
-                {client.phone && (
-                  <div className="flex items-center gap-3 text-sm text-gray-400">
-                    <Phone className="w-4 h-4 text-primary-500" />
-                    <span>{client.phone}</span>
-                  </div>
-                )}
-                <div className="flex items-center gap-3 text-sm text-gray-400">
-                  <Calendar className="w-4 h-4 text-primary-500" />
-                  <span>Joined {new Date(client.created_at).toLocaleDateString()}</span>
-                </div>
-              </div>
-
-              <div className="border-t border-white/5 pt-4">
-                <div className="flex flex-wrap gap-2">
-                  {client.fitness_goals?.slice(0, 3).map((goal, index) => (
-                    <span
-                      key={index}
-                      className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-white/5 text-gray-300 border border-white/5"
-                    >
-                      <Target className="w-3 h-3 mr-1 text-primary-400" />
-                      {goal}
-                    </span>
-                  ))}
-                  {client.fitness_goals?.length > 3 && (
-                    <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-white/5 text-gray-300 border border-white/5">
-                      +{client.fitness_goals.length - 3}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-primary-500 to-accent-500 opacity-0 group-hover:opacity-100 transition-opacity" />
-            </Link>
+            <ClientCard key={client.id} client={client} />
           ))}
         </div>
       )}
@@ -478,5 +413,59 @@ function ClientModal({ client, onClose, onSave }: { client: Client | null, onClo
     </ResponsiveModal>
   );
 }
+
+const ClientCard = React.memo(({ client }: { client: any }) => (
+  <Link
+    to={`/clients/${client.id}`}
+    className="glass-card p-6 group relative overflow-hidden"
+  >
+    <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
+      <ChevronRight className="w-5 h-5 text-primary-400" />
+    </div>
+    <div className="flex items-start gap-4 mb-6">
+      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gray-700 to-gray-600 flex items-center justify-center text-xl font-bold text-white shadow-lg">
+        {client.full_name.charAt(0)}
+      </div>
+      <div className="flex-1 min-w-0">
+        <h3 className="font-semibold text-lg text-white truncate pr-4">{client.full_name}</h3>
+        <div className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-1 ${client.status === 'active' ? 'bg-green-500/10 text-green-400 border border-green-500/20' : client.status === 'inactive' ? 'bg-gray-500/10 text-gray-400 border border-gray-500/20' : 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'}`}>
+          {client.status.charAt(0).toUpperCase() + client.status.slice(1)}
+        </div>
+      </div>
+    </div>
+    <div className="space-y-3 mb-6">
+      <div className="flex items-center gap-3 text-sm text-gray-400">
+        <Mail className="w-4 h-4 text-primary-500" />
+        <span className="truncate">{client.email}</span>
+      </div>
+      {client.phone && (
+        <div className="flex items-center gap-3 text-sm text-gray-400">
+          <Phone className="w-4 h-4 text-primary-500" />
+          <span>{client.phone}</span>
+        </div>
+      )}
+      <div className="flex items-center gap-3 text-sm text-gray-400">
+        <Calendar className="w-4 h-4 text-primary-500" />
+        <span>Joined {new Date(client.created_at).toLocaleDateString()}</span>
+      </div>
+    </div>
+    <div className="border-t border-white/5 pt-4">
+      <div className="flex flex-wrap gap-2">
+        {client.fitness_goals?.slice(0, 3).map((goal: string, index: number) => (
+          <span key={index} className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-white/5 text-gray-300 border border-white/5">
+            <Target className="w-3 h-3 mr-1 text-primary-400" />
+            {goal}
+          </span>
+        ))}
+        {client.fitness_goals?.length > 3 && (
+          <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-white/5 text-gray-300 border border-white/5">
+            +{client.fitness_goals.length - 3}
+          </span>
+        )}
+      </div>
+    </div>
+    <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-primary-500 to-accent-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+  </Link>
+));
 
 export default ClientsPage;

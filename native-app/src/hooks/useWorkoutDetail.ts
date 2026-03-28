@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Alert } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/ClientAuthContext';
 
@@ -117,6 +118,7 @@ export function useWorkoutDetail(clientProgramId: string) {
         } catch (err: any) {
             console.error('Error fetching program details:', err);
             setError(err.message);
+            Alert.alert('Erreur', err.message || 'Impossible de charger le programme');
         } finally {
             setIsLoading(false);
         }

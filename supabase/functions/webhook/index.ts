@@ -49,7 +49,33 @@ Deno.serve(async (req) => {
       endpointSecret
     );
 
-    console.log('Processing webhook event:', event.type);
+    console.log('Processing webhook event:', event.type, event.id);
+
+    // Idempotency: skip already-processed events
+    const { data: existingEvent } = await supabase
+      .from('stripe_processed_events')
+      .select('event_id')
+      .eq('event_id', event.id)
+      .maybeSingle();
+
+    if (existingEvent) {
+      console.log('Event already processed, skipping:', event.id);
+      return new Response(JSON.stringify({ received: true, duplicate: true }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200,
+      });
+    }
+
+    // Mark as processing BEFORE handling (PK prevents concurrent duplicates)
+    const { error: markError } = await supabase
+      .from('stripe_processed_events')
+      .insert({ event_id: event.id });
+
+    if (markError) {
+      console.log('Concurrent duplicate detected, skipping:', event.id);
+      return new Response(JSON.stringify({ received: true, duplicate: true }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200,
+      });
+    }
 
     switch (event.type) {
       case 'payment_intent.succeeded': {
@@ -73,55 +99,16 @@ Deno.serve(async (req) => {
             throw new Error('No coachId in metadata');
           }
 
-          if (type === 'branding_addon') {
-            const { error: updateError } = await supabase
-              .from('coaches')
-              .update({
-                has_branding: true,
-                branding_subscription_id: session.subscription,
-              })
-              .eq('id', coachId);
-
-            if (updateError) throw updateError;
-            console.log('Successfully activated Branding for coach:', coachId);
-
-          } else if (type === 'terminal_addon') {
-            const { error: updateError } = await supabase
-              .from('coaches')
-              .update({
-                has_terminal: true,
-                terminal_subscription_id: session.subscription,
-              })
-              .eq('id', coachId);
-
-            if (updateError) throw updateError;
-            console.log('Successfully activated Terminal for coach:', coachId);
-
-          } else {
-            const { error: updateError } = await supabase
-              .from('coaches')
-              .update({
-                subscription_type: 'paid',
-                client_limit: null,
-                stripe_subscription_id: session.subscription,
-                subscription_end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-              })
-              .eq('id', coachId);
-
-            if (updateError) throw updateError;
-
-            await supabase
-              .from('subscription_history')
-              .insert({
-                coach_id: coachId,
-                previous_type: 'free',
-                new_type: 'paid',
-                payment_id: session.payment_intent,
-                notes: 'Subscription upgraded via Stripe checkout',
-              });
-
-            console.log('Successfully processed Main Subscription for coach:', coachId);
-          }
+          // Atomic: UPDATE coaches + INSERT subscription_history in one transaction
+          const { error: rpcError } = await supabase.rpc('process_subscription_event', {
+            p_coach_id: coachId,
+            p_action: 'activate',
+            p_subscription_id: session.subscription,
+            p_payment_id: session.payment_intent,
+            p_type: type || null,
+          });
+          if (rpcError) throw rpcError;
+          console.log(`Successfully activated subscription (type=${type || 'main'}) for coach:`, coachId);
         } else if (session.mode === 'payment') {
           await handleSuccessfulPayment(session);
         }
@@ -138,6 +125,7 @@ Deno.serve(async (req) => {
           throw new Error('No coachId in metadata');
         }
 
+        // Determine which subscription type is being cancelled
         const { data: coachData, error: fetchError } = await supabase
           .from('coaches')
           .select('stripe_subscription_id, branding_subscription_id, terminal_subscription_id')
@@ -146,41 +134,27 @@ Deno.serve(async (req) => {
 
         if (fetchError) throw fetchError;
 
+        let deactivateType: string | null = null;
         if (coachData.branding_subscription_id === subscriptionId) {
-          await supabase
-            .from('coaches')
-            .update({ has_branding: false, branding_subscription_id: null })
-            .eq('id', coachId);
-          console.log('Successfully deactivated Branding for coach:', coachId);
+          deactivateType = 'branding_addon';
         } else if (coachData.terminal_subscription_id === subscriptionId) {
-          await supabase
-            .from('coaches')
-            .update({ has_terminal: false, terminal_subscription_id: null })
-            .eq('id', coachId);
-          console.log('Successfully deactivated Terminal for coach:', coachId);
+          deactivateType = 'terminal_addon';
         } else if (coachData.stripe_subscription_id === subscriptionId) {
-          const { error: updateError } = await supabase
-            .from('coaches')
-            .update({
-              subscription_type: 'free',
-              client_limit: 5,
-              stripe_subscription_id: null,
-              subscription_end_date: null,
-            })
-            .eq('id', coachId);
-
-          if (updateError) throw updateError;
-
-          await supabase
-            .from('subscription_history')
-            .insert({
-              coach_id: coachId,
-              previous_type: 'paid',
-              new_type: 'free',
-              notes: 'Subscription cancelled',
-            });
-          console.log('Successfully processed Main Subscription cancellation for coach:', coachId);
+          deactivateType = null; // main subscription
+        } else {
+          console.log('Unknown subscription ID, skipping:', subscriptionId);
+          break;
         }
+
+        // Atomic: UPDATE coaches + INSERT subscription_history in one transaction
+        const { error: deactivateError } = await supabase.rpc('process_subscription_event', {
+          p_coach_id: coachId,
+          p_action: 'deactivate',
+          p_subscription_id: subscriptionId,
+          p_type: deactivateType,
+        });
+        if (deactivateError) throw deactivateError;
+        console.log(`Successfully deactivated subscription (type=${deactivateType || 'main'}) for coach:`, coachId);
         break;
       }
 
@@ -326,6 +300,15 @@ async function handleSuccessfulPayment(object: any) {
         console.error('Error inserting payment record:', insertError);
         throw insertError;
       }
+    }
+    // 3. Update appointment payment_status to completed
+    const { error: aptStatusError } = await supabase
+      .from('appointments')
+      .update({ payment_status: 'completed' })
+      .eq('id', appointmentId);
+
+    if (aptStatusError) {
+      console.error('Error updating appointment payment_status:', aptStatusError);
     }
   }
 

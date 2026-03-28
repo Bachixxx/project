@@ -59,6 +59,13 @@ function ClientRegister() {
       setLoading(true);
       setError('');
 
+      // Coach code is mandatory
+      if (!coachCode || coachCode.trim() === '') {
+        setError("Un code coach est requis. Demandez à votre coach de vous envoyer un lien d'inscription.");
+        setLoading(false);
+        return;
+      }
+
       // 1. Create Auth User
       // The database trigger 'on_auth_user_created' will handle creating/linking the client profile based on metadata.
       const { data: authData, error: signUpError } = await supabase.auth.signUp({

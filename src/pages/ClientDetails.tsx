@@ -4,7 +4,6 @@ import { ChevronLeft, Plus, Calendar as CalendarIcon, BarChart, Activity, Trendi
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 // import { t } from '../i18n';
-import { InviteClientButton } from '../components/InviteClientButton';
 import { ScheduleSessionModal } from '../components/ScheduleSessionModal';
 import { SessionDetailsModal } from '../components/SessionDetailsModal';
 
@@ -362,14 +361,6 @@ function ClientDetails() {
               </div>
             </div>
             <div className="flex flex-wrap gap-3">
-              {client && !client.auth_id && (
-                <InviteClientButton
-                  clientId={client.id}
-                  onInviteSent={() => {
-                    fetchClientData();
-                  }}
-                />
-              )}
               <Link
                 to={`/clients/${client.id}/analytics`}
                 className="bg-white/5 border border-white/10 text-white px-4 py-2.5 rounded-xl flex items-center gap-2 hover:bg-white/10 hover:border-white/20 transition-all font-medium"

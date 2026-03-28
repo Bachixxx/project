@@ -2,15 +2,22 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
 import Stripe from 'npm:stripe@13.11.0';
 
-const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
-
 const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
 const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY') || '';
+
+function corsHeaders(req: Request) {
+    const origin = req.headers.get('Origin') ?? '';
+    const allowed = origin === 'https://coachency.app'
+        || origin === 'https://www.coachency.app'
+        || origin === 'https://melodious-faun-62e372.netlify.app'
+        || origin.endsWith('--melodious-faun-62e372.netlify.app');
+    return {
+        'Access-Control-Allow-Origin': allowed ? origin : 'https://coachency.app',
+        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    };
+}
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -26,10 +33,26 @@ const getStripe = (): Stripe => {
 
 Deno.serve(async (req) => {
     if (req.method === 'OPTIONS') {
-        return new Response('ok', { headers: corsHeaders });
+        return new Response('ok', { headers: corsHeaders(req) });
     }
 
     try {
+        // Authenticate the caller (coaches.id = auth.uid() directly)
+        const authHeader = req.headers.get('Authorization');
+        if (!authHeader) {
+            return new Response(JSON.stringify({ error: 'Missing Authorization header' }), {
+                headers: { ...corsHeaders(req), 'Content-Type': 'application/json' }, status: 401,
+            });
+        }
+        const token = authHeader.replace('Bearer ', '');
+        const anonClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY') || '');
+        const { data: { user }, error: authError } = await anonClient.auth.getUser(token);
+        if (authError || !user) {
+            return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+                headers: { ...corsHeaders(req), 'Content-Type': 'application/json' }, status: 401,
+            });
+        }
+
         if (!stripeSecretKey) {
             throw new Error('STRIPE_SECRET_KEY not configured');
         }
@@ -65,8 +88,6 @@ Deno.serve(async (req) => {
 
         // 3. Handle Native Terminal Mode
         if (mode === 'native_terminal') {
-            // For Tap to Pay on iPhone (Native SDK)
-            // We need a PaymentIntent with payment_method_types=['card_present']
             const unitAmount = Math.round(Number(amount) * 100);
             const applicationFee = Math.round(unitAmount * 0.01);
 
@@ -74,14 +95,6 @@ Deno.serve(async (req) => {
                 amount: unitAmount,
                 currency: 'chf',
                 payment_method_types: ['card_present'],
-                capture_method: 'manual', // Terminal SDK usually requires manual capture or automatic? 
-                // Actually for "Tap to Pay on iPhone" directly via SDK, we use manual then capture, or automatic.
-                // Docs say: "capture_method": "manual" is common for Terminal to avoid unintended captures, but "automatic" works if we process immediately.
-                // Let's use automatic for simplicity unless SDK complains.
-                // Update: 'card_present' payments must be captured manually if we want to add tip etc, but for simple flow automatic is fine.
-                // However, Capacitor Stripe Terminal plugin might expect one or the other.
-                // Let's stick to 'manual' (default for terminal) or just standard.
-                // Actually default is automatic logic but explicitly:
                 capture_method: 'automatic',
                 metadata: {
                     coachId: coachId,
@@ -92,13 +105,13 @@ Deno.serve(async (req) => {
                 transfer_data: {
                     destination: coach.stripe_account_id,
                 },
-                on_behalf_of: coach.stripe_account_id, // Recommended for Direct charges or Destination charges where the coach is the merchant of record
+                on_behalf_of: coach.stripe_account_id,
             });
 
             return new Response(
                 JSON.stringify({ client_secret: paymentIntent.client_secret }),
                 {
-                    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                    headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
                     status: 200,
                 },
             );
@@ -106,7 +119,7 @@ Deno.serve(async (req) => {
 
         // 4. Create Checkout Session (Web Mode)
         let sessionParams: any = {
-            customer: customer.id, // Mandatory for V2 / Subscriptions
+            customer: customer.id,
             payment_method_types: ['card'],
             ui_mode: 'hosted',
             metadata: {
@@ -115,8 +128,8 @@ Deno.serve(async (req) => {
                 description: description || 'Terminal Payment',
                 mode: mode || 'payment'
             },
-            success_url: `${req.headers.get('origin')}/terminal?payment_status=success`,
-            cancel_url: `${req.headers.get('origin')}/terminal?payment_status=cancelled`,
+            success_url: `${req.headers.get('origin')}/payment-success`,
+            cancel_url: `${req.headers.get('origin')}/payment-cancelled`,
         };
 
         if (mode === 'subscription') {
@@ -128,17 +141,15 @@ Deno.serve(async (req) => {
                 quantity: 1,
             }];
 
-            // Destination charge for subscription
             sessionParams.subscription_data = {
                 transfer_data: {
                     destination: coach.stripe_account_id,
                 },
-                application_fee_percent: 1, // 1% Platform Fee
+                application_fee_percent: 1,
             };
         } else {
-            // Standard One-Time Payment
-            const unitAmount = Math.round(Number(amount) * 100); // Amount in cents
-            const applicationFee = Math.round(unitAmount * 0.01); // 1% Platform Fee
+            const unitAmount = Math.round(Number(amount) * 100);
+            const applicationFee = Math.round(unitAmount * 0.01);
 
             sessionParams.mode = 'payment';
             sessionParams.line_items = [{
@@ -166,7 +177,7 @@ Deno.serve(async (req) => {
         return new Response(
             JSON.stringify({ url: session.url }),
             {
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
                 status: 200,
             },
         );
@@ -176,7 +187,7 @@ Deno.serve(async (req) => {
         return new Response(
             JSON.stringify({ error: error.message }),
             {
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
                 status: 400,
             },
         );

@@ -1035,7 +1035,7 @@ function EditSessionModal({ session, onClose, onSave }: any) {
     // In a real app we'd reuse the logic from the original file.
     const fetchDetailed = async () => {
       // ... fetching logic
-      const { data } = await supabase.from('exercises').select('*').or(`coach_id.eq.${user?.id},coach_id.is.null`);
+      const { data } = await supabase.from('exercises').select('*').or(`coach_id.eq.${user?.id},coach_id.is.null`).limit(200);
       setExercises(data || []);
 
       const { data: se } = await supabase.from('session_exercises').select('*, exercise:exercises(*)').eq('session_id', session.id);

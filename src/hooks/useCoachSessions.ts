@@ -1,3 +1,4 @@
+import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -24,6 +25,8 @@ interface SaveSessionParams {
 export function useCoachSessions() {
     const { user } = useAuth();
     const queryClient = useQueryClient();
+    const [mutationError, setMutationError] = useState<string | null>(null);
+    const clearMutationError = useCallback(() => setMutationError(null), []);
 
     // 1. Fetch Sessions
     const query = useQuery({
@@ -91,74 +94,17 @@ export function useCoachSessions() {
         mutationFn: async ({ sessionData, blocks, standaloneExercises, sessionId, is_template }: SaveSessionParams) => {
             if (!user?.id) throw new Error("No user");
 
-            let targetSessionId = sessionId;
-
-            // A. Create or Update Session Record
-            if (targetSessionId) {
-                const { data, error } = await supabase
-                    .from('sessions')
-                    .update(sessionData)
-                    .eq('id', targetSessionId)
-                    .select()
-                    .single();
-                if (error) throw error;
-
-                // Cleanup old data to rewrite
-                await supabase.from('exercise_groups').delete().eq('session_id', targetSessionId);
-                await supabase.from('session_exercises').delete().eq('session_id', targetSessionId);
-            } else {
-                const { data, error } = await supabase
-                    .from('sessions')
-                    .insert([{ ...sessionData, coach_id: user.id, is_template: is_template !== undefined ? is_template : true }])
-                    .select()
-                    .single();
-                if (error) throw error;
-                targetSessionId = data.id;
-            }
-
-            const finalSessionId = targetSessionId!;
-
-            // B. Insert Blocks
-            const blockIdMap = new Map();
-            if (blocks.length > 0) {
-                const blocksToInsert = blocks.map((block) => ({
-                    session_id: finalSessionId,
-                    name: block.name,
-                    type: block.type,
-                    repetitions: block.rounds || 1,
-                    duration_seconds: block.duration_seconds,
-                    order_index: block.order_index,
-                    coach_id: user.id,
-                    is_template: false,
-                }));
-
-                const { data: insertedBlocks, error: blocksError } = await supabase
-                    .from('exercise_groups')
-                    .insert(blocksToInsert)
-                    .select();
-
-                if (blocksError) throw blocksError;
-
-                blocks.forEach((block, index) => {
-                    blockIdMap.set(block.id, insertedBlocks[index].id);
-                });
-            }
-
-            // C. Insert Exercises (Flattened)
-            let allExercisesPayload: any[] = [];
+            // Flatten all exercises with temp group IDs for the RPC to resolve
+            const allExercisesPayload: any[] = [];
             let globalOrder = 0;
 
-            // C1. Block Exercises
             blocks.forEach((block) => {
-                const realGroupId = blockIdMap.get(block.id);
                 block.exercises.forEach((ex: any) => {
                     allExercisesPayload.push({
-                        session_id: finalSessionId,
                         exercise_id: ex.exercise.id,
-                        group_id: realGroupId,
+                        group_id: block.id, // temp ID — RPC maps to real ID
                         sets: ex.sets,
                         reps: ex.reps,
-                        weight: ex.weight,
                         rest_time: ex.rest_time,
                         duration_seconds: ex.duration_seconds,
                         distance_meters: ex.distance_meters,
@@ -169,15 +115,12 @@ export function useCoachSessions() {
                 });
             });
 
-            // C2. Standalone Exercises
             standaloneExercises.forEach((ex) => {
                 allExercisesPayload.push({
-                    session_id: finalSessionId,
                     exercise_id: ex.exercise.id,
                     group_id: null,
                     sets: ex.sets,
                     reps: ex.reps,
-                    weight: ex.weight,
                     rest_time: ex.rest_time,
                     duration_seconds: ex.duration_seconds,
                     distance_meters: ex.distance_meters,
@@ -187,15 +130,32 @@ export function useCoachSessions() {
                 });
             });
 
-            if (allExercisesPayload.length > 0) {
-                const { error: exError } = await supabase.from('session_exercises').insert(allExercisesPayload);
-                if (exError) throw exError;
-            }
+            // Single atomic RPC call replaces 4+ sequential queries
+            const { data: resultId, error } = await supabase.rpc('save_session_atomic', {
+                p_session_data: sessionData,
+                p_session_id: sessionId || null,
+                p_blocks: blocks.map((b, i) => ({
+                    id: b.id,
+                    name: b.name,
+                    type: b.type,
+                    rounds: b.rounds || 1,
+                    duration_seconds: b.duration_seconds,
+                    order_index: i,
+                })),
+                p_exercises: allExercisesPayload,
+                p_coach_id: user.id,
+                p_is_template: is_template !== undefined ? is_template : true,
+            });
 
-            return finalSessionId;
+            if (error) throw error;
+            return resultId;
         },
         onSuccess: () => {
+            setMutationError(null);
             queryClient.invalidateQueries({ queryKey: ['sessions', user?.id] });
+        },
+        onError: (err: any) => {
+            setMutationError(err.message || 'Erreur lors de la sauvegarde de la séance');
         },
     });
 
@@ -219,10 +179,11 @@ export function useCoachSessions() {
 
             return { previousSessions };
         },
-        onError: (err, newTodo, context) => {
+        onError: (err: any, newTodo, context) => {
             if (context?.previousSessions) {
                 queryClient.setQueryData(['sessions', user?.id], context.previousSessions);
             }
+            setMutationError(err.message || 'Erreur lors de la suppression de la séance');
         },
         onSettled: () => {
             queryClient.invalidateQueries({ queryKey: ['sessions', user?.id] });
@@ -233,6 +194,8 @@ export function useCoachSessions() {
         sessions: query.data || [],
         isLoading: query.isLoading,
         error: query.error,
+        mutationError,
+        clearMutationError,
         saveSession,
         deleteSession,
     };

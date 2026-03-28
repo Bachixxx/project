@@ -74,7 +74,8 @@ export function useCoachDashboard() {
                         .from('payments')
                         .select('amount, payment_date')
                         .eq('status', 'paid')
-                        .gte('payment_date', new Date(new Date().getFullYear(), new Date().getMonth() - 5, 1).toISOString()), // Get last 6 months minimum
+                        .gte('payment_date', new Date(new Date().getFullYear(), new Date().getMonth() - 5, 1).toISOString())
+                        .limit(1000), // Get last 6 months minimum
                     // Recent Programs
                     supabase
                         .from('client_programs')

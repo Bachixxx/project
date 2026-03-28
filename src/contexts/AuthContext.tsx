@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { User } from '@supabase/supabase-js';
 
@@ -12,6 +12,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   isPasswordRecovery: boolean;
+  authError: string | null;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -20,6 +21,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
     // Récupérer la session initiale avec gestion d'erreur
@@ -92,8 +94,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .then(({ data: coachData, error: coachError }) => {
             if (coachData && !coachError) {
               setUser(session.user);
+              setAuthError(null);
             } else {
               setUser(null);
+              if (coachError) {
+                setAuthError(coachError.message || 'Erreur de vérification du compte');
+              }
             }
             setLoading(false);
           });
@@ -233,7 +239,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const value = {
+  const value = useMemo(() => ({
     signUp,
     signIn,
     signOut,
@@ -241,8 +247,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     updatePassword,
     user,
     loading,
-    isPasswordRecovery
-  };
+    isPasswordRecovery,
+    authError
+  }), [user, loading, isPasswordRecovery, authError]);
 
   return (
     <AuthContext.Provider value={value}>

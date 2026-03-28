@@ -202,7 +202,7 @@ function ClientLogin() {
               <div className="mt-8 pt-6 border-t border-white/5 text-center relative z-10">
                 <p className="text-sm text-slate-400 font-light">
                   Pas encore de compte ?{' '}
-                  <Link to="/client/check-email" className="font-medium text-emerald-400 hover:text-emerald-300 transition-colors">
+                  <Link to="/client/register" className="font-medium text-emerald-400 hover:text-emerald-300 transition-colors">
                     Activez votre accès
                   </Link>
                 </p>

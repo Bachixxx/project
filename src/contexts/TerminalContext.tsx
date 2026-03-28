@@ -13,6 +13,7 @@ interface TerminalContextType {
     connectLocalReader: () => Promise<boolean>;
     collectPayment: (paymentIntent: string) => Promise<void>;
     isReady: boolean;
+    initError: string | null;
 }
 
 const TerminalContext = createContext<TerminalContextType | undefined>(undefined);
@@ -23,6 +24,7 @@ export const TerminalProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const [reader, setReader] = useState<any>(null);
     const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>(ConnectionStatus.NotConnected);
     const [isReady, setIsReady] = useState(false);
+    const [initError, setInitError] = useState<string | null>(null);
 
     // Initialize Terminal SDK
     const initialize = async () => {
@@ -62,8 +64,9 @@ export const TerminalProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                 console.log('Reader Event:', event);
             });
 
-        } catch (err) {
+        } catch (err: any) {
             console.error('Error initializing Stripe Terminal:', err);
+            setInitError(err.message || 'Erreur lors de l\'initialisation du terminal');
         }
     };
 
@@ -135,7 +138,8 @@ export const TerminalProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             initialize,
             connectLocalReader,
             collectPayment,
-            isReady
+            isReady,
+            initError
         }}>
             {children}
         </TerminalContext.Provider>

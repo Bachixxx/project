@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { LiveSessionLauncher } from './LiveSessionLauncher'; // Added
+import BugReportButton from './BugReportButton';
 import {
   LayoutDashboard,
   Dumbbell,
@@ -431,6 +432,7 @@ function Layout() {
         </main>
       </div>
       <LiveSessionLauncher isOpen={isLauncherOpen} onClose={() => setIsLauncherOpen(false)} />
+      <BugReportButton />
     </div>
   );
 }

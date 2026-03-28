@@ -76,7 +76,35 @@ serve(async (req) => {
             }
         }
 
-        // 4. Force Cleanup of Public Data via RPC (Bypassing broken cascades)
+        // 4. Cancel active Stripe subscriptions of coach's clients
+        try {
+            const { data: clients } = await supabase
+                .from('clients')
+                .select('id, stripe_customer_id')
+                .eq('coach_id', userId)
+                .not('stripe_customer_id', 'is', null);
+
+            if (clients && clients.length > 0) {
+                for (const client of clients) {
+                    try {
+                        const subscriptions = await stripe.subscriptions.list({
+                            customer: client.stripe_customer_id,
+                            status: 'active',
+                        });
+                        for (const sub of subscriptions.data) {
+                            await stripe.subscriptions.cancel(sub.id);
+                            console.log(`Cancelled client ${client.id} subscription: ${sub.id}`);
+                        }
+                    } catch (clientStripeError) {
+                        console.error(`Error cancelling subscriptions for client ${client.id}:`, clientStripeError);
+                    }
+                }
+            }
+        } catch (clientsError) {
+            console.error('Error fetching clients for subscription cleanup:', clientsError);
+        }
+
+        // 5. Force Cleanup of Public Data via RPC (Bypassing broken cascades)
         const { error: rpcError } = await supabase.rpc('cleanup_coach_data', { target_coach_id: userId });
 
         if (rpcError) {
@@ -84,7 +112,7 @@ serve(async (req) => {
             // We continue anyway, as maybe the user was already partially deleted
         }
 
-        // 5. Delete User from Supabase Auth
+        // 6. Delete User from Supabase Auth
         const { error: deleteError } = await supabase.auth.admin.deleteUser(userId);
 
         if (deleteError) {

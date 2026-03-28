@@ -1,3 +1,4 @@
+import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -32,11 +33,14 @@ export interface SaveProgramParams {
     programData: Partial<Program>;
     selectedSessions: ProgramSession[];
     programId?: string;
+    knownUpdatedAt?: string;
 }
 
 export function useCoachPrograms() {
     const { user } = useAuth();
     const queryClient = useQueryClient();
+    const [mutationError, setMutationError] = useState<string | null>(null);
+    const clearMutationError = useCallback(() => setMutationError(null), []);
 
     const query = useQuery({
         queryKey: ['programs', user?.id],
@@ -76,19 +80,29 @@ export function useCoachPrograms() {
     });
 
     const saveProgram = useMutation({
-        mutationFn: async ({ programData, selectedSessions, programId }: SaveProgramParams) => {
+        mutationFn: async ({ programData, selectedSessions, programId, knownUpdatedAt }: SaveProgramParams) => {
             let finalProgramId = programId;
 
             // Remove program_sessions and other non-column fields from programData
-            const { program_sessions, ...cleanProgramData } = programData as any;
+            const { program_sessions, updated_at, ...cleanProgramData } = programData as any;
 
             // 1. Create or Update Program
             if (programId) {
-                const { error } = await supabase
+                let query = supabase
                     .from('programs')
                     .update(cleanProgramData)
                     .eq('id', programId);
+
+                // Optimistic lock: only update if updated_at hasn't changed
+                if (knownUpdatedAt) {
+                    query = query.eq('updated_at', knownUpdatedAt);
+                }
+
+                const { data: updatedRows, error } = await query.select('id');
                 if (error) throw error;
+                if (!updatedRows || updatedRows.length === 0) {
+                    throw new Error('Ce programme a été modifié par quelqu\'un d\'autre. Veuillez rafraîchir la page.');
+                }
 
                 // Delete existing sessions to replace them
                 await supabase
@@ -123,7 +137,11 @@ export function useCoachPrograms() {
             return finalProgramId;
         },
         onSuccess: () => {
+            setMutationError(null);
             queryClient.invalidateQueries({ queryKey: ['programs', user?.id] });
+        },
+        onError: (err: any) => {
+            setMutationError(err.message || 'Erreur lors de la sauvegarde du programme');
         },
     });
 
@@ -136,7 +154,11 @@ export function useCoachPrograms() {
             if (error) throw error;
         },
         onSuccess: () => {
+            setMutationError(null);
             queryClient.invalidateQueries({ queryKey: ['programs', user?.id] });
+        },
+        onError: (err: any) => {
+            setMutationError(err.message || 'Erreur lors de la suppression du programme');
         },
     });
 
@@ -144,6 +166,8 @@ export function useCoachPrograms() {
         programs: query.data || [],
         isLoading: query.isLoading,
         error: query.error,
+        mutationError,
+        clearMutationError,
         saveProgram,
         deleteProgram,
     };

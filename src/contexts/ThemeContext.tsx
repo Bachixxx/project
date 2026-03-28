@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useClientAuth } from '../contexts/ClientAuthContext';
 
@@ -14,12 +14,14 @@ interface BrandingSettings {
 interface ThemeContextType {
     branding: BrandingSettings | null;
     isLoading: boolean;
+    brandingError: string | null;
     refreshBranding: () => Promise<void>;
 }
 
 const ThemeContext = createContext<ThemeContextType>({
     branding: null,
     isLoading: true,
+    brandingError: null,
     refreshBranding: async () => { },
 });
 
@@ -29,6 +31,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const { client } = useClientAuth();
     const [branding, setBranding] = useState<BrandingSettings | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [brandingError, setBrandingError] = useState<string | null>(null);
 
     // Helper to hex to rgb
     const hexToRgb = (hex: string) => {
@@ -69,7 +72,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         }
     };
 
-    const fetchBranding = async () => {
+    const fetchBranding = useCallback(async () => {
         try {
             // If we are logged in as a client, we fetch our coach's branding
             if (client?.coach_id) {
@@ -92,19 +95,20 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
             // Note: If logged in as a Coach, we might want to preview our own branding? 
             // For now, let's focus on Client view.
 
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error fetching branding:', error);
+            setBrandingError(error.message || 'Erreur lors du chargement du branding');
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [client]);
 
     useEffect(() => {
         fetchBranding();
-    }, [client]);
+    }, [fetchBranding]);
 
     return (
-        <ThemeContext.Provider value={{ branding, isLoading, refreshBranding: fetchBranding }}>
+        <ThemeContext.Provider value={useMemo(() => ({ branding, isLoading, brandingError, refreshBranding: fetchBranding }), [branding, isLoading, brandingError, fetchBranding])}>
             {/* We can use a style tag to inject dynamic styles */}
             {branding?.primaryColor && (
                 <style>{`

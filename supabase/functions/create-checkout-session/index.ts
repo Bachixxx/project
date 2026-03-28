@@ -102,10 +102,14 @@ Deno.serve(async (req) => {
 
       unitAmount = Math.round(program.price * 100);
 
-      if (program.coach.stripe_account_id) {
-        applicationFeeAmount = Math.round(program.price * 100 * 0.1);
-        destinationAccount = program.coach.stripe_account_id;
+      if (!program.coach.stripe_account_id) {
+        return new Response(
+          JSON.stringify({ error: 'Coach Stripe account not connected' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        );
       }
+      applicationFeeAmount = Math.round(program.price * 100 * 0.1);
+      destinationAccount = program.coach.stripe_account_id;
     }
     // CASE 2: Appointment Purchase
     else if (appointmentId) {
@@ -142,10 +146,14 @@ Deno.serve(async (req) => {
 
       unitAmount = Math.round(appointment.price * 100);
 
-      if (appointment.coach.stripe_account_id) {
-        applicationFeeAmount = Math.round(appointment.price * 100 * 0.1);
-        destinationAccount = appointment.coach.stripe_account_id;
+      if (!appointment.coach.stripe_account_id) {
+        return new Response(
+          JSON.stringify({ error: 'Coach Stripe account not connected' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        );
       }
+      applicationFeeAmount = Math.round(appointment.price * 100 * 0.1);
+      destinationAccount = appointment.coach.stripe_account_id;
     }
 
     // Get client details

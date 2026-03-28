@@ -45,6 +45,10 @@ export const fr = {
     perYear: 'par an',
     personalInfo: 'Informations personnelles',
     selectPlan: "Veuillez sélectionner un plan d'abonnement",
+    invitationExpired: "Invitation expirée ? Recevoir un nouveau lien",
+    invitationResending: "Envoi en cours...",
+    invitationResent: "Si un compte existe avec cet email, un nouveau lien d'invitation a été envoyé.",
+    invitationResendError: "Erreur lors de l'envoi. Réessayez plus tard.",
   },
   nav: {
     dashboard: 'Tableau de bord',
@@ -325,5 +329,12 @@ export const fr = {
       data: '--',
       na: 'N/A',
     }
-  }
+  },
+  payment: {
+    successTitle: 'Paiement réussi',
+    successMessage: 'Merci ! Votre paiement a bien été enregistré.',
+    cancelledTitle: 'Paiement annulé',
+    cancelledMessage: "Le paiement n'a pas été effectué. Aucun montant n'a été débité.",
+    backHome: "Retour à l'accueil",
+  },
 };
