@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { User } from '@supabase/supabase-js';
 
@@ -239,7 +239,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const value = {
+  const value = useMemo(() => ({
     signUp,
     signIn,
     signOut,
@@ -249,7 +249,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loading,
     isPasswordRecovery,
     authError
-  };
+  }), [user, loading, isPasswordRecovery, authError]);
 
   return (
     <AuthContext.Provider value={value}>

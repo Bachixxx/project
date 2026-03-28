@@ -71,7 +71,8 @@ function ExercisesPage() {
         .from('exercises')
         .select('*')
         .or(`coach_id.eq.${user?.id},coach_id.is.null`)
-        .order('name');
+        .order('name')
+        .limit(200);
 
       if (error) throw error;
       setExercises(data || []);

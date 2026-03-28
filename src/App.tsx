@@ -45,13 +45,13 @@ const ClientOnboarding = lazy(() => import('./pages/client/ClientOnboarding'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const UpdatePassword = lazy(() => import('./pages/UpdatePassword'));
 
-// Coach Private Pages (Eagerly Loaded for Native Feel)
-import Dashboard from './pages/Dashboard';
-import Clients from './pages/Clients';
-import Calendar from './pages/Calendar';
-import Sessions from './pages/Sessions';
-import Programs from './pages/Programs';
-import Profile from './pages/Profile';
+// Coach Private Pages (Lazy Loaded)
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Clients = lazy(() => import('./pages/Clients'));
+const Calendar = lazy(() => import('./pages/Calendar'));
+const Sessions = lazy(() => import('./pages/Sessions'));
+const Programs = lazy(() => import('./pages/Programs'));
+const Profile = lazy(() => import('./pages/Profile'));
 
 // Less critical / Heavy pages can remain lazy to save some initial bundle
 const Exercises = lazy(() => import('./pages/Exercises'));
@@ -69,11 +69,11 @@ const Admin = lazy(() => import('./pages/Admin'));
 const BrandingSettings = lazy(() => import('./pages/BrandingSettings'));
 
 
-// Client Private Pages (Eagerly Loaded)
-import ClientDashboard from './pages/client/ClientDashboard';
-import ClientWorkouts from './pages/client/ClientWorkouts';
-import ClientAppointments from './pages/client/ClientAppointments';
-import ClientProgress from './pages/client/ClientProgress';
+// Client Private Pages (Lazy Loaded)
+const ClientDashboard = lazy(() => import('./pages/client/ClientDashboard'));
+const ClientWorkouts = lazy(() => import('./pages/client/ClientWorkouts'));
+const ClientAppointments = lazy(() => import('./pages/client/ClientAppointments'));
+const ClientProgress = lazy(() => import('./pages/client/ClientProgress'));
 
 // Less critical client pages
 const ClientProfile = lazy(() => import('./pages/client/ClientProfile'));

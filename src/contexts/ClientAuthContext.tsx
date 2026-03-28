@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNotifications } from './NotificationsContext';
 
@@ -207,20 +207,21 @@ export function ClientAuthProvider({ children }: { children: React.ReactNode }) 
     }
   };
 
-  // Fix the refreshClient function to use the new name
-  const value = {
+  const refreshClient = useCallback(async () => {
+    const { data } = await supabase.auth.getUser();
+    if (data?.user) {
+      await fetchClientData(data.user);
+    }
+  }, []);
+
+  const value = useMemo(() => ({
     signIn,
     signOut,
     client,
     loading,
-    refreshClient: async () => {
-      const { data } = await supabase.auth.getUser();
-      if (data?.user) {
-        await fetchClientData(data.user);
-      }
-    },
+    refreshClient,
     isPasswordRecovery
-  };
+  }), [client, loading, isPasswordRecovery, refreshClient]);
 
   return (
     <ClientAuthContext.Provider value={value}>

@@ -158,7 +158,8 @@ function Admin() {
         const { data, error } = await supabase
           .from('coaches')
           .select('*')
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: false })
+          .limit(100);
 
         if (error) throw error;
         setCoaches(data || []);
@@ -171,7 +172,8 @@ function Admin() {
               full_name
             )
           `)
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: false })
+          .limit(100);
 
         if (clientsError) throw clientsError;
 
@@ -194,7 +196,8 @@ function Admin() {
           .from('exercises')
           .select('*')
           .is('coach_id', null)
-          .order('name', { ascending: true });
+          .order('name', { ascending: true })
+          .limit(100);
 
         if (error) throw error;
         setExercises(data || []);

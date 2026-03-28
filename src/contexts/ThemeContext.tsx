@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useClientAuth } from '../contexts/ClientAuthContext';
 
@@ -72,7 +72,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         }
     };
 
-    const fetchBranding = async () => {
+    const fetchBranding = useCallback(async () => {
         try {
             // If we are logged in as a client, we fetch our coach's branding
             if (client?.coach_id) {
@@ -101,14 +101,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [client]);
 
     useEffect(() => {
         fetchBranding();
-    }, [client]);
+    }, [fetchBranding]);
 
     return (
-        <ThemeContext.Provider value={{ branding, isLoading, brandingError, refreshBranding: fetchBranding }}>
+        <ThemeContext.Provider value={useMemo(() => ({ branding, isLoading, brandingError, refreshBranding: fetchBranding }), [branding, isLoading, brandingError, fetchBranding])}>
             {/* We can use a style tag to inject dynamic styles */}
             {branding?.primaryColor && (
                 <style>{`

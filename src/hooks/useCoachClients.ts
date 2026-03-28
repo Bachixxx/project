@@ -35,7 +35,8 @@ export function useCoachClients() {
                 .from('clients')
                 .select('*')
                 .eq('coach_id', user.id)
-                .order('full_name');
+                .order('full_name')
+                .limit(200);
 
             if (error) throw error;
             return data as Client[];
