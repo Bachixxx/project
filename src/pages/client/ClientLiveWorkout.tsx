@@ -218,22 +218,37 @@ function ClientLiveWorkout() {
       } else if (appointmentId) {
         console.log('Fetching appointment flow for ID:', appointmentId);
 
-        // 1. Verify Registration
-        const { data: registration, error: regError } = await supabase
-          .from('appointment_registrations')
-          .select('*')
-          .eq('appointment_id', appointmentId)
-          .eq('client_id', client.id)
-          .limit(1)
+        // 1. Verify Registration (group) or direct assignment (private)
+        const { data: appointment, error: aptCheckError } = await supabase
+          .from('appointments')
+          .select('client_id, type')
+          .eq('id', appointmentId)
           .maybeSingle();
 
-        if (regError) {
-          console.error('Registration fetch error:', regError);
-          throw regError;
+        if (aptCheckError) {
+          console.error('Appointment check error:', aptCheckError);
+          throw aptCheckError;
         }
-        if (!registration) {
-          console.error('Registration not found for client:', client.id, 'appointment:', appointmentId);
-          throw new Error('Vous n\'êtes pas inscrit à cette séance');
+
+        const isDirectlyAssigned = appointment?.client_id === client.id;
+
+        if (!isDirectlyAssigned) {
+          const { data: registration, error: regError } = await supabase
+            .from('appointment_registrations')
+            .select('id')
+            .eq('appointment_id', appointmentId)
+            .eq('client_id', client.id)
+            .limit(1)
+            .maybeSingle();
+
+          if (regError) {
+            console.error('Registration fetch error:', regError);
+            throw regError;
+          }
+          if (!registration) {
+            console.error('Registration not found for client:', client.id, 'appointment:', appointmentId);
+            throw new Error('Vous n\'êtes pas inscrit à cette séance');
+          }
         }
 
         // 2. Fetch Appointment (Simple)
