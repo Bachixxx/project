@@ -34,8 +34,8 @@ const Upgrade = lazy(() => import('./pages/Upgrade'));
 const Terms = lazy(() => import('./pages/Terms'));
 const Privacy = lazy(() => import('./pages/Privacy'));
 const Legal = lazy(() => import('./pages/Legal'));
-const PaymentSuccess = lazy(() => import('./pages/PaymentSuccess'));
-const PaymentCancelled = lazy(() => import('./pages/PaymentCancelled'));
+import PaymentSuccess from './pages/PaymentSuccess';
+import PaymentCancelled from './pages/PaymentCancelled';
 
 // Client Public Pages
 const ClientLogin = lazy(() => import('./pages/client/ClientLogin'));
