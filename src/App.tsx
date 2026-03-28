@@ -1,5 +1,5 @@
 import React, { Suspense, lazy } from 'react';
-import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import Layout from './components/Layout';
 import { AuthProvider } from './contexts/AuthContext';
 import { ClientAuthProvider } from './contexts/ClientAuthContext';
@@ -154,7 +154,7 @@ function App() {
                               <Route path="/lausanne" element={<CityLandingPage cityName="Lausanne" urlPath="lausanne" />} />
                               <Route path="/zurich" element={<CityLandingPage cityName="Zurich" urlPath="zurich" />} />
                               <Route path="/client/login" element={<ClientLogin />} />
-                              <Route path="/client/check-email" element={<CheckEmail />} />
+                              <Route path="/client/check-email" element={<Navigate to="/client/register" replace />} />
                               <Route path="/client/register" element={<ClientRegister />} />
                               <Route path="/forgot-password" element={<ForgotPassword />} />
                               <Route path="/update-password" element={<UpdatePassword />} />
