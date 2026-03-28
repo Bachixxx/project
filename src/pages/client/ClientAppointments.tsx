@@ -554,11 +554,23 @@ function ClientAppointments() {
       } else {
         const { data: scheduledSession } = await supabase
           .from('scheduled_sessions')
-          .select('coach_id')
+          .select('coach_id, payment_method, price')
           .eq('id', sessionId)
           .maybeSingle();
 
         if (!scheduledSession) throw new Error('Session not found');
+
+        // Handle online payment for scheduled sessions
+        if (scheduledSession.payment_method === 'online' && scheduledSession.price > 0) {
+          try {
+            await createCheckoutSession(undefined, client.id, sessionId);
+            return; // Redirect to Stripe
+          } catch (error: any) {
+            console.error('Payment initialization error:', error);
+            alert(error.message || 'Erreur lors de l\'initialisation du paiement');
+            return;
+          }
+        }
 
         const { error } = await supabase
           .from('session_registrations')
