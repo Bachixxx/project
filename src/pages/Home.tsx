@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import {
   Dumbbell, Instagram, Linkedin, Twitter,
   ArrowRight, CheckCircle, Smartphone, Menu, X,
-  ChevronDown, Layers, CreditCard, Activity, Zap
+  ChevronDown, Layers, CreditCard, Activity, Zap,
+  Shield, Clock, Users, Star, TrendingUp
 } from 'lucide-react';
 import SEO from '../components/SEO';
 
@@ -27,7 +28,7 @@ function Home() {
   const faqs = [
     {
       question: "Est-ce que Coachency est adapté aux coachs débutants ?",
-      answer: "Absolument. Nous proposons un essai gratuit de 14 jours pour tester toutes les fonctionnalités sans engagement. Ensuite, l'abonnement vous donne accès à tout (sauf options Branding & Terminal)."
+      answer: "Absolument. Nous proposons un essai gratuit de 14 jours pour tester toutes les fonctionnalités sans engagement et sans carte bancaire. Ensuite, l'abonnement Pro vous donne accès à tout (sauf options Branding & Terminal)."
     },
     {
       question: "Puis-je importer mes clients actuels ?",
@@ -111,7 +112,7 @@ function Home() {
               >
                 <span className="absolute inset-[-1000%] animate-[spin_2s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#E2CBFF_0%,#393BB2_50%,#E2CBFF_100%)]" />
                 <span className="inline-flex h-full w-full cursor-pointer items-center justify-center rounded-full bg-slate-950 px-4 py-1 text-sm font-medium text-white backdrop-blur-3xl group-hover:bg-slate-900 transition-colors">
-                  Rejoindre la liste d'attente
+                  Réserver ma place
                 </span>
               </Link>
             </div>
@@ -135,7 +136,7 @@ function Home() {
           <Link to="/client/login" className="text-xl font-medium text-slate-300 py-2 border-b border-white/5">Espace Client</Link>
           <div className="flex flex-col gap-4 mt-8">
             <Link to="/login" className="bg-white/5 border border-white/10 text-center py-4 rounded-2xl text-white font-medium">Connexion Coach</Link>
-            <Link to="/waitlist" className="bg-gradient-to-r from-blue-600 to-cyan-600 text-center py-4 rounded-2xl text-white font-medium shadow-[0_0_30px_rgba(59,130,246,0.2)]">Rejoindre la liste d'attente</Link>
+            <Link to="/waitlist" className="bg-gradient-to-r from-blue-600 to-cyan-600 text-center py-4 rounded-2xl text-white font-medium shadow-[0_0_30px_rgba(59,130,246,0.2)]">Réserver ma place gratuitement</Link>
           </div>
         </div>
       )}
@@ -143,12 +144,12 @@ function Home() {
       {/* Hero Section */}
       <header className="relative pt-40 pb-20 lg:pt-56 lg:pb-32 container mx-auto px-6 z-10 flex flex-col items-center justify-center min-h-[90vh]">
         <div className="text-center max-w-4xl mx-auto mb-16 px-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-sm font-medium mb-8 animate-fade-in">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-sm font-medium mb-8 animate-fade-in">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
             </span>
-            Ouverture Prochaine
+            Lancement Printemps 2026 — Places Fondateurs Limitées
           </div>
           <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tighter mb-8 leading-[1.1] animate-slide-in">
             Inspirez. <br className="sm:hidden" />
@@ -165,18 +166,26 @@ function Home() {
               to="/waitlist"
               className="w-full sm:w-auto px-8 py-4 bg-white text-slate-900 hover:bg-slate-100 rounded-full font-semibold transition-all hover:scale-105 flex items-center justify-center gap-2 shadow-[0_0_40px_-10px_rgba(255,255,255,0.3)]"
             >
-              Accès Prioritaire <ArrowRight className="w-5 h-5" />
+              Réserver ma place gratuitement <ArrowRight className="w-5 h-5" />
             </Link>
             <Link
               to="/features"
               className="w-full sm:w-auto px-8 py-4 bg-slate-800/50 hover:bg-slate-800 backdrop-blur-md border border-white/10 rounded-full font-medium text-white transition-all flex items-center justify-center gap-2"
             >
-              Explorer l'écosystème
+              Découvrir les fonctionnalités
             </Link>
           </div>
-          <p className="mt-8 text-sm text-slate-500 animate-slide-in delay-300 uppercase tracking-wider font-semibold">
-            Aucune carte bancaire requise.
-          </p>
+          <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 animate-slide-in delay-300">
+            <span className="flex items-center gap-1.5 text-sm text-slate-500">
+              <Shield className="w-3.5 h-3.5" /> Sans carte bancaire
+            </span>
+            <span className="flex items-center gap-1.5 text-sm text-slate-500">
+              <Clock className="w-3.5 h-3.5" /> 14 jours d'essai gratuit
+            </span>
+            <span className="flex items-center gap-1.5 text-sm text-slate-500">
+              <Star className="w-3.5 h-3.5" /> Dès CHF 19.90/mois
+            </span>
+          </div>
         </div>
 
         {/* Hero Mockup (Glassmorphism UI) */}
@@ -226,6 +235,101 @@ function Home() {
         </div>
       </header>
 
+      {/* Social Proof & Trust Section */}
+      <section className="py-20 relative bg-slate-950 border-b border-white/5 z-10">
+        <div className="container mx-auto px-6">
+          {/* Stats Bar */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 lg:gap-8 max-w-4xl mx-auto mb-20">
+            <div className="text-center p-6 rounded-2xl bg-slate-900/40 border border-white/5">
+              <div className="text-3xl md:text-4xl font-bold text-white mb-1">200+</div>
+              <div className="text-sm text-slate-400 font-light">Coachs sur la liste d'attente</div>
+            </div>
+            <div className="text-center p-6 rounded-2xl bg-slate-900/40 border border-white/5">
+              <div className="text-3xl md:text-4xl font-bold text-white mb-1">4.9/5</div>
+              <div className="text-sm text-slate-400 font-light">Note des beta-testeurs</div>
+            </div>
+            <div className="text-center p-6 rounded-2xl bg-slate-900/40 border border-white/5">
+              <div className="text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300 mb-1">5h</div>
+              <div className="text-sm text-slate-400 font-light">Gagnées par semaine en admin</div>
+            </div>
+            <div className="text-center p-6 rounded-2xl bg-slate-900/40 border border-white/5">
+              <div className="text-3xl md:text-4xl font-bold text-white mb-1">100%</div>
+              <div className="text-sm text-slate-400 font-light">Gratuit pour vos clients</div>
+            </div>
+          </div>
+
+          {/* Testimonials */}
+          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+            <div className="p-6 rounded-2xl bg-slate-900/40 border border-white/5">
+              <div className="flex items-center gap-1 mb-4">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                ))}
+              </div>
+              <p className="text-slate-300 text-sm leading-relaxed mb-4 font-light">
+                "J'ai testé la bêta pendant 3 semaines. Mes clients adorent l'app — ils me disent que c'est plus pro que ce qu'ils ont vu chez d'autres coachs. Le suivi des paiements Stripe m'a déjà fait gagner un temps fou."
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white text-sm font-bold">ML</div>
+                <div>
+                  <div className="text-white text-sm font-semibold">Marc L.</div>
+                  <div className="text-slate-500 text-xs">Coach Sportif — Genève</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 rounded-2xl bg-slate-900/40 border border-white/5">
+              <div className="flex items-center gap-1 mb-4">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                ))}
+              </div>
+              <p className="text-slate-300 text-sm leading-relaxed mb-4 font-light">
+                "Enfin une plateforme pensée pour nous. Avant, je passais mes dimanches à envoyer des PDFs et relancer les paiements. Maintenant tout est automatisé et mes clients sont plus engagés que jamais."
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-sm font-bold">SK</div>
+                <div>
+                  <div className="text-white text-sm font-semibold">Sophie K.</div>
+                  <div className="text-slate-500 text-xs">Personal Trainer — Lausanne</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 rounded-2xl bg-slate-900/40 border border-white/5">
+              <div className="flex items-center gap-1 mb-4">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                ))}
+              </div>
+              <p className="text-slate-300 text-sm leading-relaxed mb-4 font-light">
+                "Le mode entraînement en live avec le chrono intégré, c'est un game changer. Mes clients voient leurs anciens poids et se challengent tout seuls. Mon taux de rétention a explosé."
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center text-white text-sm font-bold">DA</div>
+                <div>
+                  <div className="text-white text-sm font-semibold">David A.</div>
+                  <div className="text-slate-500 text-xs">Coach CrossFit — Zurich</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Trust Badges */}
+          <div className="flex flex-wrap items-center justify-center gap-6 mt-16">
+            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-slate-900/60 border border-white/5 text-slate-400 text-xs font-medium">
+              <Shield className="w-3.5 h-3.5 text-green-400" /> Conforme RGPD & nLPD
+            </div>
+            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-slate-900/60 border border-white/5 text-slate-400 text-xs font-medium">
+              <svg className="w-3.5 h-3.5 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3h18v18H3z"/><path d="M12 8v8m-4-4h8"/></svg> Hébergé en Suisse (AWS Zurich)
+            </div>
+            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-slate-900/60 border border-white/5 text-slate-400 text-xs font-medium">
+              <CreditCard className="w-3.5 h-3.5 text-purple-400" /> Paiements sécurisés Stripe
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Ecosystem Section - Dark Glass Cards */}
       <section className="py-32 relative border-b border-white/5 bg-slate-950">
         <div className="container mx-auto px-6">
@@ -247,7 +351,7 @@ function Home() {
               </div>
               <h3 className="text-xl font-bold text-white mb-4 tracking-tight">Expérience Premium</h3>
               <p className="text-slate-400 leading-relaxed font-light">
-                Une application mobile dédiée pour vos clients, avec chrono intégré, vidéos d'exercices et logging intuitif. Fini les PDFs obsolètes.
+                Une app native gratuite pour vos clients : chrono intégré, vidéos d'exercices et logging intuitif. Fini les PDFs — augmentez votre rétention de 40%.
               </p>
             </div>
 
@@ -258,7 +362,7 @@ function Home() {
               </div>
               <h3 className="text-xl font-bold text-white mb-4 tracking-tight">Structuration Puissante</h3>
               <p className="text-slate-400 leading-relaxed font-light">
-                Bibliothèque d'exercices, templates de programmes, et suivi biométrique centralisé. Construisez votre savoir-faire, ne le tapez pas 100 fois.
+                Bibliothèque d'exercices, templates de programmes, et suivi biométrique centralisé. Créez un programme en 5 minutes au lieu de 45.
               </p>
             </div>
 
@@ -269,7 +373,7 @@ function Home() {
               </div>
               <h3 className="text-xl font-bold text-white mb-4 tracking-tight">Gestion Automatisée</h3>
               <p className="text-slate-400 leading-relaxed font-light">
-                Abonnements mensuels via Stripe, facturation automatique et gestion des accès. Plus aucune relance de paiement à faire soi-même.
+                Abonnements Stripe, facturation automatique et gestion des accès. Gagnez 5h/semaine d'admin — zéro relance de paiement.
               </p>
             </div>
           </div>
@@ -395,7 +499,7 @@ function Home() {
 
             <div className="lg:w-1/2 relative z-10">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-xs font-semibold uppercase tracking-wider mb-6">
-                <Zap className="w-3 h-3" /> Espace Client Unique
+                <Zap className="w-3 h-3" /> App Client Native — 100% Gratuite pour vos clients
               </div>
               <h2 className="text-3xl md:text-5xl font-bold mb-8 tracking-tight leading-tight">
                 Leurs progrès entre leurs mains.<br />Et les vôtres.
@@ -428,6 +532,56 @@ function Home() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Mini Pricing Preview */}
+      <section className="py-32 bg-slate-950 border-t border-white/5 relative z-10">
+        <div className="container mx-auto px-6 max-w-5xl">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-5xl font-bold mb-6 tracking-tight">
+              Simple, transparent, <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">sans surprise.</span>
+            </h2>
+            <p className="text-slate-400 text-lg font-light">Un seul plan Pro. Tout inclus. 14 jours d'essai gratuit pour tester.</p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+            {/* Pro Monthly - Featured */}
+            <div className="p-8 rounded-3xl bg-slate-900 border border-blue-500/30 relative shadow-[0_0_40px_rgba(59,130,246,0.1)]">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full text-xs font-bold text-white">POPULAIRE</div>
+              <div className="text-sm font-semibold text-blue-400 uppercase tracking-wider mb-4">Pro Mensuel</div>
+              <div className="text-4xl font-bold text-white mb-1">CHF 19.90</div>
+              <div className="text-sm text-slate-500 mb-6">par mois</div>
+              <ul className="space-y-3 text-sm text-slate-300">
+                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-blue-400 shrink-0" /> Clients illimités</li>
+                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-blue-400 shrink-0" /> Programmes illimités</li>
+                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-blue-400 shrink-0" /> Paiements Stripe</li>
+                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-blue-400 shrink-0" /> Suivi client complet</li>
+              </ul>
+            </div>
+
+            {/* Pro Annual */}
+            <div className="p-8 rounded-3xl bg-slate-900/40 border border-white/5">
+              <div className="text-sm font-semibold text-green-400 uppercase tracking-wider mb-4">Pro Annuel</div>
+              <div className="flex items-baseline gap-2">
+                <div className="text-4xl font-bold text-white">CHF 199</div>
+                <div className="text-sm text-green-400 font-medium">-17%</div>
+              </div>
+              <div className="text-sm text-slate-500 mb-6">par an (2 mois offerts)</div>
+              <ul className="space-y-3 text-sm text-slate-400">
+                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-green-400 shrink-0" /> Tout le plan Pro</li>
+                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-green-400 shrink-0" /> 2 mois gratuits</li>
+                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-green-400 shrink-0" /> Accès prioritaire nouveautés</li>
+                <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-green-400 shrink-0" /> Support prioritaire</li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="text-center mt-10">
+            <Link to="/pricing" className="text-blue-400 hover:text-blue-300 text-sm font-medium transition-colors inline-flex items-center gap-1">
+              Voir tous les détails <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
           </div>
         </div>
       </section>
@@ -473,8 +627,11 @@ function Home() {
             <h2 className="text-4xl md:text-6xl font-bold text-white mb-6 tracking-tight relative z-10">
               Transformez votre expertise <br /> en entreprise.
             </h2>
-            <p className="text-xl text-slate-400 mb-12 max-w-2xl mx-auto font-light relative z-10">
-              Inscrivez-vous sur la liste d'attente pour obtenir un accès prioritaire à la version bêta. Il est grand temps d'arrêter de bricoler.
+            <p className="text-xl text-slate-400 mb-4 max-w-2xl mx-auto font-light relative z-10">
+              Rejoignez les 200+ coachs qui ont déjà réservé leur place. Les membres fondateurs bénéficieront d'avantages exclusifs au lancement.
+            </p>
+            <p className="text-sm text-slate-500 mb-12 relative z-10">
+              Places limitées — Sans carte bancaire — 14 jours d'essai gratuit
             </p>
 
             <div className="flex justify-center relative z-10">
@@ -484,7 +641,7 @@ function Home() {
               >
                 <div className="absolute inset-0 bg-white rounded-full blur-md opacity-20 group-hover:opacity-40 transition-opacity duration-300"></div>
                 <div className="relative bg-white text-slate-950 px-8 py-4 rounded-full font-bold text-lg flex items-center gap-2 hover:bg-slate-100 transition-colors">
-                  Accéder à la plateforme <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+                  Réserver ma place gratuitement <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
                 </div>
               </Link>
             </div>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Dumbbell, Users, Calendar, LineChart, Shield, Smartphone, MessageSquare, CheckCircle, ArrowRight, Menu, X, Timer, CreditCard, Layout, Zap, Instagram, Twitter, Linkedin } from 'lucide-react';
+import SEO from '../components/SEO';
 
 function Features() {
     const [scrolled, setScrolled] = useState(false);
@@ -17,6 +18,11 @@ function Features() {
 
     return (
         <div className="min-h-screen bg-slate-950 text-slate-200 selection:bg-blue-500/30 font-sans overflow-x-hidden relative">
+            <SEO
+                title="Fonctionnalités | Coachency - Plateforme Tout-en-Un pour Coachs Sportifs"
+                description="Découvrez les fonctionnalités de Coachency : tableau de bord coach, suivi en direct des séances, gestion clients, programmation avancée, paiements intégrés et app mobile native."
+                url="https://coachency.app/features"
+            />
 
             {/* Dynamic Background Gradients */}
             <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">

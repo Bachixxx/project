@@ -1,6 +1,12 @@
 User-agent: *
 Disallow: /admin/
-Disallow: /client/
 Disallow: /onboarding/
+Disallow: /client/dashboard/
+Disallow: /client/workouts/
+Disallow: /client/appointments/
+Disallow: /client/progress/
+Disallow: /client/profile/
+Allow: /client/login
+Allow: /client/register
 
 Sitemap: https://coachency.app/sitemap.xml

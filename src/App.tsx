@@ -15,6 +15,7 @@ import ClientPrivateRoute from './components/client/ClientPrivateRoute';
 import ClientLayout from './components/client/ClientLayout';
 import Loading from './components/Loading';
 import PublicHome from './components/PublicHome';
+import CookieConsent from './components/CookieConsent';
 import { AdaptyProvider } from './contexts/AdaptyContext';
 
 // Static Import for Landing Page (Immediate LCP)
@@ -130,6 +131,7 @@ function App() {
                     <TerminalProvider>
                       <Router>
                         <ScrollToTop />
+                        <CookieConsent />
                         <Suspense fallback={<Loading />}>
                           <NativeRedirect>
                             <Routes>

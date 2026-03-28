@@ -45,10 +45,6 @@ export const es = {
     perYear: 'por año',
     personalInfo: 'Información personal',
     selectPlan: 'Por favor, selecciona un plan de suscripción',
-    invitationExpired: '¿Invitación expirada? Recibir un nuevo enlace',
-    invitationResending: 'Enviando...',
-    invitationResent: 'Si existe una cuenta con este correo, se ha enviado un nuevo enlace de invitación.',
-    invitationResendError: 'Error al enviar. Inténtalo más tarde.',
   },
   nav: {
     dashboard: 'Panel de control',
@@ -269,11 +265,10 @@ export const es = {
     },
     manage: 'Gestionar mi suscripción',
   },
-  payment: {
-    successTitle: 'Pago exitoso',
-    successMessage: 'Gracias. Su pago ha sido registrado correctamente.',
-    cancelledTitle: 'Pago cancelado',
-    cancelledMessage: 'El pago no se realizó. No se ha cobrado ningún importe.',
-    backHome: 'Volver al inicio',
-  },
+  cookies: {
+    title: 'Cookies y Privacidad',
+    description: 'Utilizamos cookies para analizar el tráfico y mejorar tu experiencia. No se comparten datos personales con terceros.',
+    accept: 'Aceptar',
+    refuse: 'Rechazar',
+  }
 };

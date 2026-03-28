@@ -16,7 +16,17 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://coachency.app/waitlist</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://coachency.app/geneve</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://coachency.app/lausanne</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -26,8 +36,18 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://coachency.app/lausanne</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <loc>https://coachency.app/terms</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://coachency.app/privacy</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://coachency.app/legal</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
   </url>
 </urlset>

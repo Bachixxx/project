@@ -12,5 +12,8 @@ cd ../../
 npm install --legacy-peer-deps
 
 # 4. Installer les Pods
+# On supprime le Podfile.lock pour le régénérer proprement
+# car npm install (sans lock) peut résoudre des versions plus récentes
 cd ios
-pod install
+rm -f Podfile.lock
+pod install --repo-update

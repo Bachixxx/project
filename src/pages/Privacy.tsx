@@ -1,10 +1,16 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, ShieldCheck } from 'lucide-react';
+import SEO from '../components/SEO';
 
 function Privacy() {
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-start p-4 md:p-8 relative overflow-x-hidden font-sans selection:bg-blue-500/30">
+      <SEO
+        title="Politique de Confidentialité | Coachency"
+        description="Politique de confidentialité de Coachency conforme au RGPD et à la nLPD suisse. Protection des données personnelles, droits des utilisateurs, sous-traitants et durées de conservation."
+        url="https://coachency.app/privacy"
+      />
       {/* Dynamic Background Gradients */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
         <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] bg-blue-600/10 rounded-full blur-[120px] mix-blend-screen opacity-30 animate-pulse-slow"></div>
@@ -43,7 +49,7 @@ function Privacy() {
                   Politique de confidentialité
                 </h1>
                 <div className="text-sm text-blue-400 font-medium mt-1">
-                  Dernière mise à jour : 13 février 2025
+                  Dernière mise à jour : 13 mars 2025
                 </div>
               </div>
             </div>
@@ -190,18 +196,31 @@ function Privacy() {
               <section>
                 <h2>11. Politique en matière de Cookies</h2>
                 <p>
-                  L'application Coachency.app est conçue en gardant la confidentialité à l'esprit (Privacy by design). Par conséquent :
+                  L'application Coachency.app est conçue en gardant la confidentialité à l'esprit (Privacy by design). Nous distinguons deux catégories de cookies :
                 </p>
+
+                <h3 className="text-lg font-semibold text-white mt-6 mb-3">a) Cookies Strictement Nécessaires (sans consentement)</h3>
+                <p>Ces cookies ne nécessitent pas de consentement préalable selon la Directive ePrivacy, car ils servent uniquement au bon fonctionnement technique :</p>
                 <ul className="list-disc pl-6 marker:text-blue-500">
-                  <li>Nous <strong>n'utilisons PAS</strong> de cookies de tracking marketing (ex: Meta Pixel, Google Ads Tracking).</li>
-                  <li>Nous utilisons exclusivement des <strong>Cookies Techniques ou Stockages Locaux (Local Storage) Strictement Nécessaires</strong>. Ces éléments ne nécessitent pas de consentement préalable selon la Directive ePrivacy, car ils servent uniquement à :
-                    <ul className="list-[circle] pl-6 mt-2 marker:text-slate-500">
-                      <li>Maintenir votre session de connexion active de manière sécurisée (Jetons d'authentification / JWT).</li>
-                      <li>Mémoriser vos préférences d'affichage interface locale.</li>
-                      <li>Assurer la sécurité (prévention d'attaques de type CSRF).</li>
-                    </ul>
-                  </li>
+                  <li>Maintenir votre session de connexion active de manière sécurisée (Jetons d'authentification / JWT).</li>
+                  <li>Mémoriser vos préférences d'affichage et de langue.</li>
+                  <li>Mémoriser votre choix en matière de consentement aux cookies.</li>
+                  <li>Assurer la sécurité (prévention d'attaques de type CSRF).</li>
                 </ul>
+
+                <h3 className="text-lg font-semibold text-white mt-6 mb-3">b) Cookies d'Analyse (soumis à consentement)</h3>
+                <p>Nous utilisons <strong>Google Analytics</strong> (Google Ireland Limited) afin de mesurer l'audience et d'améliorer notre service. Ces cookies ne sont déposés <strong>qu'après votre consentement explicite</strong> via notre bannière de gestion des cookies.</p>
+                <ul className="list-disc pl-6 marker:text-blue-500">
+                  <li><strong>Identifiant :</strong> G-XS4QYRDH0B</li>
+                  <li><strong>Cookies déposés :</strong> _ga, _gid, _gat (durée maximale : 26 mois).</li>
+                  <li><strong>Données collectées :</strong> pages visitées, durée de visite, type d'appareil, pays d'origine (données anonymisées, aucune donnée personnelle identifiante).</li>
+                  <li><strong>Finalité :</strong> statistiques d'utilisation agrégées, amélioration de l'expérience utilisateur.</li>
+                </ul>
+                <p>Vous pouvez <strong>retirer votre consentement à tout moment</strong> en supprimant le stockage local <code className="bg-white/10 px-1.5 py-0.5 rounded text-sm">cookie_consent</code> de votre navigateur. Les cookies Google Analytics seront alors automatiquement supprimés.</p>
+
+                <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 my-6">
+                  <p className="m-0 text-blue-200 text-sm">Nous <strong>n'utilisons PAS</strong> de cookies de tracking publicitaire ou marketing (ex : Meta Pixel, Google Ads Remarketing).</p>
+                </div>
               </section>
 
               <section>

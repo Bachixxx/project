@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Dumbbell, Send, CheckCircle, ArrowLeft, Mail, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import SEO from '../components/SEO';
 
 const Waitlist = () => {
     const [email, setEmail] = useState('');
@@ -37,6 +38,11 @@ const Waitlist = () => {
 
     return (
         <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4 relative overflow-x-hidden font-sans selection:bg-blue-500/30">
+            <SEO
+                title="Liste d'Attente | Coachency - Accès Prioritaire"
+                description="Rejoignez la liste d'attente Coachency pour obtenir un accès prioritaire à la plateforme tout-en-un pour coachs sportifs. Inscription gratuite par email."
+                url="https://coachency.app/waitlist"
+            />
             {/* Dynamic Background Gradients */}
             <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
                 <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] bg-blue-600/10 rounded-full blur-[120px] mix-blend-screen opacity-50 animate-pulse-slow"></div>
