@@ -1,13 +1,35 @@
-import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { User, Mail, LogOut, ChevronRight, Bell, Shield, HelpCircle } from 'lucide-react-native';
 import { supabase } from '../lib/supabase';
 
 export default function ProfileScreen() {
-    const handleLogout = async () => {
-        await supabase.auth.signOut();
+    const [loggingOut, setLoggingOut] = useState(false);
+
+    const handleLogout = () => {
+        Alert.alert(
+            'Déconnexion',
+            'Êtes-vous sûr de vouloir vous déconnecter ?',
+            [
+                { text: 'Annuler', style: 'cancel' },
+                {
+                    text: 'Se déconnecter',
+                    style: 'destructive',
+                    onPress: async () => {
+                        setLoggingOut(true);
+                        try {
+                            await supabase.auth.signOut();
+                        } catch (err: any) {
+                            Alert.alert('Erreur', err.message || 'Impossible de se déconnecter');
+                        } finally {
+                            setLoggingOut(false);
+                        }
+                    },
+                },
+            ]
+        );
     };
 
     const menuItems = [
@@ -75,16 +97,19 @@ export default function ProfileScreen() {
 
                     {/* Logout Button */}
                     <View className="px-4 mt-8">
-                        <TouchableOpacity onPress={handleLogout} activeOpacity={0.85}>
+                        <TouchableOpacity onPress={handleLogout} disabled={loggingOut} activeOpacity={0.85}>
                             <View className="rounded-2xl p-4 flex-row items-center justify-center gap-2"
                                 style={{
                                     backgroundColor: 'rgba(239, 68, 68, 0.1)',
                                     borderWidth: 1,
                                     borderColor: 'rgba(239, 68, 68, 0.2)',
+                                    opacity: loggingOut ? 0.5 : 1,
                                 }}
                             >
                                 <LogOut color="#f87171" size={20} />
-                                <Text className="text-red-400 font-bold">Se déconnecter</Text>
+                                <Text className="text-red-400 font-bold">
+                                    {loggingOut ? 'Déconnexion...' : 'Se déconnecter'}
+                                </Text>
                             </View>
                         </TouchableOpacity>
                     </View>

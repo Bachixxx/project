@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { Alert } from 'react-native';
 import { startOfWeek, addDays, format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { supabase } from '../lib/supabase';
@@ -236,8 +237,9 @@ export function useAppointments() {
 
             setGroupSessions(formattedGroups);
 
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error fetching appointments:', error);
+            Alert.alert('Erreur', error.message || 'Impossible de charger les rendez-vous');
         } finally {
             setLoading(false);
         }
@@ -346,8 +348,9 @@ export function useAppointments() {
                 if (error) throw error;
             }
             await fetchSessions();
-        } catch (error) {
+        } catch (error: any) {
             console.error('Registration error:', error);
+            Alert.alert('Erreur', error.message || "Impossible de s'inscrire");
             throw error;
         }
     };
@@ -369,8 +372,9 @@ export function useAppointments() {
                 if (error) throw error;
             }
             await fetchSessions();
-        } catch (error) {
+        } catch (error: any) {
             console.error('Unregistration error:', error);
+            Alert.alert('Erreur', error.message || 'Impossible de se désinscrire');
             throw error;
         }
     };

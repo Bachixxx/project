@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Alert } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/ClientAuthContext';
 
@@ -70,8 +71,9 @@ export function useWorkouts() {
                 totalWorkouts: total,
             });
 
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error fetching workouts:', error);
+            Alert.alert('Erreur', error.message || 'Impossible de charger les programmes');
         } finally {
             setIsLoading(false);
         }

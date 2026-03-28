@@ -2,12 +2,6 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import Stripe from 'npm:stripe@13.11.0';
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
-};
-
 const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
 const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY') || '';
@@ -26,15 +20,41 @@ const getStripe = (): Stripe => {
   return _stripe;
 };
 
+const ALLOWED_ORIGINS = ['https://coachency.app', 'https://www.coachency.app'];
+function corsHeaders(req: Request) {
+  const origin = req.headers.get('Origin') ?? '';
+  return {
+    'Access-Control-Allow-Origin': ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0],
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Client-Info, Apikey',
+  };
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, {
       status: 200,
-      headers: corsHeaders,
+      headers: corsHeaders(req),
     });
   }
 
   try {
+    // Authenticate the caller (coaches.id = auth.uid() directly)
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Missing Authorization header' }), {
+        headers: { ...corsHeaders(req), 'Content-Type': 'application/json' }, status: 401,
+      });
+    }
+    const token = authHeader.replace('Bearer ', '');
+    const anonClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY') || '');
+    const { data: { user }, error: authError } = await anonClient.auth.getUser(token);
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        headers: { ...corsHeaders(req), 'Content-Type': 'application/json' }, status: 401,
+      });
+    }
+
     const stripe = getStripe();
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -42,7 +62,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: appointment, error: appointmentError } = await supabase
       .from('appointments')
-      .select('*, coach:coaches(full_name, email)')
+      .select('*, coach:coaches(full_name, email, stripe_account_id)')
       .eq('id', appointmentId)
       .single();
 
@@ -51,8 +71,18 @@ Deno.serve(async (req: Request) => {
       return new Response(
         JSON.stringify({ error: 'Appointment not found: ' + (appointmentError?.message || 'Unknown error') }),
         {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
           status: 404
+        }
+      );
+    }
+
+    if (!appointment.coach?.stripe_account_id) {
+      return new Response(
+        JSON.stringify({ error: 'Coach Stripe account not connected' }),
+        {
+          headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
+          status: 400
         }
       );
     }
@@ -109,7 +139,7 @@ Deno.serve(async (req: Request) => {
       }),
       {
         headers: {
-          ...corsHeaders,
+          ...corsHeaders(req),
           'Content-Type': 'application/json',
         },
       }
@@ -120,7 +150,7 @@ Deno.serve(async (req: Request) => {
       JSON.stringify({ error: error.message }),
       {
         headers: {
-          ...corsHeaders,
+          ...corsHeaders(req),
           'Content-Type': 'application/json',
         },
         status: 400,

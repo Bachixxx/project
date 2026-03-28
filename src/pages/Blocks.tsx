@@ -13,6 +13,7 @@ export default function Blocks() {
     const [searchQuery, setSearchQuery] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingTemplate, setEditingTemplate] = useState<SessionBlock | null>(null);
+    const [deletingId, setDeletingId] = useState<string | null>(null);
     const { user } = useAuth();
 
     useEffect(() => {
@@ -70,6 +71,7 @@ export default function Blocks() {
         e.stopPropagation();
         if (!window.confirm('Êtes-vous sûr de vouloir supprimer ce bloc modèle ? Cela n\'affectera pas les séances existantes.')) return;
 
+        setDeletingId(templateId);
         try {
             const { error } = await supabase
                 .from('exercise_groups')
@@ -81,6 +83,8 @@ export default function Blocks() {
         } catch (err) {
             console.error('Error deleting template:', err);
             setError('Impossible de supprimer le modèle.');
+        } finally {
+            setDeletingId(null);
         }
     };
 
@@ -246,7 +250,8 @@ export default function Blocks() {
                                 </div>
                                 <button
                                     onClick={(e) => handleDeleteTemplate(e, template.id)}
-                                    className="p-2 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
+                                    disabled={deletingId === template.id}
+                                    className="p-2 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg opacity-0 group-hover:opacity-100 transition-all disabled:opacity-50"
                                     title="Supprimer le modèle"
                                 >
                                     <Trash2 className="w-4 h-4" />

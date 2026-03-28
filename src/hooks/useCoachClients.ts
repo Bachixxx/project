@@ -1,3 +1,4 @@
+import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -21,6 +22,8 @@ export interface Client {
 export function useCoachClients() {
     const { user } = useAuth();
     const queryClient = useQueryClient();
+    const [mutationError, setMutationError] = useState<string | null>(null);
+    const clearMutationError = useCallback(() => setMutationError(null), []);
 
     // 1. Fetch Clients
     const query = useQuery({
@@ -55,10 +58,12 @@ export function useCoachClients() {
             return data;
         },
         onSuccess: () => {
-            // Invalidate and refetch
+            setMutationError(null);
             queryClient.invalidateQueries({ queryKey: ['clients', user?.id] });
-            // Also invalidate subscription info as client count changed
             queryClient.invalidateQueries({ queryKey: ['subscription'] });
+        },
+        onError: (err: any) => {
+            setMutationError(err.message || 'Erreur lors de la création du client');
         },
     });
 
@@ -85,10 +90,11 @@ export function useCoachClients() {
 
             return { previousClients };
         },
-        onError: (err, newTodo, context) => {
+        onError: (err: any, newTodo, context) => {
             if (context?.previousClients) {
                 queryClient.setQueryData(['clients', user?.id], context.previousClients);
             }
+            setMutationError(err.message || 'Erreur lors de la mise à jour du client');
         },
         onSettled: () => {
             queryClient.invalidateQueries({ queryKey: ['clients', user?.id] });
@@ -99,6 +105,8 @@ export function useCoachClients() {
         clients: query.data || [],
         isLoading: query.isLoading,
         error: query.error,
+        mutationError,
+        clearMutationError,
         createClient,
         updateClient,
     };

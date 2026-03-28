@@ -2,6 +2,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
 import Stripe from 'npm:stripe@13.11.0';
 
+// '*' intentional: called from React Native app (no browser CORS restriction applies)
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -33,6 +34,22 @@ Deno.serve(async (req) => {
     }
 
     try {
+        // Authenticate the caller
+        const authHeader = req.headers.get('Authorization');
+        if (!authHeader) {
+            return new Response(JSON.stringify({ error: 'Missing Authorization header' }), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401,
+            });
+        }
+        const token = authHeader.replace('Bearer ', '');
+        const anonClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY') || '');
+        const { data: { user }, error: authError } = await anonClient.auth.getUser(token);
+        if (authError || !user) {
+            return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401,
+            });
+        }
+
         const stripe = getStripe();
         const request = await req.json();
         const { appointmentId, clientId, coachId } = request;
@@ -49,6 +66,9 @@ Deno.serve(async (req) => {
             .single();
 
         if (!appointment) throw new Error('Appointment not found');
+        if (!appointment.coach.stripe_account_id) {
+            throw new Error('Coach Stripe account not connected');
+        }
 
         const { data: client } = await supabase
             .from('clients')
@@ -78,13 +98,15 @@ Deno.serve(async (req) => {
 
         // 4. Payment Intent
         const unitAmount = Math.round(appointment.price * 100);
-        const destinationAccount = appointment.coach.stripe_account_id;
-
         const paymentIntentConfig: any = {
             amount: unitAmount,
             currency: 'chf',
             customer: stripeCustomerId,
             automatic_payment_methods: { enabled: true },
+            application_fee_amount: Math.round(unitAmount * 0.1), // 10% fee
+            transfer_data: {
+                destination: appointment.coach.stripe_account_id,
+            },
             metadata: {
                 appointmentId: appointmentId,
                 clientId: clientId,
@@ -93,13 +115,6 @@ Deno.serve(async (req) => {
             }
         };
 
-        if (destinationAccount) {
-            paymentIntentConfig.application_fee_amount = Math.round(unitAmount * 0.1); // 10% fee
-            paymentIntentConfig.transfer_data = {
-                destination: destinationAccount,
-            };
-        }
-
         const paymentIntent = await stripe.paymentIntents.create(paymentIntentConfig);
 
         return new Response(
@@ -107,7 +122,7 @@ Deno.serve(async (req) => {
                 paymentIntent: paymentIntent.client_secret,
                 ephemeralKey: ephemeralKey.secret,
                 customer: stripeCustomerId,
-                publishableKey: Deno.env.get('STRIPE_PUBLISHABLE_KEY') // Ensure this is set in Supabase secrets
+                publishableKey: Deno.env.get('STRIPE_PUBLISHABLE_KEY')
             }),
             {
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },

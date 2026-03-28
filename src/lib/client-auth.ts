@@ -22,11 +22,10 @@ export async function createClientInvitation(clientId: string) {
     if (inviteError) throw inviteError;
 
     // Envoyer l'email via l'Edge Function
+    // No explicit Authorization header: supabase.functions.invoke() automatically
+    // sends the current session token, which is required by send-invitation.
     const { error: sendError } = await supabase.functions.invoke('send-invitation', {
       body: { token, clientId },
-      headers: {
-        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
-      }
     });
 
     if (sendError) throw sendError;

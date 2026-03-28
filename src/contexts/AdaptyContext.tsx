@@ -8,6 +8,7 @@ const ADAPTY_PUBLIC_KEY = 'public_live_IarJQ0st.EIiSoWvDYgqfrO7T54yd';
 
 interface AdaptyContextType {
     loading: boolean;
+    purchaseLoading: boolean;
     error: string | null;
     paywalls: any[];
     products: any[];
@@ -26,6 +27,7 @@ export function AdaptyProvider({ children }: { children: ReactNode }) {
     const [products, setProducts] = useState<any[]>([]);
     const [profile, setProfile] = useState<any | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [purchaseLoading, setPurchaseLoading] = useState(false);
 
     // Initialize Adapty
     useEffect(() => {
@@ -67,8 +69,7 @@ export function AdaptyProvider({ children }: { children: ReactNode }) {
 
             } catch (err: any) {
                 console.error('Adapty init error:', err);
-                // Only set error if critical
-                // setError(err.message || 'Failed to initialize Adapty');
+                setError(err.message || 'Failed to initialize Adapty');
             } finally {
                 setLoading(false);
             }
@@ -81,6 +82,7 @@ export function AdaptyProvider({ children }: { children: ReactNode }) {
     const makePurchase = async (product: any) => {
         try {
             setError(null);
+            setPurchaseLoading(true);
             const purchaseResult = await adapty.makePurchase(product);
 
             if (purchaseResult.type === 'success') {
@@ -101,6 +103,8 @@ export function AdaptyProvider({ children }: { children: ReactNode }) {
                 setError(err.message || 'Purchase failed');
             }
             throw err;
+        } finally {
+            setPurchaseLoading(false);
         }
     };
 
@@ -131,6 +135,7 @@ export function AdaptyProvider({ children }: { children: ReactNode }) {
 
     const value = {
         loading,
+        purchaseLoading,
         error,
         paywalls,
         products,

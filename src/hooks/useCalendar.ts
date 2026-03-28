@@ -23,6 +23,7 @@ export interface CalendarItem {
 export function useCalendar(clientId: string, initialDate: Date = new Date()) {
     const [items, setItems] = useState<CalendarItem[]>([]);
     const [loading, setLoading] = useState(true);
+    const [calendarError, setCalendarError] = useState<string | null>(null);
     const [currentDate, setCurrentDate] = useState(initialDate);
 
     // Dynamic Loaded Range
@@ -148,6 +149,7 @@ export function useCalendar(clientId: string, initialDate: Date = new Date()) {
         } catch (err) {
             console.error('Error moving item:', err);
             setItems(oldItems);
+            setCalendarError('Erreur lors du déplacement');
         }
     };
 
@@ -183,6 +185,7 @@ export function useCalendar(clientId: string, initialDate: Date = new Date()) {
         } catch (err) {
             console.error('Error creating item:', err);
             setItems(prev => prev.filter(i => i.id !== tempId));
+            setCalendarError('Erreur lors de la création');
         }
     };
 
@@ -198,7 +201,7 @@ export function useCalendar(clientId: string, initialDate: Date = new Date()) {
             if (error) throw error;
         } catch (err) {
             console.error('Error updating item:', err);
-            // Revert would be complex here without full snapshot, for now just log
+            setCalendarError('Erreur lors de la mise à jour');
         }
     };
 
@@ -214,12 +217,17 @@ export function useCalendar(clientId: string, initialDate: Date = new Date()) {
             if (error) throw error;
         } catch (err) {
             console.error('Error deleting item:', err);
+            setCalendarError('Erreur lors de la suppression');
         }
     };
+
+    const clearCalendarError = useCallback(() => setCalendarError(null), []);
 
     return {
         items,
         loading,
+        calendarError,
+        clearCalendarError,
         startDate: loadedStart,
         endDate: loadedEnd,
         currentDate,

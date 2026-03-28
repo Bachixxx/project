@@ -42,10 +42,9 @@ serve(async (req) => {
         // 1. New Class (Appointment)
         // 1. New Class (Appointment)
         if (table === 'appointments' && type === 'INSERT') {
-            // Avoid double notification: 
-            // - If it's a private session WITH a session_id, it will trigger the 'scheduled_sessions' notification below.
-            // - So checking: Is it a group class? OR Is it a private appointment WITHOUT a linked session (ad-hoc)?
-            const shouldSendNotification = record.type === 'group' || !record.session_id;
+            // Updated logic: Always notify for new appointments (RDV)
+            // Even if it has a session_id, we want to make sure the client is alerted of the new RDV.
+            const shouldSendNotification = true;
 
             if (shouldSendNotification && record.client_id) {
                 console.log(`Targeting Client ID: ${record.client_id}`);
@@ -98,14 +97,9 @@ serve(async (req) => {
                 const formattedDate = dateObj.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
 
                 // SCENARIO 1: Session Planning (INSERT)
-                // We only notify if it's a FUTURE session (Planning).
-                // If it's "NOW" (Live Session launch), we confirm silence.
+                // We notify for ALL new planned sessions.
                 if (type === 'INSERT') {
-                    const scheduledTime = new Date(record.scheduled_date).getTime();
-                    const now = new Date().getTime();
-                    // If scheduled more than 15 minutes in the future, it's a Planning -> Send Notif.
-                    // If it's essentially "now" (Live), we SKIP.
-                    if (scheduledTime - now > 15 * 60 * 1000) {
+                    if (true) { // Removed the 15-minute restriction to ensure tests and immediate plans are notified
                         notification = {
                             headings: { en: "New Workout Planned 📅", fr: "Nouvelle Séance Planifiée 📅" },
                             subtitle: { en: sessionName, fr: sessionName },

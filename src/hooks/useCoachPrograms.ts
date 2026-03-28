@@ -1,3 +1,4 @@
+import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -37,6 +38,8 @@ export interface SaveProgramParams {
 export function useCoachPrograms() {
     const { user } = useAuth();
     const queryClient = useQueryClient();
+    const [mutationError, setMutationError] = useState<string | null>(null);
+    const clearMutationError = useCallback(() => setMutationError(null), []);
 
     const query = useQuery({
         queryKey: ['programs', user?.id],
@@ -123,7 +126,11 @@ export function useCoachPrograms() {
             return finalProgramId;
         },
         onSuccess: () => {
+            setMutationError(null);
             queryClient.invalidateQueries({ queryKey: ['programs', user?.id] });
+        },
+        onError: (err: any) => {
+            setMutationError(err.message || 'Erreur lors de la sauvegarde du programme');
         },
     });
 
@@ -136,7 +143,11 @@ export function useCoachPrograms() {
             if (error) throw error;
         },
         onSuccess: () => {
+            setMutationError(null);
             queryClient.invalidateQueries({ queryKey: ['programs', user?.id] });
+        },
+        onError: (err: any) => {
+            setMutationError(err.message || 'Erreur lors de la suppression du programme');
         },
     });
 
@@ -144,6 +155,8 @@ export function useCoachPrograms() {
         programs: query.data || [],
         isLoading: query.isLoading,
         error: query.error,
+        mutationError,
+        clearMutationError,
         saveProgram,
         deleteProgram,
     };

@@ -144,11 +144,12 @@ function SessionsPage() {
                               await deleteSession.mutateAsync(session.id);
                             } catch (error) {
                               console.error('Error deleting session:', error);
-                              setErrorDetails('Failed to delete session. Please try again.');
+                              setErrorDetails('Impossible de supprimer la séance. Réessayez.');
                             }
                           }
                         }}
-                        className="p-2 hover:bg-red-500/10 rounded-lg text-gray-400 hover:text-red-400 transition-colors"
+                        disabled={deleteSession.isPending}
+                        className="p-2 hover:bg-red-500/10 rounded-lg text-gray-400 hover:text-red-400 transition-colors disabled:opacity-50"
                         title="Supprimer"
                       >
                         <Trash2 className="w-4 h-4" />

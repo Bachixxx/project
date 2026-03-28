@@ -45,6 +45,10 @@ export const es = {
     perYear: 'por año',
     personalInfo: 'Información personal',
     selectPlan: 'Por favor, selecciona un plan de suscripción',
+    invitationExpired: '¿Invitación expirada? Recibir un nuevo enlace',
+    invitationResending: 'Enviando...',
+    invitationResent: 'Si existe una cuenta con este correo, se ha enviado un nuevo enlace de invitación.',
+    invitationResendError: 'Error al enviar. Inténtalo más tarde.',
   },
   nav: {
     dashboard: 'Panel de control',

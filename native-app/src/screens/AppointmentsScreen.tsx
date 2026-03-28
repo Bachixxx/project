@@ -10,6 +10,7 @@ import {
     Modal,
     StyleSheet,
     RefreshControl,
+    Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -70,6 +71,7 @@ export default function AppointmentsScreen() {
     const nav = useNavigation<any>();
     const [selectedAptId, setSelectedAptId] = useState<string | null>(null);
     const [modalVisible, setModalVisible] = useState(false);
+    const [actionLoading, setActionLoading] = useState(false);
 
     const currentSessions = activeTab === 'personal' ? personalSessions : groupSessions;
     const selectedApt = selectedAptId ? currentSessions.find(a => a.id === selectedAptId) : null;
@@ -267,17 +269,19 @@ export default function AppointmentsScreen() {
 
                                 {selectedApt.type === 'group' && !selectedApt.registered ? (
                                     <TouchableOpacity
-                                        style={[styles.actionBtn, selectedApt.payment_method === 'online' && { backgroundColor: T.blue }]}
+                                        style={[styles.actionBtn, selectedApt.payment_method === 'online' && { backgroundColor: T.blue }, actionLoading && { opacity: 0.5 }]}
+                                        disabled={actionLoading}
                                         onPress={async () => {
+                                            setActionLoading(true);
                                             try {
                                                 await handleRegister(selectedApt.id, selectedApt.source as any);
-                                                // Only close for immediate registrations (free/live)
-                                                // For online payments, handleRegister has a delay and the modal will update live
                                                 if (selectedApt.payment_method !== 'online') {
                                                     setModalVisible(false);
                                                 }
                                             } catch (e) {
-                                                console.error(e);
+                                                // Alert already shown by hook
+                                            } finally {
+                                                setActionLoading(false);
                                             }
                                         }}
                                     >
@@ -313,14 +317,31 @@ export default function AppointmentsScreen() {
 
                                         {selectedApt.registered && (
                                             <TouchableOpacity
-                                                style={[styles.actionBtn, { backgroundColor: 'transparent', borderWidth: 1, borderColor: T.rose }]}
-                                                onPress={async () => {
-                                                    try {
-                                                        await handleUnregister(selectedApt.id, selectedApt.source as any);
-                                                        setModalVisible(false);
-                                                    } catch (e) {
-                                                        console.error(e);
-                                                    }
+                                                style={[styles.actionBtn, { backgroundColor: 'transparent', borderWidth: 1, borderColor: T.rose }, actionLoading && { opacity: 0.5 }]}
+                                                disabled={actionLoading}
+                                                onPress={() => {
+                                                    Alert.alert(
+                                                        'Se désinscrire',
+                                                        'Êtes-vous sûr de vouloir vous désinscrire de cette séance ?',
+                                                        [
+                                                            { text: 'Annuler', style: 'cancel' },
+                                                            {
+                                                                text: 'Se désinscrire',
+                                                                style: 'destructive',
+                                                                onPress: async () => {
+                                                                    setActionLoading(true);
+                                                                    try {
+                                                                        await handleUnregister(selectedApt.id, selectedApt.source as any);
+                                                                        setModalVisible(false);
+                                                                    } catch (e) {
+                                                                        // Alert already shown by hook
+                                                                    } finally {
+                                                                        setActionLoading(false);
+                                                                    }
+                                                                },
+                                                            },
+                                                        ]
+                                                    );
                                                 }}
                                             >
                                                 <Text style={[styles.actionBtnText, { color: T.rose }]}>SE DÉSINSCRIRE</Text>

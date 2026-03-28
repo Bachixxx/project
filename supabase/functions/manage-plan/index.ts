@@ -2,32 +2,59 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
 import Stripe from 'npm:stripe@13.11.0';
 
-const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Methods': 'POST, DELETE, OPTIONS',
-};
-
 const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
 const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY') || '';
+
+const ALLOWED_ORIGINS = ['https://coachency.app', 'https://www.coachency.app'];
+function corsHeaders(req: Request) {
+    const origin = req.headers.get('Origin') ?? '';
+    return {
+        'Access-Control-Allow-Origin': ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0],
+        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+        'Access-Control-Allow-Methods': 'POST, DELETE, OPTIONS',
+    };
+}
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 const stripe = new Stripe(stripeSecretKey, { apiVersion: '2023-10-16' });
 
 Deno.serve(async (req) => {
     if (req.method === 'OPTIONS') {
-        return new Response('ok', { headers: corsHeaders });
+        return new Response('ok', { headers: corsHeaders(req) });
     }
 
     try {
-        const { action, planId, name, amount, interval, coachId } = await req.json();
+        // Authenticate the caller (coaches.id = auth.uid() directly)
+        const authHeader = req.headers.get('Authorization');
+        if (!authHeader) {
+            return new Response(JSON.stringify({ error: 'Missing Authorization header' }), {
+                headers: { ...corsHeaders(req), 'Content-Type': 'application/json' }, status: 401,
+            });
+        }
+        const token = authHeader.replace('Bearer ', '');
+        const anonClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY') || '');
+        const { data: { user }, error: authError } = await anonClient.auth.getUser(token);
+        if (authError || !user) {
+            return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+                headers: { ...corsHeaders(req), 'Content-Type': 'application/json' }, status: 401,
+            });
+        }
 
         if (!stripeSecretKey) throw new Error('STRIPE_SECRET_KEY not configured');
+
+        const { action, planId, name, amount, interval, coachId } = await req.json();
 
         // 1. CREATE Plan (Product + Price)
         if (action === 'create') {
             if (!name || !amount || !coachId) throw new Error('Missing required fields');
+
+            // Verify the authenticated user owns this coachId
+            if (user.id !== coachId) {
+                return new Response(JSON.stringify({ error: 'Forbidden: you can only manage your own plans' }), {
+                    headers: { ...corsHeaders(req), 'Content-Type': 'application/json' }, status: 403,
+                });
+            }
 
             // Create Product in Stripe
             const product = await stripe.products.create({
@@ -41,7 +68,7 @@ Deno.serve(async (req) => {
             // Create Price in Stripe
             const price = await stripe.prices.create({
                 product: product.id,
-                unit_amount: Math.round(Number(amount) * 100), // convert to cents
+                unit_amount: Math.round(Number(amount) * 100),
                 currency: 'chf',
                 recurring: {
                     interval: interval || 'month'
@@ -66,7 +93,7 @@ Deno.serve(async (req) => {
             if (error) throw error;
 
             return new Response(JSON.stringify(data), {
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
                 status: 200,
             });
         }
@@ -75,16 +102,21 @@ Deno.serve(async (req) => {
         if (action === 'delete') {
             if (!planId) throw new Error('Missing planId');
 
-            // Get plan from DB
+            // Get plan and verify ownership (coaches.id = auth.uid())
             const { data: plan, error: fetchError } = await supabase
                 .from('coach_plans')
-                .select('stripe_product_id, stripe_price_id')
+                .select('coach_id, stripe_product_id, stripe_price_id')
                 .eq('id', planId)
+                .eq('coach_id', user.id)
                 .single();
 
-            if (fetchError) throw fetchError;
+            if (fetchError || !plan) {
+                return new Response(JSON.stringify({ error: 'Forbidden: plan not found or not yours' }), {
+                    headers: { ...corsHeaders(req), 'Content-Type': 'application/json' }, status: 403,
+                });
+            }
 
-            // Archive Product in Stripe (cannot delete if used, so archive is safer)
+            // Archive Product in Stripe (cannot delete if used)
             if (plan.stripe_product_id) {
                 await stripe.products.update(plan.stripe_product_id, { active: false });
             }
@@ -98,7 +130,7 @@ Deno.serve(async (req) => {
             if (updateError) throw updateError;
 
             return new Response(JSON.stringify({ success: true }), {
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
                 status: 200,
             });
         }
@@ -108,7 +140,7 @@ Deno.serve(async (req) => {
     } catch (error) {
         console.error('Error managing plan:', error);
         return new Response(JSON.stringify({ error: error.message }), {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
             status: 400,
         });
     }

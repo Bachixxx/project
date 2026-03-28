@@ -5,6 +5,7 @@ import { eyeOff } from 'react-icons-kit/feather/eyeOff';
 import { eye } from 'react-icons-kit/feather/eye';
 import { LogIn, ChevronLeft, User, Mail, Lock, Activity, Users } from 'lucide-react';
 import { useClientAuth } from '../../contexts/ClientAuthContext';
+import { supabase } from '../../lib/supabase';
 import { Capacitor } from '@capacitor/core';
 
 function ClientLogin() {
@@ -14,6 +15,8 @@ function ClientLogin() {
   const [passwordIcon, setPasswordIcon] = useState(eyeOff);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState(false);
   const navigate = useNavigate();
   const { signIn, client, isPasswordRecovery } = useClientAuth();
 
@@ -43,6 +46,7 @@ function ClientLogin() {
     e.preventDefault();
     try {
       setError('');
+      setResendSuccess(false);
       setLoading(true);
       const { error } = await signIn({ email, password });
       if (error) throw error;
@@ -51,6 +55,24 @@ function ClientLogin() {
       setError('Échec de la connexion. Vérifiez vos identifiants ou contactez votre coach.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendInvitation = async () => {
+    if (!email) return;
+    setResending(true);
+    setResendSuccess(false);
+    try {
+      await supabase.functions.invoke('resend-invitation', {
+        body: { email },
+      });
+      // Always show success — the function never reveals if the email exists
+      setResendSuccess(true);
+      setError('');
+    } catch {
+      setError("Erreur lors de l'envoi. Réessayez plus tard.");
+    } finally {
+      setResending(false);
     }
   };
 
@@ -119,6 +141,25 @@ function ClientLogin() {
                 <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm mb-6 flex items-start gap-3 animate-slide-in relative z-10 backdrop-blur-md">
                   <Activity className="w-5 h-5 shrink-0 mt-0.5" />
                   <p>{error}</p>
+                </div>
+              )}
+
+              {resendSuccess && (
+                <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm mb-6 relative z-10 backdrop-blur-md text-center">
+                  Si un compte existe avec cet email, un nouveau lien d'invitation a été envoyé.
+                </div>
+              )}
+
+              {error && !resendSuccess && email && (
+                <div className="text-center mb-4 relative z-10">
+                  <button
+                    type="button"
+                    onClick={handleResendInvitation}
+                    disabled={resending}
+                    className="text-sm text-emerald-400 hover:text-emerald-300 transition-colors underline disabled:opacity-50"
+                  >
+                    {resending ? 'Envoi en cours...' : "Invitation expirée ? Recevoir un nouveau lien"}
+                  </button>
                 </div>
               )}
 
