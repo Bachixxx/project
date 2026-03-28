@@ -1,5 +1,6 @@
 import React, { useState, Suspense } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import BugReportButton from '../BugReportButton';
 import {
   LayoutDashboard, Dumbbell, Calendar, TrendingUp,
   User, LogOut, Menu, X, Activity
@@ -176,6 +177,7 @@ function ClientLayout() {
           </React.Fragment>
         </main>
       </div>
+      <BugReportButton />
     </div>
   );
 }
