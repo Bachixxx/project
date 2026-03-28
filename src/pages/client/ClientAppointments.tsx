@@ -464,7 +464,7 @@ function ClientAppointments() {
     }
   };
 
-  const handleSelectEvent = (event) => {
+  const handleSelectEvent = async (event) => {
     console.log('Selected event:', event);
 
     // Handle special item types
@@ -482,12 +482,17 @@ function ClientAppointments() {
       return;
     }
 
-    // Gate: if online payment required but not completed, redirect to payment
+    // Gate: if online payment required but not completed, create checkout session
     if (event.payment_method === 'online' && event.price > 0 && event.payment_status !== 'completed') {
-      if (event.payment_link) {
-        window.open(event.payment_link, '_blank');
-      } else {
-        alert('En attente du lien de paiement de votre coach.');
+      try {
+        setRegistering(true);
+        await createCheckoutSession(undefined, client.id, event.id);
+        // Redirect happens automatically via Stripe
+      } catch (error: any) {
+        console.error('Payment initialization error:', error);
+        alert(error.message || 'Erreur lors de l\'initialisation du paiement');
+      } finally {
+        setRegistering(false);
       }
       return;
     }
