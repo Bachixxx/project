@@ -252,7 +252,7 @@ function ClientLiveWorkout() {
         }
 
         // 2. Fetch Appointment (Simple)
-        const { data: appointment, error: appError } = await supabase
+        const { data: appointmentData, error: appError } = await supabase
           .from('appointments')
           .select('*')
           .eq('id', appointmentId)
@@ -263,22 +263,22 @@ function ClientLiveWorkout() {
           console.error('Appointment fetch error:', appError);
           throw appError;
         }
-        if (!appointment) {
+        if (!appointmentData) {
           console.error('Appointment NOT found (possibly RLS blocking):', appointmentId);
           throw new Error('Séance introuvable (Accès refusé au rendez-vous)');
         }
 
-        console.log('Appointment found:', appointment);
+        console.log('Appointment found:', appointmentData);
 
         // 3. Fetch Session content
-        if (!appointment.session_id) {
+        if (!appointmentData.session_id) {
           throw new Error('Cette séance n\'a pas de contenu associé (session_id manquant)');
         }
 
         const { data: sessionDataObj, error: sessionError } = await supabase
           .from('sessions')
           .select('id, name, description, duration_minutes, difficulty_level')
-          .eq('id', appointment.session_id)
+          .eq('id', appointmentData.session_id)
           .limit(1)
           .maybeSingle();
 
@@ -290,7 +290,7 @@ function ClientLiveWorkout() {
 
         // 10-minute window check
         const now = new Date();
-        const start = new Date(appointment.start);
+        const start = new Date(appointmentData.start);
         const diffMs = start.getTime() - now.getTime();
         const tenMinutesMs = 10 * 60 * 1000;
 
@@ -298,15 +298,15 @@ function ClientLiveWorkout() {
           setLoading(false);
           setSessionData({
             isTooEarly: true,
-            start: appointment.start,
-            title: appointment.title
+            start: appointmentData.start,
+            title: appointmentData.title
           });
           return;
         }
 
         setSessionData({
           session: sessionDataObj,
-          scheduled_date: appointment.start,
+          scheduled_date: appointmentData.start,
           notes: null
         });
         targetSessionId = sessionDataObj.id;
