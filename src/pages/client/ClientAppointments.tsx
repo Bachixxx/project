@@ -1208,13 +1208,22 @@ const SessionModal = ({ session, exercises, groups, loadingExercises, onClose, o
           </button>
 
           {session.type === 'personal' && session.status !== 'completed' && session.status !== 'cancelled' && (
-            <button
-              onClick={onStartTraining}
-              className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-xl shadow-lg shadow-blue-500/20 transition-all flex items-center gap-2"
-            >
-              <Play className="w-4 h-4" />
-              Commencer
-            </button>
+            session.payment_method === 'online' && session.price > 0 && session.payment_status !== 'completed' ? (
+              <button
+                onClick={onStartTraining}
+                className="px-6 py-2.5 bg-amber-600 hover:bg-amber-500 text-white text-sm font-medium rounded-xl shadow-lg shadow-amber-500/20 transition-all flex items-center gap-2"
+              >
+                Payer {session.price} CHF
+              </button>
+            ) : (
+              <button
+                onClick={onStartTraining}
+                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-xl shadow-lg shadow-blue-500/20 transition-all flex items-center gap-2"
+              >
+                <Play className="w-4 h-4" />
+                Commencer
+              </button>
+            )
           )}
 
           {session.type === 'group' && (
@@ -1244,7 +1253,7 @@ const SessionModal = ({ session, exercises, groups, loadingExercises, onClose, o
                     disabled={registering}
                     className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium rounded-xl shadow-lg shadow-emerald-500/20 transition-all"
                   >
-                    {registering ? '...' : "S'inscrire"}
+                    {registering ? '...' : (session.payment_method === 'online' && session.price > 0 ? `Payer ${session.price} CHF` : "S'inscrire")}
                   </button>
                 )
               )}
