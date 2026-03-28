@@ -264,7 +264,7 @@ function ClientAppointments() {
         ...formattedRegisteredSessions
       ];
 
-      let currentPersonalSessions = Array.from(new Map(allMySessions.map(item => [item.id, item])).values());
+      const currentPersonalSessions = Array.from(new Map(allMySessions.map(item => [item.id, item])).values());
 
 
       // --- END FETCH REGISTERED APPOINTMENTS ---
@@ -354,6 +354,8 @@ function ClientAppointments() {
           source: 'appointment',
           price: a.price,
           payment_method: a.payment_method,
+          payment_status: a.payment_status,
+          payment_link: a.payment_link,
           max_participants: a.max_participants,
           current_participants: a.current_participants || 0,
           registered: appointmentRegistrationMap.has(a.id) && appointmentRegistrationMap.get(a.id) !== 'cancelled',
@@ -477,6 +479,16 @@ function ClientAppointments() {
 
     if (event.item_type === 'metric') {
       navigate('/client/body-composition');
+      return;
+    }
+
+    // Gate: if online payment required but not completed, redirect to payment
+    if (event.payment_method === 'online' && event.price > 0 && event.payment_status !== 'completed') {
+      if (event.payment_link) {
+        window.open(event.payment_link, '_blank');
+      } else {
+        alert('En attente du lien de paiement de votre coach.');
+      }
       return;
     }
 

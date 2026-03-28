@@ -301,6 +301,15 @@ async function handleSuccessfulPayment(object: any) {
         throw insertError;
       }
     }
+    // 3. Update appointment payment_status to completed
+    const { error: aptStatusError } = await supabase
+      .from('appointments')
+      .update({ payment_status: 'completed' })
+      .eq('id', appointmentId);
+
+    if (aptStatusError) {
+      console.error('Error updating appointment payment_status:', aptStatusError);
+    }
   }
 
   // Send Payment Receipt Email

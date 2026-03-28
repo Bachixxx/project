@@ -312,20 +312,37 @@ export function useAppointments() {
         if (!client?.id) return;
         try {
             if (source === 'appointment') {
-                // Check if payment is required
                 const appointment = groupSessions.find(a => a.id === sessionId);
-                if (appointment?.payment_method === 'online' && !appointment.registered) {
+
+                // Online payment required: handle via Stripe, webhook does registration
+                if (appointment?.payment_method === 'online' && appointment?.price > 0) {
                     const success = await handlePayment(sessionId, appointment.coach?.id || appointment.coach_id);
                     if (!success) return; // User cancelled or failed
 
-                    // Small delay to let the webhook propagate and database update
-                    // This ensures that when we refetch or trust Realtime, the data is ready.
+                    // Poll for webhook confirmation instead of blind setTimeout
                     setLoading(true);
-                    await new Promise(resolve => setTimeout(resolve, 2500));
+                    let confirmed = false;
+                    for (let i = 0; i < 10; i++) {
+                        await new Promise(resolve => setTimeout(resolve, 1500));
+                        const { data: updated } = await supabase
+                            .from('appointments')
+                            .select('payment_status')
+                            .eq('id', sessionId)
+                            .single();
+                        if (updated?.payment_status === 'completed') {
+                            confirmed = true;
+                            break;
+                        }
+                    }
+                    if (!confirmed) {
+                        Alert.alert('Info', 'Paiement en cours de traitement. Rafraîchissez dans quelques instants.');
+                    }
                     await fetchSessions();
                     return;
                 }
 
+                // Free or in-person payment: direct registration
+                if (!appointment) throw new Error('Appointment not found');
                 const { error } = await supabase
                     .from('appointment_registrations')
                     .insert({
