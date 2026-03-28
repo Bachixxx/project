@@ -318,10 +318,11 @@ export function SessionDetailsModal({ scheduledSessionId, onClose, onStatusChang
         .from('sessions')
         .insert({
           coach_id: user.id,
-          name: session.session.name + ' (Modifié)', // Or keep unique name logic
+          name: session.session.name,
           description: session.session.description,
           duration_minutes: session.session.duration_minutes,
-          difficulty_level: session.session.difficulty_level
+          difficulty_level: session.session.difficulty_level,
+          is_template: false // Don't pollute the session library
         })
         .select()
         .single();
