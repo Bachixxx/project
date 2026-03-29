@@ -109,8 +109,8 @@ export function CreateItemModal({ isOpen, onClose, date, clientId, onCreate, onU
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fade-in">
             {/* Modal Container */}
-            <div className="bg-[#0f172a] border border-white/10 rounded-3xl max-w-md w-full overflow-hidden shadow-[0_0_40px_rgba(0,0,0,0.5)] ring-1 ring-white/5 animate-scale-in">
-                <div className="p-6 sm:p-8">
+            <div className="bg-[#0f172a] border border-white/10 rounded-3xl max-w-md w-full max-h-[90vh] flex flex-col overflow-hidden shadow-[0_0_40px_rgba(0,0,0,0.5)] ring-1 ring-white/5 animate-scale-in">
+                <div className="p-6 sm:p-8 overflow-y-auto flex-1">
                     {/* Header */}
                     <div className="flex justify-between items-start mb-6">
                         <div>
