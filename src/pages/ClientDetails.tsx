@@ -234,147 +234,46 @@ function ClientDetails() {
     );
   }
 
-  // --- COMPACT HEADER FOR PLANNING MODE ---
-  if (viewMode === 'planning') {
-    return (
-      <div className="h-screen w-full flex flex-col bg-[#09090b] overflow-hidden text-white font-sans">
-        {/* Compact Header */}
-        <div className="flex items-center justify-between px-6 py-3 border-b border-white/5 bg-[#0f172a] shadow-md z-20 flex-shrink-0">
-          <div className="flex items-center gap-6">
-            <Link
-              to="/clients"
-              className="p-2 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </Link>
-
-            <div className="flex flex-col">
-              <h1 className="text-lg font-bold text-white leading-none">{client.full_name}</h1>
-              <span className="text-xs text-gray-400">{client.email}</span>
-            </div>
-
-            {/* View Switcher (Inline) */}
-            <div className="flex items-center bg-black/20 rounded-lg p-1 ml-4 border border-white/5">
-              <button
-                onClick={() => setViewMode('overview')}
-                className="px-3 py-1.5 rounded-md text-sm font-medium transition-all text-gray-400 hover:text-white hover:bg-white/5"
-              >
-                Vue d'ensemble
-              </button>
-              <button
-                onClick={() => setViewMode('planning')}
-                className="px-3 py-1.5 rounded-md text-sm font-medium transition-all bg-blue-600 text-white shadow-sm"
-              >
-                Planning
-              </button>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Link
-              to={`/clients/${client.id}/analytics`}
-              className="p-2 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors"
-              title="Analyse"
-            >
-              <TrendingUp className="w-5 h-5" />
-            </Link>
-            <button
-              onClick={() => setShowAssignModal(true)}
-              className="bg-blue-600/10 text-blue-400 border border-blue-500/20 px-3 py-1.5 rounded-lg flex items-center gap-2 hover:bg-blue-600/20 transition-all text-sm font-bold"
-            >
-              <Plus className="w-4 h-4" />
-              Programme
-            </button>
-          </div>
-        </div>
-
-        {/* Calendar Content (Takes remaining height) */}
-        <div className="flex-1 overflow-hidden relative">
-          <CalendarGrid clientId={client.id} />
-        </div>
-
-        {/* Modals */}
-        {showAssignModal && (
-          <AssignProgramModal
-            clientId={client.id}
-            onClose={() => setShowAssignModal(false)}
-            onAssign={() => {
-              fetchClientData();
-              setShowAssignModal(false);
-            }}
-          />
-        )}
-        {showScheduleModal && (
-          <ScheduleSessionModal
-            clientId={client.id}
-            onClose={() => {
-              setShowScheduleModal(false);
-              setSelectedSlot(null);
-            }}
-            onSuccess={fetchClientData}
-            selectedSlot={selectedSlot}
-          />
-        )}
-        {showDetailsModal && selectedSessionId && (
-          <SessionDetailsModal
-            scheduledSessionId={selectedSessionId}
-            onClose={() => {
-              setShowDetailsModal(false);
-              setSelectedSessionId(null);
-            }}
-            onStatusChange={fetchClientData}
-          />
-        )}
-      </div>
-    );
-  }
-
-  // --- STANDARD LAYOUT FOR OVERVIEW MODE ---
+  // --- UNIFIED LAYOUT ---
   return (
-    <div className="min-h-screen bg-[#09090b] text-white p-6 font-sans">
-      {/* Background Gradients */}
-      <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-        <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[128px]" />
-        <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-cyan-600/10 rounded-full blur-[128px]" />
-      </div>
-
-      <div className="relative z-10 max-w-7xl mx-auto">
-        {/* Back button */}
+    <div className="h-screen w-full flex flex-col bg-[#09090b] overflow-hidden text-white font-sans">
+      {/* Fixed Header */}
+      <div className="shrink-0 px-6 pt-5 pb-0 relative z-10">
         <Link
           to="/clients"
-          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:bg-white/10 transition-all text-sm font-medium mb-6"
+          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:bg-white/10 transition-all text-sm font-medium mb-4"
         >
           <ChevronLeft className="w-4 h-4" />
           Clients
         </Link>
 
         {/* Profile Card */}
-        <div className="bg-[#1e293b]/50 border border-white/5 backdrop-blur-xl rounded-2xl p-6 mb-6">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-5">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center text-2xl font-bold text-white shadow-lg shadow-primary-500/20 shrink-0">
+        <div className="bg-[#1e293b]/50 border border-white/5 backdrop-blur-xl rounded-2xl p-5 mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center text-xl font-bold text-white shadow-lg shadow-primary-500/20 shrink-0">
               {client.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
-              <h1 className="text-2xl font-bold text-white mb-2">{client.full_name}</h1>
-              <div className="flex flex-wrap gap-2">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 text-gray-300 text-xs border border-white/5">
+              <h1 className="text-xl font-bold text-white mb-1.5">{client.full_name}</h1>
+              <div className="flex flex-wrap gap-1.5">
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white/5 text-gray-300 text-xs border border-white/5">
                   <Mail className="w-3 h-3 text-primary-400" />
                   {client.email}
                 </span>
                 {client.phone && (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 text-gray-300 text-xs border border-white/5">
+                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white/5 text-gray-300 text-xs border border-white/5">
                     <Phone className="w-3 h-3 text-primary-400" />
                     {client.phone}
                   </span>
                 )}
                 {client.gender && (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 text-gray-300 text-xs border border-white/5">
+                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white/5 text-gray-300 text-xs border border-white/5">
                     <User className="w-3 h-3 text-primary-400" />
                     {client.gender}
                   </span>
                 )}
                 {client.date_of_birth && (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 text-gray-300 text-xs border border-white/5">
+                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white/5 text-gray-300 text-xs border border-white/5">
                     <CalendarIcon className="w-3 h-3 text-primary-400" />
                     {new Date().getFullYear() - new Date(client.date_of_birth).getFullYear()} ans
                   </span>
@@ -384,14 +283,14 @@ function ClientDetails() {
             <div className="flex gap-2 shrink-0">
               <Link
                 to={`/clients/${client.id}/analytics`}
-                className="bg-white/5 border border-white/10 text-white px-4 py-2.5 rounded-xl flex items-center gap-2 hover:bg-white/10 hover:border-white/20 transition-all font-medium text-sm"
+                className="bg-white/5 border border-white/10 text-white px-3 py-2 rounded-xl flex items-center gap-2 hover:bg-white/10 hover:border-white/20 transition-all font-medium text-sm"
               >
                 <TrendingUp className="w-4 h-4 text-green-400" />
                 Analyse
               </Link>
               <button
                 onClick={() => setShowAssignModal(true)}
-                className="bg-gradient-to-r from-primary-600 to-accent-600 text-white px-4 py-2.5 rounded-xl flex items-center gap-2 hover:from-primary-500 hover:to-accent-500 transition-all font-bold shadow-lg shadow-primary-500/20 text-sm"
+                className="bg-gradient-to-r from-primary-600 to-accent-600 text-white px-3 py-2 rounded-xl flex items-center gap-2 hover:from-primary-500 hover:to-accent-500 transition-all font-bold shadow-lg shadow-primary-500/20 text-sm"
               >
                 <Plus className="w-4 h-4" />
                 Assigner
@@ -401,7 +300,7 @@ function ClientDetails() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 mb-6 bg-white/5 rounded-xl p-1 border border-white/5 w-fit">
+        <div className="flex gap-1 mb-4 bg-white/5 rounded-xl p-1 border border-white/5 w-fit">
           <button
             onClick={() => setViewMode('overview')}
             className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all ${viewMode === 'overview' ? 'bg-primary-500/20 text-primary-400 shadow-sm' : 'text-gray-400 hover:text-white'}`}
@@ -417,9 +316,16 @@ function ClientDetails() {
             Planning
           </button>
         </div>
+      </div>
 
-        {/* Content for Overview Mode */}
-        <div className="animate-fade-in">
+      {/* Content — switches based on tab */}
+      {viewMode === 'planning' ? (
+        <div className="flex-1 overflow-hidden relative">
+          <CalendarGrid clientId={client.id} />
+        </div>
+      ) : (
+        <div className="flex-1 overflow-y-auto px-6 pb-6">
+          <div className="max-w-7xl mx-auto animate-fade-in">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div className="bg-[#1e293b]/50 border border-white/5 backdrop-blur-xl rounded-2xl p-6 hover:border-white/10 transition-colors">
               <div className="flex items-center gap-3 mb-6">
@@ -631,8 +537,10 @@ function ClientDetails() {
             </div>
           </div>
         </div>
-      </div>
+        </div>
+      )}
 
+      {/* Modals — always available */}
       {showAssignModal && (
         <AssignProgramModal
           clientId={client.id}
