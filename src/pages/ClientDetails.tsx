@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ChevronLeft, Plus, Calendar as CalendarIcon, BarChart, Activity, TrendingUp, X, Clock, ChevronRight, Unlock } from 'lucide-react';
+import { ChevronLeft, Plus, Calendar as CalendarIcon, BarChart, Activity, TrendingUp, X, Clock, ChevronRight, Unlock, Mail, Phone, User } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 // import { t } from '../i18n';
@@ -339,59 +339,81 @@ function ClientDetails() {
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto">
-        <div className="mb-8">
-          <Link
-            to="/clients"
-            className="inline-flex items-center text-gray-400 hover:text-white mb-6 transition-colors"
-          >
-            <ChevronLeft className="w-5 h-5 mr-1" />
-            Retour aux Clients
-          </Link>
-          <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-            <div>
-              <h1 className="text-4xl font-bold text-white mb-2 bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">{client.full_name}</h1>
-              <div className="flex flex-wrap items-center gap-3 text-gray-400">
-                <span>{client.email}</span>
-                <span className="w-1 h-1 bg-gray-600 rounded-full"></span>
-                <span>{client.phone}</span>
-                <span className="w-1 h-1 bg-gray-600 rounded-full"></span>
-                <span>{client.gender}</span>
-                <span className="w-1 h-1 bg-gray-600 rounded-full"></span>
-                <span>{new Date().getFullYear() - new Date(client.date_of_birth).getFullYear()} ans</span>
+        {/* Back button */}
+        <Link
+          to="/clients"
+          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:bg-white/10 transition-all text-sm font-medium mb-6"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          Clients
+        </Link>
+
+        {/* Profile Card */}
+        <div className="bg-[#1e293b]/50 border border-white/5 backdrop-blur-xl rounded-2xl p-6 mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-5">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center text-2xl font-bold text-white shadow-lg shadow-primary-500/20 shrink-0">
+              {client.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+            </div>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-2xl font-bold text-white mb-2">{client.full_name}</h1>
+              <div className="flex flex-wrap gap-2">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 text-gray-300 text-xs border border-white/5">
+                  <Mail className="w-3 h-3 text-primary-400" />
+                  {client.email}
+                </span>
+                {client.phone && (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 text-gray-300 text-xs border border-white/5">
+                    <Phone className="w-3 h-3 text-primary-400" />
+                    {client.phone}
+                  </span>
+                )}
+                {client.gender && (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 text-gray-300 text-xs border border-white/5">
+                    <User className="w-3 h-3 text-primary-400" />
+                    {client.gender}
+                  </span>
+                )}
+                {client.date_of_birth && (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 text-gray-300 text-xs border border-white/5">
+                    <CalendarIcon className="w-3 h-3 text-primary-400" />
+                    {new Date().getFullYear() - new Date(client.date_of_birth).getFullYear()} ans
+                  </span>
+                )}
               </div>
             </div>
-            <div className="flex flex-wrap gap-3">
+            <div className="flex gap-2 shrink-0">
               <Link
                 to={`/clients/${client.id}/analytics`}
-                className="bg-white/5 border border-white/10 text-white px-4 py-2.5 rounded-xl flex items-center gap-2 hover:bg-white/10 hover:border-white/20 transition-all font-medium"
+                className="bg-white/5 border border-white/10 text-white px-4 py-2.5 rounded-xl flex items-center gap-2 hover:bg-white/10 hover:border-white/20 transition-all font-medium text-sm"
               >
-                <TrendingUp className="w-5 h-5 text-green-400" />
+                <TrendingUp className="w-4 h-4 text-green-400" />
                 Analyse
               </Link>
               <button
                 onClick={() => setShowAssignModal(true)}
-                className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-4 py-2.5 rounded-xl flex items-center gap-2 hover:from-blue-700 hover:to-cyan-700 transition-all font-bold shadow-lg shadow-blue-500/20"
+                className="bg-gradient-to-r from-primary-600 to-accent-600 text-white px-4 py-2.5 rounded-xl flex items-center gap-2 hover:from-primary-500 hover:to-accent-500 transition-all font-bold shadow-lg shadow-primary-500/20 text-sm"
               >
-                <Plus className="w-5 h-5" />
-                Assigner Programme
+                <Plus className="w-4 h-4" />
+                Assigner
               </button>
             </div>
           </div>
         </div>
 
-        {/* View Switcher */}
-        <div className="flex items-center gap-4 mb-6 border-b border-white/5 pb-1">
+        {/* Tabs */}
+        <div className="flex gap-1 mb-6 bg-white/5 rounded-xl p-1 border border-white/5 w-fit">
           <button
             onClick={() => setViewMode('overview')}
-            className="pb-3 px-2 font-medium transition-colors relative text-blue-400"
+            className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all ${viewMode === 'overview' ? 'bg-primary-500/20 text-primary-400 shadow-sm' : 'text-gray-400 hover:text-white'}`}
           >
+            <Activity className="w-4 h-4" />
             Vue d'ensemble
-            <div className="absolute bottom-[-1px] left-0 w-full h-0.5 bg-blue-500 rounded-full" />
           </button>
           <button
             onClick={() => setViewMode('planning')}
-            className="pb-3 px-2 font-medium transition-colors relative text-gray-400 hover:text-white"
+            className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all ${viewMode === 'planning' ? 'bg-primary-500/20 text-primary-400 shadow-sm' : 'text-gray-400 hover:text-white'}`}
           >
+            <CalendarIcon className="w-4 h-4" />
             Planning
           </button>
         </div>
