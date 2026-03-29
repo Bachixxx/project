@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format, startOfWeek, addDays, isSameDay, isToday } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Calendar as CalendarIcon, Play, CheckCircle, X, FileText, Video, ExternalLink, Info, Dumbbell, Clock, User, Users, Activity, StickyNote, Moon, ChevronLeft, ChevronRight, Loader } from 'lucide-react';
+import { Calendar as CalendarIcon, CalendarPlus, Play, CheckCircle, X, FileText, Video, ExternalLink, Info, Dumbbell, Clock, User, Users, Activity, StickyNote, Moon, ChevronLeft, ChevronRight, Loader } from 'lucide-react';
 import { useClientAuth } from '../../contexts/ClientAuthContext';
 import { supabase } from '../../lib/supabase';
 import { createCheckoutSession } from '../../lib/stripe';
+import { generateICS } from '../../utils/calendar';
 
 function ClientAppointments() {
   const { client } = useClientAuth();
@@ -141,6 +142,7 @@ function ClientAppointments() {
           coach: s.coach,
           type: 'personal',
           item_type: s.item_type || 'session',
+          source: 'scheduled_session',
           content: s.content,
           session_id: s.session_id
         };
@@ -163,6 +165,7 @@ function ClientAppointments() {
           notes: apt.notes,
           coach: apt.coach,
           type: 'appointment_registration',
+          source: 'appointment',
           session_id: apt.session_id,
           session: apt.session || { name: apt.title, duration_minutes: apt.duration },
           registered: true
@@ -701,7 +704,7 @@ function ClientAppointments() {
                           dayEvents.map(event => {
                             let themeColor = 'blue';
                             let icon = <Dumbbell className="w-6 h-6" />;
-                            let badgeText = 'Personnel';
+                            let badgeText = 'Entraînement';
 
                             if (event.item_type === 'note') {
                               themeColor = 'amber';
@@ -715,6 +718,10 @@ function ClientAppointments() {
                               themeColor = 'green';
                               icon = <Activity className="w-6 h-6" />;
                               badgeText = 'Biométrie';
+                            } else if (event.source === 'appointment') {
+                              themeColor = 'cyan';
+                              icon = <Users className="w-6 h-6" />;
+                              badgeText = 'Rendez-vous';
                             } else if (event.type === 'group') {
                               themeColor = 'emerald';
                               icon = <Users className="w-6 h-6" />;
@@ -878,8 +885,9 @@ const SessionModal = ({ session, exercises, groups, loadingExercises, onClose, o
     }
   };
 
+  const isAppointment = session.source === 'appointment';
   const isPersonal = session.type === 'personal';
-  const accentColor = isPersonal ? 'blue' : 'emerald';
+  const accentColor = isAppointment ? 'cyan' : isPersonal ? 'blue' : 'emerald';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -899,8 +907,13 @@ const SessionModal = ({ session, exercises, groups, loadingExercises, onClose, o
 
           <div className="flex justify-between items-start z-10 relative">
             <div>
-              <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium mb-3 ${getStatusColor(session.registered ? 'registered' : session.status)}`}>
-                {session.registered ? 'Inscrit' : getStatusText(session.status)}
+              <div className="flex items-center gap-2 mb-3">
+                <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(session.registered ? 'registered' : session.status)}`}>
+                  {session.registered ? 'Inscrit' : getStatusText(session.status)}
+                </div>
+                <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-${accentColor}-500/20 text-${accentColor}-400 border border-${accentColor}-500/30`}>
+                  {isAppointment ? <><Users className="w-3 h-3" /> Rendez-vous</> : <><Dumbbell className="w-3 h-3" /> Entraînement</>}
+                </div>
               </div>
               <h2 className="text-3xl font-bold text-white mb-1">{session.title}</h2>
               <div className="flex items-center gap-2 text-white/70">
@@ -1103,7 +1116,20 @@ const SessionModal = ({ session, exercises, groups, loadingExercises, onClose, o
           </button>
 
           {session.type === 'personal' && session.status !== 'completed' && session.status !== 'cancelled' && (
-            session.payment_method === 'online' && session.price > 0 && session.payment_status !== 'completed' ? (
+            session.source === 'appointment' ? (
+              <button
+                onClick={() => generateICS({
+                  title: session.title,
+                  start: session.start,
+                  durationMinutes: session.session?.duration_minutes || 60,
+                  description: session.coach ? `Avec ${session.coach.full_name}` : undefined,
+                })}
+                className="px-6 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white text-sm font-medium rounded-xl shadow-lg shadow-cyan-500/20 transition-all flex items-center gap-2"
+              >
+                <CalendarPlus className="w-4 h-4" />
+                Ajouter au calendrier
+              </button>
+            ) : session.payment_method === 'online' && session.price > 0 && session.payment_status !== 'completed' ? (
               <button
                 onClick={onStartTraining}
                 className="px-6 py-2.5 bg-amber-600 hover:bg-amber-500 text-white text-sm font-medium rounded-xl shadow-lg shadow-amber-500/20 transition-all flex items-center gap-2"
@@ -1116,7 +1142,7 @@ const SessionModal = ({ session, exercises, groups, loadingExercises, onClose, o
                 className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-xl shadow-lg shadow-blue-500/20 transition-all flex items-center gap-2"
               >
                 <Play className="w-4 h-4" />
-                Commencer
+                Lancer la séance
               </button>
             )
           )}

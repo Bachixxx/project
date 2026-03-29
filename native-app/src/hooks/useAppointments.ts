@@ -143,6 +143,7 @@ export function useAppointments() {
                         notes: apt.notes,
                         coach: apt.coach,
                         type: 'appointment_registration',
+                        source: 'appointment',
                         item_type: 'session',
                         session_id: apt.session_id,
                         session: apt.session || { name: apt.title, duration_minutes: apt.duration },

@@ -49,6 +49,7 @@ const T = {
     amber: '#fbbf24',
     indigo: '#a78bfa',
     rose: '#fb7185',
+    cyan: '#22d3ee',
     muted: '#94a3b8',
     textSecondary: '#cbd5e1',
 };
@@ -360,19 +361,26 @@ export default function AppointmentsScreen() {
 
 
 function EventCard({ event, onPress }: { event: Appointment; onPress: () => void }) {
-    const color = getThemeColor(event.item_type);
+    const isAppointment = (event as any).source === 'appointment';
+    const color = isAppointment ? T.cyan : getThemeColor(event.item_type);
+    const icon = isAppointment ? <Users size={20} color={T.cyan} /> : getIcon(event.item_type, 20);
 
     return (
         <TouchableOpacity activeOpacity={0.8} onPress={onPress} style={styles.card}>
             <View style={styles.cardHeader}>
                 <View style={[styles.cardIconBox, { backgroundColor: color + '15' }]}>
-                    {getIcon(event.item_type, 20)}
+                    {icon}
                 </View>
                 <View style={{ flex: 1 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                        <Text style={[styles.cardBadge, { color }]}>
+                            {isAppointment ? 'RENDEZ-VOUS' : 'ENTRAÎNEMENT'}
+                        </Text>
+                    </View>
                     <Text style={styles.cardTitle}>{event.title}</Text>
                     <View style={styles.cardMeta}>
                         <Clock size={12} color={T.muted} />
-                        <Text style={styles.cardTime}>{format(event.start, 'HH:mm')}</Text>
+                        <Text style={styles.cardTime}>{isAppointment ? format(event.start, 'HH:mm') : format(event.start, 'd MMM', { locale: fr })}</Text>
                         {event.coach && (
                             <>
                                 <View style={styles.dot} />
@@ -543,6 +551,11 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    cardBadge: {
+        fontSize: 9,
+        fontWeight: '800',
+        letterSpacing: 1,
     },
     cardTitle: {
         color: '#fff',
