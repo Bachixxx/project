@@ -27,7 +27,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Récupérer la session initiale avec gestion d'erreur
     supabase.auth.getSession().then(async ({ data: { session }, error }) => {
       if (error) {
-        // Gérer silencieusement les erreurs de token de rafraîchissement
         if (error.message?.includes('refresh_token_not_found') ||
           error.message?.includes('Invalid Refresh Token')) {
           console.log('Session expired, user will need to re-authenticate');
@@ -36,37 +35,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.error('Session error:', error);
         }
         setUser(null);
-        // Check if user is a coach
-        if (session?.user) {
-          const { data: coachData, error: coachError } = await supabase
-            .from('coaches')
-            .select('id')
-            .eq('id', session.user.id)
-            .maybeSingle();
+        setLoading(false);
+        return;
+      }
 
-          if (coachData && !coachError) {
-            setUser(session.user);
-            // OneSignal Login for Coach
+      // Session valid — verify user is a coach before setting user
+      if (session?.user) {
+        const { data: coachData, error: coachError } = await supabase
+          .from('coaches')
+          .select('id')
+          .eq('id', session.user.id)
+          .maybeSingle();
+
+        if (coachData && !coachError) {
+          setUser(session.user);
+          // @ts-ignore
+          if (window.OneSignalDeferred) {
             // @ts-ignore
-            if (window.OneSignalDeferred) {
-              // @ts-ignore
-              window.OneSignalDeferred.push(function (OneSignal) {
-                OneSignal.login(session.user.id);
-                OneSignal.User.addTag("role", "coach");
-              });
-            }
-          } else {
-            console.log("Logged-in user is not a coach, clearing user context");
-            setUser(null);
+            window.OneSignalDeferred.push(function (OneSignal) {
+              OneSignal.login(session.user.id);
+              OneSignal.User.addTag("role", "coach");
+            });
           }
         } else {
           setUser(null);
         }
+      } else {
+        setUser(null);
       }
       setLoading(false);
     }).catch(async () => {
       console.log('Authentication session recovery failed, user will need to re-authenticate');
-      // If session recovery fails completely, wipe tokens
       await supabase.auth.signOut();
       setUser(null);
       setLoading(false);
