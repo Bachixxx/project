@@ -118,30 +118,32 @@ export function LiveSessionLauncher({ isOpen, onClose, initialClientId }: LiveSe
             const todayEnd = new Date();
             todayEnd.setHours(23, 59, 59, 999);
 
-            const { data: scheduleData } = await supabase
-                .from('scheduled_sessions')
+            // 1. Fetch today's appointment for this client (in-person coaching)
+            const { data: appointmentData } = await supabase
+                .from('appointments')
                 .select(`
-          id,
-          scheduled_date,
-          session:sessions (
-            id,
-            name,
-            duration_minutes,
-            description
-          )
-        `)
+                  id,
+                  start,
+                  session_id,
+                  session:sessions (
+                    id,
+                    name,
+                    duration_minutes,
+                    description
+                  )
+                `)
+                .eq('coach_id', user?.id)
                 .eq('client_id', clientId)
-                .gte('scheduled_date', todayStart.toISOString())
-                .lte('scheduled_date', todayEnd.toISOString())
-                .neq('status', 'cancelled')
-                .neq('status', 'completed') // Only show pending/scheduled
-                .not('session_id', 'is', null) // Only show actual sessions, not notes/rest
-                .order('scheduled_date', { ascending: true })
+                .gte('start', todayStart.toISOString())
+                .lte('start', todayEnd.toISOString())
+                .in('status', ['scheduled', 'confirmed'])
+                .not('session_id', 'is', null)
+                .order('start', { ascending: true })
                 .limit(1)
                 .single();
 
-            if (scheduleData) {
-                setTodaySession(scheduleData as any);
+            if (appointmentData) {
+                setTodaySession(appointmentData as any);
             } else {
                 setTodaySession(null);
             }
