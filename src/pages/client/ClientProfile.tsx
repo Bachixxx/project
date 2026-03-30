@@ -41,6 +41,12 @@ function ClientProfile() {
   const [changingCoach, setChangingCoach] = useState(false);
   const [coachDetails, setCoachDetails] = useState<any>(null); // To store current coach info
 
+  // Password Change State
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({ newPassword: '', confirmPassword: '' });
+  const [passwordError, setPasswordError] = useState('');
+  const [changingPassword, setChangingPassword] = useState(false);
+
 
   useEffect(() => {
     if (client) {
@@ -139,6 +145,29 @@ function ClientProfile() {
       fetchCoachDetails();
     }
   }, [clientDetails]);
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordError('');
+    if (passwordForm.newPassword.length < 6) {
+      setPasswordError('Le mot de passe doit contenir au moins 6 caractères.');
+      return;
+    }
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordError('Les mots de passe ne correspondent pas.');
+      return;
+    }
+    setChangingPassword(true);
+    const { error } = await supabase.auth.updateUser({ password: passwordForm.newPassword });
+    setChangingPassword(false);
+    if (error) {
+      setPasswordError(error.message);
+    } else {
+      setShowPasswordModal(false);
+      setPasswordForm({ newPassword: '', confirmPassword: '' });
+      alert('Mot de passe mis à jour avec succès !');
+    }
+  };
 
   const handleChangeCoach = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -631,7 +660,7 @@ function ClientProfile() {
                   <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider">Sécurité & Compte</h3>
                 </div>
                 <div className="divide-y divide-white/5">
-                  <button className="w-full px-6 py-4 flex items-center justify-between hover:bg-white/5 transition-colors group active:bg-white/10">
+                  <button onClick={() => setShowPasswordModal(true)} className="w-full px-6 py-4 flex items-center justify-between hover:bg-white/5 transition-colors group active:bg-white/10">
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
                         <Shield className="w-5 h-5 text-blue-400" />
@@ -702,6 +731,63 @@ function ClientProfile() {
           )}</AnimatePresence>
 
       </motion.div>
+
+      {/* Change Password Drawer */}
+      <Drawer.Root open={showPasswordModal} onOpenChange={(open) => { setShowPasswordModal(open); if (!open) { setPasswordError(''); setPasswordForm({ newPassword: '', confirmPassword: '' }); } }} shouldScaleBackground>
+        <Drawer.Portal>
+          <Drawer.Overlay className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50" />
+          <Drawer.Content className="bg-[#1e293b] flex flex-col rounded-t-[10px] h-fit max-h-[96%] mt-24 fixed bottom-0 left-0 right-0 z-[60] border-t border-white/10 outline-none">
+            <div className="p-4 bg-[#1e293b] rounded-t-[10px] flex-1 pb-10">
+              <div aria-hidden className="mx-auto w-12 h-1.5 flex-shrink-0 rounded-full bg-gray-600 mb-8" />
+              <div className="max-w-md mx-auto">
+                <div className="text-center mb-6">
+                  <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-400">
+                    <Shield className="w-8 h-8" />
+                  </div>
+                  <Drawer.Title className="text-2xl font-bold text-white mb-2">Changer le mot de passe</Drawer.Title>
+                  <Drawer.Description className="text-gray-400 text-sm">
+                    Choisissez un nouveau mot de passe d'au moins 6 caractères.
+                  </Drawer.Description>
+                </div>
+                <form onSubmit={handleChangePassword} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Nouveau mot de passe</label>
+                    <input
+                      type="password"
+                      value={passwordForm.newPassword}
+                      onChange={(e) => setPasswordForm(f => ({ ...f, newPassword: e.target.value }))}
+                      className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                      placeholder="••••••••"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Confirmer le mot de passe</label>
+                    <input
+                      type="password"
+                      value={passwordForm.confirmPassword}
+                      onChange={(e) => setPasswordForm(f => ({ ...f, confirmPassword: e.target.value }))}
+                      className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                      placeholder="••••••••"
+                      required
+                    />
+                  </div>
+                  {passwordError && (
+                    <p className="text-red-400 text-sm">{passwordError}</p>
+                  )}
+                  <button
+                    type="submit"
+                    disabled={changingPassword || !passwordForm.newPassword || !passwordForm.confirmPassword}
+                    className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-blue-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {changingPassword ? "Mise à jour..." : "Confirmer"}
+                  </button>
+                </form>
+              </div>
+            </div>
+          </Drawer.Content>
+        </Drawer.Portal>
+      </Drawer.Root>
 
       {/* Change Coach Modal */}
       {/* Change Coach Drawer */}
