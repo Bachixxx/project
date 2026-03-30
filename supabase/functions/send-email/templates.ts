@@ -120,6 +120,18 @@ export const TEMPLATES = {
     `, 'Séance Confirmée')
   }),
 
+  'password.changed': (data: Record<string, any>) => ({
+    subject: 'Votre mot de passe Coachency a été modifié',
+    html: MASTER_TEMPLATE(`
+      <h1>Mot de passe modifié</h1>
+      <p>Bonjour ${data.name},</p>
+      <p>Votre mot de passe a bien été modifié le ${data.date}.</p>
+      <p style="background-color:#0f172a;border-left:4px solid #3b82f6;padding:12px 16px;border-radius:8px;color:#93c5fd;">
+        Si vous n'êtes pas à l'origine de ce changement, contactez immédiatement votre coach ou notre support.
+      </p>
+    `, 'Mot de passe modifié')
+  }),
+
   'payment.receipt': (data: Record<string, any>) => ({
     subject: `Reçu de paiement - ${data.amount}`,
     html: MASTER_TEMPLATE(`

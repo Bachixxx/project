@@ -166,6 +166,16 @@ function ClientProfile() {
       setShowPasswordModal(false);
       setPasswordForm({ newPassword: '', confirmPassword: '' });
       alert('Mot de passe mis à jour avec succès !');
+      supabase.functions.invoke('send-email', {
+        body: {
+          to: client?.email,
+          template_name: 'password.changed',
+          data: {
+            name: clientDetails?.full_name || client?.email,
+            date: new Date().toLocaleDateString('fr-FR', { dateStyle: 'long' }),
+          },
+        },
+      });
     }
   };
 

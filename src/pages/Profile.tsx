@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronLeft, User, Mail, Phone, Award, Crown, Clock, BadgeEuro, ExternalLink, CheckCircle, AlertTriangle, Trash2 } from 'lucide-react';
+import { ChevronLeft, User, Mail, Phone, Award, Crown, Clock, BadgeEuro, ExternalLink, CheckCircle, AlertTriangle, Trash2, Shield, Lock } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useSubscription } from '../hooks/useSubscription';
@@ -21,6 +21,10 @@ function ProfilePage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({ newPassword: '', confirmPassword: '' });
+  const [passwordError, setPasswordError] = useState('');
+  const [changingPassword, setChangingPassword] = useState(false);
 
   const { subscriptionInfo } = useSubscription();
 
@@ -80,6 +84,39 @@ function ProfilePage() {
     }
   };
 
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordError('');
+    if (passwordForm.newPassword.length < 6) {
+      setPasswordError('Le mot de passe doit contenir au moins 6 caractères.');
+      return;
+    }
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordError('Les mots de passe ne correspondent pas.');
+      return;
+    }
+    setChangingPassword(true);
+    const { error } = await supabase.auth.updateUser({ password: passwordForm.newPassword });
+    setChangingPassword(false);
+    if (error) {
+      setPasswordError(error.message);
+    } else {
+      setShowPasswordModal(false);
+      setPasswordForm({ newPassword: '', confirmPassword: '' });
+      alert('Mot de passe mis à jour avec succès !');
+      supabase.functions.invoke('send-email', {
+        body: {
+          to: coach?.email,
+          template_name: 'password.changed',
+          data: {
+            name: coach?.full_name || coach?.email,
+            date: new Date().toLocaleDateString('fr-FR', { dateStyle: 'long' }),
+          },
+        },
+      });
+    }
+  };
 
   const handleDeleteAccount = async () => {
     if (deleteConfirmation !== 'DELETE') return;
@@ -302,6 +339,26 @@ function ProfilePage() {
             </div>
           </div>
 
+          {/* Security */}
+          <div className="bg-white/5 border border-white/10 backdrop-blur-lg rounded-xl p-6">
+            <div className="flex flex-col md:flex-row items-center md:items-center justify-between gap-4 text-center md:text-left">
+              <div>
+                <h2 className="text-xl font-semibold text-white mb-2 flex items-center justify-center md:justify-start gap-2">
+                  <Shield className="w-5 h-5" />
+                  Sécurité
+                </h2>
+                <p className="text-white/80">Gérez votre mot de passe.</p>
+              </div>
+              <button
+                onClick={() => setShowPasswordModal(true)}
+                className="w-full md:w-auto px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors flex items-center justify-center gap-2"
+              >
+                <Lock className="w-4 h-4" />
+                Changer le mot de passe
+              </button>
+            </div>
+          </div>
+
           {/* Profile Form */}
           {isEditing ? (
             <form onSubmit={handleSubmit} className="bg-white/5 border border-white/10 backdrop-blur-lg rounded-xl p-6 space-y-6">
@@ -412,6 +469,61 @@ function ProfilePage() {
           )}
         </div>
       </div>
+
+      {/* Password Change Modal */}
+      <ResponsiveModal
+        isOpen={showPasswordModal}
+        onClose={() => {
+          setShowPasswordModal(false);
+          setPasswordError('');
+          setPasswordForm({ newPassword: '', confirmPassword: '' });
+        }}
+        title="Changer le mot de passe"
+      >
+        <form onSubmit={handleChangePassword} className="p-4 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Nouveau mot de passe</label>
+            <input
+              type="password"
+              value={passwordForm.newPassword}
+              onChange={(e) => setPasswordForm(f => ({ ...f, newPassword: e.target.value }))}
+              className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+              placeholder="••••••••"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Confirmer le mot de passe</label>
+            <input
+              type="password"
+              value={passwordForm.confirmPassword}
+              onChange={(e) => setPasswordForm(f => ({ ...f, confirmPassword: e.target.value }))}
+              className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+              placeholder="••••••••"
+              required
+            />
+          </div>
+          {passwordError && (
+            <p className="text-red-400 text-sm">{passwordError}</p>
+          )}
+          <div className="flex justify-end gap-3 pt-4">
+            <button
+              type="button"
+              onClick={() => setShowPasswordModal(false)}
+              className="px-4 py-2 text-gray-400 hover:text-white"
+            >
+              Annuler
+            </button>
+            <button
+              type="submit"
+              disabled={changingPassword || !passwordForm.newPassword || !passwordForm.confirmPassword}
+              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors"
+            >
+              {changingPassword ? 'Mise à jour...' : 'Confirmer'}
+            </button>
+          </div>
+        </form>
+      </ResponsiveModal>
 
       {/* Delete Confirmation Modal */}
       <ResponsiveModal
