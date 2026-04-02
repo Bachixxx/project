@@ -81,7 +81,7 @@ export default function BugReportButton() {
       <button
         id="bug-report-btn"
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-24 sm:bottom-6 right-4 sm:right-6 z-[100] w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 hover:bg-amber-500/30 hover:scale-110 transition-all shadow-lg backdrop-blur-sm"
+        className="fixed bottom-24 sm:bottom-6 left-4 sm:left-6 z-[100] w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 hover:bg-amber-500/30 hover:scale-110 transition-all shadow-lg backdrop-blur-sm"
         title="Signaler un bug"
       >
         <Bug className="w-5 h-5" />
