@@ -81,14 +81,14 @@ export default function BugReportButton() {
       <button
         id="bug-report-btn"
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-24 sm:bottom-6 right-4 sm:right-6 z-50 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 hover:bg-amber-500/30 hover:scale-110 transition-all shadow-lg backdrop-blur-sm"
+        className="fixed bottom-24 sm:bottom-6 right-4 sm:right-6 z-[100] w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 hover:bg-amber-500/30 hover:scale-110 transition-all shadow-lg backdrop-blur-sm"
         title="Signaler un bug"
       >
         <Bug className="w-5 h-5" />
       </button>
 
       {isOpen && (
-        <div id="bug-report-modal" className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4">
+        <div id="bug-report-modal" className="fixed inset-0 z-[101] flex items-end sm:items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsOpen(false)} />
           <div className="relative bg-slate-900 border border-white/10 rounded-2xl w-full max-w-md p-6 shadow-2xl">
             <div className="flex items-center justify-between mb-4">
