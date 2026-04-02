@@ -1,4 +1,4 @@
-import { User, Bell } from 'lucide-react';
+import { User } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface DashboardHeaderProps {
@@ -46,12 +46,6 @@ export function DashboardHeader({ clientName, notifications = 0, avatarUrl }: Da
                 </div>
             </div>
 
-            <button className="relative p-2 bg-white/5 rounded-full hover:bg-white/10 transition-all active:scale-95">
-                <Bell className="w-6 h-6 text-gray-300" />
-                {notifications > 0 && (
-                    <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border border-[#0f172a]" />
-                )}
-            </button>
         </motion.div>
     );
 }
